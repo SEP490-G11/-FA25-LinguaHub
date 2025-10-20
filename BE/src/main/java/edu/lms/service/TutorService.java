@@ -1,21 +1,30 @@
 package edu.lms.service;
 
 import edu.lms.entity.Tutor;
-
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import java.util.Optional;
 
 public interface TutorService {
 
-    Tutor createTutor(Tutor tutor);
+    // 1. List/Search Tutors (Admin Only)
+    Page<Tutor> listTutors(String keyword, String status, Pageable pageable);
 
-    Optional<Tutor> getTutorById(Long tutorId);
+    // 2. View tutor details (Admin Only)
+    Optional<Tutor> getTutorDetails(Long tutorId);
 
-    Optional<Tutor> getTutorByUserId(Long userId);
+    // 3. Approve tutor (Pending → Approved)
+    Tutor approveTutor(Long tutorId, Long adminId);
 
-    List<Tutor> getAllTutors();
+    // 4. Reject tutor (Pending → Rejected)
+    Tutor rejectTutor(Long tutorId, Long adminId, String reason);
 
-    Tutor updateTutor(Long tutorId, Tutor updatedTutor);
+    // 5. Suspend tutor (Approved → Suspended)
+    Tutor suspendTutor(Long tutorId, Long adminId);
 
-    void deleteTutor(Long tutorId);
+    // 6. Reactivate tutor (Suspended → Approved)
+    Tutor activateTutor(Long tutorId, Long adminId);
+
+    // 7. Optional: Update info (experience, specialization)
+    Tutor updateTutorInfo(Long tutorId, Short experience, String specialization);
 }
