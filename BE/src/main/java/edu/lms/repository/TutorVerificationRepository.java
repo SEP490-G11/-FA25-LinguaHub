@@ -5,13 +5,17 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
+
 
 @Repository
 public interface TutorVerificationRepository extends JpaRepository<TutorVerification, Long> {
 
-    // Lấy danh sách verification theo TutorID
     List<TutorVerification> findByTutor_TutorId(Long tutorId);
 
-    // Lấy tất cả yêu cầu theo trạng thái (Pending, Approved, Rejected)
     List<TutorVerification> findByStatus(TutorVerification.Status status);
+
+    // Lấy bản Pending mới nhất cho 1 Tutor (phục vụ approve/reject theo tutorId)
+    Optional<TutorVerification> findFirstByTutor_TutorIdAndStatusOrderByTutorVerificationIdDesc(
+            Long tutorId, TutorVerification.Status status);
 }
