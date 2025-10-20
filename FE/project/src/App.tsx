@@ -1,27 +1,11 @@
-import React, { useEffect } from 'react';
-import { useDispatch } from 'react-redux';
-import { AppRoutes } from '@/routes/AppRoutes';
-import { loadUserFromStorage } from '@/redux/slices/authSlice';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
-import type { AppDispatch } from '@/redux/store';
+import api from "./config/axiosConfig";  // ✅ import đúng tên export
 
 function App() {
-  const dispatch = useDispatch<AppDispatch>();
+    api.get("/test")
+        .then((res) => console.log("✅ Backend connected:", res.data))
+        .catch((err) => console.error("❌ Connection failed:", err));
 
-  useEffect(() => {
-    dispatch(loadUserFromStorage());
-  }, [dispatch]);
-
-  return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <main>
-        <AppRoutes />
-      </main>
-      <Footer />
-    </div>
-  );
+    return <div>LinguaHub Connection Test</div>;
 }
 
 export default App;
