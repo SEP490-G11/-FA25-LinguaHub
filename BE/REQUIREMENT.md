@@ -76,3 +76,7 @@
         - Update ReviewedBy and ReviewedAt
         - Tutor.Status may remain Pending or change to Suspended based on policy
 5. Tutor is now eligible to create courses if approved
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/main
