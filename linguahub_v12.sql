@@ -1,6 +1,6 @@
 -- ==========================================================
 -- DATABASE: LinguaHub - Centralized Language Tutor & LMS
--- Version: FINAL OPTIMIZED (Production-Ready)
+-- Version: FINAL OPTIMIZED (v3)
 -- Author: Bui Quang Thai
 -- ==========================================================
 
@@ -28,7 +28,7 @@ CREATE TABLE Users (
     IsActive BOOLEAN DEFAULT TRUE,
     CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     UpdatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB COMMENT='System users including profile details';
+) ENGINE=InnoDB COMMENT='System users including merged profile data';
 
 CREATE TABLE Verification (
     VerificationID BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -38,7 +38,7 @@ CREATE TABLE Verification (
     ExpiredAt DATETIME,
     IsVerified BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE CASCADE
-) ENGINE=InnoDB COMMENT='User account verification';
+) ENGINE=InnoDB COMMENT='User verification codes (email/phone/OTP)';
 
 -- ==========================================================
 -- 2. TUTOR & VERIFICATION
@@ -52,7 +52,7 @@ CREATE TABLE Tutor (
     Rating DECIMAL(3,2) DEFAULT 0.0,
     Status ENUM('Pending','Approved','Suspended') DEFAULT 'Pending',
     FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE CASCADE
-) ENGINE=InnoDB COMMENT='Tutor information and teaching specialization';
+) ENGINE=InnoDB COMMENT='Tutor information and specialization details';
 
 CREATE TABLE TutorVerification (
     TutorVerificationID BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -63,7 +63,7 @@ CREATE TABLE TutorVerification (
     ReviewedAt DATETIME,
     FOREIGN KEY (TutorID) REFERENCES Tutor(TutorID) ON DELETE CASCADE,
     FOREIGN KEY (ReviewedBy) REFERENCES Users(UserID) ON DELETE SET NULL
-) ENGINE=InnoDB COMMENT='Tutor verification workflow';
+) ENGINE=InnoDB COMMENT='Tutor verification workflow and approval process';
 
 -- ==========================================================
 -- 3. COURSES & CATEGORY SYSTEM
@@ -74,7 +74,7 @@ CREATE TABLE CourseCategory (
     Name VARCHAR(100) NOT NULL,
     Description TEXT,
     CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB COMMENT='Course categories (e.g., English, Korean)';
+) ENGINE=InnoDB COMMENT='Course categories (e.g., English, Korean, Japanese)';
 
 CREATE TABLE Courses (
     CourseID BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -84,12 +84,14 @@ CREATE TABLE Courses (
     Duration INT,
     Price DECIMAL(10,2) DEFAULT 0.00,
     CategoryID BIGINT,
+    Language VARCHAR(50) DEFAULT 'English',
+    ThumbnailURL VARCHAR(255),
     Status ENUM('Draft','Pending','Approved','Rejected','Disabled') DEFAULT 'Draft',
     CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     UpdatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (TutorID) REFERENCES Tutor(TutorID) ON DELETE SET NULL,
     FOREIGN KEY (CategoryID) REFERENCES CourseCategory(CategoryID)
-) ENGINE=InnoDB COMMENT='Courses created by tutors';
+) ENGINE=InnoDB COMMENT='Courses created by tutors, with thumbnails and language metadata';
 
 CREATE TABLE CourseSection (
     SectionID BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -119,12 +121,14 @@ CREATE TABLE Enrollments (
     FOREIGN KEY (CourseID) REFERENCES Courses(CourseID) ON DELETE CASCADE
 ) ENGINE=InnoDB COMMENT='Learner course enrollments';
 
--- 🔹 NEW: Snapshot Section for Learners
+-- 🔹 Snapshot: Section progress tracking
 CREATE TABLE UserCourseSection (
     UserCourseSectionID BIGINT AUTO_INCREMENT PRIMARY KEY,
+    UserID BIGINT NOT NULL,
     EnrollmentID BIGINT NOT NULL,
     SectionID BIGINT NOT NULL,
     Progress DECIMAL(5,2) DEFAULT 0.0,
+    FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE CASCADE,
     FOREIGN KEY (EnrollmentID) REFERENCES Enrollments(EnrollmentID) ON DELETE CASCADE,
     FOREIGN KEY (SectionID) REFERENCES CourseSection(SectionID) ON DELETE CASCADE
 ) ENGINE=InnoDB COMMENT='Tracks user progress per course section';
@@ -140,7 +144,7 @@ CREATE TABLE UserLesson (
     FOREIGN KEY (LessonID) REFERENCES Lessons(LessonID) ON DELETE CASCADE,
     FOREIGN KEY (UserID) REFERENCES Users(UserID),
     FOREIGN KEY (EnrollmentID) REFERENCES Enrollments(EnrollmentID)
-) ENGINE=InnoDB COMMENT='User progress per lesson';
+) ENGINE=InnoDB COMMENT='User progress tracking per lesson';
 
 CREATE TABLE CourseReview (
     ReviewID BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -151,7 +155,7 @@ CREATE TABLE CourseReview (
     CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (CourseID) REFERENCES Courses(CourseID) ON DELETE CASCADE,
     FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE CASCADE
-) ENGINE=InnoDB COMMENT='Reviews for courses';
+) ENGINE=InnoDB COMMENT='Course feedback and rating system';
 
 -- ==========================================================
 -- 4. SERVICES & BENEFITS (1-1 BOOKING / PREMIUM)
@@ -163,7 +167,7 @@ CREATE TABLE Services (
     Duration INT,
     Description TEXT,
     Price DECIMAL(10,2) DEFAULT 0.00
-) ENGINE=InnoDB COMMENT='Available services such as 1-on-1 tutoring';
+) ENGINE=InnoDB COMMENT='Available premium services or tutoring packages';
 
 CREATE TABLE ServiceBenefit (
     BenefitID BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -172,7 +176,7 @@ CREATE TABLE ServiceBenefit (
     NumberUsage INT DEFAULT 0,
     ServiceID BIGINT,
     FOREIGN KEY (ServiceID) REFERENCES Services(ServiceID) ON DELETE CASCADE
-) ENGINE=InnoDB COMMENT='Benefits of each service';
+) ENGINE=InnoDB COMMENT='Benefits associated with each service';
 
 CREATE TABLE UserService (
     UserServiceID BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -184,7 +188,7 @@ CREATE TABLE UserService (
     Duration INT,
     FOREIGN KEY (UserID) REFERENCES Users(UserID),
     FOREIGN KEY (ServiceID) REFERENCES Services(ServiceID)
-) ENGINE=InnoDB COMMENT='User purchased services';
+) ENGINE=InnoDB COMMENT='User purchased services or tutoring plans';
 
 CREATE TABLE UserServiceBenefit (
     UserServiceBenefitID BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -194,7 +198,7 @@ CREATE TABLE UserServiceBenefit (
     NumberUsageRemaining INT DEFAULT 0,
     NumberBooking INT DEFAULT 0,
     FOREIGN KEY (UserServiceID) REFERENCES UserService(UserServiceID) ON DELETE CASCADE
-) ENGINE=InnoDB COMMENT='Tracks user’s remaining benefit usage';
+) ENGINE=InnoDB COMMENT='Tracks usage of benefits per user service';
 
 -- ==========================================================
 -- 5. BOOKING & PAYMENT SYSTEM
@@ -207,7 +211,7 @@ CREATE TABLE Schedule (
     EndTime DATETIME,
     IsAvailable BOOLEAN DEFAULT TRUE,
     FOREIGN KEY (TutorID) REFERENCES Tutor(TutorID) ON DELETE CASCADE
-) ENGINE=InnoDB COMMENT='Tutor available times';
+) ENGINE=InnoDB COMMENT='Tutor availability schedule for bookings';
 
 CREATE TABLE Booking (
     BookingID BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -222,7 +226,7 @@ CREATE TABLE Booking (
     FOREIGN KEY (TutorID) REFERENCES Tutor(TutorID),
     FOREIGN KEY (ScheduleID) REFERENCES Schedule(ScheduleID),
     FOREIGN KEY (UserServiceID) REFERENCES UserService(UserServiceID)
-) ENGINE=InnoDB COMMENT='1-1 session bookings';
+) ENGINE=InnoDB COMMENT='1-on-1 tutoring booking records';
 
 CREATE TABLE Payments (
     PaymentID BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -238,8 +242,11 @@ CREATE TABLE Payments (
     FOREIGN KEY (EnrollmentID) REFERENCES Enrollments(EnrollmentID) ON DELETE SET NULL,
     FOREIGN KEY (UserServiceID) REFERENCES UserService(UserServiceID) ON DELETE SET NULL,
     FOREIGN KEY (ReceivedID) REFERENCES Users(UserID) ON DELETE SET NULL,
-    CHECK ((EnrollmentID IS NOT NULL AND UserServiceID IS NULL) OR (EnrollmentID IS NULL AND UserServiceID IS NOT NULL))
-) ENGINE=InnoDB COMMENT='Payment transactions for courses/services';
+    CHECK (
+        (EnrollmentID IS NOT NULL AND UserServiceID IS NULL)
+        OR (EnrollmentID IS NULL AND UserServiceID IS NOT NULL)
+    )
+) ENGINE=InnoDB COMMENT='Handles all payment transactions';
 
 CREATE TABLE Feedback (
     FeedbackID BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -249,10 +256,10 @@ CREATE TABLE Feedback (
     Comment TEXT,
     FOREIGN KEY (UserID) REFERENCES Users(UserID),
     FOREIGN KEY (PaymentID) REFERENCES Payments(PaymentID)
-) ENGINE=InnoDB COMMENT='Feedback for services/courses';
+) ENGINE=InnoDB COMMENT='Feedback for completed services or courses';
 
 -- ==========================================================
--- 6. CHAT & POLICY
+-- 6. CHAT & POLICY MANAGEMENT
 -- ==========================================================
 
 CREATE TABLE ChatRoom (
@@ -264,7 +271,7 @@ CREATE TABLE ChatRoom (
     ChatRoomType ENUM('Advice','Training') DEFAULT 'Training',
     FOREIGN KEY (UserID) REFERENCES Users(UserID),
     FOREIGN KEY (TutorID) REFERENCES Tutor(TutorID)
-) ENGINE=InnoDB COMMENT='Chat rooms between user and tutor';
+) ENGINE=InnoDB COMMENT='Private chat room between learner and tutor';
 
 CREATE TABLE ChatRoomMessage (
     MessageID BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -275,7 +282,7 @@ CREATE TABLE ChatRoomMessage (
     CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (ChatRoomID) REFERENCES ChatRoom(ChatRoomID),
     FOREIGN KEY (SenderID) REFERENCES Users(UserID)
-) ENGINE=InnoDB COMMENT='Messages inside chat rooms';
+) ENGINE=InnoDB COMMENT='Messages within chat rooms (chat history)';
 
 CREATE TABLE Policy (
     PolicyID BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -285,4 +292,4 @@ CREATE TABLE Policy (
     Value INT,
     CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
     IsActive BOOLEAN DEFAULT TRUE
-) ENGINE=InnoDB COMMENT='System-wide policies';
+) ENGINE=InnoDB COMMENT='System-wide policies and configurations';
