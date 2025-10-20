@@ -1,6 +1,6 @@
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+// import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { lessonsApi } from '@/queries/lessons';
 import { ROUTES } from '@/constants';

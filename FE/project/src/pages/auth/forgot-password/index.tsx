@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';//useNavigate
 import { motion } from 'framer-motion';
 import { Mail, ArrowLeft, Languages, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,7 @@ const ForgotPassword = () => {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
 
   const fadeInUp = {
     initial: { opacity: 0, y: 60 },

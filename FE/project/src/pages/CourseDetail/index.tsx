@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { useParams } from 'react-router-dom';
 import CourseHeroSection from './components/sections/hero-section';
 import CourseContent from './components/sections/course-content';
@@ -26,8 +26,8 @@ const CourseDetail = () => {
     duration: '12 weeks',
     lessons: 36,
     level: 'Intermediate',
-    price: 25,
-    originalPrice: 35,
+    price: 255.000,
+    originalPrice: 355.000,
     language: 'English',
     image: 'https://images.pexels.com/photos/3184339/pexels-photo-3184339.jpeg?auto=compress&cs=tinysrgb&w=800',
     description: 'Master English conversation skills with our comprehensive course designed for intermediate learners. Learn practical phrases, improve pronunciation, and gain confidence in real-world conversations.',

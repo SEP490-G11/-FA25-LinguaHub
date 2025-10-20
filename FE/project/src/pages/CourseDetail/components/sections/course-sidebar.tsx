@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Star, Clock, BookOpen, Users, Calendar, Globe } from 'lucide-react';
@@ -18,7 +18,7 @@ const CourseSidebar = ({ course }: CourseSidebarProps) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: 'VND'
-    }).format(price);
+    }).format(price*1000);
   };
 
   return (
@@ -113,9 +113,9 @@ const CourseSidebar = ({ course }: CourseSidebarProps) => {
         <div className="text-center mb-4">
           <div className="flex items-center justify-center space-x-2 mb-2">
             <span className="text-3xl font-bold text-blue-600">{formatPrice(course.price)}</span>
-            <span className="text-gray-500">/giờ</span>
+            <span className="text-gray-500"></span>
           </div>
-          <span className="text-gray-400 line-through">{formatPrice(course.originalPrice)}/giờ</span>
+          <span className="text-gray-400 line-through">{formatPrice(course.originalPrice)}</span>
         </div>
         <Link 
           to={`/payment/${course.id}`}

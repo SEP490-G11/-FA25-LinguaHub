@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { motion } from 'framer-motion';
 import { Star, Clock, Users, Award, Play, BookOpen, CheckCircle, Globe, Calendar } from 'lucide-react';
 
@@ -60,9 +60,9 @@ const CourseHeroSection = ({ course }: CourseHeroSectionProps) => {
 
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
-                <span className="text-3xl font-bold">{formatPrice(course.price * 25000)}</span>
-                <span className="text-blue-200">/hour</span>
-                <span className="text-blue-300 line-through">{formatPrice(course.originalPrice * 25000)}</span>
+                <span className="text-3xl font-bold">{formatPrice(course.price )}</span>
+                {/*<span className="text-blue-200">/hour</span>*/}
+                <span className="text-blue-300 line-through">{formatPrice(course.originalPrice )}</span>
               </div>
             </div>
           </motion.div>

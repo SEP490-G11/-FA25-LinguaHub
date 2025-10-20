@@ -23,30 +23,38 @@ import LanguageCourses from '@/pages/LanguageCourses/index';
 import ForgotPassword from '@/pages/auth/forgot-password';
 import ResetPassword from '@/pages/auth/reset-password';
 import VerifyEmail from '@/pages/auth/verify-email';
+import CreateCourse from '@/pages/CreateCourse/index';
+import PendingCourses from '@/pages/PendingCourses/index';
+import TutorCourses from '@/pages/TutorCourses/index';
+import MyCourses from '@/pages/MyCourses/index';
 
 export function AppRoutes() {
-  return (
-    <Routes>
-      <Route path={ROUTES.HOME} element={<HomePage />} />
-      <Route path={ROUTES.SIGN_IN} element={<SignIn />} />
-      <Route path="/auth/complete-forgot-password" element={<CompleteForgotPassword />} />
-      <Route path="/auth/google-callback" element={<GoogleCallback />} />
-      <Route path="/auth/forgot-password" element={<ForgotPassword />} />
-      <Route path="/auth/reset-password" element={<ResetPassword />} />
-      <Route path="/auth/verify-email" element={<VerifyEmail />} />
-      <Route path={ROUTES.SIGN_UP} element={<SignUp />} />
-      <Route path={ROUTES.LANGUAGES} element={<Languages />} />
-      <Route path={ROUTES.TUTORS} element={<Tutors />} />
-      <Route path={ROUTES.TUTOR_DETAIL} element={<TutorDetail />} />
-      <Route path={ROUTES.COURSE_DETAIL} element={<CourseDetail />} />
-      <Route path={ROUTES.LESSON_DETAIL} element={<LessonDetail />} />
-      <Route path={ROUTES.PRACTICE_TEST} element={<PracticeTest />} />
-      <Route path={ROUTES.BECOME_TUTOR} element={<BecomeTutor />} />
-      <Route path={ROUTES.WISHLIST} element={<Wishlist />} />
-      <Route path={ROUTES.PAYMENT} element={<Payment />} />
-      <Route path={ROUTES.POLICY} element={<PolicyPage />} />
-      <Route path="/languages/:language" element={<LanguageCourses />} />
-      <Route path="*" element={<NotFound />} />
-    </Routes>
-  );
+        return (
+            <Routes>
+                    <Route path={ROUTES.HOME} element={<HomePage />} />
+                    <Route path={ROUTES.SIGN_IN} element={<SignIn />} />
+                    <Route path="/auth/complete-forgot-password" element={<CompleteForgotPassword />} />
+                    <Route path="/auth/google-callback" element={<GoogleCallback />} />
+                    <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+                    <Route path="/auth/reset-password" element={<ResetPassword />} />
+                    <Route path="/auth/verify-email" element={<VerifyEmail />} />
+                    <Route path={ROUTES.SIGN_UP} element={<SignUp />} />
+                    <Route path="/create-course" element={<CreateCourse />} />
+                    <Route path="/admin/pending-courses" element={<PendingCourses />} />
+                    <Route path="/tutor/courses" element={<TutorCourses />} />
+                    <Route path="/my-courses" element={<MyCourses />} />
+                    <Route path={ROUTES.LANGUAGES} element={<Languages />} />
+                    <Route path={ROUTES.TUTORS} element={<Tutors />} />
+                    <Route path={ROUTES.TUTOR_DETAIL} element={<TutorDetail />} />
+                    <Route path={ROUTES.COURSE_DETAIL} element={<CourseDetail />} />
+                    <Route path={ROUTES.LESSON_DETAIL} element={<LessonDetail />} />
+                    <Route path={ROUTES.PRACTICE_TEST} element={<PracticeTest />} />
+                    <Route path={ROUTES.BECOME_TUTOR} element={<BecomeTutor />} />
+                    <Route path={ROUTES.WISHLIST} element={<Wishlist />} />
+                    <Route path={ROUTES.PAYMENT} element={<Payment />} />
+                    <Route path={ROUTES.POLICY} element={<PolicyPage />} />
+                    <Route path="/languages/:language" element={<LanguageCourses />} />
+                    <Route path="*" element={<NotFound />} />
+            </Routes>
+        );
 }

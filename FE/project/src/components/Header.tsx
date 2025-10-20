@@ -1,6 +1,6 @@
-import React from 'react';
+
 import { Link, useLocation } from 'react-router-dom';
-import { Bell, Menu, Languages, Heart, ChevronDown } from 'lucide-react';
+import { Bell, Menu, Languages, Heart } from 'lucide-react';//ChevronDown
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ROUTES } from '@/constants';
@@ -55,15 +55,15 @@ const Header = () => {
             >
               Tutors
             </Link>
-            <Link 
-              to={ROUTES.PRACTICE_TEST}
-              className={cn(
-                "transition-colors font-medium",
-                isActive(ROUTES.PRACTICE_TEST) ? 'text-primary' : 'text-muted-foreground hover:text-primary'
-              )}
-            >
-              Practice Test
-            </Link>
+            {/*<Link */}
+            {/*  to={ROUTES.PRACTICE_TEST}*/}
+            {/*  className={cn(*/}
+            {/*    "transition-colors font-medium",*/}
+            {/*    isActive(ROUTES.PRACTICE_TEST) ? 'text-primary' : 'text-muted-foreground hover:text-primary'*/}
+            {/*  )}*/}
+            {/*>*/}
+            {/*  Practice Test*/}
+            {/*</Link>*/}
             <Link 
               to={ROUTES.BECOME_TUTOR}
               className={cn(

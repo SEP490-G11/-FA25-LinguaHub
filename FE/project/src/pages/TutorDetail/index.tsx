@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { useParams } from 'react-router-dom';
 import TutorHeroSection from './components/sections/hero-section';
 import CoursesSection from './components/sections/courses-section';
@@ -35,7 +35,7 @@ const TutorDetail = () => {
     ],
     students: 15000,
     lessonsCompleted: 2500,
-    price: 25,
+    price: 255000,
     experience: '5 years',
     specialties: ['Business English', 'IELTS', 'Conversation', 'Grammar', 'Pronunciation'],
     image: 'https://images.pexels.com/photos/1181686/pexels-photo-1181686.jpeg?auto=compress&cs=tinysrgb&w=800',
