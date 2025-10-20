@@ -27,23 +27,35 @@
 
 ### API: Tutor Management (Admin Only)
 
-#### 4.1. Get list of tutor requests
-- Method: GET `/admin/tutors/pending`
-- Description: Retrieve list of tutors with status = Pending
-- Role allowed: Admin
-- Query: pagination, sorting by created time or name
+### 4.1. List/Search tutors
+- Method: GET `/admin/tutors`
+- Description: Retrieve list of tutors with pagination, sorting, filter by status or keyword (name/email).
+- Query: page, size, sortBy, keyword (optional), status (optional)
 
-#### 4.2. Approve tutor request
+### 4.2. View tutor details
+- Method: GET `/admin/tutors/{id}`
+- Description: View tutor details including User info, verification status, experience, specialization.
+
+### 4.3. Approve tutor
 - Method: PUT `/admin/tutors/{id}/approve`
-- Description: Approve a tutor request
-- Role allowed: Admin
-- Body: reviewed_by
+- Description: Change status from Pending to Approved.
 
-#### 4.3. Reject tutor request
+### 4.4. Reject tutor
 - Method: PUT `/admin/tutors/{id}/reject`
-- Description: Reject a tutor request
-- Role allowed: Admin
-- Body: reviewed_by, optional reason
+- Description: Change TutorVerification status to Rejected.
+- Optional: note/reason
+
+### 4.5. Suspend (Soft Delete)
+- Method: PUT `/admin/tutors/{id}/suspend`
+- Description: Change status from Approved to Suspended.
+
+### 4.6. Activate tutor (unsuspend)
+- Method: PUT `/admin/tutors/{id}/activate`
+- Description: Change status from Suspended to Approved.
+
+### 4.7. Update tutor information (optional)
+- Method: PATCH `/admin/tutors/{id}`
+- Description: Update specialization or experience (admin intervention).
 
 ### Constraints & Business Rules (Rule - Applies to)
 - Only ADMIN can approve or reject a tutor - API level
