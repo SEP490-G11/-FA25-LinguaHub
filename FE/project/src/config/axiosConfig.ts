@@ -7,7 +7,7 @@ const api = axios.create({
     },
 });
 
-// ✅ Chỉ thêm token khi có
+// Chỉ thêm token khi có
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem("accessToken");
     if (token && token.trim() !== "") {

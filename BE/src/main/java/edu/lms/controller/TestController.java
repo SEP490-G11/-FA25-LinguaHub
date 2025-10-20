@@ -11,7 +11,7 @@ public class TestController {
 
     @GetMapping
     public ResponseEntity<String> hello() {
-        return ResponseEntity.ok("✅ Backend Connected Successfully!");
+        return ResponseEntity.ok("Backend Connected Successfully!");
     }
 }
 
