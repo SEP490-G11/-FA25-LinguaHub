@@ -37,7 +37,7 @@ public class Tutor {
     String bio;
 
     @Column(precision = 3, scale = 2)
-    BigDecimal rating = BigDecimal.valueOf(0.0); // Default 0.0
+    BigDecimal rating = BigDecimal.ZERO; // Default 0.0
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
