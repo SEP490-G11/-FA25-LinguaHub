@@ -1,5 +1,6 @@
 package edu.lms.entity;
 
+import edu.lms.enums.TutorVerificationStatus;
 import edu.lms.enums.VerificationStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -14,23 +15,24 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "TutorVerification")
 public class TutorVerification {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long tutorVerificationID;
 
-    @ManyToOne
-    @JoinColumn(name = "tutorID", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "TutorID", nullable = false)
     Tutor tutor;
 
+    @Column(length = 255)
     String documentURL;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private VerificationStatus status;
+    @Column(length = 10, nullable = false)
+    TutorVerificationStatus status = TutorVerificationStatus.Pending;
 
-
-    @ManyToOne
-    @JoinColumn(name = "reviewedBy")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ReviewedBy", referencedColumnName = "userID")
     User reviewedBy;
 
     LocalDateTime reviewedAt;
