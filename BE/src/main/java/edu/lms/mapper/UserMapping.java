@@ -1,19 +1,24 @@
 package edu.lms.mapper;
 
 import edu.lms.dto.request.UserCreationRequest;
-import edu.lms.dto.request.UserUpdateRequest;
 import edu.lms.dto.response.UserResponse;
 import edu.lms.entity.User;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
 
+import java.util.UUID;
 
 @Mapper(componentModel = "spring")
 public interface UserMapping {
+
     User toUser(UserCreationRequest request);
-//    @Mapping(source = "firstName", target = "lastName", ignore = true)
+
+    @Mapping(target = "userID", expression = "java(mapUUID(user.getUserID()))") // ✅ Custom mapping
+    @Mapping(target = "role", expression = "java(user.getRole() != null ? user.getRole().getName() : null)")
     UserResponse toUserResponse(User user);
-    @Mapping(target = "roles", ignore = true)
-    void updateUser(@MappingTarget User user, UserUpdateRequest request);
+
+    // ✅ MapStruct sẽ gọi hàm này để map UUID
+    default UUID mapUUID(UUID value) {
+        return value;
+    }
 }
