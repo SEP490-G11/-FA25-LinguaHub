@@ -27,7 +27,7 @@ public class AuthenticationController {
     AuthenticationService authenticationService;
     AuthenticationManager authenticationManager;
 
-    // ✅ Đăng nhập (Guest) — không cần token
+    //Đăng nhập (Guest) — không cần token
     @PostMapping("/token")
     @PreAuthorize("permitAll()") // hoặc có thể dùng hasAuthority('LOGIN') nếu bạn cấp quyền cho cả guest
     public ApiRespond<AuthenticationReponse> login(@RequestBody AuthenticationRequest request) {
@@ -43,7 +43,7 @@ public class AuthenticationController {
                 .build();
     }
 
-    // ✅ Kiểm tra token hợp lệ (User đang đăng nhập)
+    //Kiểm tra token hợp lệ (User đang đăng nhập)
     @PostMapping("/introspect")
     @PreAuthorize("hasAuthority('INTROSPECT_TOKEN')")
     public ApiRespond<IntrospectResponse> introspect(@RequestBody IntrospectRequest request)
@@ -54,7 +54,7 @@ public class AuthenticationController {
                 .build();
     }
 
-    // ✅ Đăng xuất (chỉ user đã đăng nhập)
+    //Đăng xuất (chỉ user đã đăng nhập)
     @PostMapping("/logout")
     @PreAuthorize("hasAuthority('LOGOUT')")
     public ApiRespond<Void> logout(@RequestBody LogoutRequest request)

@@ -47,7 +47,7 @@ public class AuthenticationService {
     @Value("${jwt.signerKey}")
     protected String SIGNER_KEY;
 
-    // ✅ Kiểm tra token hợp lệ
+    //Kiểm tra token hợp lệ
     public IntrospectResponse introspect(IntrospectRequest request) throws JOSEException, ParseException {
         var token = request.getToken();
         try {
@@ -58,7 +58,7 @@ public class AuthenticationService {
         return IntrospectResponse.builder().valid(true).build();
     }
 
-    // ✅ Xử lý đăng nhập
+    //Xử lý đăng nhập
     public AuthenticationReponse authenticate(AuthenticationRequest request) {
         PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
 
@@ -70,7 +70,7 @@ public class AuthenticationService {
         boolean authenticated = passwordEncoder.matches(request.getPassword(), user.getPasswordHash());
         if (!authenticated) throw new AppException(ErrorCode.UNAUTHENTICATED);
 
-        // ✅ Sinh token có role + permissions
+        //Sinh token có role + permissions
         String token = generateToken(user);
 
         return AuthenticationReponse.builder()
@@ -79,11 +79,11 @@ public class AuthenticationService {
                 .build();
     }
 
-    // ✅ Sinh JWT token (dùng Nimbus)
+    //Sinh JWT token (dùng Nimbus)
     private String generateToken(User user) {
         JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
 
-        // ✅ Lấy danh sách quyền từ Role trong DB
+        //Lấy danh sách quyền từ Role trong DB
         List<String> permissions = user.getRole().getPermissions()
                 .stream()
                 .map(Permission::getName)
@@ -109,7 +109,7 @@ public class AuthenticationService {
         }
     }
 
-    // ✅ Logout (invalidate token)
+    //Logout (invalidate token)
     public void logout(LogoutRequest request) throws ParseException, JOSEException {
         var signedToken = verifyToken(request.getToken());
         String jit = signedToken.getJWTClaimsSet().getJWTID();
@@ -123,7 +123,7 @@ public class AuthenticationService {
         invalidatedTokenRepository.save(invalidatedToken);
     }
 
-    // ✅ Verify token
+    //Verify token
     private SignedJWT verifyToken(String token) throws ParseException, JOSEException {
         JWSVerifier verifier = new MACVerifier(SIGNER_KEY.getBytes());
         SignedJWT signedJWT = SignedJWT.parse(token);

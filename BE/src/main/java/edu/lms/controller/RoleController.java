@@ -25,7 +25,7 @@ public class RoleController {
 
     RoleService roleService;
 
-    // ✅ Tạo role mới – chỉ Admin
+    //Tạo role mới – chỉ Admin
     @PostMapping
     @PreAuthorize("hasAuthority('CREATE_ROLE')")
     public ApiRespond<RoleResponse> create(@RequestBody RoleRequest request) {
@@ -34,7 +34,7 @@ public class RoleController {
                 .build();
     }
 
-    // ✅ Xem tất cả role – Admin hoặc Tutor có thể xem
+    //Xem tất cả role – Admin hoặc Tutor có thể xem
     @GetMapping
     @PreAuthorize("hasAuthority('VIEW_ROLE')")
     public ApiRespond<List<RoleResponse>> getAll() {
@@ -43,7 +43,7 @@ public class RoleController {
                 .build();
     }
 
-    // ✅ Xóa role – chỉ Admin
+    //Xóa role – chỉ Admin
     @DeleteMapping("/{role}")
     @PreAuthorize("hasAuthority('DELETE_ROLE')")
     public ApiRespond<Void> delete(@PathVariable String role) {
@@ -53,7 +53,7 @@ public class RoleController {
                 .build();
     }
 
-    // ✅ Cập nhật role – chỉ Admin
+    //Cập nhật role – chỉ Admin
     @PutMapping("/{roleName}")
     @PreAuthorize("hasAuthority('UPDATE_ROLE')")
     public ResponseEntity<RoleResponse> updateRole(

@@ -28,7 +28,7 @@ public class ApplicationInitConfig {
     ApplicationRunner applicationRunner(UserRepository userRepository) {
         return args -> {
 
-            // ✅ Kiểm tra & tạo role Admin nếu chưa có
+            //Kiểm tra & tạo role Admin nếu chưa có
             Role adminRole = roleRepository.findById("Admin")
                     .orElseGet(() -> {
                         Role newAdminRole = Role.builder()
@@ -37,11 +37,11 @@ public class ApplicationInitConfig {
                                 .permissions(new HashSet<>())
                                 .build();
                         roleRepository.save(newAdminRole);
-                        log.info("✅ Created missing role: Admin");
+                        log.info("Created missing role: Admin");
                         return newAdminRole;
                     });
 
-            // ✅ Nếu chưa có user admin → tạo mới
+            //Nếu chưa có user admin → tạo mới
             if (userRepository.findByUsername("admin").isEmpty()) {
                 User admin = User.builder()
                         .username("admin")
@@ -53,9 +53,9 @@ public class ApplicationInitConfig {
                         .build();
 
                 userRepository.save(admin);
-                log.warn("✅ Default admin account created: [admin@linguahub.com / admin]");
+                log.warn("Default admin account created: [admin@linguahub.com / admin]");
             } else {
-                log.info("ℹ️ Admin user already exists, skipping creation");
+                log.info("Admin user already exists, skipping creation");
             }
         };
     }

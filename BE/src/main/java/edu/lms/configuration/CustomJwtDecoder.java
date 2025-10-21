@@ -33,7 +33,7 @@ public class CustomJwtDecoder implements JwtDecoder {
             throw new JwtException("Missing or empty token");
         }
 
-        // ✅ Kiểm tra token hợp lệ bằng AuthenticationService
+        //Kiểm tra token hợp lệ bằng AuthenticationService
         try {
             var response = authenticationService.introspect(
                     IntrospectRequest.builder().token(token).build());
@@ -45,7 +45,7 @@ public class CustomJwtDecoder implements JwtDecoder {
             throw new JwtException("Token parsing error: " + e.getMessage(), e);
         }
 
-        // ✅ Tạo Nimbus decoder (chỉ tạo 1 lần)
+        //Tạo Nimbus decoder (chỉ tạo 1 lần)
         if (Objects.isNull(nimbusJwtDecoder)) {
             SecretKeySpec keySpec = new SecretKeySpec(signerKey.getBytes(), "HmacSHA512");
             nimbusJwtDecoder = NimbusJwtDecoder
