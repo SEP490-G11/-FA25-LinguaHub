@@ -1,42 +1,38 @@
 package edu.lms.entity;
 
+import edu.lms.enums.TutorStatus;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.FieldDefaults;
 
-@Entity
-@Table(name = "Tutor")
-@Getter
-@Setter
+import java.util.UUID;
+
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
+@Entity
+@Table(name = "Tutor")
 public class Tutor {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "TutorID")
-    private Long tutorId;
+    Long tutorID;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "UserID", nullable = false, unique = true)
-    private User user; // Liên kết tới bảng Users
+    User user;
 
-    @Column(name = "Experience")
-    private Short experience;
+    @Column
+    Short experience; //
 
-    @Column(name = "Specialization", length = 255)
-    private String specialization;
+    @Column(length = 255)
+    String specialization;
 
-    @Column(name = "Rating", precision = 3, scale = 2)
-    private Double rating;
+    @Column(precision = 3, scale = 2)
+    Double rating;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "Status", length = 10)
-    private TutorStatus status;
-
-    public enum TutorStatus {
-        Pending,
-        Approved,
-        Suspended
-    }
+    TutorStatus status; // ENUM('Pending','Approved','Suspended')
 }
