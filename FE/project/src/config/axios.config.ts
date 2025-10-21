@@ -1,128 +1,169 @@
-import axios, { AxiosResponse } from 'axios';
-import helpers from '../helpers';
+import axios, {
+  AxiosRequestConfig,
+  AxiosResponse,
+  AxiosError,
+  InternalAxiosRequestConfig
+} from 'axios';
+import helpers from '@/helpers';
 
-const baseURL =
-  process.env.NODE_ENV === 'production'
+const baseURL = process.env.NODE_ENV === 'production'
     ? 'https://lms.autopass.blog/'
     : 'https://lms.autopass.blog/';
 
-const onRequestSuccess = (config: any) => {
-  config.headers['Authorization'] = `Bearer ${helpers.cookie_get('AT')}`;
+
+const api = axios.create({
+  baseURL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  timeout: 10000,
+});
+
+
+const onRequestSuccess = (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
+  const token: string | undefined = helpers.cookie_get('AT');
+  if (token && token.trim() !== '') {
+    config.headers = config.headers || {};
+    (config.headers as { Authorization?: string }).Authorization = `Bearer ${token}`;
+  }
   return config;
 };
-const onRequestError = (error: any) => {
+
+const onRequestError = (error: AxiosError): Promise<AxiosError> => {
   return Promise.reject(error);
 };
-const onResponseSuccess = (response: any) => {
+
+
+const onResponseSuccess = (response: AxiosResponse): AxiosResponse => {
   return response.data;
 };
-const onResponseError = (error: any) => {
+interface ApiErrorData {
+  message?: string;
+
+}
+const onResponseError = (error: AxiosError<ApiErrorData>): Promise<AxiosResponse<ApiErrorData> | AxiosError<ApiErrorData>> => {
   if (error.response) {
+    const status = error.response.status;
+    const data = error.response.data as ApiErrorData;
+    const message = data.message;
     if (
-      (error.response.status == 403 &&
-        error.response.data.message == 'Token expired') ||
-      error.response.status == 401
+        (status === 403 && message === 'Token expired') ||
+        status === 401
     ) {
       helpers.cookie_delete('AT');
       window.location.href = '/login';
     }
-    return Promise.reject(error.response);
+    return Promise.reject(error.response);  
   }
   return Promise.reject(error);
 };
-axios.interceptors.request.use(onRequestSuccess, onRequestError);
-axios.interceptors.response.use(onResponseSuccess, onResponseError);
-axios.defaults.baseURL = baseURL;
 
-var BaseRequest = {
-  Get: async <T = any>(url: string) => {
-    try {
-      const response: any = await axios.get<T>(url);
-      return response; // Trả về toàn bộ response thay vì chỉ response.data
-    } catch (err) {
-      console.error('GET Error:', err);
-      throw err;
-    }
-  },
 
-  Post: async <T = any, D = any>(url: string, data?: D) => {
-    try {
-      const response: any = await axios.post<T>(url, data);
-      return response; // Trả về toàn bộ response
-    } catch (err) {
-      console.error('POST Error:', err);
-      throw err;
-    }
-  },
+api.interceptors.request.use(onRequestSuccess, onRequestError);
+api.interceptors.response.use(onResponseSuccess, onResponseError);
 
-  Put: async <T = any, D = any>(url: string, data?: D) => {
+
+const BaseRequest = {
+  Get: async <T = unknown>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> => {
     try {
-      const response: any = await axios.put<T>(url, data);
+      const response: AxiosResponse<T> = await api.get<T>(url, config);
       return response;
     } catch (err) {
-      console.error('PUT Error:', err);
-      throw err;
+      const error = err as AxiosError;
+      console.error('GET Error:', error.message);
+      throw error;
     }
   },
 
-  Patch: async <T = any, D = any>(url: string, data?: D) => {
+  Post: async <T = unknown, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> => {
     try {
-      const response: any = await axios.patch<T>(url, data);
+      const response: AxiosResponse<T> = await api.post<T>(url, data, config);
       return response;
     } catch (err) {
-      console.error('PATCH Error:', err);
-      throw err;
+      const error = err as AxiosError;
+      console.error('POST Error:', error.message);
+      throw error;
     }
   },
 
-  Delete: async <T = any>(url: string) => {
+  Put: async <T = unknown, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> => {
     try {
-      const response: AxiosResponse<T> = await axios.delete<T>(url);
+      const response: AxiosResponse<T> = await api.put<T>(url, data, config);
       return response;
     } catch (err) {
-      console.error('DELETE Error:', err);
-      throw err;
+      const error = err as AxiosError;
+      console.error('PUT Error:', error.message);
+      throw error;
     }
-  }
+  },
+
+  Patch: async <T = unknown, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> => {
+    try {
+      const response: AxiosResponse<T> = await api.patch<T>(url, data, config);
+      return response;
+    } catch (err) {
+      const error = err as AxiosError;
+      console.error('PATCH Error:', error.message);
+      throw error;
+    }
+  },
+
+  Delete: async <T = unknown>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> => {
+    try {
+      const response: AxiosResponse<T> = await api.delete<T>(url, config);
+      return response;
+    } catch (err) {
+      const error = err as AxiosError;
+      console.error('DELETE Error:', error.message);
+      throw error;
+    }
+  },
 };
 
-var BaseRequestV2 = {
-  Get: async <T = any>(url: string) => {
+
+const BaseRequestV2 = {
+  Get: async <T = unknown>(url: string, config?: AxiosRequestConfig): Promise<[AxiosError | null, AxiosResponse<T> | null]> => {
     try {
-      const res: AxiosResponse<T> = await axios.get(url);
-      return [null, res]; // Trả về toàn bộ response thay vì chỉ res.data
-    } catch (err: any) {
-      return [err?.response || err, null]; // Trả về toàn bộ lỗi response nếu có
+      const res: AxiosResponse<T> = await api.get<T>(url, config);
+      return [null, res];
+    } catch (err: unknown) {
+      const error = err as AxiosError;
+      return [error, null];
     }
   },
 
-  Post: async <T = any>(url: string, data?: any) => {
+  Post: async <T = unknown, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig): Promise<[AxiosError | null, AxiosResponse<T> | null]> => {
     try {
-      const res: AxiosResponse<T> = await axios.post(url, data);
+      const res: AxiosResponse<T> = await api.post<T>(url, data, config);
       return [null, res];
-    } catch (err: any) {
-      return [err?.response || err, null];
+    } catch (err: unknown) {
+      const error = err as AxiosError;
+      return [error, null];
     }
   },
 
-  Put: async <T = any>(url: string, data?: any) => {
+  Put: async <T = unknown, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig): Promise<[AxiosError | null, AxiosResponse<T> | null]> => {
     try {
-      const res: AxiosResponse<T> = await axios.put(url, data);
+      const res: AxiosResponse<T> = await api.put<T>(url, data, config);
       return [null, res];
-    } catch (err: any) {
-      return [err?.response || err, null];
+    } catch (err: unknown) {
+      const error = err as AxiosError;
+      return [error, null];
     }
   },
 
-  Delete: async <T = any>(url: string) => {
+  Delete: async <T = unknown>(url: string, config?: AxiosRequestConfig): Promise<[AxiosError | null, AxiosResponse<T> | null]> => {
     try {
-      const res: AxiosResponse<T> = await axios.delete(url);
+      const res: AxiosResponse<T> = await api.delete<T>(url, config);
       return [null, res];
-    } catch (err: any) {
-      return [err?.response || err, null];
+    } catch (err: unknown) {
+      const error = err as AxiosError;
+      return [error, null];
     }
-  }
+  },
 };
 
+
+export { api };
 export default BaseRequest;
 export { BaseRequestV2 };
