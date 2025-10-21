@@ -29,9 +29,9 @@ public class TutorServiceImpl implements TutorService {
     private final UserRepository userRepository;
 
     @Override
-    public void applyToBecomeTutor(String userId, TutorApplyRequest request) {
+    public void applyToBecomeTutor(Long userId, TutorApplyRequest request) {
         // 1. Lấy user từ database
-        User user = userRepository.findById(UUID.fromString(userId))
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
 
         // 2. Kiểm tra có Tutor record chưa
@@ -69,8 +69,8 @@ public class TutorServiceImpl implements TutorService {
     }
 
     @Override
-    public TutorApplyResponse getApplicationStatus(String userId) {
-        User user = userRepository.findById(UUID.fromString(userId))
+    public TutorApplyResponse getApplicationStatus(Long userId) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
 
         Tutor tutor = tutorRepository.findByUser(user)

@@ -18,10 +18,10 @@ public class TutorController {
     // 1. Submit application
     @PostMapping("/apply")
     public ResponseEntity<?> applyToBecomeTutor(
-            @RequestHeader("X-User-Id") String userId, // Tạm lấy userId từ Header (sẽ thay bằng token sau)
+            @RequestHeader("X-User-Id") Long userId, // Tạm lấy userId từ Header (sẽ thay bằng token sau)
             @RequestBody @Valid TutorApplyRequest request
     ) {
-        tutorService.applyToBecomeTutor(userId, request);
+        tutorService.applyToBecomeTutor(userId,request);
         return ResponseEntity.ok("Application submitted successfully and is now pending review.");
     }
 
