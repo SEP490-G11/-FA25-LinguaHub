@@ -47,7 +47,11 @@ public class AuthenticationService {
     @Value("${jwt.signerKey}")
     protected String SIGNER_KEY;
 
+<<<<<<< HEAD
     // Kiểm tra token hợp lệ
+=======
+    //Kiểm tra token hợp lệ
+>>>>>>> Add-Permission
     public IntrospectResponse introspect(IntrospectRequest request) throws JOSEException, ParseException {
         var token = request.getToken();
         try {

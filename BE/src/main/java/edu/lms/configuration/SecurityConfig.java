@@ -41,7 +41,11 @@ public class SecurityConfig {
             "/auth/**"
     };
 
+<<<<<<< HEAD
     // Security Filter Chain
+=======
+    //Security Filter Chain
+>>>>>>> Add-Permission
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
@@ -62,7 +66,11 @@ public class SecurityConfig {
         return http.build();
     }
 
+<<<<<<< HEAD
     // Custom converter: đọc "permissions" và "role" từ JWT
+=======
+    //Custom converter: đọc "permissions" và "role" từ JWT
+>>>>>>> Add-Permission
     @Bean
     public JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
@@ -100,7 +108,11 @@ public class SecurityConfig {
         return provider;
     }
 
+<<<<<<< HEAD
     // Password Encoder
+=======
+    //Password Encoder
+>>>>>>> Add-Permission
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder(10);
