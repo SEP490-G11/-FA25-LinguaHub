@@ -5,7 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import java.util.UUID;
+import java.math.BigDecimal;
 
 @Data
 @NoArgsConstructor
@@ -24,15 +24,22 @@ public class Tutor {
     @JoinColumn(name = "UserID", nullable = false, unique = true)
     User user;
 
-    @Column
-    Short experience; //
+    @Column(nullable = false)
+    Short experience = 0; // Default 0
 
     @Column(length = 255)
     String specialization;
 
+    @Column(length = 100)
+    String teachingLanguage;
+
+    @Column(columnDefinition = "TEXT")
+    String bio;
+
     @Column(precision = 3, scale = 2)
-    Double rating;
+    BigDecimal rating = BigDecimal.valueOf(0.0); // Default 0.0
 
     @Enumerated(EnumType.STRING)
-    TutorStatus status; // ENUM('Pending','Approved','Suspended')
+    @Column(nullable = false)
+    TutorStatus status = TutorStatus.PENDING; // Default Pending
 }
