@@ -1,10 +1,10 @@
 package edu.lms.entity;
 
 import edu.lms.enums.TutorVerificationStatus;
-import edu.lms.enums.VerificationStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+
 import java.time.LocalDateTime;
 
 @Data
@@ -24,16 +24,36 @@ public class TutorVerification {
     @JoinColumn(name = "TutorID", nullable = false)
     Tutor tutor;
 
+    @Column(nullable = false)
+    Short experience = 0;
+
     @Column(length = 255)
+    String specialization;
+
+    @Column(length = 100)
+    String teachingLanguage;
+
+    @Column(columnDefinition = "TEXT")
+    String bio;
+
+    @Column(length = 255)
+    String certificateName;
+
+    @Column(length = 255, nullable = false)
     String documentURL;
 
     @Enumerated(EnumType.STRING)
-    @Column(length = 10, nullable = false)
-    TutorVerificationStatus status = TutorVerificationStatus.Pending;
+    @Column(nullable = false)
+    TutorVerificationStatus status = TutorVerificationStatus.PENDING;
+
+    LocalDateTime submittedAt = LocalDateTime.now();
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ReviewedBy", referencedColumnName = "userID")
     User reviewedBy;
 
     LocalDateTime reviewedAt;
+
+    @Column(columnDefinition = "TEXT")
+    String reasonForReject;
 }
