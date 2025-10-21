@@ -17,7 +17,7 @@ public interface UserMapping {
     @Mapping(target = "role", expression = "java(user.getRole() != null ? user.getRole().getName() : null)")
     UserResponse toUserResponse(User user);
 
-    // ✅ MapStruct sẽ gọi hàm này để map UUID
+    //MapStruct sẽ gọi hàm này để map UUID
     default UUID mapUUID(UUID value) {
         return value;
     }

@@ -41,7 +41,7 @@ public class SecurityConfig {
             "/auth/**"
     };
 
-    // ✅ 1️⃣ Security Filter Chain
+    // Security Filter Chain
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
@@ -62,7 +62,7 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // ✅ 2️⃣ Custom converter: đọc "permissions" và "role" từ JWT
+    // Custom converter: đọc "permissions" và "role" từ JWT
     @Bean
     public JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
@@ -84,14 +84,14 @@ public class SecurityConfig {
         return converter;
     }
 
-    // ✅ 3️⃣ AuthenticationManager
+    //AuthenticationManager
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig)
             throws Exception {
         return authConfig.getAuthenticationManager();
     }
 
-    // ✅ 4️⃣ AuthenticationProvider
+    //AuthenticationProvider
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
@@ -100,13 +100,13 @@ public class SecurityConfig {
         return provider;
     }
 
-    // ✅ 5️⃣ Password Encoder
+    // Password Encoder
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder(10);
     }
 
-    // ✅ 6️⃣ CORS
+    //CORS
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();

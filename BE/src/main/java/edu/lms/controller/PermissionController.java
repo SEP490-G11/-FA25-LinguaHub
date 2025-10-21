@@ -24,7 +24,7 @@ public class PermissionController {
 
     PermissionService permissionService;
 
-    // ✅ Tạo quyền mới – chỉ Admin
+    //Tạo quyền mới – chỉ Admin
     @PostMapping
     @PreAuthorize("hasAuthority('CREATE_PERMISSION')")
     public ApiRespond<PermissionResponse> create(@RequestBody PermissionRequest permissionRequest) {
@@ -33,7 +33,7 @@ public class PermissionController {
                 .build();
     }
 
-    // ✅ Xem danh sách quyền – chỉ Admin
+    //Xem danh sách quyền – chỉ Admin
     @GetMapping
     @PreAuthorize("hasAuthority('VIEW_PERMISSION')")
     public ApiRespond<List<PermissionResponse>> getAll() {
@@ -42,7 +42,7 @@ public class PermissionController {
                 .build();
     }
 
-    // ✅ Xóa quyền – chỉ Admin
+    //Xóa quyền – chỉ Admin
     @DeleteMapping("/{permission}")
     @PreAuthorize("hasAuthority('DELETE_PERMISSION')")
     public ApiRespond<Void> delete(@PathVariable String permission) {
