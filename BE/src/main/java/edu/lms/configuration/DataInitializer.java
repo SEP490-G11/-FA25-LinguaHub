@@ -24,11 +24,6 @@ public class DataInitializer {
     @Transactional
     public void initData() {
 
-<<<<<<< HEAD
-        // Tạo các Role mặc định nếu chưa có
-=======
-        //Tạo các Role mặc định nếu chưa có
->>>>>>> Add-Permission
         Role admin = roleRepository.findById("Admin").orElseGet(() ->
                 roleRepository.save(Role.builder()
                         .name("Admin")
@@ -53,11 +48,7 @@ public class DataInitializer {
                         .build())
         );
 
-<<<<<<< HEAD
-        // Danh sách quyền mặc định trong toàn hệ thống
-=======
-        //Danh sách quyền mặc định trong toàn hệ thống
->>>>>>> Add-Permission
+
         List<Permission> defaultPermissions = List.of(
 
                 // --- USER MANAGEMENT ---
@@ -88,22 +79,13 @@ public class DataInitializer {
                 new Permission("APPLY_TUTOR", "Apply to become a tutor")
         );
 
-<<<<<<< HEAD
-        // Insert quyền nếu chưa tồn tại
-=======
-        //Insert quyền nếu chưa tồn tại
->>>>>>> Add-Permission
+
         for (Permission p : defaultPermissions) {
             if (!permissionRepository.existsById(p.getName())) {
                 permissionRepository.save(p);
             }
         }
 
-<<<<<<< HEAD
-        //  Gán quyền cho từng vai trò
-=======
-        //Gán quyền cho từng vai trò
->>>>>>> Add-Permission
 
         // Admin – Toàn quyền
         admin.getPermissions().addAll(permissionRepository.findAll());
@@ -121,11 +103,7 @@ public class DataInitializer {
         learner.getPermissions().add(permissionRepository.findById("LOGIN").orElseThrow());
         learner.getPermissions().add(permissionRepository.findById("LOGOUT").orElseThrow());
 
-<<<<<<< HEAD
-        // Lưu tất cả lại DB
-=======
-        //Lưu tất cả lại DB
->>>>>>> Add-Permission
+
         roleRepository.saveAll(List.of(admin, tutor, learner));
 
         System.out.println("✅ Roles & Permissions have been initialized successfully!");

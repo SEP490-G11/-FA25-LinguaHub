@@ -28,11 +28,7 @@ public class ApplicationInitConfig {
     ApplicationRunner applicationRunner(UserRepository userRepository) {
         return args -> {
 
-<<<<<<< HEAD
-            // Kiểm tra & tạo role Admin nếu chưa có
-=======
-            //Kiểm tra & tạo role Admin nếu chưa có
->>>>>>> Add-Permission
+
             Role adminRole = roleRepository.findById("Admin")
                     .orElseGet(() -> {
                         Role newAdminRole = Role.builder()
@@ -45,11 +41,6 @@ public class ApplicationInitConfig {
                         return newAdminRole;
                     });
 
-<<<<<<< HEAD
-            // Nếu chưa có user admin → tạo mới
-=======
-            //Nếu chưa có user admin → tạo mới
->>>>>>> Add-Permission
             if (userRepository.findByUsername("admin").isEmpty()) {
                 User admin = User.builder()
                         .username("admin")
