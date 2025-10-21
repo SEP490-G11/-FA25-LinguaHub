@@ -1,5 +1,5 @@
 import  { useState } from 'react';
- import { Link, useLocation, useNavigate } from 'react-router-dom' //
+ import { Link, useLocation  } from 'react-router-dom' //useNavigate
 import { Bell, Menu, Languages, Heart, User, LogOut, BookOpen, Settings, GraduationCap, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -17,6 +17,7 @@ import { ROUTES } from '@/constants';
 const mockUser = {
   UserID: 1,
   FullName: 'Đinh Hải Đăng',
+
   AvatarURL: 'https://example.com/avatar.jpg',
   Email: 'dinhhaidang123@example.com',
   Role: 'Learner' as const,
@@ -24,7 +25,7 @@ const mockUser = {
 
 const Header = () => {
   const location = useLocation();
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
@@ -233,6 +234,12 @@ const Header = () => {
                           <span>Hồ sơ</span>
                         </Link>
                       </DropdownMenuItem>
+                      {/*<DropdownMenuItem asChild>*/}
+                      {/*  <Link to="/" className="cursor-pointer">*/}
+                      {/*    <User className="mr-2 h-4 w-4" />*/}
+                      {/*    <span>Lịch sử trò chuyện</span>*/}
+                      {/*  </Link>*/}
+                      {/*</DropdownMenuItem>*/}
                       <DropdownMenuItem asChild>
                         <Link to="/my-courses" className="cursor-pointer">
                           <BookOpen className="mr-2 h-4 w-4" />

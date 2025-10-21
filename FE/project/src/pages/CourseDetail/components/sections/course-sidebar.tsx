@@ -66,35 +66,35 @@ const CourseSidebar = ({ course }: CourseSidebarProps) => {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <Clock className="w-5 h-5 text-gray-500" />
+              <Clock className="w-5 h-5 text-gray-500"/>
               <span className="text-gray-600">Duration</span>
             </div>
             <span className="font-medium">{course.duration}</span>
           </div>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <BookOpen className="w-5 h-5 text-gray-500" />
+              <BookOpen className="w-5 h-5 text-gray-500"/>
               <span className="text-gray-600">Lessons</span>
             </div>
             <span className="font-medium">{course.lessons}</span>
           </div>
+          {/*<div className="flex items-center justify-between">*/}
+          {/*  /!*<div className="flex items-center space-x-2">*!/*/}
+          {/*  /!*  /!*<Users className="w-5 h-5 text-gray-500" />*!/*!/*/}
+          {/*  /!*  /!*<span className="text-gray-600">Class Size</span>*!/*!/*/}
+          {/*  /!*</div>*!/*/}
+          {/*  <span className="font-medium">{course.groupSize}</span>*/}
+          {/*</div>*/}
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <Users className="w-5 h-5 text-gray-500" />
-              <span className="text-gray-600">Class Size</span>
-            </div>
-            <span className="font-medium">{course.groupSize}</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Calendar className="w-5 h-5 text-gray-500" />
+              <Calendar className="w-5 h-5 text-gray-500"/>
               <span className="text-gray-600">Schedule</span>
             </div>
             <span className="font-medium">Flexible</span>
           </div>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <Globe className="w-5 h-5 text-gray-500" />
+              <Globe className="w-5 h-5 text-gray-500"/>
               <span className="text-gray-600">Language</span>
             </div>
             <span className="font-medium">{course.language}</span>
@@ -103,16 +103,16 @@ const CourseSidebar = ({ course }: CourseSidebarProps) => {
       </motion.div>
 
       {/* Enroll Button */}
-      <motion.div 
-        className="bg-white rounded-xl p-6 shadow-md"
-        initial="initial"
-        whileInView="animate"
-        viewport={{ once: true }}
-        variants={fadeInUp}
+      <motion.div
+          className="bg-white rounded-xl p-6 shadow-md"
+          initial="initial"
+          whileInView="animate"
+          viewport={{once: true}}
+          variants={fadeInUp}
       >
         <div className="text-center mb-4">
           <div className="flex items-center justify-center space-x-2 mb-2">
-            <span className="text-3xl font-bold text-blue-600">{formatPrice(course.price)}</span>
+          <span className="text-3xl font-bold text-blue-600">{formatPrice(course.price)}</span>
             <span className="text-gray-500"></span>
           </div>
           <span className="text-gray-400 line-through">{formatPrice(course.originalPrice)}</span>

@@ -69,7 +69,7 @@ const CourseDetail = () => {
     ],
     certificates: ['Course completion certificate', 'IELTS preparation certificate'],
     schedule: 'Flexible - book lessons when convenient',
-    groupSize: '1-on-1 or small groups (max 4 students)'
+    // groupSize: '1-on-1 or small groups (max 4 students)'
   };
 
   return (
