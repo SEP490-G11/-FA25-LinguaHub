@@ -32,16 +32,16 @@ import java.util.Map;
 public class UserService {
 
     UserRepository userRepository;
-    RoleRepository roleRepository; // ✅ Thêm dòng này
+    RoleRepository roleRepository; //Thêm dòng này
     UserMapping userMapping;
     PasswordEncoder passwordEncoder;
 
-    // ✅ 1. Tạo user mới (default role: Learner)
+    //1. Tạo user mới (default role: Learner)
     public UserResponse createUser(UserCreationRequest request) {
         User user = userMapping.toUser(request);
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
 
-        // ✅ Gán role mặc định từ DB
+        //Gán role mặc định từ DB
         Role learnerRole = roleRepository.findById("Learner")
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXIST));
         user.setRole(learnerRole);
@@ -55,7 +55,7 @@ public class UserService {
         return userMapping.toUserResponse(user);
     }
 
-    // ✅ 2. Chỉ Admin mới được xem danh sách user
+    //2. Chỉ Admin mới được xem danh sách user
     @PreAuthorize("hasAuthority('VIEW_USER')")
     public List<UserResponse> getUsers() {
         log.info("Fetching all users...");
@@ -65,7 +65,7 @@ public class UserService {
                 .toList();
     }
 
-    // ✅ 3. Lấy user theo ID (chỉ Admin)
+    //3. Lấy user theo ID (chỉ Admin)
     @PostAuthorize("hasAuthority('VIEW_USER')")
     public UserResponse getUser(Long id) {
         log.info("Fetching user by ID...");
@@ -74,7 +74,7 @@ public class UserService {
         return userMapping.toUserResponse(user);
     }
 
-    // ✅ 4. Lấy thông tin user hiện tại (qua token)
+    //4. Lấy thông tin user hiện tại (qua token)
     public UserResponse getMyInfo() {
         String principal = SecurityContextHolder.getContext().getAuthentication().getName();
         log.info("Fetching info for current user: {}", principal);
@@ -86,7 +86,7 @@ public class UserService {
         return userMapping.toUserResponse(user);
     }
 
-    // ✅ 5. Update từng field linh hoạt (PATCH)
+    //5. Update từng field linh hoạt (PATCH)
     public UserResponse updateUserFields(Long userID, Map<String, Object> updates) {
         User user = userRepository.findById(userID)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXIST));
@@ -107,7 +107,7 @@ public class UserService {
         return userMapping.toUserResponse(user);
     }
 
-    // ✅ 6. Xóa user (chỉ Admin)
+    //6. Xóa user (chỉ Admin)
     @PreAuthorize("hasAuthority('DELETE_USER')")
     public void deleteUser(Long userId) {
         if (!userRepository.existsById(userId)) {
