@@ -2,6 +2,7 @@ package edu.lms.service;
 
 import edu.lms.entity.User;
 import edu.lms.repository.UserRepository;
+import edu.lms.security.UserPrincipal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -21,11 +22,7 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .or(() -> userRepository.findByUsername(username))
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
 
-        // Trả về user cho Spring Security xử lý
-        return org.springframework.security.core.userdetails.User
-                .withUsername(user.getEmail() != null ? user.getEmail() : user.getUsername())
-                .password(user.getPasswordHash())
-                .roles(user.getRole().getName())
-                .build();
+        // Trả về UserPrincipal để có thể lấy userId
+        return new UserPrincipal(user);
     }
 }
