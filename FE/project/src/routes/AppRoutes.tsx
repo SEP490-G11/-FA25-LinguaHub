@@ -1,4 +1,3 @@
-import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { ROUTES } from '@/constants';
 
@@ -27,6 +26,8 @@ import CreateCourse from '@/pages/CreateCourse/index';
 import PendingCourses from '@/pages/PendingCourses/index';
 import TutorCourses from '@/pages/TutorCourses/index';
 import MyCourses from '@/pages/MyCourses/index';
+import PaymentHistory from "@/pages/PaymentHistory";
+import MyEnrollments from "@/pages/MyEnrollments";
 
 export function AppRoutes() {
         return (
@@ -55,6 +56,8 @@ export function AppRoutes() {
                     <Route path={ROUTES.POLICY} element={<PolicyPage />} />
                     <Route path="/languages/:language" element={<LanguageCourses />} />
                     <Route path="*" element={<NotFound />} />
+                    <Route path="/payment-history" element={<PaymentHistory/>}/>
+                    <Route path="/my-enrollments" element={<MyEnrollments/>}/>
             </Routes>
         );
 }

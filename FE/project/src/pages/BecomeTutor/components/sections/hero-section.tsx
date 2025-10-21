@@ -1,6 +1,5 @@
-import React from 'react';
 import { motion } from 'framer-motion';
-import { Languages } from 'lucide-react';
+// import { Languages } from 'lucide-react';
 
 const HeroSection = () => {
   const fadeInUp = {

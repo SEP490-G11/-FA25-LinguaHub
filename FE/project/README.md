@@ -31,3 +31,10 @@ src/
   components/ui/     # Bộ component shadcn/ui
   components/shared/ # Component chia sẻ (modal, table, ...)
 ```
+```
+Ngôn ngữ chính:
+ TypeScript - Ngôn ngữ lập trình chính với type safety
+ TSX/JSX - Cú pháp cho React components
+ CSS - Styling với Tailwind CSS
+
+```
