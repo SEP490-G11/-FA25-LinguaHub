@@ -1,6 +1,7 @@
 package edu.lms.exception;
 
 import edu.lms.dto.request.ApiRespond;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -92,7 +93,33 @@ public class GlobalExceptionHandler {
                         .code(errorcode.getCode())
                         .message(errorcode.getMessage())
                         .build());
+    }
 
+    // Handle EntityNotFoundException
+    @ExceptionHandler(value = EntityNotFoundException.class)
+    public ResponseEntity<ApiRespond> handleEntityNotFound(EntityNotFoundException ex) {
+        ApiRespond apiRespond = new ApiRespond();
+        apiRespond.setCode(404);
+        apiRespond.setMessage(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiRespond);
+    }
+
+    // Handle TutorApplicationException
+    @ExceptionHandler(value = TutorApplicationException.class)
+    public ResponseEntity<ApiRespond> handleTutorApplication(TutorApplicationException ex) {
+        ApiRespond apiRespond = new ApiRespond();
+        apiRespond.setCode(400);
+        apiRespond.setMessage(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(apiRespond);
+    }
+
+    // Handle TutorNotFoundException
+    @ExceptionHandler(value = TutorNotFoundException.class)
+    public ResponseEntity<ApiRespond> handleTutorNotFound(TutorNotFoundException ex) {
+        ApiRespond apiRespond = new ApiRespond();
+        apiRespond.setCode(404);
+        apiRespond.setMessage(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiRespond);
     }
     private String mapAttribuite(String message, Map<String, Object> attributes) {
         String minValue = String.valueOf(attributes.get(MIN_ATTRIBUTE).toString());
