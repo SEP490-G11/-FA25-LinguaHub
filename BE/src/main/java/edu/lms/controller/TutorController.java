@@ -28,7 +28,7 @@ public class TutorController {
     // 2. View application status
     @GetMapping("/apply/status")
     public ResponseEntity<TutorApplyResponse> getApplyStatus(
-            @RequestHeader("X-User-Id") String userId
+            @RequestHeader("X-User-Id") Long userId
     ) {
         return ResponseEntity.ok(tutorService.getApplicationStatus(userId));
     }

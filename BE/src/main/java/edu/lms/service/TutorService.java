@@ -5,5 +5,5 @@ import edu.lms.dto.response.TutorApplyResponse;
 
 public interface TutorService {
     void applyToBecomeTutor(Long userId, TutorApplyRequest request);
-    TutorApplyResponse getApplicationStatus(String userId);
+    TutorApplyResponse getApplicationStatus(Long userId);
 }
