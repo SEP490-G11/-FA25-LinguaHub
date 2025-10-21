@@ -1,12 +1,10 @@
 package edu.lms.service;
 
-
-import edu.lms.constant.PredefinedRole;
 import edu.lms.dto.request.UserCreationRequest;
 import edu.lms.dto.request.UserUpdateRequest;
 import edu.lms.dto.response.UserResponse;
-import edu.lms.entity.User;
 import edu.lms.entity.Role;
+import edu.lms.entity.User;
 import edu.lms.exception.AppException;
 import edu.lms.exception.ErrorCode;
 import edu.lms.mapper.UserMapping;
@@ -24,31 +22,29 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.*;
-
+import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class UserService {
+
     UserRepository userRepository;
+    RoleRepository roleRepository; // ✅ Thêm dòng này
     UserMapping userMapping;
     PasswordEncoder passwordEncoder;
-    RoleRepository roleRepository;
 
+    // ✅ 1. Tạo user mới (default role: Learner)
     public UserResponse createUser(UserCreationRequest request) {
         User user = userMapping.toUser(request);
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
 
-        Role defaultRole = roleRepository.findById("USER")
-                .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
-
-
-        Set<Role> roles = new HashSet<>();
-        roles.add(defaultRole);
-        user.setRoles(roles);
-
+        // ✅ Gán role mặc định từ DB
+        Role learnerRole = roleRepository.findById("Learner")
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXIST));
+        user.setRole(learnerRole);
 
         try {
             user = userRepository.save(user);
@@ -56,64 +52,67 @@ public class UserService {
             throw new AppException(ErrorCode.USER_EXISTED);
         }
 
-
         return userMapping.toUserResponse(user);
     }
 
-
-    @PreAuthorize("hasRole('ADMIN')")
+    // ✅ 2. Chỉ Admin mới được xem danh sách user
+    @PreAuthorize("hasAuthority('VIEW_USER')")
     public List<UserResponse> getUsers() {
-        log.info("In method get Users");
-        return userRepository.findAll().stream().map(userMapping::toUserResponse).toList();
+        log.info("Fetching all users...");
+        return userRepository.findAll()
+                .stream()
+                .map(userMapping::toUserResponse)
+                .toList();
     }
 
-    @PostAuthorize("hasRole(ADMIN)")//Lấy user theo id
-    public UserResponse getUser(String id) {
-        log.info("In method get User by Id");
-        return userMapping.toUserResponse(userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found")));
-    }
-
-    public UserResponse getMyInfo() {//lấy in4 thg user có token tương ứng
-        var context = SecurityContextHolder.getContext();
-        String name = context.getAuthentication().getName();
-        User user = userRepository.findByUsername(name)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+    // ✅ 3. Lấy user theo ID (chỉ Admin)
+    @PostAuthorize("hasAuthority('VIEW_USER')")
+    public UserResponse getUser(Long id) {
+        log.info("Fetching user by ID...");
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXIST));
         return userMapping.toUserResponse(user);
     }
 
-//    @PostAuthorize("returnObject.username == authentication.name")
-//    public UserResponse updateUser(String userId, UserUpdateRequest request) {
-//        User user = userRepository.findById(userId)
-//                .orElseThrow(() -> new RuntimeException("User not found"));
-//        userMapping.updateUser(user, request);
-//        user.setPassword(passwordEncoder.encode(user.getPassword()));
-//
-//        var roles = roleRepository.findAllById(request.getRoles());
-//        user.setRoles(new HashSet<>(roles));
-//
-//        return userMapping.toUserResponse(userRepository.save(user));
-//
-//    }
-public UserResponse updateUserFields(String userID, Map<String, Object> updates) {
-    User user = userRepository.findById(userID).orElseThrow(() -> new RuntimeException("User not found"));
-    updates.forEach((field, value) -> {
-        switch (field) {
-            case "firstName" -> user.setFirstName((String) value);
-            case "lastName" -> user.setLastName((String) value);
-            case "dob" -> user.setDob(LocalDate.parse((String) value));
-            case "username" -> user.setUsername((String) value);
-            // bạn có thể thêm các field khác cần update
-            default -> throw new RuntimeException("Field " + field + " not updatable");
-        }
-    });
+    // ✅ 4. Lấy thông tin user hiện tại (qua token)
+    public UserResponse getMyInfo() {
+        String principal = SecurityContextHolder.getContext().getAuthentication().getName();
+        log.info("Fetching info for current user: {}", principal);
 
-    userRepository.save(user);
-    return userMapping.toUserResponse(user);
-}
+        User user = userRepository.findByEmail(principal)
+                .or(() -> userRepository.findByUsername(principal))
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXIST));
 
+        return userMapping.toUserResponse(user);
+    }
+
+    // ✅ 5. Update từng field linh hoạt (PATCH)
+    public UserResponse updateUserFields(Long userID, Map<String, Object> updates) {
+        User user = userRepository.findById(userID)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXIST));
+
+        updates.forEach((field, value) -> {
+            switch (field) {
+                case "fullName" -> user.setFullName((String) value);
+                case "country" -> user.setCountry((String) value);
+                case "address" -> user.setAddress((String) value);
+                case "phone" -> user.setPhone((String) value);
+                case "bio" -> user.setBio((String) value);
+                case "dob" -> user.setDob(LocalDate.parse((String) value));
+                default -> throw new RuntimeException("Field '" + field + "' not updatable");
+            }
+        });
+
+        userRepository.save(user);
+        return userMapping.toUserResponse(user);
+    }
+
+    // ✅ 6. Xóa user (chỉ Admin)
     @PreAuthorize("hasAuthority('DELETE_USER')")
-    public void deleteUser(String userId) {
+    public void deleteUser(Long userId) {
+        if (!userRepository.existsById(userId)) {
+            throw new AppException(ErrorCode.USER_NOT_EXIST);
+        }
         userRepository.deleteById(userId);
     }
-
 }

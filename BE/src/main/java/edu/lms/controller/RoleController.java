@@ -1,6 +1,5 @@
 package edu.lms.controller;
 
-
 import edu.lms.dto.request.ApiRespond;
 import edu.lms.dto.request.RoleRequest;
 import edu.lms.dto.response.RoleResponse;
@@ -11,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,32 +22,43 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Builder
 public class RoleController {
+
     RoleService roleService;
 
+    // ✅ Tạo role mới – chỉ Admin
     @PostMapping
-    ApiRespond<RoleResponse> create(@RequestBody RoleRequest request){
+    @PreAuthorize("hasAuthority('CREATE_ROLE')")
+    public ApiRespond<RoleResponse> create(@RequestBody RoleRequest request) {
         return ApiRespond.<RoleResponse>builder()
                 .result(roleService.create(request))
                 .build();
-
     }
+
+    // ✅ Xem tất cả role – Admin hoặc Tutor có thể xem
     @GetMapping
-    ApiRespond<List<RoleResponse>> getAll(){
+    @PreAuthorize("hasAuthority('VIEW_ROLE')")
+    public ApiRespond<List<RoleResponse>> getAll() {
         return ApiRespond.<List<RoleResponse>>builder()
                 .result(roleService.getAll())
                 .build();
+    }
 
-    }
+    // ✅ Xóa role – chỉ Admin
     @DeleteMapping("/{role}")
-    ApiRespond<Void> delete(@PathVariable String role){
+    @PreAuthorize("hasAuthority('DELETE_ROLE')")
+    public ApiRespond<Void> delete(@PathVariable String role) {
         roleService.delete(role);
-        return ApiRespond.<Void>builder().build();
+        return ApiRespond.<Void>builder()
+                .message("Role deleted successfully")
+                .build();
     }
+
+    // ✅ Cập nhật role – chỉ Admin
     @PutMapping("/{roleName}")
+    @PreAuthorize("hasAuthority('UPDATE_ROLE')")
     public ResponseEntity<RoleResponse> updateRole(
             @PathVariable String roleName,
             @RequestBody RoleRequest request) {
         return ResponseEntity.ok(roleService.update(roleName, request));
     }
-
 }
