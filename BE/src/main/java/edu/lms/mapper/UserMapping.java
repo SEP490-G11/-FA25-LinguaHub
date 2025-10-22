@@ -23,7 +23,7 @@ public interface UserMapping {
     @Mapping(target = "role", expression = "java(user.getRole() != null ? user.getRole().getName() : null)")
     UserResponse toUserResponse(User user);
 
-    default UUID mapUUID(UUID value) {
+    default Long mapUUID(Long value) {
         return value;
     }
 }

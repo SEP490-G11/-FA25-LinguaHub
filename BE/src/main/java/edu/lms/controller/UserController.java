@@ -58,14 +58,14 @@ public class UserController {
     @PatchMapping("/{userID}")
     @PreAuthorize("hasAuthority('UPDATE_USER') or hasAuthority('ADMIN')")
     public ResponseEntity<UserResponse> updateUserFields(
-            @PathVariable UUID userID,
+            @PathVariable Long userID,
             @RequestBody Map<String, Object> updates) {
         return ResponseEntity.ok(userService.updateUserFields(userID, updates));
     }
 
     @DeleteMapping("/{userID}")
     @PreAuthorize("hasAuthority('DELETE_USER')")
-    public void deleteUser(@PathVariable UUID userID) {
+    public void deleteUser(@PathVariable Long userID) {
         userService.deleteUser(userID);
     }
 }

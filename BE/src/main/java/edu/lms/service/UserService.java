@@ -68,7 +68,7 @@ public class UserService {
 
     //3. Lấy user theo ID (chỉ Admin)
     @PostAuthorize("hasAuthority('VIEW_USER')")
-    public UserResponse getUser(UUID id) {
+    public UserResponse getUser(Long id) {
         log.info("Fetching user by ID...");
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXIST));
@@ -88,7 +88,7 @@ public class UserService {
     }
 
     //5. Update từng field linh hoạt (PATCH)
-    public UserResponse updateUserFields(UUID userID, Map<String, Object> updates) {
+    public UserResponse updateUserFields(Long userID, Map<String, Object> updates) {
         User user = userRepository.findById(userID)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXIST));
 
@@ -110,7 +110,7 @@ public class UserService {
 
     //6. Xóa user (chỉ Admin)
     @PreAuthorize("hasAuthority('DELETE_USER')")
-    public void deleteUser(UUID userId) {
+    public void deleteUser(Long userId) {
         if (!userRepository.existsById(userId)) {
             throw new AppException(ErrorCode.USER_NOT_EXIST);
         }
