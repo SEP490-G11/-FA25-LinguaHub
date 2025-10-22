@@ -9,41 +9,94 @@
  - All request actions are audited (reviewed_by, reviewed_at)
 
 ## Entity: Tutor
-- TutorID
-- UserID
-- Experience Default: 0
-- Specialization
-- Rating Default: 0.0
-- Status: ENUM('PENDING', 'APPROVED', 'REJECTED', 'SUSPENDED') Default Pending
+- TutorID 
+- UserID 
+- Experience (Default: 0)
+- Specialization 
+- TeachingLanguage 
+- Bio 
+- Rating (Default: 0.0)
+- Status: ENUM('PENDING', 'APPROVED', 'REJECTED', 'SUSPENDED') (Default: 'PENDING')
 
 ## Entity: TutorVerification
-- TutorVerificationID
-- TutorID
-- DocumentURL
-- Status: ENUM('PENDING', 'APPROVED', 'REJECTED') Default Pending
-- ReviewedBy
-- ReviewedAt
+- TutorVerificationID 
+- UserID 
+- Experience (Default: 0)
+- Specialization 
+- TeachingLanguage 
+- Bio 
+- CertificateName 
+- DocumentURL 
+- Status: ENUM('PENDING', 'APPROVED', 'REJECTED') (Default: 'PENDING')
+- SubmittedAt (Default: CURRENT_TIMESTAMP)
+- ReviewedBy 
+- ReviewedAt 
+- ReasonForReject
 
+## API: Tutor Application (User Side)
+### Submit tutor application
 
-### API: Tutor Management (Admin Only)
+- Method: POST /tutors/apply 
+- Description: User submits a request to become a tutor.
 
-#### 4.1. Get list of tutor requests
-- Method: GET `/admin/tutors/pending`
-- Description: Retrieve list of tutors with status = Pending
-- Role allowed: Admin
-- Query: pagination, sorting by created time or name
+### Check application status
 
-#### 4.2. Approve tutor request
-- Method: PUT `/admin/tutors/{id}/approve`
-- Description: Approve a tutor request
-- Role allowed: Admin
-- Body: reviewed_by
+- Method: GET /tutors/apply/status 
+- Description: Retrieve the current verification status of logged-in user.
 
-#### 4.3. Reject tutor request
-- Method: PUT `/admin/tutors/{id}/reject`
-- Description: Reject a tutor request
-- Role allowed: Admin
-- Body: reviewed_by, optional reason
+## API: Tutor Management (Admin Only)
+
+### List/Search tutors
+
+- Method: GET /admin/tutors 
+- Description: Retrieve list of tutors with pagination, sorting, filter by status or keyword (name/email). 
+- Query: page, size, sortBy, keyword (optional), status (optional)
+
+### View tutor details
+
+- Method: GET /admin/tutors/{id} 
+- Description: View tutor details including User info, verification status, experience, specialization.
+
+### Approve tutor
+
+- Method: PUT /admin/tutors/{id}/approve 
+- Description: Change status from Pending to Approved.
+
+### Reject tutor
+
+- Method: PUT /admin/tutors/{id}/reject 
+- Description: Change TutorVerification status to Rejected. 
+- Optional: note/reason
+
+### Suspend tutor (Soft Delete)
+
+- Method: PUT /admin/tutors/{id}/suspend 
+- Description: Change status from Approved to Suspended.
+
+### Activate tutor (Unsuspend)
+
+- Method: PUT /admin/tutors/{id}/activate 
+- Description: Change status from Suspended to Approved.
+
+### Update tutor information (optional)
+
+- Method: PATCH /admin/tutors/{id} 
+- Description: Update specialization or experience (admin intervention).
+
+### Constraints & Business Rules (Rule - Applies to)
+- Only ADMIN can approve or reject a tutor - API level
+- Tutor must exist before approval - Approve/Reject
+- Tutor must be in Pending status to approve/reject - Approve/Reject
+- TutorVerification must exist for Tutor - Approve/Reject
+- On approve: Tutor.Status → Approved - Tutor
+- On approve: TutorVerification.Status → Approved - TutorVerification
+- On approve: ReviewedBy MUST be a valid AdminID - TutorVerification
+- On reject: Tutor.Status stays Pending or may set Suspended (optional) - Tutor
+- On reject: TutorVerification.Status → Rejected - TutorVerification
+- On reject: ReviewedBy MUST be a valid AdminID - TutorVerification
+- ReviewedAt MUST be updated on both approve/reject - TutorVerification
+- System SHOULD NOT allow re-approval if already Approved or Rejected - Approve
+- User.Role optionally updated to Tutor after approval (if business rule requires) - Users
 
 ### Constraints & Business Rules (Rule - Applies to)
 - Only ADMIN can approve or reject a tutor - API level

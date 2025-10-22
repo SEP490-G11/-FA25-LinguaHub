@@ -4,7 +4,8 @@ import edu.lms.enums.TutorStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import java.util.List;
+
+import java.math.BigDecimal;
 
 @Data
 @NoArgsConstructor
@@ -14,21 +15,31 @@ import java.util.List;
 @Entity
 @Table(name = "Tutor")
 public class Tutor {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long tutorID;
 
-    @OneToOne
-    @JoinColumn(name = "userID", unique = true, nullable = false)
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "UserID", nullable = false, unique = true)
     User user;
 
-    Short experience;
+    @Column(nullable = false)
+    Short experience = 0; // Default 0
+
+    @Column(length = 255)
     String specialization;
-    Double rating;
+
+    @Column(length = 100)
+    String teachingLanguage;
+
+    @Column(columnDefinition = "TEXT")
+    String bio;
+
+    @Column(precision = 3, scale = 2)
+    BigDecimal rating = BigDecimal.ZERO; // Default 0.0
 
     @Enumerated(EnumType.STRING)
-    TutorStatus status = TutorStatus.Pending;
-
-    @OneToMany(mappedBy = "tutor", cascade = CascadeType.ALL)
-    List<TutorVerification> verifications;
+    @Column(nullable = false)
+    TutorStatus status = TutorStatus.PENDING; // Default Pending
 }

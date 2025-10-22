@@ -20,8 +20,8 @@ import java.util.UUID;
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    UUID userID;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    Long userID;
 
     @NotBlank(message = "Email is required")
     @Column(nullable = false, unique = true, length = 255)
