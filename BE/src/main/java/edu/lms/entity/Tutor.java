@@ -1,42 +1,48 @@
 package edu.lms.entity;
 
+import edu.lms.enums.TutorStatus;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.FieldDefaults;
+import java.math.BigDecimal;
+import java.util.List;
 
-@Entity
-@Table(name = "Tutor")
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
+@Entity
+@Table(name = "Tutor")
 public class Tutor {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "TutorID")
-    private Long tutorId;
+    Long tutorID;
 
     @OneToOne
-    @JoinColumn(name = "UserID", nullable = false, unique = true)
-    private User user; // Liên kết tới bảng Users
+    @JoinColumn(name = "UserID", unique = true, nullable = false)
+    User user;
 
-    @Column(name = "Experience")
-    private Short experience;
+    @Column(name = "Experience", columnDefinition = "SMALLINT DEFAULT 0")
+    Short experience = 0;
 
     @Column(name = "Specialization", length = 255)
-    private String specialization;
+    String specialization;
 
-    @Column(name = "Rating", precision = 3, scale = 2)
-    private Double rating;
+    @Column(name = "TeachingLanguage", length = 100)
+    String teachingLanguage;
+
+    @Column(name = "Bio", columnDefinition = "TEXT")
+    String bio;
+
+    @Column(name = "Rating", precision = 3, scale = 2, columnDefinition = "DECIMAL(3,2) DEFAULT 0.0")
+    BigDecimal rating = BigDecimal.ZERO;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "Status", length = 10)
-    private TutorStatus status;
+    @Column(name = "Status", columnDefinition = "ENUM('Pending','Approved','Suspended') DEFAULT 'Pending'")
+    TutorStatus status = TutorStatus.PENDING;
 
-    public enum TutorStatus {
-        Pending,
-        Approved,
-        Suspended
-    }
+    @OneToMany(mappedBy = "tutor", cascade = CascadeType.ALL)
+    List<TutorVerification> verifications;
 }

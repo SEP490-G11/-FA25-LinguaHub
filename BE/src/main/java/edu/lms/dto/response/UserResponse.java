@@ -14,7 +14,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserResponse {
-    UUID userID;
+    Long userID;
     String username;
     String email;
     String fullName;
