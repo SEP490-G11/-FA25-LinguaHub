@@ -8,6 +8,7 @@ spring:
     url: jdbc:mysql://localhost:3306/linguahub?useSSL=false&serverTimezone=UTC
     username: springstudent
     password: springstudent
+
   jpa:
     hibernate:
       ddl-auto: update

@@ -1,3 +1,4 @@
+
 package edu.lms.mapper;
 
 import edu.lms.dto.request.UserCreationRequest;
@@ -11,23 +12,19 @@ import java.util.UUID;
 @Mapper(componentModel = "spring")
 public interface UserMapping {
 
-//    User toUser(UserCreationRequest request);
-//
-//    @Mapping(target = "userID", expression = "java(mapUUID(user.getUserID()))") // ✅ Custom mapping
-//    @Mapping(target = "role", expression = "java(user.getRole() != null ? user.getRole().getName() : null)")
-//    UserResponse toUserResponse(User user);
-//
-//    //MapStruct sẽ gọi hàm này để map UUID
-//    default UUID mapUUID(UUID value) {
-//        return value;
-//    }
+    @Mapping(target = "passwordHash", source = "password")
+    @Mapping(target = "fullName", expression = "java(request.getFirstName() + \" \" + request.getLastName())")
+    @Mapping(target = "email", source = "email")
+    @Mapping(target = "isActive", ignore = true) // giữ mặc định = true
+    @Mapping(target = "createdAt", expression = "java(java.time.LocalDateTime.now())")
+    @Mapping(target = "updatedAt", expression = "java(java.time.LocalDateTime.now())")
+    User toUser(UserCreationRequest request);
 
+    @Mapping(target = "userID", expression = "java(mapUUID(user.getUserID()))")
+    @Mapping(target = "role", expression = "java(user.getRole() != null ? user.getRole().getName() : null)")
+    UserResponse toUserResponse(User user);
 
-        User toUser(UserCreationRequest request);
-
-        @Mapping(target = "userID", source = "userID") // hoặc bỏ hoàn toàn nếu cần
-        @Mapping(target = "role", expression = "java(user.getRole() != null ? user.getRole().getName() : null)")
-        UserResponse toUserResponse(User user);
+    default Long mapUUID(Long value) {
+        return value;
     }
-
-
+}

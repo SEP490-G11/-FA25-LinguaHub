@@ -6,7 +6,6 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -52,20 +51,26 @@ public class User {
     @Column(columnDefinition = "TEXT")
     String bio;
 
+    // Giữ mặc định true cả khi dùng Builder
+    @Builder.Default
     @Column(nullable = false)
     Boolean isActive = true;
 
+    // Tự set thời gian khi khởi tạo và cập nhật
+    @Builder.Default
     @Column(nullable = false)
-    LocalDateTime createdAt;
+    LocalDateTime createdAt = LocalDateTime.now();
 
+    @Builder.Default
     @Column(nullable = false)
-    LocalDateTime updatedAt;
+    LocalDateTime updatedAt = LocalDateTime.now();
 
-    // ✅ Auto set createdAt & updatedAt khi insert/update
+    //Auto update timestamps khi persist/update
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
+        if (this.isActive == null) this.isActive = true;
     }
 
     @PreUpdate
