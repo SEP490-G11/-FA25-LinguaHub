@@ -13,7 +13,7 @@ public interface UserMapping {
 
     User toUser(UserCreationRequest request);
 
-    @Mapping(target = "userID", expression = "java(mapUUID(user.getUserID()))") // ✅ Custom mapping
+    @Mapping(target = "userID", expression = "java(mapUUID(user.getUserID()))") //Custom mapping
     @Mapping(target = "role", expression = "java(user.getRole() != null ? user.getRole().getName() : null)")
     UserResponse toUserResponse(User user);
 
