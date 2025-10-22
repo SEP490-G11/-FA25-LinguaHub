@@ -51,12 +51,12 @@ public class User {
     @Column(columnDefinition = "TEXT")
     String bio;
 
-    // ✅ Giữ mặc định true cả khi dùng Builder
+    // Giữ mặc định true cả khi dùng Builder
     @Builder.Default
     @Column(nullable = false)
     Boolean isActive = true;
 
-    // ✅ Tự set thời gian khi khởi tạo và cập nhật
+    // Tự set thời gian khi khởi tạo và cập nhật
     @Builder.Default
     @Column(nullable = false)
     LocalDateTime createdAt = LocalDateTime.now();
@@ -65,7 +65,7 @@ public class User {
     @Column(nullable = false)
     LocalDateTime updatedAt = LocalDateTime.now();
 
-    // ✅ Auto update timestamps khi persist/update
+    //Auto update timestamps khi persist/update
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
