@@ -53,7 +53,7 @@ const onResponseError = (error: AxiosError<ApiErrorData>): Promise<AxiosResponse
       helpers.cookie_delete('AT');
       window.location.href = '/login';
     }
-    return Promise.reject(error.response);  
+    return Promise.reject(error.response);
   }
   return Promise.reject(error);
 };

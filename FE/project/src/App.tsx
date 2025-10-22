@@ -8,14 +8,14 @@ import Footer from '@/components/Footer';
 
 function App() {
     return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <main>
-        <AppRoutes />
-      </main>
-      <Footer />
-    </div>
-  );
+        <div className="min-h-screen bg-background">
+            <Header />
+            <main>
+                <AppRoutes />
+            </main>
+            <Footer />
+        </div>
+    );
 }
 
 export default App;
