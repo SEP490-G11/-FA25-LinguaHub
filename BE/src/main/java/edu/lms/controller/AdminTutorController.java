@@ -3,6 +3,7 @@ package edu.lms.controller;
 import edu.lms.dto.request.TutorApprovalRequest;
 import edu.lms.dto.response.TutorApplicationDetailResponse;
 import edu.lms.dto.response.TutorApplicationListResponse;
+import edu.lms.security.UserPrincipal;
 import edu.lms.service.TutorService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
