@@ -1,6 +1,7 @@
 package edu.lms.service;
 
 import edu.lms.dto.request.TutorApplyRequest;
+import edu.lms.dto.request.TutorUpdateRequest;
 import edu.lms.dto.response.TutorApplicationDetailResponse;
 import edu.lms.dto.response.TutorApplicationListResponse;
 import edu.lms.dto.response.TutorApplyResponse;
@@ -19,4 +20,5 @@ public interface TutorService {
     List<TutorApplicationListResponse> getAllTutors(String status);
     void suspendTutor(Long tutorId, Long adminId);
     void unsuspendTutor(Long tutorId, Long adminId);
+    void updateTutorInfo(Long tutorId, TutorUpdateRequest request);
 }

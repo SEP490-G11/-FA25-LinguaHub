@@ -1,6 +1,7 @@
 package edu.lms.service;
 
 import edu.lms.dto.request.TutorApplyRequest;
+import edu.lms.dto.request.TutorUpdateRequest;
 import edu.lms.dto.response.TutorApplicationDetailResponse;
 import edu.lms.dto.response.TutorApplicationListResponse;
 import edu.lms.dto.response.TutorApplyResponse;
@@ -250,6 +251,43 @@ public class TutorServiceImpl implements TutorService {
         tutorRepository.save(tutor);
         
         log.info("Tutor unsuspended successfully: {}", tutorId);
+    }
+
+    @Override
+    public void updateTutorInfo(Long tutorId, TutorUpdateRequest request) {
+        log.info("Updating tutor information for tutor ID: {}", tutorId);
+        
+        Tutor tutor = tutorRepository.findById(tutorId)
+                .orElseThrow(() -> new TutorNotFoundException("Tutor not found with ID: " + tutorId));
+        
+        // Update fields only if they are provided (not null)
+        if (request.getExperience() != null) {
+            tutor.setExperience(request.getExperience());
+            log.info("Updated experience to: {}", request.getExperience());
+        }
+        
+        if (request.getSpecialization() != null) {
+            tutor.setSpecialization(request.getSpecialization());
+            log.info("Updated specialization to: {}", request.getSpecialization());
+        }
+        
+        if (request.getTeachingLanguage() != null) {
+            tutor.setTeachingLanguage(request.getTeachingLanguage());
+            log.info("Updated teaching language to: {}", request.getTeachingLanguage());
+        }
+        
+        if (request.getBio() != null) {
+            tutor.setBio(request.getBio());
+            log.info("Updated bio");
+        }
+        
+        if (request.getRating() != null) {
+            tutor.setRating(request.getRating());
+            log.info("Updated rating to: {}", request.getRating());
+        }
+        
+        tutorRepository.save(tutor);
+        log.info("Tutor information updated successfully for tutor ID: {}", tutorId);
     }
 
     // Helper methods
