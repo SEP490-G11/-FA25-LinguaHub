@@ -40,7 +40,7 @@ public class UserService {
     //1. Tạo user mới (default role: Learner)
     public UserResponse createUser(UserCreationRequest request) {
         User user = userMapping.toUser(request);
-        user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+        user.setPasswordHash(passwordEncoder.encode(request.getPasswordHash()));
 
         //Gán role mặc định từ DB
         Role learnerRole = roleRepository.findById("Learner")

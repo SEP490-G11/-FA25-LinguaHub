@@ -26,7 +26,7 @@ public class UserResponse {
     String address;
     String bio;
     Boolean isActive;
-    String role; // chỉ lấy tên role, ví dụ: "Admin"
+    String role;
     LocalDateTime createdAt;
     LocalDateTime updatedAt;
 }
