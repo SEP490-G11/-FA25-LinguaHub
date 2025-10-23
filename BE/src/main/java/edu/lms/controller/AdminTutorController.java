@@ -1,6 +1,7 @@
 package edu.lms.controller;
 
 import edu.lms.dto.request.TutorApprovalRequest;
+import edu.lms.dto.request.TutorUpdateRequest;
 import edu.lms.dto.response.TutorApplicationDetailResponse;
 import edu.lms.dto.response.TutorApplicationListResponse;
 import edu.lms.security.UserPrincipal;
@@ -18,7 +19,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/admin/tutors")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasAuthority('VIEW_TUTOR_APPLICATIONS')")
 public class AdminTutorController {
 
     private final TutorService tutorService;
@@ -41,6 +42,7 @@ public class AdminTutorController {
 
     // 3. Duyệt đơn đăng ký (approve)
     @PostMapping("/applications/{verificationId}/approve")
+    @PreAuthorize("hasAuthority('APPROVE_TUTOR')")
     public ResponseEntity<?> approveApplication(
             @PathVariable Long verificationId
     ) {
@@ -51,6 +53,7 @@ public class AdminTutorController {
 
     // 4. Từ chối đơn đăng ký (reject)
     @PostMapping("/applications/{verificationId}/reject")
+    @PreAuthorize("hasAuthority('REJECT_TUTOR')")
     public ResponseEntity<?> rejectApplication(
             @PathVariable Long verificationId,
             @RequestBody @Valid TutorApprovalRequest request
@@ -71,6 +74,7 @@ public class AdminTutorController {
 
     // 6. Suspend/Unsuspend tutor
     @PostMapping("/{tutorId}/suspend")
+    @PreAuthorize("hasAuthority('SUSPEND_TUTOR')")
     public ResponseEntity<?> suspendTutor(
             @PathVariable Long tutorId
     ) {
@@ -80,12 +84,25 @@ public class AdminTutorController {
     }
 
     @PostMapping("/{tutorId}/unsuspend")
+    @PreAuthorize("hasAuthority('ACTIVATE_TUTOR')")
     public ResponseEntity<?> unsuspendTutor(
             @PathVariable Long tutorId
     ) {
         Long adminId = getCurrentUserId();
         tutorService.unsuspendTutor(tutorId, adminId);
         return ResponseEntity.ok("Tutor unsuspended successfully");
+    }
+
+    // 7. Update tutor information
+    @PatchMapping("/{tutorId}")
+    @PreAuthorize("hasAuthority('UPDATE_TUTOR_INFO')")
+    public ResponseEntity<?> updateTutorInfo(
+            @PathVariable Long tutorId,
+            @RequestBody @Valid TutorUpdateRequest request
+    ) {
+        Long adminId = getCurrentUserId();
+        tutorService.updateTutorInfo(tutorId, request);
+        return ResponseEntity.ok("Tutor information updated successfully");
     }
 
     // Helper method to get current user ID from JWT token

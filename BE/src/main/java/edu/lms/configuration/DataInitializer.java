@@ -76,7 +76,16 @@ public class DataInitializer {
                 // --- COURSE / SYSTEM FEATURES ---
                 new Permission("MANAGE_COURSES", "Manage all courses"),
                 new Permission("VIEW_REPORTS", "View system reports"),
-                new Permission("APPLY_TUTOR", "Apply to become a tutor")
+                new Permission("APPLY_TUTOR", "Apply to become a tutor"),
+                
+                // --- TUTOR MANAGEMENT ---
+                new Permission("VIEW_TUTOR_APPLICATIONS", "View tutor applications"),
+                new Permission("APPROVE_TUTOR", "Approve tutor applications"),
+                new Permission("REJECT_TUTOR", "Reject tutor applications"),
+                new Permission("SUSPEND_TUTOR", "Suspend tutor accounts"),
+                new Permission("ACTIVATE_TUTOR", "Activate suspended tutors"),
+                new Permission("UPDATE_TUTOR_INFO", "Update tutor information"),
+                new Permission("VIEW_TUTOR_STATUS", "View own tutor application status")
         );
 
 
@@ -90,12 +99,13 @@ public class DataInitializer {
         // Admin – Toàn quyền
         admin.getPermissions().addAll(permissionRepository.findAll());
 
-        // Tutor – có thể xem user, quản lý khóa học, chỉnh sửa thông tin cá nhân
+        // Tutor – có thể xem user, quản lý khóa học, chỉnh sửa thông tin cá nhân, xem trạng thái đơn apply
         tutor.getPermissions().add(permissionRepository.findById("VIEW_USER").orElseThrow());
         tutor.getPermissions().add(permissionRepository.findById("UPDATE_USER").orElseThrow());
         tutor.getPermissions().add(permissionRepository.findById("MANAGE_COURSES").orElseThrow());
         tutor.getPermissions().add(permissionRepository.findById("VIEW_ROLE").orElseThrow());
         tutor.getPermissions().add(permissionRepository.findById("VIEW_PERMISSION").orElseThrow());
+        tutor.getPermissions().add(permissionRepository.findById("VIEW_TUTOR_STATUS").orElseThrow());
 
         //Learner – chỉ được xem thông tin bản thân, apply tutor, enroll course
         learner.getPermissions().add(permissionRepository.findById("VIEW_USER").orElseThrow());

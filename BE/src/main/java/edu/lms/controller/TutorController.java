@@ -21,7 +21,7 @@ public class TutorController {
 
     // 1. Submit application
     @PostMapping("/apply")
-    @PreAuthorize("hasRole('LEARNER')")
+    @PreAuthorize("hasAuthority('APPLY_TUTOR')")
     public ResponseEntity<?> applyToBecomeTutor(
             @RequestBody @Valid TutorApplyRequest request
     ) {
@@ -32,7 +32,7 @@ public class TutorController {
 
     // 2. View application status
     @GetMapping("/apply/status")
-    @PreAuthorize("hasRole('LEARNER') or hasRole('TUTOR')")
+    @PreAuthorize("hasAuthority('VIEW_TUTOR_STATUS')")
     public ResponseEntity<TutorApplyResponse> getApplyStatus() {
         Long userId = getCurrentUserId();
         return ResponseEntity.ok(tutorService.getApplicationStatus(userId));
