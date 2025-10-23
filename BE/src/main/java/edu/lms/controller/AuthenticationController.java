@@ -81,6 +81,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.text.ParseException;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
@@ -105,16 +106,17 @@ public class AuthenticationController {
     // ===================== VERIFY EMAIL =====================
 
     @PostMapping("/verify")
-    @PreAuthorize("permitAll()")
-    public ApiRespond<Void> verifyEmail(
-            @RequestParam String email,
-            @RequestParam String otp
-    ) {
+    public ApiRespond<String> verifyEmail(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+        String otp = request.get("otp");
+
         authenticationService.verifyEmail(email, otp);
-        return ApiRespond.<Void>builder()
-                .message("Email verified successfully. Account created!")
+
+        return ApiRespond.<String>builder()
+                .message("Account verified successfully!")
                 .build();
     }
+
 
     // ===================== LOGIN =====================
 
