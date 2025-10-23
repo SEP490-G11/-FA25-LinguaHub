@@ -13,7 +13,7 @@ import java.util.UUID;
 public interface UserMapping {
 
     @Mapping(target = "passwordHash", source = "password")
-    @Mapping(target = "fullName", expression = "java(request.getFirstName() + \" \" + request.getLastName())")
+    @Mapping(target = "fullName", source = "fullName")
     @Mapping(target = "email", source = "email")
     @Mapping(target = "isActive", ignore = true) // giữ mặc định = true
     @Mapping(target = "createdAt", expression = "java(java.time.LocalDateTime.now())")

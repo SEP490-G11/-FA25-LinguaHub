@@ -1,31 +1,38 @@
 package edu.lms.entity;
 
-import edu.lms.enums.VerificationType;
+import edu.lms.enums.Gender;
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.FieldDefaults;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+@Entity
+@Table(name = "verification")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@FieldDefaults(level = AccessLevel.PRIVATE)
-@Entity
-@Table(name = "Verification")
 public class Verification {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Long verificationID;
+    private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "userID", nullable = false)
-    User user;
+    private String email;
+    private String username;
+    private String fullName;
+    private String passwordHash;
 
     @Enumerated(EnumType.STRING)
-    VerificationType type;
+    private Gender gender;
+    private LocalDate dob;
+    private String phone;
+    private String country;
+    private String address;
 
-    String code;
-    LocalDateTime expiredAt;
-    Boolean isVerified = false;
+    @Column(columnDefinition = "TEXT")
+    private String bio;
+
+    private String otp;
+    private LocalDateTime expiresAt;
 }
