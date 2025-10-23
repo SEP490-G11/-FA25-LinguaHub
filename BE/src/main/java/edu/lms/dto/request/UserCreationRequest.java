@@ -30,21 +30,18 @@ public class UserCreationRequest {
 
     @NotBlank(message = "Password is required")
     @Size(min = 8, message = "INVALID_PASSWORD")
-    String passwordHash;
+    String password;
 
     @NotBlank(message = "Full name is required")
     String fullName;
 
-    @NotBlank(message = "Role is required")
-    String roleName;   // "Learner" hoặc "Tutor"
-
     // ===== Thông tin cá nhân =====
     @NotNull(message = "Gender is required")
-    Gender gender;          // MALE / FEMALE / OTHER
+    Gender gender;
 
     @NotNull(message = "Date of birth is required")
     @DobConstraint(min = 10, message = "INVALID_DOB")
-    LocalDate dob;          // ngày sinh
+    LocalDate dob;
 
     @NotBlank(message = "Phone number is required")
     String phone;
@@ -57,5 +54,5 @@ public class UserCreationRequest {
 
     @NotBlank(message = "Bio is required")
     @Column(columnDefinition = "TEXT")
-    String bio;             // mô tả ngắn (Tutor có thể dùng để giới thiệu)
+    String bio;
 }

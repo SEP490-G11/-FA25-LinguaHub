@@ -7,7 +7,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "Verification")
+@Table(name = "verification")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,23 +16,23 @@ public class Verification {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Long id;
+    private Long id;
 
-    String email;
-    String username;
-    String fullName;
-    String passwordHash;
-    String roleName;
+    private String email;
+    private String username;
+    private String fullName;
+    private String passwordHash;
 
     @Enumerated(EnumType.STRING)
-    Gender gender;
-    LocalDate dob;
-    String phone;
-    String country;
-    String address;
-    @Column(columnDefinition = "TEXT")
-    String bio;
+    private Gender gender;
+    private LocalDate dob;
+    private String phone;
+    private String country;
+    private String address;
 
-    String otp;
-    LocalDateTime expiresAt;
+    @Column(columnDefinition = "TEXT")
+    private String bio;
+
+    private String otp;
+    private LocalDateTime expiresAt;
 }

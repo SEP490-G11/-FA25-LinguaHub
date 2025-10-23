@@ -57,27 +57,26 @@ public class AuthenticationService {
             throw new AppException(ErrorCode.USER_EXISTED);
         }
 
-        //Mã hóa password
+        // Mã hóa password
         PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
-        String hashedPassword = passwordEncoder.encode(request.getPasswordHash());
+        String hashedPassword = passwordEncoder.encode(request.getPassword());
 
-        //Kiểm tra Role hợp lệ
-        Role role = roleRepository.findByName(request.getRoleName())
+        // Gán Role mặc định là Learner
+        Role role = roleRepository.findByName("Learner")
                 .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
 
-        //Sinh mã OTP ngẫu nhiên
+        // Sinh mã OTP ngẫu nhiên
         String otp = String.valueOf(new Random().nextInt(900000) + 100000);
 
-        //Gửi OTP qua email
+        // Gửi OTP qua email
         emailService.sendOtp(request.getEmail(), otp);
 
-        //Lưu tạm vào bảng Verification
+        // Lưu tạm vào bảng Verification
         Verification verification = Verification.builder()
                 .email(request.getEmail())
                 .username(request.getUsername())
                 .fullName(request.getFullName())
                 .passwordHash(hashedPassword)
-                .roleName(request.getRoleName())
                 .gender(request.getGender())
                 .dob(request.getDob())
                 .phone(request.getPhone())
@@ -100,12 +99,11 @@ public class AuthenticationService {
         if (verification.getExpiresAt().isBefore(LocalDateTime.now()))
             throw new AppException(ErrorCode.OTP_EXPIRED);
 
-        Role role = roleRepository.findByName(verification.getRoleName())
+        // Role mặc định là Learner
+        Role role = roleRepository.findByName("Learner")
                 .orElseThrow(() -> new AppException(ErrorCode.ROLE_NOT_FOUND));
 
-        boolean isTutor = role.getName().equalsIgnoreCase("Tutor");
-
-        //Tạo user chính thức
+        // Tạo user chính thức
         User user = User.builder()
                 .email(verification.getEmail())
                 .username(verification.getUsername())
@@ -118,16 +116,11 @@ public class AuthenticationService {
                 .country(verification.getCountry())
                 .address(verification.getAddress())
                 .bio(verification.getBio())
-                .isActive(!isTutor) // Learner = true, Tutor = false
+                .isActive(true)
                 .build();
 
         userRepository.save(user);
         verificationRepository.delete(verification);
-
-        //Nếu là Tutor, gửi thông báo cho Admin duyệt
-        if (isTutor) {
-            emailService.notifyAdminNewTutor(user);
-        }
     }
 
     // ========================= LOGIN =========================
@@ -140,7 +133,7 @@ public class AuthenticationService {
                 .or(() -> userRepository.findByUsername(request.getUsername()))
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXIST));
 
-        // Nếu user chưa active (Tutor chưa duyệt)
+        // Nếu user chưa active (chưa được duyệt)
         if (!Boolean.TRUE.equals(user.getIsActive())) {
             throw new AppException(ErrorCode.UNAUTHENTICATED);
         }

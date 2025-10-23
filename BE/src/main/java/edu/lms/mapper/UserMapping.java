@@ -11,7 +11,7 @@ import java.util.UUID;
 @Mapper(componentModel = "spring")
 public interface UserMapping {
 
-    @Mapping(target = "passwordHash", source = "passwordHash")
+    @Mapping(target = "passwordHash", source = "password")
     @Mapping(target = "fullName", source = "fullName")
     @Mapping(target = "email", source = "email")
     @Mapping(target = "isActive", ignore = true) // giữ mặc định = true
