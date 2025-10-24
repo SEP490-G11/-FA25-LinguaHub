@@ -2,6 +2,7 @@ package edu.lms.configuration;
 
 import edu.lms.entity.Permission;
 import edu.lms.entity.Role;
+import edu.lms.exception.ErrorCode;
 import edu.lms.repository.PermissionRepository;
 import edu.lms.repository.RoleRepository;
 import jakarta.transaction.Transactional;
@@ -56,6 +57,7 @@ public class DataInitializer {
                 new Permission("VIEW_USER", "View user list"),
                 new Permission("UPDATE_USER", "Update user info"),
                 new Permission("DELETE_USER", "Delete users"),
+                new Permission("CHANGE_PASSWORD", "Change your password"),
 
                 // --- ROLE MANAGEMENT ---
                 new Permission("CREATE_ROLE", "Create new roles"),
@@ -106,16 +108,19 @@ public class DataInitializer {
         tutor.getPermissions().add(permissionRepository.findById("VIEW_ROLE").orElseThrow());
         tutor.getPermissions().add(permissionRepository.findById("VIEW_PERMISSION").orElseThrow());
         tutor.getPermissions().add(permissionRepository.findById("VIEW_TUTOR_STATUS").orElseThrow());
+        tutor.getPermissions().add(permissionRepository.findById("CHANGE_PASSWORD").orElseThrow());
 
         //Learner – chỉ được xem thông tin bản thân, apply tutor, enroll course
         learner.getPermissions().add(permissionRepository.findById("VIEW_USER").orElseThrow());
         learner.getPermissions().add(permissionRepository.findById("APPLY_TUTOR").orElseThrow());
         learner.getPermissions().add(permissionRepository.findById("LOGIN").orElseThrow());
         learner.getPermissions().add(permissionRepository.findById("LOGOUT").orElseThrow());
+        learner.getPermissions().add(permissionRepository.findById("CHANGE_PASSWORD").orElseThrow());
+
 
 
         roleRepository.saveAll(List.of(admin, tutor, learner));
 
-        System.out.println("✅ Roles & Permissions have been initialized successfully!");
+        System.out.println("Roles & Permissions have been initialized successfully!");
     }
 }

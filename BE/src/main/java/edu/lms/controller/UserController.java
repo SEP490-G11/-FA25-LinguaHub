@@ -1,6 +1,7 @@
 package edu.lms.controller;
 
 import edu.lms.dto.request.ApiRespond;
+import edu.lms.dto.request.ChangePasswordRequest;
 import edu.lms.dto.request.UserCreationRequest;
 import edu.lms.dto.response.UserResponse;
 import edu.lms.service.UserService;
@@ -53,6 +54,12 @@ public class UserController {
         return ApiRespond.<UserResponse>builder()
                 .result(userService.getMyInfo())
                 .build();
+    }
+    @PostMapping("/change-password")
+    @PreAuthorize("hasAuthority('CHANGE_PASSWORD')")
+    public ApiRespond<String> changePassword(@RequestBody ChangePasswordRequest request) {
+        userService.changePassword(request);
+        return ApiRespond.<String>builder().message("Password changed successfully.").build();
     }
 
     @PatchMapping("/{userID}")
