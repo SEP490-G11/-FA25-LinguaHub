@@ -39,16 +39,16 @@ public class AuthenticationController {
     // ===================== VERIFY EMAIL =====================
 
     @PostMapping("/verify")
+    @PreAuthorize("permitAll()")
     public ApiRespond<String> verifyEmail(@RequestBody Map<String, String> request) {
-        String email = request.get("email");
         String otp = request.get("otp");
-
-        authenticationService.verifyEmail(email, otp);
+        authenticationService.verifyEmail(otp);
 
         return ApiRespond.<String>builder()
                 .message("Account verified successfully!")
                 .build();
     }
+
 
 
     // ===================== LOGIN =====================
@@ -91,5 +91,25 @@ public class AuthenticationController {
                 .message("Logged out successfully.")
                 .build();
     }
+    @PostMapping("/forgot-password")
+    public ApiRespond<String> forgotPassword(@RequestBody ForgotPasswordRequest request) {
+        authenticationService.forgotPassword(request);
+        return ApiRespond.<String>builder().message("OTP sent to your email.").build();
+    }
+
+    @PostMapping("/verify-reset-otp")
+    public ApiRespond<String> verifyResetOtp(@RequestBody VerifyResetOtpRequest request) {
+        authenticationService.verifyResetOtp(request);
+        return ApiRespond.<String>builder().message("OTP verified successfully.").build();
+    }
+
+    @PostMapping("/set-new-password")
+    public ApiRespond<String> setNewPassword(@RequestBody SetNewPasswordRequest request) {
+        authenticationService.setNewPassword(request);
+        return ApiRespond.<String>builder().message("Password updated successfully.").build();
+    }
+
+
+
 }
 

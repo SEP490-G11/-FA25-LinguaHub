@@ -1,5 +1,6 @@
 package edu.lms.service;
 
+import edu.lms.dto.request.ChangePasswordRequest;
 import edu.lms.dto.request.UserCreationRequest;
 import edu.lms.dto.request.UserUpdateRequest;
 import edu.lms.dto.response.UserResponse;
@@ -18,6 +19,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -115,5 +117,24 @@ public class UserService {
             throw new AppException(ErrorCode.USER_NOT_EXIST);
         }
         userRepository.deleteById(userId);
+    }
+    public void changePassword(ChangePasswordRequest request) {
+        String currentEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        User user = userRepository.findByEmail(currentEmail)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXIST));
+
+        PasswordEncoder encoder = new BCryptPasswordEncoder(10);
+
+        if (!encoder.matches(request.getOldPassword(), user.getPasswordHash())) {
+            throw new AppException(ErrorCode.PASSWORD_ENABLED);
+        }
+
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new AppException(ErrorCode.PASSWORD_NOT_MATCH);
+        }
+
+        user.setPasswordHash(encoder.encode(request.getNewPassword()));
+        userRepository.save(user);
     }
 }
