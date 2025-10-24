@@ -22,13 +22,13 @@ import LanguageCourses from '@/pages/LanguageCourses/index';
 import ForgotPassword from '@/pages/auth/forgot-password';
 import ResetPassword from '@/pages/auth/reset-password';
 import VerifyEmail from '@/pages/auth/verify-email';
-import CreateCourse from '@/pages/CreateCourse/index';
 import PendingCourses from '@/pages/PendingCourses/index';
 import TutorCourses from '@/pages/TutorCourses/index';
 import MyCourses from '@/pages/MyCourses/index';
 import PaymentHistory from "@/pages/PaymentHistory";
 import MyEnrollments from "@/pages/MyEnrollments";
 import ApplyTutor from '@/pages/ApplyTutor/index';
+import CreateCourse from '@/pages/CreateCourse/index';
 
 export function AppRoutes() {
         return (
@@ -41,7 +41,6 @@ export function AppRoutes() {
                     <Route path="/auth/reset-password" element={<ResetPassword />} />
                     <Route path="/auth/verify-email" element={<VerifyEmail />} />
                     <Route path={ROUTES.SIGN_UP} element={<SignUp />} />
-                    <Route path="/create-course" element={<CreateCourse />} />
                     <Route path="/admin/pending-courses" element={<PendingCourses />} />
                     <Route path="/tutor/courses" element={<TutorCourses />} />
                     <Route path="/my-courses" element={<MyCourses />} />
@@ -60,6 +59,7 @@ export function AppRoutes() {
                     <Route path="/payment-history" element={<PaymentHistory/>}/>
                     <Route path="/my-enrollments" element={<MyEnrollments/>}/>
                     <Route path="/learner/apply-tutor" element={<ApplyTutor />} />
+                    <Route path="/tutor/create-courses" element={<CreateCourse />} />
             </Routes>
         );
 }
