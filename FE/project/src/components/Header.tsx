@@ -1,5 +1,5 @@
-import  { useState } from 'react';
- import { Link, useLocation  } from 'react-router-dom' //useNavigate
+import { useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';  // ✅ Thêm useNavigate để redirect sau logout
 import { Bell, Menu, Languages, Heart, User, LogOut, BookOpen, Settings, GraduationCap, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -13,21 +13,28 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { ROUTES } from '@/constants';
-
-const mockUser = {
-  UserID: 1,
-  FullName: 'Đinh Hải Đăng',
-
-  AvatarURL: 'https://example.com/avatar.jpg',
-  Email: 'dinhhaidang123@example.com',
-  Role: 'Learner' as const,
-};
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState, AppDispatch } from '@/redux/store';
+import { signOut } from '@/redux/slices/authSlice'; // ✅ Giữ nguyên, giờ là thunk async
 
 const Header = () => {
   const location = useLocation();
-  // const navigate = useNavigate();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const navigate = useNavigate();  // ✅ Thêm để redirect
+  const dispatch = useDispatch<AppDispatch>();
+  const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+
+  const handleLogout = async () => {
+    try {
+      await dispatch(signOut()).unwrap();  // ✅ Dispatch thunk async và await để handle redirect
+      console.log('✅ Logout success');
+      navigate(ROUTES.SIGN_IN, { replace: true });  // Redirect về sign-in
+    } catch (err) {
+      console.error('❌ Logout error:', err);
+      // Optional: navigate anyway nếu error
+      navigate(ROUTES.SIGN_IN, { replace: true });
+    }
+  };
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -55,17 +62,10 @@ const Header = () => {
     },
   ];
 
-  const handleMockLogin = () => {
-    setIsLoggedIn(true);
-  };
-
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-  };
 
   const getUserInitials = () => {
-    if (!mockUser?.FullName) return 'U';
-    return mockUser.FullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    if (!user?.FullName) return 'U';
+    return user.FullName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
   return (
@@ -113,15 +113,6 @@ const Header = () => {
               >
                 Tutors
               </Link>
-              {/*<Link*/}
-              {/*    to={ROUTES.PRACTICE_TEST}*/}
-              {/*    className={cn(*/}
-              {/*        "transition-colors font-medium",*/}
-              {/*        isActive(ROUTES.PRACTICE_TEST) ? 'text-primary' : 'text-muted-foreground hover:text-primary'*/}
-              {/*    )}*/}
-              {/*>*/}
-              {/*  Practice Test*/}
-              {/*</Link>*/}
               <Link
                   to={ROUTES.BECOME_TUTOR}
                   className={cn(
@@ -194,11 +185,8 @@ const Header = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {!isLoggedIn ? (
+              {!isAuthenticated ? (
                   <>
-                    <Button variant="ghost" onClick={handleMockLogin}>
-                      ĐN
-                    </Button>
                     <Button variant="ghost" asChild>
                       <Link to={ROUTES.SIGN_IN}>Sign In</Link>
                     </Button>
@@ -211,7 +199,7 @@ const Header = () => {
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                         <Avatar className="h-10 w-10">
-                          <AvatarImage src={mockUser.AvatarURL} alt={mockUser.FullName} />
+                          <AvatarImage src={user?.AvatarURL || undefined} alt={user?.FullName || 'User'} />
                           <AvatarFallback className="bg-primary text-primary-foreground">
                             {getUserInitials()}
                           </AvatarFallback>
@@ -221,45 +209,39 @@ const Header = () => {
                     <DropdownMenuContent align="end" className="w-56">
                       <DropdownMenuLabel>
                         <div className="flex flex-col space-y-1">
-                          <p className="text-sm font-medium leading-none">{mockUser.FullName}</p>
+                          <p className="text-sm font-medium leading-none">{user?.FullName || 'User'}</p> {/* ✅ Sửa: Dùng fullName */}
                           <p className="text-xs leading-none text-muted-foreground">
-                            {mockUser.Email}
+                            {user?.Email || 'user@example.com'}
                           </p>
                         </div>
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem asChild>
-                        <Link to="/profile" className="cursor-pointer">
+                        <Link to="/profile" className="cursor-pointer"> {/* ✅ Sửa: Hardcode paths vì ROUTES chưa có */}
                           <User className="mr-2 h-4 w-4" />
                           <span>Hồ sơ</span>
                         </Link>
                       </DropdownMenuItem>
-                      {/*<DropdownMenuItem asChild>*/}
-                      {/*  <Link to="/" className="cursor-pointer">*/}
-                      {/*    <User className="mr-2 h-4 w-4" />*/}
-                      {/*    <span>Lịch sử trò chuyện</span>*/}
-                      {/*  </Link>*/}
-                      {/*</DropdownMenuItem>*/}
                       <DropdownMenuItem asChild>
-                        <Link to="/my-courses" className="cursor-pointer">
+                        <Link to="/my-courses" className="cursor-pointer"> {/* ✅ Sửa: Hardcode paths vì ROUTES chưa có */}
                           <BookOpen className="mr-2 h-4 w-4" />
                           <span>Khóa học của tôi</span>
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <Link to="/my-enrollments" className="cursor-pointer">
+                        <Link to="/my-enrollments" className="cursor-pointer"> {/* ✅ Sửa: Hardcode paths vì ROUTES chưa có */}
                           <GraduationCap className="mr-2 h-4 w-4" />
                           <span>Tiến độ học</span>
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <Link to="/payment-history" className="cursor-pointer">
+                        <Link to="/payment-history" className="cursor-pointer"> {/* ✅ Sửa: Hardcode paths vì ROUTES chưa có */}
                           <CreditCard className="mr-2 h-4 w-4" />
                           <span>Lịch sử thanh toán</span>
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <Link to="/settings" className="cursor-pointer">
+                        <Link to="/settings" className="cursor-pointer"> {/* ✅ Sửa: Hardcode paths vì ROUTES chưa có */}
                           <Settings className="mr-2 h-4 w-4" />
                           <span>Cài đặt</span>
                         </Link>

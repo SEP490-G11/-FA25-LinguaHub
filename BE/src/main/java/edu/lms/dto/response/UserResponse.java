@@ -1,25 +1,32 @@
 package edu.lms.dto.response;
 
-
-
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+
 import java.time.LocalDate;
-import java.util.Set;
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-
-
 public class UserResponse {
-    String id;
+    Long userID;
     String username;
-    String firstName;
-    String lastName;
+    String email;
+    String fullName;
+    String avatarURL;
+    String gender;
     LocalDate dob;
-    Set<RoleResponse> roles;
+    String phone;
+    String country;
+    String address;
+    String bio;
+    Boolean isActive;
+    String role;
+    LocalDateTime createdAt;
+    LocalDateTime updatedAt;
 }

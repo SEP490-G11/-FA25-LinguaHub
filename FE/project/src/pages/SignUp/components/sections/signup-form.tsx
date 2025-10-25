@@ -1,30 +1,66 @@
-import axios from 'axios';
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import axios, { AxiosError } from 'axios';
+import  { useState, ChangeEvent, FormEvent } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Mail, Lock, Eye, EyeOff, User, Phone, Languages } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, User, Phone, Languages, Calendar, UserCircle } from 'lucide-react';
+
+// ✅ Define interfaces
+interface FormErrors {
+  username?: string;
+  fullName?: string;
+  email?: string;
+  phone?: string;
+  dob?: string;
+  gender?: string;
+  password?: string;
+  confirmPassword?: string;
+}
+
+interface FormData {
+  username: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  dob: string;
+  gender: string;
+  password: string;
+  confirmPassword: string;
+}
+
+interface BeErrorResponse {
+  code?: number;
+  message?: string;
+}
 
 const SignUpForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
+    username: '',
     fullName: '',
     email: '',
     phone: '',
+    dob: new Date().toISOString().split('T')[0],  // Default to current real date (YYYY-MM-DD)
+    gender: 'Male',  // Default to Male
     password: '',
     confirmPassword: ''
   });
-  const [errors, setErrors] = useState<any>({});
+  const [errors, setErrors] = useState<FormErrors>({});
   const [message, setMessage] = useState<string>('');
+  const navigate = useNavigate();
 
-  const validateForm = () => {
-    const newErrors: any = {};
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {};
+    if (!formData.username.trim()) newErrors.username = 'Username is required';
+    else if (formData.username.length < 3) newErrors.username = 'Username must be at least 3 characters';
     if (!formData.fullName.trim()) newErrors.fullName = 'Full name is required';
     if (!formData.email.trim()) newErrors.email = 'Email is required';
     else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Email is invalid';
     if (!formData.phone.trim()) newErrors.phone = 'Phone number is required';
     else if (!/^\d{10,}$/.test(formData.phone.replace(/\D/g, '')))
       newErrors.phone = 'Phone number must be at least 10 digits';
+    if (!formData.dob) newErrors.dob = 'Date of birth is required';
+    if (!formData.gender) newErrors.gender = 'Gender is required';
     if (!formData.password) newErrors.password = 'Password is required';
     else if (formData.password.length < 6)
       newErrors.password = 'Password must be at least 6 characters';
@@ -37,14 +73,13 @@ const SignUpForm = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {  // Support select for gender
     const { name, value } = e.target;
     setFormData({
       ...formData,
       [name]: value
     });
-    // Clear error khi user typing
-    if (errors[name]) {
+    if (errors[name as keyof FormErrors]) {
       setErrors({
         ...errors,
         [name]: ''
@@ -52,27 +87,54 @@ const SignUpForm = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setMessage('');
     if (validateForm()) {
       try {
-        const response = await axios.post('http://localhost:8080/api/v1/auth/register', {
-          username: formData.email,
+        const response = await axios.post('http://localhost:8080/auth/register', {
+          username: formData.username,
           password: formData.password,
-          firstName: formData.fullName.split(' ')[0] || formData.fullName,
-          lastName: formData.fullName.split(' ').slice(1).join(' ') || '',
-          phone: formData.phone  // Thêm phone nếu backend hỗ trợ
+          fullName: formData.fullName,
+          email: formData.email,
+          phone: formData.phone,
+          gender: formData.gender,
+          dob: formData.dob,
+          country: 'string',
+          address: 'string',
+          bio: 'string'
         });
 
         console.log('Registration success:', response.data);
-        setMessage('Registration successful! You can now sign in.');
-        setFormData({ fullName: '', email: '', phone: '', password: '', confirmPassword: '' });
+        setMessage('Registration successful! Redirecting to email verification...');
+
+        // Success redirect to VerifyEmail
+        setTimeout(() => {
+          navigate(`/auth/verify-email?type=signup&email=${encodeURIComponent(formData.email)}`);
+        }, 1500);
+
+        // Clear form
+        setFormData({ username: '', fullName: '', email: '', phone: '', dob: new Date().toISOString().split('T')[0], gender: 'Male', password: '', confirmPassword: '' });
         setErrors({});
-      } catch (error: any) {
-        console.error('Registration error:', error);  // Debug console
-        if (error.response?.data?.message) {
-          setMessage(`Error: ${error.response.data.message}`);
+      } catch (error: AxiosError<BeErrorResponse> | unknown) {
+        console.error('Registration error:', error);
+        const axiosError = error as AxiosError<BeErrorResponse>;
+        const errorData = axiosError.response?.data;
+
+        // ✅ Handle code 1006 as success (pending verify)
+        if (errorData?.code === 1006) {
+          setMessage('Account created successfully! A verification email has been sent. Redirecting...');
+
+          // Redirect to VerifyEmail
+          setTimeout(() => {
+            navigate(`/auth/verify-email?type=signup&email=${encodeURIComponent(formData.email)}`);
+          }, 1500);
+          return;
+        }
+
+        // Real errors
+        if (errorData?.message) {
+          setMessage(`Error: ${errorData.message}`);
         } else {
           setMessage('Registration failed. Please try again.');
         }
@@ -125,6 +187,31 @@ const SignUpForm = () => {
                     {message}
                   </div>
               )}
+
+              {/* Username */}
+              <div>
+                <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+                  Username
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <User className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                      id="username"
+                      name="username"
+                      type="text"
+                      required
+                      value={formData.username}
+                      onChange={handleChange}
+                      className={`block w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                          errors.username ? 'border-red-300' : 'border-gray-300'
+                      }`}
+                      placeholder="Enter your username"
+                  />
+                </div>
+                {errors.username && <p className="mt-1 text-sm text-red-600">{errors.username}</p>}
+              </div>
 
               {/* Full Name */}
               <div>
@@ -199,6 +286,57 @@ const SignUpForm = () => {
                   />
                 </div>
                 {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone}</p>}
+              </div>
+
+              {/* DOB */}
+              <div>
+                <label htmlFor="dob" className="block text-sm font-medium text-gray-700 mb-2">
+                  Date of Birth
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Calendar className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                      id="dob"
+                      name="dob"
+                      type="date"
+                      required
+                      value={formData.dob}
+                      onChange={handleChange}
+                      className={`block w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                          errors.dob ? 'border-red-300' : 'border-gray-300'
+                      }`}
+                  />
+                </div>
+                {errors.dob && <p className="mt-1 text-sm text-red-600">{errors.dob}</p>}
+              </div>
+
+              {/* Gender */}
+              <div>
+                <label htmlFor="gender" className="block text-sm font-medium text-gray-700 mb-2">
+                  Gender
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <UserCircle className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <select
+                      id="gender"
+                      name="gender"
+                      required
+                      value={formData.gender}
+                      onChange={handleChange}
+                      className={`block w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                          errors.gender ? 'border-red-300' : 'border-gray-300'
+                      }`}
+                  >
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                {errors.gender && <p className="mt-1 text-sm text-red-600">{errors.gender}</p>}
               </div>
 
               {/* Password */}

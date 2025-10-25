@@ -4,57 +4,69 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
-import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    private static final String[] PUBLIC_GET_ENDPOINTS = {
-            "/users", "/api/test"
-    };
-
-    private static final String[] PUBLIC_POST_ENDPOINTS = {
-            "/auth/token", "/auth/introspect", "/auth/logout", "/users"
-    };
-
     @Autowired
     private CustomJwtDecoder customJwtDecoder;
+
+    @Autowired
+    private UserDetailsService userDetailsService;
+
+    private static final String[] PUBLIC_ENDPOINTS = {
+            // ✅ Swagger UI + OpenAPI
+            "/swagger-ui.html",
+            "/swagger-ui/**",
+            "/swagger-resources/**",
+            "/v3/api-docs",
+            "/v3/api-docs/**",
+            "/v3/api-docs.yaml",
+            "/webjars/**",
+            "/configuration/ui",
+            "/configuration/security",
+
+            // ✅ Các endpoint public khác
+            "/auth/**",
+            "/api/test/**"
+    };
+
+
 
 //    @Bean
 //    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 //        http
-//                // ✅ Cho phép CORS cho React
 //                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-//                // ✅ Tắt CSRF cho API REST
 //                .csrf(AbstractHttpConfigurer::disable)
-//                // ✅ Cấu hình phân quyền
 //                .authorizeHttpRequests(auth -> auth
-//                        // Cho phép preflight (OPTIONS)
 //                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-//                        // Cho phép các endpoint public (test, login, logout)
-//                        .requestMatchers(HttpMethod.GET, PUBLIC_GET_ENDPOINTS).permitAll()
-//                        .requestMatchers(HttpMethod.POST, PUBLIC_POST_ENDPOINTS).permitAll()
-//                        // Các request còn lại cần JWT hợp lệ
+//                        .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
 //                        .anyRequest().authenticated()
 //                )
-//                // ✅ Cấu hình xác thực JWT (Resource Server)
 //                .oauth2ResourceServer(oauth2 -> oauth2
-//                        .jwt(jwtConfigurer -> jwtConfigurer
+//                        .jwt(jwt -> jwt
 //                                .decoder(customJwtDecoder)
 //                                .jwtAuthenticationConverter(jwtAuthenticationConverter()))
 //                        .authenticationEntryPoint(new JwtAuthenticationEntryPoint())
@@ -69,13 +81,11 @@ public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
                     .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                    // ✅ Cho phép public các endpoint sau mà không cần token
-                    .requestMatchers("/api/test", "/auth/**", "/users").permitAll()
-                    // Các request khác cần xác thực JWT
+                    .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
                     .anyRequest().authenticated()
             )
             .oauth2ResourceServer(oauth2 -> oauth2
-                    .jwt(jwtConfigurer -> jwtConfigurer
+                    .jwt(jwt -> jwt
                             .decoder(customJwtDecoder)
                             .jwtAuthenticationConverter(jwtAuthenticationConverter()))
                     .authenticationEntryPoint(new JwtAuthenticationEntryPoint())
@@ -85,28 +95,54 @@ public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 }
 
 
-    // ✅ Cấu hình chuyển đổi JWT Authorities
     @Bean
     public JwtAuthenticationConverter jwtAuthenticationConverter() {
-        JwtGrantedAuthoritiesConverter jwtGrantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
-        jwtGrantedAuthoritiesConverter.setAuthorityPrefix("");
+        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
+        converter.setJwtGrantedAuthoritiesConverter(jwt -> {
+            List<String> authorities = new ArrayList<>();
 
-        JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
-        jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(jwtGrantedAuthoritiesConverter);
-        return jwtAuthenticationConverter;
+            // Lấy danh sách quyền từ claim "permissions"
+            List<String> permissions = jwt.getClaimAsStringList("permissions");
+            if (permissions != null) authorities.addAll(permissions);
+
+            // Thêm ROLE_ chính
+            String role = jwt.getClaimAsString("role");
+            if (role != null) authorities.add("ROLE_" + role.toUpperCase());
+
+            return authorities.stream()
+                    .map(SimpleGrantedAuthority::new)
+                    .collect(Collectors.toList());
+        });
+        return converter;
     }
 
-    // ✅ Mã hóa mật khẩu người dùng
+    //AuthenticationManager
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig)
+            throws Exception {
+        return authConfig.getAuthenticationManager();
+    }
+
+    //AuthenticationProvider
+    @Bean
+    public DaoAuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        provider.setUserDetailsService(userDetailsService);
+        provider.setPasswordEncoder(passwordEncoder());
+        return provider;
+    }
+
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder(10);
     }
 
-    // ✅ Cho phép kết nối từ FE (localhost:5173)
+    //CORS
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of("http://localhost:*")); // ✅ Cho phép mọi cổng localhost
+        configuration.setAllowedOriginPatterns(List.of("http://localhost:*", "http://127.0.0.1:*"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);

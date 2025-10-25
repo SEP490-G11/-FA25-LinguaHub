@@ -1,12 +1,18 @@
-// import  { useEffect } from 'react';
-// import { useDispatch } from 'react-redux';
+import  { useEffect } from 'react';
+import { useDispatch } from 'react-redux';
 import { AppRoutes } from '@/routes/AppRoutes';
-// import { loadUserFromStorage } from '@/redux/slices/authSlice';
+import { checkAuth } from '@/redux/slices/authSlice';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-// import type { AppDispatch } from '@/redux/store';
+import type { AppDispatch } from '@/redux/store';
 
 function App() {
+    const dispatch = useDispatch<AppDispatch>();
+
+    useEffect(() => {
+        dispatch(checkAuth());
+    }, [dispatch]);
+
     return (
         <div className="min-h-screen bg-background">
             <Header />

@@ -1,39 +1,205 @@
-import axios from 'axios';
+import axios, {
+    AxiosRequestConfig,
+    AxiosResponse,
+    AxiosError,
+    InternalAxiosRequestConfig
+} from 'axios';
 
-// Create axios instance
-export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api',
-  timeout: 10000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+
+const cookie_get = (name: string): string | undefined => {
+    const value = '; ' + document.cookie;
+    const parts = value.split('; ' + name + '=');
+    if (parts.length >= 2) return parts.pop()?.split(';').shift();
+    return undefined;
+};
+
+const cookie_delete = (name: string): void => {
+    document.cookie = `${name}=;SameSite=Lax;path=/;Max-Age=-99999999;`;
+};
+
+type UnwrappedResponse<T> = T;
+
+const baseURL = process.env.NODE_ENV === 'production'
+    ? 'https://lms.autopass.blog/'
+    : 'http://localhost:8080';
+
+const api = axios.create({
+    baseURL,
+    headers: {
+        'Content-Type': 'application/json',
+    },
+    timeout: 10000,
 });
 
-// Request interceptor
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+const onRequestSuccess = (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
+    const token: string | undefined = cookie_get('AT');
+    if (token && token.trim() !== '') {
+        config.headers = config.headers || {};
+        (config.headers as { Authorization?: string }).Authorization = `Bearer ${token}`;
     }
     return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
+};
 
-// Response interceptor
-api.interceptors.response.use(
-  (response) => {
-    return response;
-  },
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('user_data');
-      window.location.href = '/signin';
+const onRequestError = (error: AxiosError): Promise<AxiosError> => {
+    return Promise.reject(error);
+};
+
+const onResponseSuccess = <T>(response: AxiosResponse<T>): UnwrappedResponse<T> => {
+    return response.data;
+};
+
+interface ApiErrorData {
+    message?: string;
+    // Thêm fields khác nếu backend return
+}
+
+const onResponseError = (error: AxiosError<ApiErrorData>): Promise<AxiosError<ApiErrorData>> => {
+    if (error.response) {
+        const status = error.response.status;
+        const data = error.response.data as ApiErrorData;
+        const message = data.message;
+        console.warn('API Error:', { status, message });
+
+        if (
+            status === 401 ||
+            (status === 403 && message === 'Token expired')
+        ) {
+            cookie_delete('AT');
+            window.location.href = '/sign-in';
+        }
+        return Promise.reject(error.response);
     }
     return Promise.reject(error);
-  }
+};
+
+api.interceptors.request.use(onRequestSuccess, onRequestError);
+api.interceptors.response.use(
+    onResponseSuccess as unknown as (value: AxiosResponse<unknown>) => AxiosResponse<unknown>,
+    onResponseError
 );
+
+interface ApiMethods {
+    Get: <T = unknown>(url: string, config?: AxiosRequestConfig) => Promise<T>;
+    Post: <T = unknown, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig) => Promise<T>;
+    Put: <T = unknown, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig) => Promise<T>;
+    Patch: <T = unknown, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig) => Promise<T>;
+    Delete: <T = unknown>(url: string, config?: AxiosRequestConfig) => Promise<T>;
+}
+
+const BaseRequest: ApiMethods = {
+    Get: async <T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> => {
+        try {
+            const response = await api.get<T>(url, config);
+            return response as unknown as T;
+        } catch (err: unknown) {
+            const error = err as AxiosError<ApiErrorData>;
+            console.error('GET Error:', error.response?.data?.message || error.message);
+            if (error.response?.data) {
+                throw error.response.data;
+            }
+            throw error;
+        }
+    },
+
+    Post: async <T = unknown, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig): Promise<T> => {
+        try {
+            const response = await api.post<T>(url, data, config);
+            return response as unknown as T;
+        } catch (err: unknown) {
+            const error = err as AxiosError<ApiErrorData>;
+            console.error('POST Error:', error.response?.data?.message || error.message);
+            if (error.response?.data) {
+                throw error.response.data;
+            }
+            throw error;
+        }
+    },
+
+    Put: async <T = unknown, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig): Promise<T> => {
+        try {
+            const response = await api.put<T>(url, data, config);
+            return response as unknown as T;
+        } catch (err: unknown) {
+            const error = err as AxiosError<ApiErrorData>;
+            console.error('PUT Error:', error.response?.data?.message || error.message);
+            if (error.response?.data) {
+                throw error.response.data;
+            }
+            throw error;
+        }
+    },
+
+    Patch: async <T = unknown, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig): Promise<T> => {
+        try {
+            const response = await api.patch<T>(url, data, config);
+            return response as unknown as T;
+        } catch (err: unknown) {
+            const error = err as AxiosError<ApiErrorData>;
+            console.error('PATCH Error:', error.response?.data?.message || error.message);
+            if (error.response?.data) {
+                throw error.response.data;
+            }
+            throw error;
+        }
+    },
+
+    Delete: async <T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> => {
+        try {
+            const response = await api.delete<T>(url, config);
+            return response as unknown as T;
+        } catch (err: unknown) {
+            const error = err as AxiosError<ApiErrorData>;
+            console.error('DELETE Error:', error.response?.data?.message || error.message);
+            if (error.response?.data) {
+                throw error.response.data;
+            }
+            throw error;
+        }
+    },
+};
+
+const BaseRequestV2 = {
+    Get: async <T = unknown>(url: string, config?: AxiosRequestConfig): Promise<[AxiosError<ApiErrorData> | null, T | null]> => {
+        try {
+            const res = await api.get<T>(url, config);
+            return [null, res as unknown as T];
+        } catch (err: unknown) {
+            const error = err as AxiosError<ApiErrorData>;
+            return [error, null];
+        }
+    },
+
+    Post: async <T = unknown, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig): Promise<[AxiosError<ApiErrorData> | null, T | null]> => {
+        try {
+            const res = await api.post<T>(url, data, config);
+            return [null, res as unknown as T];
+        } catch (err: unknown) {
+            const error = err as AxiosError<ApiErrorData>;
+            return [error, null];
+        }
+    },
+
+    Put: async <T = unknown, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig): Promise<[AxiosError<ApiErrorData> | null, T | null]> => {
+        try {
+            const res = await api.put<T>(url, data, config);
+            return [null, res as unknown as T];
+        } catch (err: unknown) {
+            const error = err as AxiosError<ApiErrorData>;
+            return [error, null];
+        }
+    },
+
+    Delete: async <T = unknown>(url: string, config?: AxiosRequestConfig): Promise<[AxiosError<ApiErrorData> | null, T | null]> => {
+        try {
+            const res = await api.delete<T>(url, config);
+            return [null, res as unknown as T];
+        } catch (err: unknown) {
+            const error = err as AxiosError<ApiErrorData>;
+            return [error, null];
+        }
+    },
+};
+
+// Named exports
+export { api, BaseRequest, BaseRequestV2 };
+export default BaseRequest;

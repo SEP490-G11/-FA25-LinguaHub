@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Users, DollarSign, Clock, Globe, ArrowRight } from 'lucide-react';
