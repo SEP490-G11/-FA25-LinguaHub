@@ -9,7 +9,7 @@ import org.springframework.http.HttpStatusCode;
 public enum ErrorCode {
     UNCATEGORIZED_EXCEPTION(9999,"Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
     INVALID_KEY(1001,"Invalid key", HttpStatus.BAD_REQUEST),
-    USER_EXISTED(1002, "User existed", HttpStatus.BAD_REQUEST),
+    USER_EXISTED(1002, "Username is Existed", HttpStatus.BAD_REQUEST),
     USERNAME_INVALID(1003, "Username must be at least {min} characters", HttpStatus.BAD_REQUEST),
     INVALID_PASSWORD(1004,"Password must be at least {min} characters", HttpStatus.BAD_REQUEST),
     USER_NOT_EXIST(1005,"User is not exist", HttpStatus.NOT_FOUND),
@@ -20,7 +20,9 @@ public enum ErrorCode {
     INVALID_OTP(2001, "Invalid or incorrect OTP code", HttpStatus.BAD_REQUEST),
     OTP_EXPIRED(2002, "OTP code has expired", HttpStatus.BAD_REQUEST),
     PASSWORD_NOT_MATCH(2003,"Password is not matched" , HttpStatus.BAD_REQUEST),
-    PASSWORD_ENABLED(2004,"The password is false", HttpStatus.BAD_REQUEST),;
+    PASSWORD_ENABLED(2004,"The password is false", HttpStatus.BAD_REQUEST),
+    EMAIL_EXISTED(2005,"This Email has Signed in before", HttpStatus.BAD_REQUEST),
+    ;
 
     ErrorCode(int code, String message,HttpStatusCode httpStatusCode) {
         this.code = code;

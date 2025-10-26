@@ -31,12 +31,14 @@ spring:
           starttls:
             enable: true
     default-encoding: UTF-8
+google:
+  client-id: "42781484149-pel6vfv7rb7ih298ru93t6vq1fg8q3sq.apps.googleusercontent.com"
 
 logging:
   level:
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql: TRACE
-    org.springframework.mail: DEBUG          # 👈 log thêm để xem quá trình gửi mail
+    org.springframework.mail: DEBUG          # log thêm để xem quá trình gửi mail
 
 jwt:
   signerKey: "1TjXchw5FLOEsb63KcDFhTARvPWL4jUGCWfGWxgSS1f/1y/LgJxHnMqaF6A/ijXY"
