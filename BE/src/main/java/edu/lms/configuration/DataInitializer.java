@@ -77,6 +77,7 @@ public class DataInitializer {
 
                 // --- COURSE / SYSTEM FEATURES ---
                 new Permission("MANAGE_COURSES", "Manage all courses"),
+                new Permission("MANAGE_LESSON", "Manage lessons and lesson resources"),
                 new Permission("VIEW_REPORTS", "View system reports"),
                 new Permission("APPLY_TUTOR", "Apply to become a tutor"),
                 
@@ -105,6 +106,7 @@ public class DataInitializer {
         tutor.getPermissions().add(permissionRepository.findById("VIEW_USER").orElseThrow());
         tutor.getPermissions().add(permissionRepository.findById("UPDATE_USER").orElseThrow());
         tutor.getPermissions().add(permissionRepository.findById("MANAGE_COURSES").orElseThrow());
+        tutor.getPermissions().add(permissionRepository.findById("MANAGE_LESSON").orElseThrow());
         tutor.getPermissions().add(permissionRepository.findById("VIEW_ROLE").orElseThrow());
         tutor.getPermissions().add(permissionRepository.findById("VIEW_PERMISSION").orElseThrow());
         tutor.getPermissions().add(permissionRepository.findById("VIEW_TUTOR_STATUS").orElseThrow());
