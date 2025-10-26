@@ -16,7 +16,8 @@ public class Verification {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "verificationID")
+    private Long verificationID;
 
     private String email;
     private String username;
@@ -25,6 +26,7 @@ public class Verification {
 
     @Enumerated(EnumType.STRING)
     private Gender gender;
+
     private LocalDate dob;
     private String phone;
     private String country;
