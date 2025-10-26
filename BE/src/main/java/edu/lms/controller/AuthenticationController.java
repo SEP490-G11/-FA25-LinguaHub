@@ -7,6 +7,7 @@ import edu.lms.dto.response.IntrospectResponse;
 import edu.lms.service.AuthenticationService;
 import com.nimbusds.jose.JOSEException;
 import edu.lms.service.GoogleAuthService;
+import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -44,14 +45,14 @@ public class AuthenticationController {
 
     @PostMapping("/verify")
     @PreAuthorize("permitAll()")
-    public ApiRespond<String> verifyEmail(@RequestBody Map<String, String> request) {
-        String otp = request.get("otp");
-        authenticationService.verifyEmail(otp);
+    public ApiRespond<String> verifyEmail(@RequestBody VerifyEmailRequest request) {
+        authenticationService.verifyEmail(request.getOtp());
 
         return ApiRespond.<String>builder()
                 .message("Account verified successfully!")
                 .build();
     }
+
 
 
 
@@ -113,11 +114,11 @@ public class AuthenticationController {
         return ApiRespond.<String>builder().message("Password updated successfully.").build();
     }
     @PostMapping("/google")
-    public ResponseEntity<AuthResponse> loginWithGoogle(@RequestBody Map<String, String> request){
-        String idToken = request.get("idToken");
-        AuthResponse authResponse = googleAuthService.loginWithGoogle(idToken);
+    public ResponseEntity<AuthResponse> loginWithGoogle(@RequestBody @Valid GoogleLoginRequest request) {
+        AuthResponse authResponse = googleAuthService.loginWithGoogle(request.getIdToken());
         return ResponseEntity.ok(authResponse);
     }
+
 
 
 
