@@ -1,13 +1,16 @@
 package edu.lms.controller;
 
 import edu.lms.dto.request.*;
+import edu.lms.dto.response.AuthResponse;
 import edu.lms.dto.response.AuthenticationReponse;
 import edu.lms.dto.response.IntrospectResponse;
 import edu.lms.service.AuthenticationService;
 import com.nimbusds.jose.JOSEException;
+import edu.lms.service.GoogleAuthService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -24,6 +27,7 @@ public class AuthenticationController {
 
     AuthenticationService authenticationService;
     AuthenticationManager authenticationManager;
+    GoogleAuthService googleAuthService;
 
     // ===================== REGISTER =====================
 
@@ -107,6 +111,12 @@ public class AuthenticationController {
     public ApiRespond<String> setNewPassword(@RequestBody SetNewPasswordRequest request) {
         authenticationService.setNewPassword(request);
         return ApiRespond.<String>builder().message("Password updated successfully.").build();
+    }
+    @PostMapping("/google")
+    public ResponseEntity<AuthResponse> loginWithGoogle(@RequestBody Map<String, String> request){
+        String idToken = request.get("idToken");
+        AuthResponse authResponse = googleAuthService.loginWithGoogle(idToken);
+        return ResponseEntity.ok(authResponse);
     }
 
 
