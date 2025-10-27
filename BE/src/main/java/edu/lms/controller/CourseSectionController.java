@@ -49,8 +49,7 @@ public class CourseSectionController {
     @PutMapping("/{sectionID}")
     public ApiRespond<CourseSectionResponse> updateSection(
             @PathVariable Long sectionID,
-            @RequestBody CourseSectionRequest request
-    ) {
+            @RequestBody CourseSectionRequest request) {
         return ApiRespond.<CourseSectionResponse>builder()
                 .result(courseSectionService.updateSection(sectionID, request))
                 .message("Section updated successfully")
