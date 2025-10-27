@@ -25,7 +25,6 @@ public interface CourseSectionMapper {
                 .title(entity.getTitle())
                 .description(entity.getDescription())
                 .orderIndex(entity.getOrderIndex())
-                .lessons(null) // set thủ công trong service
                 .build();
     }
 }
