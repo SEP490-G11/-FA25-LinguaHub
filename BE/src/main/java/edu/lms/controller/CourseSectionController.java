@@ -3,7 +3,6 @@ package edu.lms.controller;
 import edu.lms.dto.request.ApiRespond;
 import edu.lms.dto.request.CourseSectionRequest;
 import edu.lms.dto.response.CourseSectionResponse;
-import edu.lms.dto.response.LessonResponse;
 import edu.lms.service.CourseSectionService;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -43,16 +42,6 @@ public class CourseSectionController {
     public ApiRespond<CourseSectionResponse> getSectionById(@PathVariable Long sectionID) {
         return ApiRespond.<CourseSectionResponse>builder()
                 .result(courseSectionService.getSectionById(sectionID))
-                .build();
-    }
-
-    // GET LESSONS BY SECTION
-    @GetMapping("/{sectionID}/lessons")
-    public ApiRespond<List<LessonResponse>> getLessonsBySection(@PathVariable Long sectionID) {
-        CourseSectionResponse section = courseSectionService.getSectionById(sectionID);
-        return ApiRespond.<List<LessonResponse>>builder()
-                .result(section.getLessons())
-                .message("Lessons retrieved successfully")
                 .build();
     }
 
