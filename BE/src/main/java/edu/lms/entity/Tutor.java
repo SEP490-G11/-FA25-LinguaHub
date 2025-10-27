@@ -15,6 +15,7 @@ import java.util.List;
 @Entity
 @Table(name = "Tutor")
 public class Tutor {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "TutorID")
@@ -45,4 +46,7 @@ public class Tutor {
 
     @OneToMany(mappedBy = "tutor", cascade = CascadeType.ALL)
     List<TutorVerification> verifications;
+
+    @OneToMany(mappedBy = "tutor", cascade = CascadeType.ALL)
+    List<Service> services;
 }
