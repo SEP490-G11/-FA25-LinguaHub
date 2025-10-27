@@ -15,7 +15,17 @@ public interface CourseSectionMapper {
     @Mapping(target = "lessons", ignore = true)
     CourseSection toEntity(CourseSectionRequest request);
 
-    // Entity → Response
-    @Mapping(target = "courseID", source = "course.courseID")
-    CourseSectionResponse toResponse(CourseSection entity);
+    default CourseSectionResponse toResponse(CourseSection entity) {
+        if (entity == null) {
+            return null;
+        }
+        return CourseSectionResponse.builder()
+                .sectionID(entity.getSectionID())
+                .courseID(entity.getCourse() != null ? entity.getCourse().getCourseID() : null)
+                .title(entity.getTitle())
+                .description(entity.getDescription())
+                .orderIndex(entity.getOrderIndex())
+                .lessons(null) // set thủ công trong service
+                .build();
+    }
 }
