@@ -46,16 +46,17 @@ public class LessonServiceImpl implements LessonService {
 
     @Override
     public List<LessonResponse> getLessonsBySection(Long sectionId, Long tutorId) {
-        CourseSection section = sectionRepository.findBySectionIdAndTutorId(sectionId, tutorId)
+        // Verify section exists and belongs to tutor
+        sectionRepository.findBySectionIdAndTutorId(sectionId, tutorId)
                 .orElseThrow(() -> new ResourceNotFoundException("CourseSection not found or you don't have permission"));
 
-        return lessonRepository.findBySectionSectionID(sectionId)
-                .stream().map(this::mapToResponse)
-                .collect(Collectors.toList());
+        List<Lesson> lessons = lessonRepository.findBySectionSectionID(sectionId);
+        return lessons.stream().map(this::mapToResponse).collect(Collectors.toList());
     }
 
     public List<LessonResponse> getLessonsBySectionWithFilters(Long sectionId, Long tutorId, String keyword, String sortBy, String order) {
-        CourseSection section = sectionRepository.findBySectionIdAndTutorId(sectionId, tutorId)
+        // Verify section exists and belongs to tutor
+        sectionRepository.findBySectionIdAndTutorId(sectionId, tutorId)
                 .orElseThrow(() -> new ResourceNotFoundException("CourseSection not found or you don't have permission"));
 
         return lessonRepository.findBySectionWithFilters(sectionId, keyword, sortBy, order)
@@ -94,6 +95,22 @@ public class LessonServiceImpl implements LessonService {
 
         // Cascade remove handled by JPA
         lessonRepository.delete(lesson);
+    }
+
+    @Override
+    public Long getTutorIdBySection(Long sectionId) {
+        CourseSection section = sectionRepository.findById(sectionId)
+                .orElseThrow(() -> new ResourceNotFoundException("CourseSection not found"));
+        
+        return section.getCourse().getTutor().getTutorID();
+    }
+
+    @Override
+    public Long getTutorIdByLesson(Long lessonId) {
+        Lesson lesson = lessonRepository.findById(lessonId)
+                .orElseThrow(() -> new ResourceNotFoundException("Lesson not found"));
+        
+        return lesson.getSection().getCourse().getTutor().getTutorID();
     }
 
     private LessonResponse mapToResponse(Lesson lesson) {

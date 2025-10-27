@@ -12,6 +12,7 @@ import java.util.Optional;
 @Repository
 public interface CourseSectionRepository extends JpaRepository<CourseSection, Long> {
     List<CourseSection> findByCourse_CourseID(Long courseID);
+    
     @Query("SELECT cs FROM CourseSection cs WHERE cs.sectionID = :sectionId AND cs.course.tutor.tutorID = :tutorId")
     Optional<CourseSection> findBySectionIdAndTutorId(@Param("sectionId") Long sectionId, @Param("tutorId") Long tutorId);
 
