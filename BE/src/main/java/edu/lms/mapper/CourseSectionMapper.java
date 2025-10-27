@@ -1,17 +1,19 @@
 package edu.lms.mapper;
 
 import edu.lms.dto.request.CourseSectionRequest;
+import edu.lms.dto.response.LessonResourceResponse;
 import edu.lms.dto.response.LessonResponse;
 import edu.lms.dto.response.CourseSectionResponse;
 import edu.lms.entity.CourseSection;
 import edu.lms.entity.Lesson;
+import edu.lms.entity.LessonResource;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Mapper(componentModel = "spring", uses = { LessonMapper.class })
+@Mapper(componentModel = "spring")
 public interface CourseSectionMapper {
 
     // Request → Entity
@@ -41,13 +43,23 @@ public interface CourseSectionMapper {
                 .build();
     }
 
-    // Helper method to map Lesson to LessonResponse
-    // This avoids circular dependency if LessonMapper also needs
-    // CourseSectionMapper
+    /**
+     * Helper method to map Lesson to LessonResponse.
+     * This is defined here to avoid circular dependencies if a separate
+     * LessonMapper
+     * were used.
+     */
     default LessonResponse lessonToLessonResponse(Lesson lesson) {
         if (lesson == null) {
             return null;
         }
+
+        List<LessonResourceResponse> resourceResponses = lesson.getResources() != null
+                ? lesson.getResources().stream()
+                        .map(this::resourceToResourceResponse)
+                        .collect(Collectors.toList())
+                : Collections.emptyList();
+
         return LessonResponse.builder()
                 .lessonID(lesson.getLessonID())
                 .title(lesson.getTitle())
@@ -57,6 +69,23 @@ public interface CourseSectionMapper {
                 .content(lesson.getContent())
                 .orderIndex(lesson.getOrderIndex())
                 .createdAt(lesson.getCreatedAt())
+                .resources(resourceResponses)
+                .build();
+    }
+
+    /**
+     * Helper method to map LessonResource to LessonResourceResponse.
+     */
+    default LessonResourceResponse resourceToResourceResponse(LessonResource resource) {
+        if (resource == null) {
+            return null;
+        }
+        return LessonResourceResponse.builder()
+                .resourceID(resource.getResourceID())
+                .resourceType(resource.getResourceType())
+                .resourceTitle(resource.getResourceTitle())
+                .resourceURL(resource.getResourceURL())
+                .uploadedAt(resource.getUploadedAt())
                 .build();
     }
 }
