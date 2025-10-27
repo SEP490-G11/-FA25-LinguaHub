@@ -93,6 +93,22 @@ public class LessonResourceServiceImpl implements LessonResourceService {
         }
     }
 
+    @Override
+    public Long getTutorIdByLesson(Long lessonId) {
+        Lesson lesson = lessonRepository.findById(lessonId)
+                .orElseThrow(() -> new ResourceNotFoundException("Lesson not found"));
+        
+        return lesson.getSection().getCourse().getTutor().getTutorID();
+    }
+
+    @Override
+    public Long getTutorIdByResource(Long resourceId) {
+        LessonResource resource = resourceRepository.findById(resourceId)
+                .orElseThrow(() -> new ResourceNotFoundException("Resource not found"));
+        
+        return resource.getLesson().getSection().getCourse().getTutor().getTutorID();
+    }
+
     private LessonResourceResponse mapToResponse(LessonResource resource) {
         return LessonResourceResponse.builder()
                 .resourceID(resource.getResourceID())
