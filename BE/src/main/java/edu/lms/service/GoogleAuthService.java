@@ -70,7 +70,7 @@ public class GoogleAuthService {
             }
 
             //5. Sinh JWT nội bộ của hệ thống
-            String jwt = authenticationService.generateToken(user);
+            String jwt = authenticationService.generateAccessToken(user);
 
             //6. Trả dữ liệu cho FE
             return AuthResponse.builder()

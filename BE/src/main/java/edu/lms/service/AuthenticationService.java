@@ -1,7 +1,5 @@
 //package edu.lms.service;
 //
-//import jakarta.servlet.http.HttpSession;
-//
 //import edu.lms.dto.request.*;
 //import edu.lms.dto.response.AuthenticationReponse;
 //import edu.lms.dto.response.IntrospectResponse;
@@ -9,11 +7,7 @@
 //import edu.lms.exception.AppException;
 //import edu.lms.exception.ErrorCode;
 //import edu.lms.repository.*;
-//import com.nimbusds.jose.*;
-//import com.nimbusds.jose.crypto.MACSigner;
-//import com.nimbusds.jose.crypto.MACVerifier;
-//import com.nimbusds.jwt.JWTClaimsSet;
-//import com.nimbusds.jwt.SignedJWT;
+//import jakarta.servlet.http.HttpSession;
 //import jakarta.transaction.Transactional;
 //import lombok.AccessLevel;
 //import lombok.RequiredArgsConstructor;
@@ -21,11 +15,15 @@
 //import lombok.experimental.NonFinal;
 //import lombok.extern.slf4j.Slf4j;
 //import org.springframework.beans.factory.annotation.Value;
-//import org.springframework.security.core.context.SecurityContextHolder;
 //import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 //import org.springframework.security.crypto.password.PasswordEncoder;
 //import org.springframework.stereotype.Service;
 //import org.springframework.util.StringUtils;
+//import com.nimbusds.jose.*;
+//import com.nimbusds.jose.crypto.MACSigner;
+//import com.nimbusds.jose.crypto.MACVerifier;
+//import com.nimbusds.jwt.JWTClaimsSet;
+//import com.nimbusds.jwt.SignedJWT;
 //
 //import java.text.ParseException;
 //import java.time.Instant;
@@ -39,6 +37,7 @@
 //@RequiredArgsConstructor
 //@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 //public class AuthenticationService {
+//
 //    final HttpSession session;
 //
 //    UserRepository userRepository;
@@ -51,8 +50,13 @@
 //    @Value("${jwt.signerKey}")
 //    protected String SIGNER_KEY;
 //
+//    // ================= REGISTER =================
+//    @Transactional
 //    public void register(UserCreationRequest request) {
 //        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+//            throw new AppException(ErrorCode.EMAIL_EXISTED);
+//        }
+//        if (userRepository.findByUsername(request.getUsername()).isPresent()) {
 //            throw new AppException(ErrorCode.USER_EXISTED);
 //        }
 //
@@ -64,6 +68,8 @@
 //
 //        String otp = String.valueOf(new Random().nextInt(900000) + 100000);
 //        emailService.sendOtp(request.getEmail(), otp);
+//
+//        verificationRepository.deleteByEmail(request.getEmail());
 //
 //        Verification verification = Verification.builder()
 //                .email(request.getEmail())
@@ -81,9 +87,17 @@
 //                .build();
 //
 //        verificationRepository.save(verification);
+//
+//        //Lưu email vào session để verify OTP sau không cần truyền lại
+//        session.setAttribute("registerEmail", request.getEmail());
 //    }
 //
-//    public void verifyEmail(String email, String otp) {
+//    public void verifyEmail(String otp) {
+//        String email = (String) session.getAttribute("registerEmail");
+//        if (email == null) {
+//            throw new AppException(ErrorCode.UNAUTHENTICATED);
+//        }
+//
 //        Verification verification = verificationRepository.findByEmailAndOtp(email, otp)
 //                .orElseThrow(() -> new AppException(ErrorCode.INVALID_OTP));
 //
@@ -110,8 +124,12 @@
 //
 //        userRepository.save(user);
 //        verificationRepository.delete(verification);
+//
+//        //Xóa session sau khi verify xong
+//        session.removeAttribute("registerEmail");
 //    }
 //
+//    // ================= LOGIN =================
 //    public AuthenticationReponse authenticate(AuthenticationRequest request) {
 //        PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
 //
@@ -124,7 +142,7 @@
 //        }
 //
 //        boolean authenticated = passwordEncoder.matches(request.getPassword(), user.getPasswordHash());
-//        if (!authenticated) throw new AppException(ErrorCode.UNAUTHENTICATED);
+//        if (!authenticated) throw new AppException(ErrorCode.PASSWORD_ENABLED);
 //
 //        String token = generateToken(user);
 //
@@ -134,7 +152,7 @@
 //                .build();
 //    }
 //
-//    private String generateToken(User user) {
+//    public String generateToken(User user) {
 //        JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
 //
 //        List<String> permissions = user.getRole().getPermissions()
@@ -161,6 +179,7 @@
 //            throw new RuntimeException("Failed to create token", e);
 //        }
 //    }
+//
 //
 //    public IntrospectResponse introspect(IntrospectRequest request) throws JOSEException, ParseException {
 //        var token = request.getToken();
@@ -201,6 +220,7 @@
 //        return signedJWT;
 //    }
 //
+//    // ================= FORGOT PASSWORD =================
 //    public void forgotPassword(ForgotPasswordRequest request) {
 //        User user = userRepository.findByEmail(request.getEmail())
 //                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXIST));
@@ -216,66 +236,58 @@
 //                .expiresAt(LocalDateTime.now().plusMinutes(5))
 //                .build();
 //        verificationRepository.save(verification);
+//
+//        // Lưu email vào session
+//        session.setAttribute("resetEmail", user.getEmail());
 //    }
 //
 //    public void verifyResetOtp(VerifyResetOtpRequest request) {
+//        String email = (String) session.getAttribute("resetEmail");
+//        if (email == null) throw new AppException(ErrorCode.UNAUTHENTICATED);
+//
 //        Verification verification = verificationRepository
-//                .findByEmailAndOtp(request.getEmail(), request.getOtp())
+//                .findByEmailAndOtp(email, request.getOtp())
 //                .orElseThrow(() -> new AppException(ErrorCode.INVALID_OTP));
 //
 //        if (verification.getExpiresAt().isBefore(LocalDateTime.now()))
 //            throw new AppException(ErrorCode.OTP_EXPIRED);
 //
-//
-//        session.setAttribute("resetEmail", verification.getEmail());
+//        //Lưu OTP vào session
+//        session.setAttribute("resetOtp", request.getOtp());
 //    }
-//
 //
 //    @Transactional
 //    public void setNewPassword(SetNewPasswordRequest request) {
 //        String email = (String) session.getAttribute("resetEmail");
-//        if (email == null) {
-//            throw new AppException(ErrorCode.UNAUTHENTICATED);
-//        }
+//        String otp = (String) session.getAttribute("resetOtp");
 //
+//        if (email == null || otp == null)
+//            throw new AppException(ErrorCode.UNAUTHENTICATED);
+//
+//        Verification verification = verificationRepository
+//                .findByEmailAndOtp(email, otp)
+//                .orElseThrow(() -> new AppException(ErrorCode.INVALID_OTP));
+//
+//        if (!request.getNewPassword().equals(request.getConfirmPassword()))
+//            throw new AppException(ErrorCode.PASSWORD_NOT_MATCH);
+//
+//        PasswordEncoder encoder = new BCryptPasswordEncoder(10);
 //        User user = userRepository.findByEmail(email)
 //                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXIST));
 //
-//        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
-//            throw new AppException(ErrorCode.PASSWORD_NOT_MATCH);
-//        }
-//
-//        PasswordEncoder encoder = new BCryptPasswordEncoder(10);
 //        user.setPasswordHash(encoder.encode(request.getNewPassword()));
 //        userRepository.save(user);
+//        verificationRepository.delete(verification);
 //
-//        verificationRepository.deleteByEmail(email);
-//
+//        //Clear session
 //        session.removeAttribute("resetEmail");
+//        session.removeAttribute("resetOtp");
 //    }
 //
 //
 //
-//    public void changePassword(ChangePasswordRequest request) {
-//        String currentEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-//
-//        User user = userRepository.findByEmail(currentEmail)
-//                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXIST));
-//
-//        PasswordEncoder encoder = new BCryptPasswordEncoder(10);
-//
-//        if (!encoder.matches(request.getOldPassword(), user.getPasswordHash())) {
-//            throw new AppException(ErrorCode.INVALID_PASSWORD);
-//        }
-//
-//        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
-//            throw new AppException(ErrorCode.PASSWORD_NOT_MATCH);
-//        }
-//
-//        user.setPasswordHash(encoder.encode(request.getNewPassword()));
-//        userRepository.save(user);
-//    }
 //}
+//
 package edu.lms.service;
 
 import edu.lms.dto.request.*;
@@ -366,16 +378,12 @@ public class AuthenticationService {
                 .build();
 
         verificationRepository.save(verification);
-
-        //Lưu email vào session để verify OTP sau không cần truyền lại
         session.setAttribute("registerEmail", request.getEmail());
     }
 
     public void verifyEmail(String otp) {
         String email = (String) session.getAttribute("registerEmail");
-        if (email == null) {
-            throw new AppException(ErrorCode.UNAUTHENTICATED);
-        }
+        if (email == null) throw new AppException(ErrorCode.UNAUTHENTICATED);
 
         Verification verification = verificationRepository.findByEmailAndOtp(email, otp)
                 .orElseThrow(() -> new AppException(ErrorCode.INVALID_OTP));
@@ -403,8 +411,6 @@ public class AuthenticationService {
 
         userRepository.save(user);
         verificationRepository.delete(verification);
-
-        // ✅ Xóa session sau khi verify xong
         session.removeAttribute("registerEmail");
     }
 
@@ -421,19 +427,22 @@ public class AuthenticationService {
         }
 
         boolean authenticated = passwordEncoder.matches(request.getPassword(), user.getPasswordHash());
-        if (!authenticated) throw new AppException(ErrorCode.PASSWORD_ENABLED);
+        if (!authenticated) throw new AppException(ErrorCode.INVALID_PASSWORD);
 
-        String token = generateToken(user);
+        // Generate tokens
+        String accessToken = generateAccessToken(user);
+        String refreshToken = generateRefreshToken(user);
 
         return AuthenticationReponse.builder()
-                .token(token)
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
                 .authenticated(true)
                 .build();
     }
 
-    public String generateToken(User user) {
+    // ================= TOKEN GENERATORS =================
+    public String generateAccessToken(User user) {
         JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
-
         List<String> permissions = user.getRole().getPermissions()
                 .stream()
                 .map(Permission::getName)
@@ -443,7 +452,7 @@ public class AuthenticationService {
                 .subject(StringUtils.hasText(user.getEmail()) ? user.getEmail() : user.getUsername())
                 .issuer("linguahub.com")
                 .issueTime(new Date())
-                .expirationTime(Date.from(Instant.now().plus(1, ChronoUnit.HOURS)))
+                .expirationTime(Date.from(Instant.now().plus(1, ChronoUnit.HOURS))) // 1 hour
                 .jwtID(UUID.randomUUID().toString())
                 .claim("role", user.getRole().getName())
                 .claim("permissions", permissions)
@@ -454,11 +463,70 @@ public class AuthenticationService {
             jwsObject.sign(new MACSigner(SIGNER_KEY.getBytes()));
             return jwsObject.serialize();
         } catch (JOSEException e) {
-            log.error("Cannot create token", e);
-            throw new RuntimeException("Failed to create token", e);
+            throw new RuntimeException("Failed to create access token", e);
         }
     }
 
+    public String generateRefreshToken(User user) {
+        JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
+
+        JWTClaimsSet claims = new JWTClaimsSet.Builder()
+                .subject(StringUtils.hasText(user.getEmail()) ? user.getEmail() : user.getUsername())
+                .issuer("linguahub.com")
+                .issueTime(new Date())
+                .expirationTime(Date.from(Instant.now().plus(7, ChronoUnit.DAYS))) // 7 days
+                .jwtID(UUID.randomUUID().toString())
+                .build();
+
+        try {
+            JWSObject jwsObject = new JWSObject(header, new Payload(claims.toJSONObject()));
+            jwsObject.sign(new MACSigner(SIGNER_KEY.getBytes()));
+            return jwsObject.serialize();
+        } catch (JOSEException e) {
+            throw new RuntimeException("Failed to create refresh token", e);
+        }
+    }
+
+    // ================= REFRESH TOKEN FLOW =================
+    public AuthenticationReponse refreshToken(String refreshToken) {
+        try {
+            SignedJWT signedJWT = verifyToken(refreshToken);
+            String username = signedJWT.getJWTClaimsSet().getSubject();
+
+            User user = userRepository.findByEmail(username)
+                    .or(() -> userRepository.findByUsername(username))
+                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXIST));
+
+            String newAccessToken = generateAccessToken(user);
+            return AuthenticationReponse.builder()
+                    .accessToken(newAccessToken)
+                    .refreshToken(refreshToken)
+                    .authenticated(true)
+                    .build();
+
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        }
+    }
+
+    // ================= VERIFY TOKEN =================
+    private SignedJWT verifyToken(String token) throws ParseException, JOSEException {
+        JWSVerifier verifier = new MACVerifier(SIGNER_KEY.getBytes());
+        SignedJWT signedJWT = SignedJWT.parse(token);
+
+        Date exp = signedJWT.getJWTClaimsSet().getExpirationTime();
+        boolean verified = signedJWT.verify(verifier);
+
+        if (!(verified && exp.after(new Date())))
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+
+        if (invalidatedTokenRepository.existsById(signedJWT.getJWTClaimsSet().getJWTID()))
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+
+        return signedJWT;
+    }
+
+    // ================= INTROSPECT / LOGOUT =================
     public IntrospectResponse introspect(IntrospectRequest request) throws JOSEException, ParseException {
         var token = request.getToken();
         try {
@@ -482,23 +550,7 @@ public class AuthenticationService {
         invalidatedTokenRepository.save(invalidatedToken);
     }
 
-    private SignedJWT verifyToken(String token) throws ParseException, JOSEException {
-        JWSVerifier verifier = new MACVerifier(SIGNER_KEY.getBytes());
-        SignedJWT signedJWT = SignedJWT.parse(token);
-
-        Date exp = signedJWT.getJWTClaimsSet().getExpirationTime();
-        boolean verified = signedJWT.verify(verifier);
-
-        if (!(verified && exp.after(new Date())))
-            throw new AppException(ErrorCode.UNAUTHENTICATED);
-
-        if (invalidatedTokenRepository.existsById(signedJWT.getJWTClaimsSet().getJWTID()))
-            throw new AppException(ErrorCode.UNAUTHENTICATED);
-
-        return signedJWT;
-    }
-
-    // ================= FORGOT PASSWORD =================
+    // ================= FORGOT / RESET PASSWORD =================
     public void forgotPassword(ForgotPasswordRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXIST));
@@ -515,7 +567,6 @@ public class AuthenticationService {
                 .build();
         verificationRepository.save(verification);
 
-        // ✅ Lưu email vào session
         session.setAttribute("resetEmail", user.getEmail());
     }
 
@@ -530,7 +581,6 @@ public class AuthenticationService {
         if (verification.getExpiresAt().isBefore(LocalDateTime.now()))
             throw new AppException(ErrorCode.OTP_EXPIRED);
 
-        //Lưu OTP vào session
         session.setAttribute("resetOtp", request.getOtp());
     }
 
@@ -557,12 +607,8 @@ public class AuthenticationService {
         userRepository.save(user);
         verificationRepository.delete(verification);
 
-        //Clear session
         session.removeAttribute("resetEmail");
         session.removeAttribute("resetOtp");
     }
-
-
-
 }
 
