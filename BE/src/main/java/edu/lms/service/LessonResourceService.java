@@ -13,4 +13,8 @@ public interface LessonResourceService {
     LessonResourceResponse updateResource(Long resourceId, LessonResourceRequest request, Long tutorId);
 
     void deleteResource(Long resourceId, Long tutorId);
+    
+    Long getTutorIdByLesson(Long lessonId);
+    
+    Long getTutorIdByResource(Long resourceId);
 }
