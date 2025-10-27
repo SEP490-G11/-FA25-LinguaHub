@@ -206,7 +206,7 @@ public class AuthenticationService {
         }
     }
 
-    // ================= REFRESH TOKEN FLOW =================
+    // ================= REFRESH NEW ACCESS TOKEN WHEN CURRENT ACCESS TOKEN EXPIRED =================
     public AuthenticationReponse refreshToken(String refreshToken) {
         RefreshToken storedToken = refreshTokenRepository.findByToken(refreshToken)
                 .orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
