@@ -72,6 +72,19 @@ public class AuthenticationController {
                 .result(result)
                 .build();
     }
+    @PostMapping("/refresh")
+    @PreAuthorize("permitAll()")
+    public ApiRespond<AuthenticationReponse> refreshToken(@RequestBody Map<String, String> request) {
+        String refreshToken = request.get("refreshToken");
+        AuthenticationReponse response = authenticationService.refreshToken(refreshToken);
+        return ApiRespond.<AuthenticationReponse>builder()
+                .result(response)
+                .message("Access token refreshed successfully.")
+                .build();
+    }
+
+
+
 
     // ===================== INTROSPECT =====================
 
@@ -123,4 +136,3 @@ public class AuthenticationController {
 
 
 }
-
