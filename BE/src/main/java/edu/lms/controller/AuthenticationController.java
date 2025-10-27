@@ -79,8 +79,10 @@ public class AuthenticationController {
         AuthenticationReponse response = authenticationService.refreshToken(refreshToken);
         return ApiRespond.<AuthenticationReponse>builder()
                 .result(response)
+                .message("Access token refreshed successfully.")
                 .build();
     }
+
 
 
 
