@@ -1,6 +1,5 @@
 package edu.lms.service;
 
-
 import edu.lms.dto.request.LessonRequest;
 import edu.lms.entity.*;
 import edu.lms.enums.LessonType;
@@ -21,118 +20,133 @@ import java.util.stream.Collectors;
 @Transactional
 public class LessonServiceImpl implements LessonService {
 
-    private final LessonRepository lessonRepository;
-    private final CourseSectionRepository sectionRepository;
-    private final LessonResourceRepository resourceRepository;
+        private final LessonRepository lessonRepository;
+        private final CourseSectionRepository sectionRepository;
+        private final LessonResourceRepository resourceRepository;
 
-    @Override
-    public LessonResponse createLesson(Long sectionId, LessonRequest request, Long tutorId) {
-        CourseSection section = sectionRepository.findBySectionIdAndTutorId(sectionId, tutorId)
-                .orElseThrow(() -> new ResourceNotFoundException("CourseSection not found or you don't have permission"));
+        @Override
+        public LessonResponse createLesson(Long sectionID, LessonRequest request, Long tutorId) {
+                CourseSection section = sectionRepository.findBySectionIdAndTutorId(sectionID, tutorId)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "CourseSection not found or you don't have permission"));
 
-        Lesson lesson = Lesson.builder()
-                .section(section)
-                .title(request.getTitle())
-                .duration(request.getDuration())
-                .lessonType(request.getLessonType() != null ? request.getLessonType() : LessonType.Video)
-                .videoURL(request.getVideoURL())
-                .content(request.getContent())
-                .orderIndex(request.getOrderIndex())
-                .build();
+                Lesson lesson = Lesson.builder()
+                                .section(section)
+                                .title(request.getTitle())
+                                .duration(request.getDuration())
+                                .lessonType(request.getLessonType() != null ? request.getLessonType()
+                                                : LessonType.Video)
+                                .videoURL(request.getVideoURL())
+                                .content(request.getContent())
+                                .orderIndex(request.getOrderIndex())
+                                .build();
 
-        Lesson saved = lessonRepository.save(lesson);
-        return mapToResponse(saved);
-    }
+                Lesson saved = lessonRepository.save(lesson);
+                return mapToResponse(saved);
+        }
 
-    @Override
-    public List<LessonResponse> getLessonsBySection(Long sectionId, Long tutorId) {
-        // Verify section exists and belongs to tutor
-        sectionRepository.findBySectionIdAndTutorId(sectionId, tutorId)
-                .orElseThrow(() -> new ResourceNotFoundException("CourseSection not found or you don't have permission"));
+        @Override
+        public List<LessonResponse> getLessonsBySection(Long sectionID, Long tutorId) {
+                // Verify section exists and belongs to tutor
+                sectionRepository.findBySectionIdAndTutorId(sectionID, tutorId)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "CourseSection not found or you don't have permission"));
 
-        List<Lesson> lessons = lessonRepository.findBySectionSectionID(sectionId);
-        return lessons.stream().map(this::mapToResponse).collect(Collectors.toList());
-    }
+                List<Lesson> lessons = lessonRepository.findBySectionSectionID(sectionID);
+                return lessons.stream().map(this::mapToResponse).collect(Collectors.toList());
+        }
 
-    public List<LessonResponse> getLessonsBySectionWithFilters(Long sectionId, Long tutorId, String keyword, String sortBy, String order) {
-        // Verify section exists and belongs to tutor
-        sectionRepository.findBySectionIdAndTutorId(sectionId, tutorId)
-                .orElseThrow(() -> new ResourceNotFoundException("CourseSection not found or you don't have permission"));
+        public List<LessonResponse> getLessonsBySectionWithFilters(Long sectionID, Long tutorId, String keyword,
+                        String sortBy, String order) {
+                // Verify section exists and belongs to tutor
+                sectionRepository.findBySectionIdAndTutorId(sectionID, tutorId)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "CourseSection not found or you don't have permission"));
 
-        return lessonRepository.findBySectionWithFilters(sectionId, keyword, sortBy, order)
-                .stream().map(this::mapToResponse)
-                .collect(Collectors.toList());
-    }
+                return lessonRepository.findBySectionWithFilters(sectionID, keyword, sortBy, order)
+                                .stream().map(this::mapToResponse)
+                                .collect(Collectors.toList());
+        }
 
-    @Override
-    public LessonResponse getLessonDetail(Long lessonId, Long tutorId) {
-        Lesson lesson = lessonRepository.findByLessonIdAndTutorId(lessonId, tutorId)
-                .orElseThrow(() -> new ResourceNotFoundException("Lesson not found or you don't have permission"));
+        @Override
+        public LessonResponse getLessonDetail(Long lessonId, Long tutorId) {
+                Lesson lesson = lessonRepository.findByLessonIdAndTutorId(lessonId, tutorId)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Lesson not found or you don't have permission"));
 
-        return mapToResponse(lesson);
-    }
+                return mapToResponse(lesson);
+        }
 
-    @Override
-    public LessonResponse updateLesson(Long lessonId, LessonRequest request, Long tutorId) {
-        Lesson lesson = lessonRepository.findByLessonIdAndTutorId(lessonId, tutorId)
-                .orElseThrow(() -> new ResourceNotFoundException("Lesson not found or you don't have permission"));
+        @Override
+        public LessonResponse updateLesson(Long lessonId, LessonRequest request, Long tutorId) {
+                Lesson lesson = lessonRepository.findByLessonIdAndTutorId(lessonId, tutorId)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Lesson not found or you don't have permission"));
 
-        if (request.getTitle() != null) lesson.setTitle(request.getTitle());
-        if (request.getDuration() != null) lesson.setDuration(request.getDuration());
-        if (request.getLessonType() != null) lesson.setLessonType(request.getLessonType());
-        if (request.getVideoURL() != null) lesson.setVideoURL(request.getVideoURL());
-        if (request.getContent() != null) lesson.setContent(request.getContent());
-        if (request.getOrderIndex() != null) lesson.setOrderIndex(request.getOrderIndex());
+                if (request.getTitle() != null)
+                        lesson.setTitle(request.getTitle());
+                if (request.getDuration() != null)
+                        lesson.setDuration(request.getDuration());
+                if (request.getLessonType() != null)
+                        lesson.setLessonType(request.getLessonType());
+                if (request.getVideoURL() != null)
+                        lesson.setVideoURL(request.getVideoURL());
+                if (request.getContent() != null)
+                        lesson.setContent(request.getContent());
+                if (request.getOrderIndex() != null)
+                        lesson.setOrderIndex(request.getOrderIndex());
 
-        Lesson updated = lessonRepository.save(lesson);
-        return mapToResponse(updated);
-    }
+                Lesson updated = lessonRepository.save(lesson);
+                return mapToResponse(updated);
+        }
 
-    @Override
-    public void deleteLesson(Long lessonId, Long tutorId) {
-        Lesson lesson = lessonRepository.findByLessonIdAndTutorId(lessonId, tutorId)
-                .orElseThrow(() -> new ResourceNotFoundException("Lesson not found or you don't have permission"));
+        @Override
+        public void deleteLesson(Long lessonId, Long tutorId) {
+                Lesson lesson = lessonRepository.findByLessonIdAndTutorId(lessonId, tutorId)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Lesson not found or you don't have permission"));
 
-        // Cascade remove handled by JPA
-        lessonRepository.delete(lesson);
-    }
+                // Cascade remove handled by JPA
+                lessonRepository.delete(lesson);
+        }
 
-    @Override
-    public Long getTutorIdBySection(Long sectionId) {
-        CourseSection section = sectionRepository.findById(sectionId)
-                .orElseThrow(() -> new ResourceNotFoundException("CourseSection not found"));
-        
-        return section.getCourse().getTutor().getTutorID();
-    }
+        @Override
+        public Long getTutorIdBySection(Long sectionID) {
+                CourseSection section = sectionRepository.findById(sectionID)
+                                .orElseThrow(() -> new ResourceNotFoundException("CourseSection not found"));
 
-    @Override
-    public Long getTutorIdByLesson(Long lessonId) {
-        Lesson lesson = lessonRepository.findById(lessonId)
-                .orElseThrow(() -> new ResourceNotFoundException("Lesson not found"));
-        
-        return lesson.getSection().getCourse().getTutor().getTutorID();
-    }
+                return section.getCourse().getTutor().getTutorID();
+        }
 
-    private LessonResponse mapToResponse(Lesson lesson) {
-        return LessonResponse.builder()
-                .lessonID(lesson.getLessonID())
-                .title(lesson.getTitle())
-                .duration(lesson.getDuration())
-                .lessonType(lesson.getLessonType())
-                .videoURL(lesson.getVideoURL())
-                .content(lesson.getContent())
-                .orderIndex(lesson.getOrderIndex())
-                .createdAt(lesson.getCreatedAt())
-                .resources(lesson.getResources() != null ?
-                        lesson.getResources().stream().map(res ->
-                                LessonResourceResponse.builder()
-                                        .resourceID(res.getResourceID())
-                                        .resourceType(res.getResourceType())
-                                        .resourceTitle(res.getResourceTitle())
-                                        .resourceURL(res.getResourceURL())
-                                        .uploadedAt(res.getUploadedAt())
-                                        .build()
-                        ).collect(Collectors.toList()) : null)
-                .build();
-    }
+        @Override
+        public Long getTutorIdByLesson(Long lessonId) {
+                Lesson lesson = lessonRepository.findById(lessonId)
+                                .orElseThrow(() -> new ResourceNotFoundException("Lesson not found"));
+
+                return lesson.getSection().getCourse().getTutor().getTutorID();
+        }
+
+        private LessonResponse mapToResponse(Lesson lesson) {
+                return LessonResponse.builder()
+                                .lessonID(lesson.getLessonID())
+                                .title(lesson.getTitle())
+                                .duration(lesson.getDuration())
+                                .lessonType(lesson.getLessonType())
+                                .videoURL(lesson.getVideoURL())
+                                .content(lesson.getContent())
+                                .orderIndex(lesson.getOrderIndex())
+                                .createdAt(lesson.getCreatedAt())
+                                .resources(lesson.getResources() != null
+                                                ? lesson.getResources().stream()
+                                                                .map(res -> LessonResourceResponse.builder()
+                                                                                .resourceID(res.getResourceID())
+                                                                                .resourceType(res.getResourceType())
+                                                                                .resourceTitle(res.getResourceTitle())
+                                                                                .resourceURL(res.getResourceURL())
+                                                                                .uploadedAt(res.getUploadedAt())
+                                                                                .build())
+                                                                .collect(Collectors.toList())
+                                                : null)
+                                .build();
+        }
 }
