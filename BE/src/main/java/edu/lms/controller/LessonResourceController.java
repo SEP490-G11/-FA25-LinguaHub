@@ -3,96 +3,78 @@ package edu.lms.controller;
 import edu.lms.dto.request.ApiRespond;
 import edu.lms.dto.request.LessonResourceRequest;
 import edu.lms.dto.response.LessonResourceResponse;
-import edu.lms.security.UserPrincipal;
 import edu.lms.service.LessonResourceService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import lombok.experimental.FieldDefaults;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Slf4j
+import static lombok.AccessLevel.PRIVATE;
+
 @RestController
-@RequestMapping("/tutors")
+@RequestMapping("/tutor/courses/sections")
 @RequiredArgsConstructor
+@FieldDefaults(level = PRIVATE, makeFinal = true)
 public class LessonResourceController {
 
-    private final LessonResourceService lessonResourceService;
+    LessonResourceService lessonResourceService;
 
-    // Add lesson resource
+    // ADD RESOURCE
     @PostMapping("/lessons/{lessonId}/resources")
-    @PreAuthorize("hasAuthority('MANAGE_LESSON')")
-    public ResponseEntity<ApiRespond<LessonResourceResponse>> addResource(
+    public ApiRespond<LessonResourceResponse> addResource(
             @PathVariable Long lessonId,
             @RequestBody @Valid LessonResourceRequest request
     ) {
-        Long tutorId = getCurrentTutorId();
+        Long tutorId = lessonResourceService.getTutorIdByLesson(lessonId);
         LessonResourceResponse resource = lessonResourceService.addResource(lessonId, request, tutorId);
 
-        return ResponseEntity.ok(ApiRespond.<LessonResourceResponse>builder()
+        return ApiRespond.<LessonResourceResponse>builder()
                 .result(resource)
                 .message("Resource added successfully")
-                .build());
+                .build();
     }
 
-    // View lesson resources
+    // GET RESOURCES BY LESSON
     @GetMapping("/lessons/{lessonId}/resources")
-    @PreAuthorize("hasAuthority('MANAGE_LESSON')")
-    public ResponseEntity<ApiRespond<List<LessonResourceResponse>>> getResourcesByLesson(
+    public ApiRespond<List<LessonResourceResponse>> getResourcesByLesson(
             @PathVariable Long lessonId
     ) {
-        Long tutorId = getCurrentTutorId();
+        Long tutorId = lessonResourceService.getTutorIdByLesson(lessonId);
         List<LessonResourceResponse> resources = lessonResourceService.getResourcesByLesson(lessonId, tutorId);
 
-        return ResponseEntity.ok(ApiRespond.<List<LessonResourceResponse>>builder()
+        return ApiRespond.<List<LessonResourceResponse>>builder()
                 .result(resources)
                 .message("Resources retrieved successfully")
-                .build());
+                .build();
     }
 
-    // Update lesson resource
+    // UPDATE RESOURCE
     @PutMapping("/resources/{resourceId}")
-    @PreAuthorize("hasAuthority('MANAGE_LESSON')")
-    public ResponseEntity<ApiRespond<LessonResourceResponse>> updateResource(
+    public ApiRespond<LessonResourceResponse> updateResource(
             @PathVariable Long resourceId,
             @RequestBody @Valid LessonResourceRequest request
     ) {
-        Long tutorId = getCurrentTutorId();
+        Long tutorId = lessonResourceService.getTutorIdByResource(resourceId);
         LessonResourceResponse resource = lessonResourceService.updateResource(resourceId, request, tutorId);
 
-        return ResponseEntity.ok(ApiRespond.<LessonResourceResponse>builder()
+        return ApiRespond.<LessonResourceResponse>builder()
                 .result(resource)
                 .message("Resource updated successfully")
-                .build());
+                .build();
     }
 
-    // Delete lesson resource
+    // DELETE RESOURCE
     @DeleteMapping("/resources/{resourceId}")
-    @PreAuthorize("hasAuthority('MANAGE_LESSON')")
-    public ResponseEntity<ApiRespond<Void>> deleteResource(
+    public ApiRespond<Void> deleteResource(
             @PathVariable Long resourceId
     ) {
-        Long tutorId = getCurrentTutorId();
+        Long tutorId = lessonResourceService.getTutorIdByResource(resourceId);
         lessonResourceService.deleteResource(resourceId, tutorId);
 
-        return ResponseEntity.ok(ApiRespond.<Void>builder()
+        return ApiRespond.<Void>builder()
                 .message("Resource deleted successfully")
-                .build());
-    }
-
-    // Helper method to get current tutor ID from JWT token
-    private Long getCurrentTutorId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.getPrincipal() instanceof UserPrincipal) {
-            UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
-            // Assuming tutorId is stored in UserPrincipal or can be derived from userId
-            return userPrincipal.getUserId(); // You might need to modify this based on your UserPrincipal structure
-        }
-        throw new RuntimeException("User not authenticated");
+                .build();
     }
 }
