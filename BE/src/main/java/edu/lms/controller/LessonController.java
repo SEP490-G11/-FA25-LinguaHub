@@ -22,7 +22,7 @@ public class LessonController {
     LessonService lessonService;
 
     // GET LESSONS BY SECTION
-    @GetMapping("/{sectionID}/lessons")
+    @GetMapping("/{sectionId}/lessons")
     public ApiRespond<List<LessonResponse>> getLessonsBySection(
             @PathVariable Long sectionId,
             @RequestParam(required = false) String sortBy,
@@ -46,7 +46,7 @@ public class LessonController {
     }
 
     // CREATE LESSON
-    @PostMapping("/{sectionID}/lessons")
+    @PostMapping("/{sectionId}/lessons")
     public ApiRespond<LessonResponse> createLesson(
             @PathVariable Long sectionId,
             @RequestBody @Valid LessonRequest request
