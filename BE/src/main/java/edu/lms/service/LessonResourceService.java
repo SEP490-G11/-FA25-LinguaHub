@@ -6,15 +6,11 @@ import edu.lms.dto.response.LessonResourceResponse;
 import java.util.List;
 
 public interface LessonResourceService {
-    LessonResourceResponse addResource(Long lessonId, LessonResourceRequest request, Long tutorId);
+    LessonResourceResponse addResource(Long lessonId, LessonResourceRequest request);
 
-    List<LessonResourceResponse> getResourcesByLesson(Long lessonId, Long tutorId);
+    List<LessonResourceResponse> getResourcesByLesson(Long lessonId);
 
-    LessonResourceResponse updateResource(Long resourceId, LessonResourceRequest request, Long tutorId);
+    LessonResourceResponse updateResource(Long resourceId, LessonResourceRequest request);
 
-    void deleteResource(Long resourceId, Long tutorId);
-    
-    Long getTutorIdByLesson(Long lessonId);
-    
-    Long getTutorIdByResource(Long resourceId);
+    void deleteResource(Long resourceId);
 }
