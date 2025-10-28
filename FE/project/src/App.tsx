@@ -1,9 +1,11 @@
-import  { useEffect } from 'react';
+import  { useEffect } from 'react';//hook của React
 import { useDispatch } from 'react-redux';
 import { AppRoutes } from '@/routes/AppRoutes';
 import { checkAuth } from '@/redux/slices/authSlice';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+//kiểu dữ liệu TypeScript định nghĩa loại dispatch
+//TypeScript muốn biết trước dispatch sẽ gửi kiểu dữ liệu gì
 import type { AppDispatch } from '@/redux/store';
 
 function App() {

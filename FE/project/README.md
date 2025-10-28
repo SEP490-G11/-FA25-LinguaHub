@@ -13,7 +13,7 @@
 - Node.js >= 18
 - npm >= 9 (hoặc dùng pnpm/yarn, tùy chọn)
 Mở dự án tại port `http://localhost:3000`
-
+- Thêm CORS ở BE để cho phép FE truy cập
 ---
 
 ## Cấu trúc thư mục

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Mail, CheckCircle, RefreshCw, Languages, Shield } from 'lucide-react';
+import {  CheckCircle, RefreshCw, Languages, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
@@ -9,6 +9,7 @@ import { ErrorMessage } from '@/components/shared/ErrorMessage';
 import axios, { AxiosError } from 'axios';
 
 interface BeErrorResponse {
+  code?: number;
   message?: string;
 }
 
@@ -24,7 +25,7 @@ const VerifyEmail = () => {
   const navigate = useNavigate();
 
   const type = searchParams.get('type') || 'signup';
-  const email = searchParams.get('email');
+  const email = searchParams.get('email');  // Giữ để hiển thị UI và resend
 
   const fadeInUp = {
     initial: { opacity: 0, y: 60 },
@@ -33,8 +34,9 @@ const VerifyEmail = () => {
   };
 
   useEffect(() => {
-    if (searchParams.get('token')) {
-      handleAutoVerify();
+    // FIXED: Lưu email vào localStorage làm fallback nếu session fail (dùng cho header nếu cần)
+    if (email) {
+      localStorage.setItem('temp_verify_email', decodeURIComponent(email));
     }
 
     const timer = setInterval(() => {
@@ -50,98 +52,105 @@ const VerifyEmail = () => {
     return () => clearInterval(timer);
   }, [searchParams]);
 
-  const handleAutoVerify = async () => {
-    setIsVerifying(true);
-    try {
-      const token = searchParams.get('token');
-      if (!token) throw new Error('No token provided');
-
-      // API xác thực OTP cho reset password
-      const response = await axios.post('http://localhost:8080/auth/verify-reset-otp', {
-        email,
-        otp: token
-      });
-
-      console.log('Auto verification success:', response.data);
-      setIsVerified(true);
-
-      setTimeout(() => {
-        if (type === 'password-reset') {
-          navigate('/auth/complete-forgot-password');
-        } else {
-          navigate('/signin?verified=true');
-        }
-      }, 3000);
-    } catch (error: AxiosError<BeErrorResponse> | unknown) {
-      console.error('Verification failed:', error);
-      const axiosError = error as AxiosError<BeErrorResponse>;
-      setErrors({ otp: axiosError.response?.data?.message || 'Verification failed' });
-    } finally {
-      setIsVerifying(false);
-    }
-  };
-
   const handleManualVerify = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!otpCode.trim()) {
-      setErrors({ otp: 'Vui lòng nhập mã OTP' });
-      return;
-    }
-
-    if (otpCode.length !== 6) {
-      setErrors({ otp: 'Mã OTP phải có 6 chữ số' });
-      return;
-    }
-
-    if (!email) {
-      setErrors({ otp: 'Email không hợp lệ' });
+    if (!otpCode.trim() || otpCode.length !== 6) {
+      setErrors({ otp: otpCode.length !== 6 ? 'Mã OTP phải có 6 chữ số' : 'Vui lòng nhập mã OTP' });
       return;
     }
 
     setIsVerifying(true);
     setErrors({});
+    const token = localStorage.getItem('accessToken');
+    console.log('Token before verify:', token);
+
+    const verifyEmail = decodeURIComponent(email || localStorage.getItem('temp_verify_email') || '');
+    if (!verifyEmail) {
+      setErrors({ otp: 'Email không tồn tại để verify. Hãy resend OTP.' });
+      setIsVerifying(false);
+      return;
+    }
 
     try {
-      // API xác thực OTP
-      const response = await axios.post('http://localhost:8080/auth/verify-reset-otp', {
-        email,
-        otp: otpCode
-      });
+      const config: any = { withCredentials: true };
+      if (token) {
+        config.headers = { Authorization: `Bearer ${token}` };
+      } else {
+        console.warn('No token, falling back to session/cookie');
+      }
 
-      console.log('Manual verification success:', response.data);
+      const response = await axios.post(
+          'http://localhost:8080/auth/verify',
+          { otp: otpCode, email: verifyEmail },  // Thêm email nếu BE cần
+          config
+      );
+
+      console.log('Verification success:', response.data);
+      const newToken = response.data.token;
+      if (newToken) localStorage.setItem('accessToken', newToken);
+
       setIsVerified(true);
+      localStorage.removeItem('temp_verify_email');
 
       setTimeout(() => {
-        navigate('/signin?verified=true');
+        navigate(type === 'password-reset' ? '/auth/complete-forgot-password' : '/signin?verified=true');
       }, 3000);
     } catch (error: AxiosError<BeErrorResponse> | unknown) {
-      console.error('Verification failed:', error);
       const axiosError = error as AxiosError<BeErrorResponse>;
-      setErrors({ otp: axiosError.response?.data?.message || 'Mã OTP không chính xác' });
+      console.error('Verification failed:', axiosError.response);
+      const beError = axiosError.response?.data;
+
+      if (axiosError.response?.status === 401 || beError?.code === 1006) {
+        setErrors({ otp: '401/1006 error. Token/session invalid. Try resend OTP.' });
+        localStorage.removeItem('accessToken');
+      } else {
+        setErrors({ otp: beError?.message || 'Mã OTP không chính xác' });
+      }
+      setCanResend(true);
+      setCountdown(0);
     } finally {
       setIsVerifying(false);
     }
   };
 
   const handleResendEmail = async () => {
-    if (!email) return;
+    // FIXED: Check email trước
+    if (!email) {
+      setMessage('Email không được cung cấp');
+      return;
+    }
 
     setCanResend(false);
     setCountdown(60);
     setMessage('');
+    setErrors({});  // Clear error khi resend
 
     try {
-      // API gửi lại OTP
-      await axios.post('http://localhost:8080/auth/resend-otp', {
-        email
+      // FIXED: Gửi { email } cho resend để backend gửi OTP mới + set session (refresh auth state)
+      const response = await axios.post('http://localhost:8080/auth/resend-otp', {
+        email: decodeURIComponent(email)
+      }, {
+        withCredentials: true  // Để set session mới
       });
-      console.log('Resend OTP success');
-      setMessage('Mã OTP mới đã được gửi đến email của bạn.');
+      console.log('Resend OTP success:', response.data);
+      setMessage('Mã OTP mới đã được gửi đến email của bạn. Session đã được cập nhật để đăng ký tài khoản.');
+
+      // FIXED: Nếu backend trả token sau resend, set nó (giả sử response.data.token tồn tại)
+      const newToken = response.data.token;
+      if (newToken) {
+        localStorage.setItem('accessToken', newToken);
+        console.log('New token set from resend:', newToken);
+      }
+
+      // FIXED: Clear temp email vì session mới được set
+      localStorage.removeItem('temp_verify_email');
     } catch (error: AxiosError<BeErrorResponse> | unknown) {
       console.error('Resend failed:', error);
       const axiosError = error as AxiosError<BeErrorResponse>;
-      setMessage(axiosError.response?.data?.message || 'Gửi lại thất bại. Vui lòng thử sau.');
+      const beError = axiosError.response?.data;
+      console.log('Full error response for resend:', axiosError.response);
+      setMessage(beError?.message || 'Gửi lại thất bại (401). Kiểm tra backend: Endpoint /auth/resend-otp có yêu cầu auth không? Hoặc CORS credentials.');
     }
 
     // Reset countdown
@@ -159,7 +168,7 @@ const VerifyEmail = () => {
   const getTitle = () => {
     if (isVerified) return 'Email đã được xác thực!';
     if (type === 'password-reset') return 'Xác thực Email để đặt lại mật khẩu';
-    return 'Xác thực Email của bạn';
+    return 'Xác thực Email để hoàn tất đăng ký';
   };
 
   const getDescription = () => {
@@ -167,13 +176,14 @@ const VerifyEmail = () => {
       if (type === 'password-reset') {
         return 'Email của bạn đã được xác thực. Quá trình đặt lại mật khẩu đã hoàn tất.';
       }
-      return 'Email của bạn đã được xác thực thành công. Bạn có thể đăng nhập vào tài khoản của mình.';
+      return 'Email của bạn đã được xác thực thành công. Tài khoản với email này đã được tạo, bạn có thể đăng nhập ngay.';
     }
 
     if (type === 'password-reset') {
       return 'Vui lòng nhập mã OTP được gửi đến email của bạn để hoàn tất việc đặt lại mật khẩu.';
     }
-    return 'Chúng tôi đã gửi mã OTP 6 chữ số đến địa chỉ email của bạn. Vui lòng nhập mã để xác thực tài khoản.';
+    // FIXED: Hiển thị email để user confirm, nhấn mạnh đăng ký
+    return `Chúng tôi đã gửi mã OTP 6 chữ số đến ${decodeURIComponent(email || '')}. Nhập mã để xác thực và hoàn tất tạo tài khoản.`;
   };
 
   if (isVerified) {
@@ -289,11 +299,27 @@ const VerifyEmail = () => {
               </form>
             </div>
 
+            {/* FIXED: Thêm button resend nổi bật nếu 401/1006 error */}
+            {errors.otp?.includes('401') || errors.otp?.includes('1006') && (
+                <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <p className="text-sm text-yellow-800 mb-2">Để tiếp tục đăng ký, hãy gửi lại OTP (có thể do CORS/session):</p>
+                  <Button
+                      onClick={handleResendEmail}
+                      variant="outline"
+                      className="w-full"
+                      size="sm"
+                  >
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Gửi lại OTP ngay
+                  </Button>
+                </div>
+            )}
+
             {/* Message display */}
             {message && (
                 <div
                     className={`p-3 rounded-lg text-sm mt-4 ${
-                        message.includes('Error') || message.includes('failed')
+                        message.includes('Error') || message.includes('failed') || message.includes('401')
                             ? 'bg-red-50 text-red-700 border border-red-200'
                             : 'bg-green-50 text-green-700 border border-green-200'
                     }`}

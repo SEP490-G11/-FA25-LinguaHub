@@ -3,13 +3,17 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 
 // https://vitejs.dev/config/
+//Dùng để xử lý đường dẫn file và thư mục
 export default defineConfig({
+  //plugins là danh sách các plugin mà Vite sẽ dùng.
   plugins: [react()],
+//đường dẫn rút gọn
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  //optimizeDeps là cấu hình tối ưu hoá dependency
   optimizeDeps: {
     exclude: ['lucide-react'],
   },

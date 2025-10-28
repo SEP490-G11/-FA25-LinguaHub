@@ -1,13 +1,17 @@
 package edu.lms.controller;
 
 import edu.lms.dto.request.*;
+import edu.lms.dto.response.AuthResponse;
 import edu.lms.dto.response.AuthenticationReponse;
 import edu.lms.dto.response.IntrospectResponse;
 import edu.lms.service.AuthenticationService;
 import com.nimbusds.jose.JOSEException;
+import edu.lms.service.GoogleAuthService;
+import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -24,6 +28,7 @@ public class AuthenticationController {
 
     AuthenticationService authenticationService;
     AuthenticationManager authenticationManager;
+    GoogleAuthService googleAuthService;
 
     // ===================== REGISTER =====================
 
@@ -40,14 +45,14 @@ public class AuthenticationController {
 
     @PostMapping("/verify")
     @PreAuthorize("permitAll()")
-    public ApiRespond<String> verifyEmail(@RequestBody Map<String, String> request) {
-        String otp = request.get("otp");
-        authenticationService.verifyEmail(otp);
+    public ApiRespond<String> verifyEmail(@RequestBody VerifyEmailRequest request) {
+        authenticationService.verifyEmail(request.getOtp());
 
         return ApiRespond.<String>builder()
                 .message("Account verified successfully!")
                 .build();
     }
+
 
 
 
@@ -67,6 +72,19 @@ public class AuthenticationController {
                 .result(result)
                 .build();
     }
+    @PostMapping("/refresh")
+    @PreAuthorize("permitAll()")
+    public ApiRespond<AuthenticationReponse> refreshToken(@RequestBody Map<String, String> request) {
+        String refreshToken = request.get("refreshToken");
+        AuthenticationReponse response = authenticationService.refreshToken(refreshToken);
+        return ApiRespond.<AuthenticationReponse>builder()
+                .result(response)
+                .message("Access token refreshed successfully.")
+                .build();
+    }
+
+
+
 
     // ===================== INTROSPECT =====================
 
@@ -108,8 +126,13 @@ public class AuthenticationController {
         authenticationService.setNewPassword(request);
         return ApiRespond.<String>builder().message("Password updated successfully.").build();
     }
+    @PostMapping("/google")
+    public ResponseEntity<AuthResponse> loginWithGoogle(@RequestBody @Valid GoogleLoginRequest request) {
+        AuthResponse authResponse = googleAuthService.loginWithGoogle(request.getIdToken());
+        return ResponseEntity.ok(authResponse);
+    }
+
 
 
 
 }
-

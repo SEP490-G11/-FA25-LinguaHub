@@ -13,8 +13,8 @@ import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { ErrorMessage } from '@/components/shared/ErrorMessage';
 import { signIn } from '@/redux/slices/authSlice';
 import type { RootState, AppDispatch } from '@/redux/store';
-
-
+import { clearError } from '@/redux/slices/authSlice';
+import { ROUTES } from '@/constants';
 const signInSchema = z.object({
   username: z.string().min(3, 'Login name must be at least 3 characters'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
@@ -28,7 +28,10 @@ const SignIn = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
   const { isLoading, error } = useSelector((state: RootState) => state.auth);
-
+// ⬇️ Thêm useEffect này
+  React.useEffect(() => {
+    dispatch(clearError());
+  }, [dispatch]);
   const {
     register,
     handleSubmit,
@@ -37,7 +40,7 @@ const SignIn = () => {
     resolver: zodResolver(signInSchema),
     mode: 'onChange',
     defaultValues: {
-      username: '',  // Username default
+      username: '',
       password: '',
       rememberMe: false,
     },
@@ -45,24 +48,10 @@ const SignIn = () => {
 
 
   const onSubmit = async (data: SignInForm) => {
-    try {
-      const credentials = {
-        username: data.username,
-        password: data.password,
-        rememberMe: data.rememberMe || false,
-      };
-
-      const result = await dispatch(signIn(credentials)).unwrap();
-      console.log('✅ Login success:', result);
-
-
-      navigate('/', { replace: true });
-    } catch (err) {
-      console.error('❌ SignIn error:', err);
-    }
+    await dispatch(signIn(data)).unwrap();
+    navigate('/', { replace: true });
   };
 
-  // ✅ Animation setup
   const fadeInUp = {
     initial: { opacity: 0, y: 60 },
     animate: { opacity: 1, y: 0 },
@@ -161,7 +150,7 @@ const SignIn = () => {
                   </label>
                 </div>
                 <Link
-                    to="/auth/forgot-password"
+                    to={ROUTES.FORGOT_PASSWORD}
                     className="text-sm font-medium text-blue-600 hover:text-blue-500 transition-colors"
                 >
                   Forgot your password?
@@ -191,7 +180,7 @@ const SignIn = () => {
               <p className="text-sm text-gray-600">
                 Don't have an account?{' '}
                 <Link
-                    to="/sign-up"
+                    to={ROUTES.SIGN_UP}
                     className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
                 >
                   Sign up now

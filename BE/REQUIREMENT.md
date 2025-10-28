@@ -129,7 +129,73 @@
         - Update ReviewedBy and ReviewedAt
         - Tutor.Status may remain Pending or change to Suspended based on policy
 5. Tutor is now eligible to create courses if approved
+
+
+#### Lesson
+- LessonID
+- SectionID
+- Title
+- Duration
+- LessonType Enum(Video, Reading) Default: Video
+- VideoURL
+- Context
+- OrderIndex
+- CreatedAt default current_timestamp
+
+#### LessonResource
+- ResourceID
+- LessonID
+- ResourceType Enum(PDF, ExternalLink) Default: PDF
+- ResourceTitle
+- ResourceURL
+- UploadedAt default current_timestamp
+
+#### API: Lesson Management
+## View all lesson in a section
+- Method: GET /tutors/coursesections/{coursesectionId}/lessons 
+- Description: Get a list of all lessons in a CourseSection. 
+- Query: sortBy, order (ASC/DESC), keyword (optional).
+
+## Create a new Lesson
+- Method: POST /tutors/coursesections/{coursesectionId}/lessons
+- Description: Tutor creates a new lesson in an existing CourseSection.
+
+## View Lesson Detail
+- Method: GET /tutors/lessons/{lessonId}
+- Description: View detailed lesson content, with a list of LessonResources.
+
+## Update Lesson
+- Method: PUT /tutors/lessons/{lessonId}
+- Description: Tutor edits lesson information.
+
+## Delete Lesson
+- Method: DELETE /tutors/lessons/{lessonId} 
+- Description:Tutor deleted a lesson (including related Lesson Resources). 
+- Behavior:
+     - Soft delete 
+     - Deletes all Lesson Resources with corresponding lessonIDs.
+
+
+#### API: LessonResource Management
+
+## Add lesson resource
+- Method: POST /tutors/lessons/{lessonId}/resources 
+- Description: Add resources (PDF or external links) to Lesson.
+
+## View Lesson Resources
+- Method: GET /tutors/lessons/{lessonId}/resources
+- Description: View a list of all resources for a lesson.
+
+## Update Lesson Resource
+- Method: PUT /tutors/resources/{resourceId}
+- Description: Update resource information (e.g. change link or name).
+
+## Delete Lesson Resource
+- Method: DELETE /tutors/resources/{resourceId}
+- Description: Delete a resource associated with a lesson. (Soft delete)
+
 <<<<<<< HEAD
 =======
 
 >>>>>>> origin/main
+>

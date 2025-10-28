@@ -20,4 +20,7 @@ public interface TutorRepository extends JpaRepository<Tutor, Long> {
 
     // Tìm tutor có status pending (dùng khi admin xem hồ sơ chờ duyệt)
     List<Tutor> findAllByStatusOrderByTutorIDAsc(TutorStatus status);
+
+    // Tìm Tutor theo UserID (để lấy TutorID từ UserID đang đăng nhập)
+    Optional<Tutor> findByUser_UserID(Long userId);
 }

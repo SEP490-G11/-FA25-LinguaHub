@@ -1,10 +1,11 @@
 import axios, { AxiosError } from 'axios';
-import  { useState, ChangeEvent, FormEvent } from 'react';
+import { useState, ChangeEvent, FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Mail, Lock, Eye, EyeOff, User, Phone, Languages, Calendar, UserCircle } from 'lucide-react';
+import { useEffect } from 'react';
 
-// ✅ Define interfaces
+
 interface FormErrors {
   username?: string;
   fullName?: string;
@@ -33,6 +34,17 @@ interface BeErrorResponse {
 }
 
 const SignUpForm = () => {
+  useEffect(() => {
+
+    setMessage('');
+    setErrors({});
+
+
+    return () => {
+      setMessage('');
+      setErrors({});
+    };
+  }, []);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState<FormData>({
@@ -40,11 +52,13 @@ const SignUpForm = () => {
     fullName: '',
     email: '',
     phone: '',
-    dob: new Date().toISOString().split('T')[0],  // Default to current real date (YYYY-MM-DD)
-    gender: 'Male',  // Default to Male
+    dob: new Date().toISOString().split('T')[0],  // Default to current date
+    gender: 'Male',
     password: '',
     confirmPassword: ''
+
   });
+
   const [errors, setErrors] = useState<FormErrors>({});
   const [message, setMessage] = useState<string>('');
   const navigate = useNavigate();
@@ -53,37 +67,42 @@ const SignUpForm = () => {
     const newErrors: FormErrors = {};
     if (!formData.username.trim()) newErrors.username = 'Username is required';
     else if (formData.username.length < 3) newErrors.username = 'Username must be at least 3 characters';
+
     if (!formData.fullName.trim()) newErrors.fullName = 'Full name is required';
+
     if (!formData.email.trim()) newErrors.email = 'Email is required';
     else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Email is invalid';
+
     if (!formData.phone.trim()) newErrors.phone = 'Phone number is required';
     else if (!/^\d{10,}$/.test(formData.phone.replace(/\D/g, '')))
       newErrors.phone = 'Phone number must be at least 10 digits';
+
     if (!formData.dob) newErrors.dob = 'Date of birth is required';
+    else {
+      const age = (new Date().getTime() - new Date(formData.dob).getTime()) / (1000 * 3600 * 24 * 365.25);
+      if (age < 13) newErrors.dob = 'You must be at least 13 years old';
+    }
+
     if (!formData.gender) newErrors.gender = 'Gender is required';
+
     if (!formData.password) newErrors.password = 'Password is required';
     else if (formData.password.length < 6)
-      newErrors.password = 'Password must be at least 6 characters';
-    if (!formData.confirmPassword)
-      newErrors.confirmPassword = 'Please confirm your password';
-    else if (formData.password !== formData.confirmPassword)
-      newErrors.confirmPassword = 'Passwords do not match';
+      newErrors.password = 'Password must be at least 8 characters';
+    else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password))
+      newErrors.password = 'Password must contain uppercase, lowercase, and number';
+
+    if (!formData.confirmPassword) newErrors.confirmPassword = 'Please confirm your password';
+    else if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {  // Support select for gender
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value
-    });
+    setFormData({ ...formData, [name]: value });
     if (errors[name as keyof FormErrors]) {
-      setErrors({
-        ...errors,
-        [name]: ''
-      });
+      setErrors({ ...errors, [name]: '' });
     }
   };
 
@@ -100,44 +119,61 @@ const SignUpForm = () => {
           phone: formData.phone,
           gender: formData.gender,
           dob: formData.dob,
-          country: 'string',
-          address: 'string',
-          bio: 'string'
+          country: '',
+          address: '',
+          bio: ''
+        }, {
+          withCredentials: true  // Thêm để gửi/set cookie/session
         });
-
         console.log('Registration success:', response.data);
-        setMessage('Registration successful! Redirecting to email verification...');
 
-        // Success redirect to VerifyEmail
-        setTimeout(() => {
-          navigate(`/auth/verify-email?type=signup&email=${encodeURIComponent(formData.email)}`);
-        }, 1500);
+        const token = response.data.token;
+        if (token) {
+          localStorage.setItem('accessToken', token);
+        } else {
+          console.warn('No token in registration response. Verify may fallback to no-auth.');
+        }
 
-        // Clear form
-        setFormData({ username: '', fullName: '', email: '', phone: '', dob: new Date().toISOString().split('T')[0], gender: 'Male', password: '', confirmPassword: '' });
+
+        if (response.data.code === 0 || response.data.code === 1006) {
+          setMessage('Account created successfully! OTP sent. Redirecting to verification...');
+          setTimeout(() => {
+            navigate(`/auth/verify-email?type=signup&email=${encodeURIComponent(formData.email)}`);
+          }, 1500);
+        } else {
+          setMessage('Registration successful! Redirecting...');
+          setTimeout(() => {
+            navigate('/signin');
+          }, 1500);
+        }
+
+
+        setFormData({
+          username: '',
+          fullName: '',
+          email: '',
+          phone: '',
+          dob: new Date().toISOString().split('T')[0],
+          gender: 'Male',
+          password: '',
+          confirmPassword: ''
+        });
         setErrors({});
       } catch (error: AxiosError<BeErrorResponse> | unknown) {
         console.error('Registration error:', error);
         const axiosError = error as AxiosError<BeErrorResponse>;
-        const errorData = axiosError.response?.data;
+        const errorData = axiosError.response?.data || { message: 'Unknown error' };
 
-        // ✅ Handle code 1006 as success (pending verify)
-        if (errorData?.code === 1006) {
-          setMessage('Account created successfully! A verification email has been sent. Redirecting...');
 
-          // Redirect to VerifyEmail
+        if (errorData.code === 0 || errorData.code === 1006) {
+          setMessage('Account created successfully! OTP sent. Redirecting to verification...');
           setTimeout(() => {
             navigate(`/auth/verify-email?type=signup&email=${encodeURIComponent(formData.email)}`);
           }, 1500);
           return;
         }
 
-        // Real errors
-        if (errorData?.message) {
-          setMessage(`Error: ${errorData.message}`);
-        } else {
-          setMessage('Registration failed. Please try again.');
-        }
+        setMessage(`Error: ${errorData.message || 'Registration failed. Please try again.'}`);
       }
     }
   };

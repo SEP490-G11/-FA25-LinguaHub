@@ -1,44 +1,34 @@
-// Types generated/updated based on LinguaHub DB Schema (v4 - UUID Edition)
-// Maps SQL tables to TS interfaces for FE type safety
-// Assumptions:
-// - IDs: BIGINT → number; CHAR(36) → string (UUID).
-// - Dates: DATETIME → string (ISO).
-// - Enums: Direct map to union types.
-// - Optional: NULLABLE → ?.
-// - Nested: Use IDs (fetch separately); add nested arrays for convenience where logical.
-// - UUID: UserID, ReviewedBy, etc. as string.
-
-// import { ApiResponse, PaginatedResponse } from './api';  // Assume from previous
-
-// ==========================================================
-// 1. CORE USER TYPES
-// ==========================================================
+//định nghĩa kiểu dữ liệu (Type Definitions) cho toàn bộ Frontend.
+//Mỗi object API trả về có cấu trúc thế nào,
+// Các thuộc tính trong object tên gì, kiểu gì,
+// Thuộc tính nào bắt buộc / tùy chọn,
+// Và đảm bảo bạn không truyền sai dữ liệu khi code.
 
 export interface User {
-  UserID: string;  // CHAR(36) PRIMARY KEY (UUID)
-  Email: string;   // VARCHAR UNIQUE NOT NULL
-  PasswordHash: string;  // VARCHAR NOT NULL (never expose in FE)
-  Role: 'Admin' | 'Tutor' | 'Learner';  // ENUM DEFAULT 'Learner'
-  FullName?: string;  // VARCHAR
-  AvatarURL?: string;  // VARCHAR
-  Gender?: 'Male' | 'Female' | 'Other';  // ENUM
-  DOB?: string;  // DATE (ISO string)
-  Phone?: string;  // VARCHAR
-  Country?: string;  // VARCHAR
-  Address?: string;  // VARCHAR
-  Bio?: string;  // TEXT
-  IsActive: boolean;  // BOOLEAN DEFAULT TRUE
-  CreatedAt: string;  // DATETIME DEFAULT CURRENT_TIMESTAMP
-  UpdatedAt: string;  // DATETIME ON UPDATE
+  UserID: string;
+  email: string;
+  PasswordHash: string;
+  Role: 'Admin' | 'Tutor' | 'Learner';
+  fullName?: string;
+  AvatarURL?: string;
+  Gender?: 'Male' | 'Female' | 'Other';
+  DOB?: string;
+  Phone?: string;
+  Country?: string;
+  Address?: string;
+  Bio?: string;
+  IsActive: boolean;
+  CreatedAt: string;
+  UpdatedAt: string;
 }
 
 export interface Verification {
-  VerificationID: number;  // BIGINT AUTO_INCREMENT
-  UserID: string;  // CHAR(36)
-  Type: 'Email' | 'Phone' | 'OTP';  // ENUM
-  Code: string;  // VARCHAR(20) NOT NULL
-  ExpiredAt?: string;  // DATETIME
-  IsVerified: boolean;  // DEFAULT FALSE
+  VerificationID: number;
+  UserID: string;
+  Type: 'Email' | 'Phone' | 'OTP';
+  Code: string;
+  ExpiredAt?: string;
+  IsVerified: boolean;
 }
 
 // ==========================================================
@@ -46,30 +36,30 @@ export interface Verification {
 // ==========================================================
 
 export interface Tutor {
-  TutorID: number;  // BIGINT AUTO_INCREMENT
-  UserID: string;   // CHAR(36) UNIQUE
-  Experience: number;  // SMALLINT DEFAULT 0
-  Specialization?: string;  // VARCHAR
-  TeachingLanguage?: string;  // VARCHAR(100) - NEW
-  Bio?: string;  // TEXT - NEW
-  Rating: number;  // DECIMAL(3,2) DEFAULT 0.0
-  Status: 'Pending' | 'Approved' | 'Suspended';  // ENUM DEFAULT 'Pending'
+  TutorID: number;
+  UserID: string;
+  Experience: number;
+  Specialization?: string;
+  TeachingLanguage?: string;
+  Bio?: string;
+  Rating: number;
+  Status: 'Pending' | 'Approved' | 'Suspended';
 }
 
 export interface TutorVerification {
-  TutorVerificationID: number;  // BIGINT AUTO_INCREMENT
-  UserID: string;  // CHAR(36) NOT NULL - CHANGED from TutorID
-  Experience: number;  // SMALLINT DEFAULT 0 - NEW
-  Specialization?: string;  // VARCHAR - NEW
-  TeachingLanguage?: string;  // VARCHAR(100) - NEW
-  Bio?: string;  // TEXT - NEW
-  CertificateName?: string;  // VARCHAR(255) - NEW
-  DocumentURL?: string;  // VARCHAR(255)
-  Status: 'Pending' | 'Approved' | 'Rejected';  // ENUM DEFAULT 'Pending'
-  SubmittedAt: string;  // DATETIME DEFAULT CURRENT_TIMESTAMP - NEW
-  ReviewedBy?: string;  // CHAR(36) NULL - CHANGED to string (UUID)
-  ReviewedAt?: string;  // DATETIME NULL
-  ReasonForReject?: string;  // TEXT NULL - NEW
+  TutorVerificationID: number;
+  UserID: string;
+  Experience: number;
+  Specialization?: string;
+  TeachingLanguage?: string;
+  Bio?: string;
+  CertificateName?: string;
+  DocumentURL?: string;
+  Status: 'Pending' | 'Approved' | 'Rejected';
+  SubmittedAt: string;
+  ReviewedBy?: string;
+  ReviewedAt?: string;
+  ReasonForReject?: string;
 }
 
 // ==========================================================
@@ -77,92 +67,92 @@ export interface TutorVerification {
 // ==========================================================
 
 export interface CourseCategory {
-  CategoryID: number;  // BIGINT AUTO_INCREMENT
-  Name: string;  // NOT NULL
-  Description?: string;  // TEXT
-  CreatedAt: string;  // DATETIME DEFAULT CURRENT_TIMESTAMP
+  CategoryID: number;
+  Name: string;
+  Description?: string;
+  CreatedAt: string;
 }
 
 export interface Course {
-  CourseID: number;  // BIGINT AUTO_INCREMENT
-  Title: string;  // NOT NULL
-  Description?: string;  // TEXT
-  TutorID?: number;  // BIGINT (links to Tutor)
-  Duration?: number;  // INT
-  Price?: number;  // DECIMAL(10,2) DEFAULT 0.00
-  CategoryID?: number;  // BIGINT
-  Language?: string;  // VARCHAR DEFAULT 'English'
-  ThumbnailURL?: string;  // VARCHAR
-  Status: 'Draft' | 'Pending' | 'Approved' | 'Rejected' | 'Disabled';  // ENUM DEFAULT 'Draft'
-  CreatedAt: string;  // DATETIME DEFAULT CURRENT_TIMESTAMP
-  UpdatedAt: string;  // DATETIME ON UPDATE
-  sections?: CourseSection[];  // Nested for FE (from CourseSection)
+  CourseID: number;
+  Title: string;
+  Description?: string;
+  TutorID?: number;
+  Duration?: number;
+  Price?: number;
+  CategoryID?: number;
+  Language?: string;
+  ThumbnailURL?: string;
+  Status: 'Draft' | 'Pending' | 'Approved' | 'Rejected' | 'Disabled';
+  CreatedAt: string;
+  UpdatedAt: string;
+  sections?: CourseSection[];
 }
 
 export interface CourseSection {
-  SectionID: number;  // BIGINT AUTO_INCREMENT
-  CourseID: number;  // NOT NULL
-  Title?: string;  // VARCHAR
-  Description?: string;  // TEXT
-  OrderIndex?: number;  // INT
-  lessons?: Lesson[];  // Nested
+  SectionID: number;
+  CourseID: number;
+  Title?: string;
+  Description?: string;
+  OrderIndex?: number;
+  lessons?: Lesson[];
 }
 
 export interface Lesson {
-  LessonID: number;  // BIGINT AUTO_INCREMENT
-  SectionID: number;  // NOT NULL
-  Title: string;  // NOT NULL
-  Duration?: number;  // SMALLINT
-  LessonType: 'Video' | 'Reading';  // ENUM DEFAULT 'Video' - NEW
-  VideoURL?: string;  // VARCHAR
-  Content?: string;  // TEXT - NEW
-  OrderIndex?: number;  // INT - NEW
-  CreatedAt: string;  // DATETIME DEFAULT CURRENT_TIMESTAMP - NEW
-  resources?: LessonResource[];  // Nested - NEW
+  LessonID: number;
+  SectionID: number;
+  Title: string;
+  Duration?: number;
+  LessonType: 'Video' | 'Reading';
+  VideoURL?: string;
+  Content?: string;
+  OrderIndex?: number;
+  CreatedAt: string;
+  resources?: LessonResource[];
 }
 
 export interface LessonResource {
-  ResourceID: number;  // BIGINT AUTO_INCREMENT
-  LessonID: number;  // NOT NULL
-  ResourceType: 'PDF' | 'ExternalLink';  // ENUM DEFAULT 'PDF' - NEW
-  ResourceTitle?: string;  // VARCHAR
-  ResourceURL: string;  // NOT NULL
-  UploadedAt: string;  // DATETIME DEFAULT CURRENT_TIMESTAMP
+  ResourceID: number;
+  LessonID: number;
+  ResourceType: 'PDF' | 'ExternalLink';
+  ResourceTitle?: string;
+  ResourceURL: string;
+  UploadedAt: string;
 }
 
 export interface Enrollment {
-  EnrollmentID: number;  // BIGINT AUTO_INCREMENT
-  UserID: string;  // CHAR(36) NOT NULL - CHANGED to string
-  CourseID: number;  // NOT NULL
-  Status: 'Active' | 'Completed' | 'Cancelled';  // ENUM DEFAULT 'Active'
-  CreatedAt: string;  // DATETIME DEFAULT CURRENT_TIMESTAMP
+  EnrollmentID: number;
+  UserID: string;
+  CourseID: number;
+  Status: 'Active' | 'Completed' | 'Cancelled';
+  CreatedAt: string;
 }
 
 export interface UserCourseSection {
-  UserCourseSectionID: number;  // BIGINT AUTO_INCREMENT
-  UserID: string;  // CHAR(36) NOT NULL - CHANGED
-  EnrollmentID: number;  // NOT NULL
-  SectionID: number;  // NOT NULL
-  Progress: number;  // DECIMAL(5,2) DEFAULT 0.0
+  UserCourseSectionID: number;
+  UserID: string;
+  EnrollmentID: number;
+  SectionID: number;
+  Progress: number;
 }
 
 export interface UserLesson {
-  UserLessonID: number;  // BIGINT AUTO_INCREMENT
+  UserLessonID: number;
   LessonID?: number;
-  UserID: string;  // CHANGED to string
+  UserID: string;
   EnrollmentID?: number;
-  IsDone: boolean;  // DEFAULT FALSE
-  WatchedDuration?: number;  // INT DEFAULT 0
+  IsDone: boolean;
+  WatchedDuration?: number;
   CompletedAt?: string;
 }
 
 export interface CourseReview {
-  ReviewID: number;  // BIGINT AUTO_INCREMENT
-  CourseID: number;  // NOT NULL
-  UserID: string;  // CHAR(36) NOT NULL - CHANGED
-  Rating: number;  // INT 1-5
-  Comment?: string;  // TEXT
-  CreatedAt: string;  // DATETIME DEFAULT CURRENT_TIMESTAMP
+  ReviewID: number;
+  CourseID: number;
+  UserID: string;
+  Rating: number;
+  Comment?: string;
+  CreatedAt: string;
 }
 
 // ==========================================================
@@ -170,38 +160,38 @@ export interface CourseReview {
 // ==========================================================
 
 export interface Service {
-  ServiceID: number;  // BIGINT AUTO_INCREMENT
-  Title?: string;  // VARCHAR
-  Duration?: number;  // INT
-  Description?: string;  // TEXT
-  Price?: number;  // DECIMAL(10,2) DEFAULT 0.00
+  ServiceID: number;
+  Title?: string;
+  Duration?: number;
+  Description?: string;
+  Price?: number;
 }
 
 export interface ServiceBenefit {
-  BenefitID: number;  // BIGINT AUTO_INCREMENT
-  Title?: string;  // VARCHAR
-  Description?: string;  // TEXT
-  NumberUsage?: number;  // INT DEFAULT 0
-  ServiceID?: number;  // BIGINT
+  BenefitID: number;
+  Title?: string;
+  Description?: string;
+  NumberUsage?: number;
+  ServiceID?: number;
 }
 
 export interface UserService {
-  UserServiceID: number;  // BIGINT AUTO_INCREMENT
-  UserID: string;  // CHAR(36) - CHANGED
-  ServiceID?: number;  // BIGINT
-  StartDate?: string;  // DATETIME
-  IsActive: boolean;  // DEFAULT TRUE
-  Title?: string;  // VARCHAR
-  Duration?: number;  // INT
+  UserServiceID: number;
+  UserID: string;
+  ServiceID?: number;
+  StartDate?: string;
+  IsActive: boolean;
+  Title?: string;
+  Duration?: number;
 }
 
 export interface UserServiceBenefit {
-  UserServiceBenefitID: number;  // BIGINT AUTO_INCREMENT
+  UserServiceBenefitID: number;
   UserServiceID: number;
-  Title?: string;  // VARCHAR
-  Description?: string;  // TEXT
-  NumberUsageRemaining?: number;  // INT DEFAULT 0
-  NumberBooking?: number;  // INT DEFAULT 0
+  Title?: string;
+  Description?: string;
+  NumberUsageRemaining?: number;
+  NumberBooking?: number;
 }
 
 // ==========================================================
@@ -209,44 +199,44 @@ export interface UserServiceBenefit {
 // ==========================================================
 
 export interface Schedule {
-  ScheduleID: number;  // BIGINT AUTO_INCREMENT
-  TutorID: number;  // NOT NULL
-  StartTime: string;  // DATETIME
-  EndTime: string;  // DATETIME
-  IsAvailable: boolean;  // DEFAULT TRUE
+  ScheduleID: number;
+  TutorID: number;
+  StartTime: string;
+  EndTime: string;
+  IsAvailable: boolean;
 }
 
 export interface Booking {
-  BookingID: number;  // BIGINT AUTO_INCREMENT
-  UserID: string;  // CHAR(36) - CHANGED
-  TutorID: number;  // BIGINT
-  ScheduleID: number;  // BIGINT
-  UserServiceID?: number;  // BIGINT
-  Status: 'Pending' | 'Confirmed' | 'Cancelled' | 'Completed';  // ENUM DEFAULT 'Pending'
-  CreatedAt: string;  // DATETIME DEFAULT CURRENT_TIMESTAMP
-  UpdatedAt: string;  // DATETIME ON UPDATE
+  BookingID: number;
+  UserID: string;
+  TutorID: number;
+  ScheduleID: number;
+  UserServiceID?: number;
+  Status: 'Pending' | 'Confirmed' | 'Cancelled' | 'Completed';
+  CreatedAt: string;
+  UpdatedAt: string;
 }
 
 export interface Payment {
-  PaymentID: number;  // BIGINT AUTO_INCREMENT
-  Amount?: number;  // DECIMAL(10,2)
-  PaymentType: 'Course' | 'Service';  // ENUM
-  PaymentMethod: 'PAYOS' | 'VNPAY' | 'BANK';  // ENUM
-  EnrollmentID?: number;  // BIGINT NULL (mutually exclusive with UserServiceID)
-  UserServiceID?: number;  // BIGINT NULL
-  IsPaid: boolean;  // DEFAULT FALSE
-  IsRefund: boolean;  // DEFAULT FALSE
-  ReceivedID?: string;  // CHAR(36) NULL - CHANGED to string (UUID)
-  AmountPaid?: number;  // DECIMAL(10,2) DEFAULT 0.00
-  // Note: CHECK constraint handled in SQL; in TS, ensure logic in forms
+  PaymentID: number;
+  Amount?: number;
+  PaymentType: 'Course' | 'Service';
+  PaymentMethod: 'PAYOS' | 'VNPAY' | 'BANK';
+  EnrollmentID?: number;
+  UserServiceID?: number;
+  IsPaid: boolean;
+  IsRefund: boolean;
+  ReceivedID?: string;
+  AmountPaid?: number;
+
 }
 
 export interface Feedback {
-  FeedbackID: number;  // BIGINT AUTO_INCREMENT
-  UserID: string;  // CHAR(36) - CHANGED
-  PaymentID: number;  // BIGINT
-  Rating: number;  // INT 1-5
-  Comment?: string;  // TEXT
+  FeedbackID: number;
+  UserID: string;
+  PaymentID: number;
+  Rating: number;
+  Comment?: string;
 }
 
 // ==========================================================
@@ -254,31 +244,31 @@ export interface Feedback {
 // ==========================================================
 
 export interface ChatRoom {
-  ChatRoomID: number;  // BIGINT AUTO_INCREMENT
-  Title?: string;  // VARCHAR
-  Description?: string;  // TEXT
-  UserID: string;  // CHAR(36) - CHANGED
-  TutorID?: number;  // BIGINT
-  ChatRoomType: 'Advice' | 'Training';  // ENUM DEFAULT 'Training'
+  ChatRoomID: number;
+  Title?: string;
+  Description?: string;
+  UserID: string;
+  TutorID?: number;
+  ChatRoomType: 'Advice' | 'Training';
 }
 
 export interface ChatRoomMessage {
-  MessageID: number;  // BIGINT AUTO_INCREMENT
-  ChatRoomID: number;  // BIGINT
-  SenderID: string;  // CHAR(36) - CHANGED
-  Content?: string;  // TEXT
-  MessageType: 'Text' | 'Image' | 'File';  // ENUM DEFAULT 'Text'
-  CreatedAt: string;  // DATETIME DEFAULT CURRENT_TIMESTAMP
+  MessageID: number;
+  ChatRoomID: number;
+  SenderID: string;
+  Content?: string;
+  MessageType: 'Text' | 'Image' | 'File';
+  CreatedAt: string;
 }
 
 export interface Policy {
-  PolicyID: number;  // BIGINT AUTO_INCREMENT
-  Title?: string;  // VARCHAR
-  Description?: string;  // TEXT
-  PolicyType: 'Commission' | 'Refund' | 'General';  // ENUM NOT NULL
-  Value?: number;  // INT
-  CreatedAt: string;  // DATETIME DEFAULT CURRENT_TIMESTAMP
-  IsActive: boolean;  // DEFAULT TRUE
+  PolicyID: number;
+  Title?: string;
+  Description?: string;
+  PolicyType: 'Commission' | 'Refund' | 'General';
+  Value?: number;
+  CreatedAt: string;
+  IsActive: boolean;
 }
 
 // ==========================================================
@@ -288,37 +278,37 @@ export interface Policy {
 // Language (from Courses.Language, Tutor.TeachingLanguage)
 export interface Language {
   name: string;
-  code?: string;  // e.g., 'en'
+  code?: string;
   level?: 'Beginner' | 'Intermediate' | 'Advanced';
 }
 
 // Availability (from Schedule)
 export interface Availability {
   timezone?: string;
-  schedules: Schedule[];  // Array
+  schedules: Schedule[];
 }
 
 // WeekCurriculum (from CourseSection/Lessons)
 export interface WeekCurriculum {
-  week: number;  // Or SectionID
+  week: number;
   title: string;
   lessons: Lesson[];
 }
 
 // Material/Resource (from LessonResource)
 export interface Material {
-  id: number;  // ResourceID
-  title?: string;  // ResourceTitle
-  type: 'PDF' | 'ExternalLink';  // ResourceType
+  id: number;
+  title?: string;
+  type: 'PDF' | 'ExternalLink';
   size?: string;
-  downloadUrl: string;  // ResourceURL
+  downloadUrl: string;
 }
 
 // Comment/Reply (from CourseReview/Feedback)
 export interface Comment {
   id: number;
-  userId: string;  // UserID (UUID)
-  message: string;  // Comment
+  userId: string;
+  message: string;
   createdAt: string;
   replies?: Reply[];
 }
@@ -373,10 +363,9 @@ export interface SignInForm {
 
 export interface SignUpForm {
   fullName?: string;
-  email: string;  // NOT NULL
-  phone?: string;
+  email: string;
   password: string;
-  confirmPassword?: string;  // Client-side
+  confirmPassword?: string;
   // Add role?: 'Learner' if selectable
 }
 
@@ -385,12 +374,12 @@ export interface CourseFilters {
   language: string;
   level: string;
   priceRange: string;
-  categoryId?: number;  // From CourseCategory
-  status?: 'Approved';  // From Courses.Status
+  categoryId?: number;
+  status?: 'Approved';
 }
 
 export interface TutorFilters {
-  language: string;  // TeachingLanguage
+  language: string;
   priceRange: string;
-  status?: 'Approved';  // From Tutor.Status
+  status?: 'Approved';
 }

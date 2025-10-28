@@ -1,9 +1,10 @@
 // Phát hiện lỗi trong dev mode
 import { StrictMode } from 'react';
 import ReactDOM from 'react-dom/client';
-//Cho phép điều hướng trang
+//Cho phép điều hướng trang không reload
 import { BrowserRouter } from 'react-router-dom';
 //Cho phép dùng Redux
+//Redux là một kho lưu trữ (store) cho dữ liệu của ứng dụng.
 import { Provider } from 'react-redux';
 import { store } from '@/redux/store';
 //Cuộn lên đầu khi đổi trang

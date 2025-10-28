@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';  // ✅ Thêm useNavigate để redirect sau logout
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Bell, Menu, Languages, Heart, User, LogOut, BookOpen, Settings, GraduationCap, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -15,23 +15,21 @@ import { cn } from '@/lib/utils';
 import { ROUTES } from '@/constants';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '@/redux/store';
-import { signOut } from '@/redux/slices/authSlice'; // ✅ Giữ nguyên, giờ là thunk async
+import { signOut } from '@/redux/slices/authSlice';
 
 const Header = () => {
   const location = useLocation();
-  const navigate = useNavigate();  // ✅ Thêm để redirect
+  const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
   const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   const handleLogout = async () => {
     try {
-      await dispatch(signOut()).unwrap();  // ✅ Dispatch thunk async và await để handle redirect
-      console.log('✅ Logout success');
-      navigate(ROUTES.SIGN_IN, { replace: true });  // Redirect về sign-in
+      await dispatch(signOut()).unwrap();
+      navigate(ROUTES.SIGN_IN, { replace: true });
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (err) {
-      console.error('❌ Logout error:', err);
-      // Optional: navigate anyway nếu error
       navigate(ROUTES.SIGN_IN, { replace: true });
     }
   };
@@ -62,10 +60,14 @@ const Header = () => {
     },
   ];
 
-
   const getUserInitials = () => {
-    if (!user?.FullName) return 'U';
-    return user.FullName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
+    if (user?.fullName) {  // Sửa lowercase f (match BE)
+      return user.fullName.split(' ').map((n: string) => n[0]).join('').toLocaleUpperCase('vi-VN').slice(0, 2);  // Handle Unicode Đ/đ
+    }
+    if (user?.email) {  // Sửa lowercase e
+      return user.email.split('@')[0].slice(0, 2).toLocaleUpperCase('vi-VN');  // 'GI' từ 'giaxuyen66'
+    }
+    return 'U';
   };
 
   return (
@@ -199,7 +201,7 @@ const Header = () => {
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                         <Avatar className="h-10 w-10">
-                          <AvatarImage src={user?.AvatarURL || undefined} alt={user?.FullName || 'User'} />
+                          <AvatarImage src={user?.AvatarURL || undefined} alt={user?.fullName || 'User'} />
                           <AvatarFallback className="bg-primary text-primary-foreground">
                             {getUserInitials()}
                           </AvatarFallback>
@@ -209,39 +211,39 @@ const Header = () => {
                     <DropdownMenuContent align="end" className="w-56">
                       <DropdownMenuLabel>
                         <div className="flex flex-col space-y-1">
-                          <p className="text-sm font-medium leading-none">{user?.FullName || 'User'}</p> {/* ✅ Sửa: Dùng fullName */}
+                          <p className="text-sm font-medium leading-none">{user?.fullName || 'User'}</p>
                           <p className="text-xs leading-none text-muted-foreground">
-                            {user?.Email || 'user@example.com'}
+                            {user?.email || 'user@example.com'}
                           </p>
                         </div>
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem asChild>
-                        <Link to="/profile" className="cursor-pointer"> {/* ✅ Sửa: Hardcode paths vì ROUTES chưa có */}
+                        <Link to="/profile" className="cursor-pointer">
                           <User className="mr-2 h-4 w-4" />
                           <span>Hồ sơ</span>
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <Link to="/my-courses" className="cursor-pointer"> {/* ✅ Sửa: Hardcode paths vì ROUTES chưa có */}
+                        <Link to="/my-courses" className="cursor-pointer">
                           <BookOpen className="mr-2 h-4 w-4" />
                           <span>Khóa học của tôi</span>
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <Link to="/my-enrollments" className="cursor-pointer"> {/* ✅ Sửa: Hardcode paths vì ROUTES chưa có */}
+                        <Link to="/my-enrollments" className="cursor-pointer">
                           <GraduationCap className="mr-2 h-4 w-4" />
                           <span>Tiến độ học</span>
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <Link to="/payment-history" className="cursor-pointer"> {/* ✅ Sửa: Hardcode paths vì ROUTES chưa có */}
+                        <Link to="/payment-history" className="cursor-pointer">
                           <CreditCard className="mr-2 h-4 w-4" />
                           <span>Lịch sử thanh toán</span>
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <Link to="/settings" className="cursor-pointer"> {/* ✅ Sửa: Hardcode paths vì ROUTES chưa có */}
+                        <Link to="/settings" className="cursor-pointer">
                           <Settings className="mr-2 h-4 w-4" />
                           <span>Cài đặt</span>
                         </Link>

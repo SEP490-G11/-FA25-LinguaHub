@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-
+//trì hoãn việc cập nhật giá trị
 export function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
 

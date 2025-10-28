@@ -1,25 +1,33 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import BaseRequest from '@/lib/api';
 import type { User } from '@/types';
+import {AxiosError} from "axios";
 
-// ======= Common API Types =======
+// interface cho response API
 interface ApiRespond<T> {
     result: T;
     message?: string;
 }
-
+//Type cho data đăng nhập
 interface SignInCredentials {
     username: string;
     password: string;
     rememberMe?: boolean;
 }
-
+//Type cho data đăng ký
 interface SignUpData {
     fullName: string;
     email: string;
     password: string;
+    username?: string;
+    phone?: string;
+    dob?: string;
+    gender?: string;
+    country?: string;
+    address?: string;
+    bio?: string;
 }
-
+//Type cho state của slice
 interface AuthState {
     user: User | null;
     isAuthenticated: boolean;
@@ -76,8 +84,7 @@ export const testConnection = createAsyncThunk(
         }
     }
 );
-
-// ======= SIGN IN (Login) =======
+// ======= SignIn =======
 export const signIn = createAsyncThunk(
     'auth/signIn',
     async (credentials: SignInCredentials, { rejectWithValue }) => {
@@ -86,43 +93,50 @@ export const signIn = createAsyncThunk(
                 username: credentials.username,
                 password: credentials.password,
             };
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const response = await BaseRequest.Post<ApiRespond<any>>('/auth/token', apiData);
 
-            const response = await BaseRequest.Post<{
-                code: number;
-                message: string;
-                result: {
-                    token: string;
-                    authenticated: boolean;
-                };
-            }>('/auth/token', apiData);
+            if (!response || !response.result?.authenticated) {
+                return rejectWithValue(response?.message || 'Sai tên đăng nhập hoặc mật khẩu');
+            }
 
-            const { token, authenticated } = response.result;
+            const { accessToken, refreshToken, authenticated } = response.result;
 
-            if (authenticated && token) {
-                // Lưu token
-                const expiresDays = credentials.rememberMe ? 7 : 1;
-                cookie_set('AT', token, expiresDays);
-                localStorage.setItem('access_token', token);
-
-                const userResponse = await BaseRequest.Get<ApiRespond<User>>('/users/myInfo');
-                const user = userResponse.result;
-
-                if (user) {
-                    localStorage.setItem('user_data', JSON.stringify(user));
-                    return { user, token };
-                } else {
-                    return rejectWithValue('Không thể lấy thông tin người dùng');
-                }
-            } else {
+            if (!authenticated || !accessToken) {
                 return rejectWithValue('Sai tên đăng nhập hoặc mật khẩu');
             }
-        } catch (error: unknown) {
-            const err = error as { response?: { data?: { message?: string } } };
-            const message = err?.response?.data?.message || 'Đăng nhập thất bại';
+            //Tự Động Gửi Kèm Request
+            const expiresDays = credentials.rememberMe ? 7 : 1;
+            cookie_set('AT', accessToken, expiresDays);
+            cookie_set('RT', refreshToken, expiresDays);
+            // Dễ Access Từ JS
+            localStorage.setItem('access_token', accessToken);
+            localStorage.setItem('refresh_token', refreshToken);
+            // Lấy thông tin người dùng
+            const userResponse = await BaseRequest.Get<ApiRespond<User>>('/users/myInfo');
+            const user = userResponse.result;
+
+            if (!user) {
+                return rejectWithValue('Không thể lấy thông tin người dùng');
+            }
+
+            localStorage.setItem('user_data', JSON.stringify(user));
+            return { user, token: accessToken, authenticated: true };
+        } catch (err: unknown) {
+            const error = err as AxiosError<{ message?: string }>;
+
+            const message =
+                error.response?.data?.message ||
+                (error.response?.status === 401
+                    ? 'Sai tên đăng nhập hoặc mật khẩu'
+                    : 'Đăng nhập thất bại');
+
             return rejectWithValue(message);
         }
     }
 );
+
+
 
 // ======= SIGN OUT (Logout) =======
 export const signOut = createAsyncThunk(
@@ -132,11 +146,11 @@ export const signOut = createAsyncThunk(
             const token = localStorage.getItem('access_token');
             if (token) {
                 await BaseRequest.Post('/auth/logout', { token });
-                console.log('✅ Logout API success');
+                console.log(' Logout API success');
             }
             return true;
         } catch (error: unknown) {
-            console.error('❌ Logout API error:', error);
+            console.error(' Logout API error:', error);
             return true;
         }
     }
@@ -166,6 +180,30 @@ export const signUp = createAsyncThunk(
             return { user, token };
         } catch (error: unknown) {
             const message = (error as Error).message || 'Sign up failed';
+            return rejectWithValue(message);
+        }
+    }
+);
+export const verifyOtp = createAsyncThunk(
+    'auth/verifyOtp',
+    async (otp: string, { rejectWithValue }) => {
+        try {
+            const token = localStorage.getItem('access_token');
+            if (!token) return rejectWithValue('No token');
+
+            const response = await BaseRequest.Post<ApiRespond<null>>(
+                '/auth/verify',
+                { otp },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                }
+            );
+
+            return response.message || 'Email verified successfully';
+        } catch (error) {
+            const message = (error as Error).message || 'OTP verification failed';
             return rejectWithValue(message);
         }
     }
@@ -332,9 +370,8 @@ const authSlice = createSlice({
                 state.isLoading = true;
                 state.error = null;
             })
-            .addCase(sendOtp.fulfilled, (state, action) => {
+            .addCase(sendOtp.fulfilled, (state) => {
                 state.isLoading = false;
-                // Bạn có thể cập nhật trạng thái gửi OTP thành công nếu muốn
             })
             .addCase(sendOtp.rejected, (state, action) => {
                 state.isLoading = false;

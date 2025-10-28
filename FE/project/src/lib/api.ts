@@ -1,7 +1,9 @@
 import axios, {
+    //Kiểm soát cấu hình request
     AxiosRequestConfig,
     AxiosResponse,
     AxiosError,
+    // Làm việc với request interceptor
     InternalAxiosRequestConfig
 } from 'axios';
 
@@ -22,7 +24,7 @@ type UnwrappedResponse<T> = T;
 const baseURL = process.env.NODE_ENV === 'production'
     ? 'https://lms.autopass.blog/'
     : 'http://localhost:8080';
-
+//Tạo client Axios riêng biệt, để không cần lặp lại baseURL mỗi lần gọi.
 const api = axios.create({
     baseURL,
     headers: {
@@ -30,7 +32,7 @@ const api = axios.create({
     },
     timeout: 10000,
 });
-
+//Thêm token vào header
 const onRequestSuccess = (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
     const token: string | undefined = cookie_get('AT');
     if (token && token.trim() !== '') {
@@ -50,34 +52,30 @@ const onResponseSuccess = <T>(response: AxiosResponse<T>): UnwrappedResponse<T> 
 
 interface ApiErrorData {
     message?: string;
-    // Thêm fields khác nếu backend return
 }
 
 const onResponseError = (error: AxiosError<ApiErrorData>): Promise<AxiosError<ApiErrorData>> => {
     if (error.response) {
         const status = error.response.status;
         const data = error.response.data as ApiErrorData;
-        const message = data.message;
+        const message = data?.message || '';
         console.warn('API Error:', { status, message });
-
-        if (
-            status === 401 ||
-            (status === 403 && message === 'Token expired')
-        ) {
+        if (status === 403 && message === 'Token expired') {
             cookie_delete('AT');
             window.location.href = '/sign-in';
         }
-        return Promise.reject(error.response);
     }
+
     return Promise.reject(error);
 };
 
+// Đăng ký interceptor cho Axios
 api.interceptors.request.use(onRequestSuccess, onRequestError);
 api.interceptors.response.use(
     onResponseSuccess as unknown as (value: AxiosResponse<unknown>) => AxiosResponse<unknown>,
     onResponseError
 );
-
+//định nghĩa kiểu dữ liệu
 interface ApiMethods {
     Get: <T = unknown>(url: string, config?: AxiosRequestConfig) => Promise<T>;
     Post: <T = unknown, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig) => Promise<T>;
@@ -87,7 +85,11 @@ interface ApiMethods {
 }
 
 const BaseRequest: ApiMethods = {
-    Get: async <T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> => {
+    //Chữ Ký Hàm
+    Get: async <T = unknown>(
+        url: string,
+        config?: AxiosRequestConfig
+    ): Promise<T> => {
         try {
             const response = await api.get<T>(url, config);
             return response as unknown as T;
@@ -101,7 +103,11 @@ const BaseRequest: ApiMethods = {
         }
     },
 
-    Post: async <T = unknown, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig): Promise<T> => {
+    Post: async <T = unknown, D = unknown>(
+        url: string,
+        data?: D,
+        config?: AxiosRequestConfig
+    ): Promise<T> => {
         try {
             const response = await api.post<T>(url, data, config);
             return response as unknown as T;
@@ -115,7 +121,11 @@ const BaseRequest: ApiMethods = {
         }
     },
 
-    Put: async <T = unknown, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig): Promise<T> => {
+    Put: async <T = unknown, D = unknown>(
+        url: string,
+        data?: D,
+        config?: AxiosRequestConfig
+    ): Promise<T> => {
         try {
             const response = await api.put<T>(url, data, config);
             return response as unknown as T;
@@ -129,7 +139,11 @@ const BaseRequest: ApiMethods = {
         }
     },
 
-    Patch: async <T = unknown, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig): Promise<T> => {
+    Patch: async <T = unknown, D = unknown>(
+        url: string,
+        data?: D,
+        config?: AxiosRequestConfig
+    ): Promise<T> => {
         try {
             const response = await api.patch<T>(url, data, config);
             return response as unknown as T;
@@ -143,7 +157,10 @@ const BaseRequest: ApiMethods = {
         }
     },
 
-    Delete: async <T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> => {
+    Delete: async <T = unknown>(
+        url: string,
+        config?: AxiosRequestConfig
+    ): Promise<T> => {
         try {
             const response = await api.delete<T>(url, config);
             return response as unknown as T;
@@ -158,48 +175,6 @@ const BaseRequest: ApiMethods = {
     },
 };
 
-const BaseRequestV2 = {
-    Get: async <T = unknown>(url: string, config?: AxiosRequestConfig): Promise<[AxiosError<ApiErrorData> | null, T | null]> => {
-        try {
-            const res = await api.get<T>(url, config);
-            return [null, res as unknown as T];
-        } catch (err: unknown) {
-            const error = err as AxiosError<ApiErrorData>;
-            return [error, null];
-        }
-    },
 
-    Post: async <T = unknown, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig): Promise<[AxiosError<ApiErrorData> | null, T | null]> => {
-        try {
-            const res = await api.post<T>(url, data, config);
-            return [null, res as unknown as T];
-        } catch (err: unknown) {
-            const error = err as AxiosError<ApiErrorData>;
-            return [error, null];
-        }
-    },
-
-    Put: async <T = unknown, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig): Promise<[AxiosError<ApiErrorData> | null, T | null]> => {
-        try {
-            const res = await api.put<T>(url, data, config);
-            return [null, res as unknown as T];
-        } catch (err: unknown) {
-            const error = err as AxiosError<ApiErrorData>;
-            return [error, null];
-        }
-    },
-
-    Delete: async <T = unknown>(url: string, config?: AxiosRequestConfig): Promise<[AxiosError<ApiErrorData> | null, T | null]> => {
-        try {
-            const res = await api.delete<T>(url, config);
-            return [null, res as unknown as T];
-        } catch (err: unknown) {
-            const error = err as AxiosError<ApiErrorData>;
-            return [error, null];
-        }
-    },
-};
-
-// Named exports
-export { api, BaseRequest, BaseRequestV2 };
+export { api, BaseRequest};
 export default BaseRequest;
