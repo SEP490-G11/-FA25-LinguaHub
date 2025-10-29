@@ -42,7 +42,7 @@ public class PermissionController {
                 .build();
     }
 
-    //Xóa quyền – chỉ Admin
+    //Xóa quyền-Dùng để test
     @DeleteMapping("/{permission}")
     @PreAuthorize("hasAuthority('DELETE_PERMISSION')")
     public ApiRespond<Void> delete(@PathVariable String permission) {

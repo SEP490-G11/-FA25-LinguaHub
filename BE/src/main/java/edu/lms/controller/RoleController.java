@@ -43,7 +43,7 @@ public class RoleController {
                 .build();
     }
 
-    //Xóa role – chỉ Admin
+    //Xóa role – Dùng để test
     @DeleteMapping("/{role}")
     @PreAuthorize("hasAuthority('DELETE_ROLE')")
     public ApiRespond<Void> delete(@PathVariable String role) {
@@ -53,7 +53,7 @@ public class RoleController {
                 .build();
     }
 
-    //Cập nhật role – chỉ Admin
+    //Cập nhật role – Dùng để test
     @PutMapping("/{roleName}")
     @PreAuthorize("hasAuthority('UPDATE_ROLE')")
     public ResponseEntity<RoleResponse> updateRole(
