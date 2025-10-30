@@ -12,25 +12,26 @@ import java.util.List;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-@Table(name = "UserService")
-public class UserService {
+@Table(name = "UserBookingPlan")
+public class UserBookingPlan {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Long userServiceID;
+    Long userBookingPlanID;
 
     @ManyToOne
     @JoinColumn(name = "userID")
     User user;
 
     @ManyToOne
-    @JoinColumn(name = "serviceID")
-    Service service;
+    @JoinColumn(name = "bookingPlanID")
+    BookingPlan bookingPlan;
 
-    LocalDateTime startDate;
+    LocalDateTime startDate = LocalDateTime.now();
     Boolean isActive = true;
     String title;
     Integer duration;
 
-    @OneToMany(mappedBy = "userService", cascade = CascadeType.ALL)
-    List<UserServiceBenefit> userServiceBenefits;
+    @OneToMany(mappedBy = "userBookingPlan", cascade = CascadeType.ALL)
+    List<UserBookingPlanBenefit> userBookingPlanBenefits;
 }

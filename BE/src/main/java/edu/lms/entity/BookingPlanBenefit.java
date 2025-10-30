@@ -10,8 +10,8 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-@Table(name = "ServiceBenefit")
-public class ServiceBenefit {
+@Table(name = "BookingPlanBenefit")
+public class BookingPlanBenefit {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long benefitID;
@@ -21,6 +21,6 @@ public class ServiceBenefit {
     Integer numberUsage;
 
     @ManyToOne
-    @JoinColumn(name = "serviceID")
-    Service service;
+    @JoinColumn(name = "bookingPlanID")
+    BookingPlan bookingPlan;
 }

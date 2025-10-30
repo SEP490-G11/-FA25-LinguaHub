@@ -13,12 +13,12 @@ import java.util.List;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-@Table(name = "Services")
-public class Service {
+@Table(name = "BookingPlan")
+public class BookingPlan {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Long serviceID;
+    Long bookingPlanID;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tutorID", nullable = false)
@@ -46,6 +46,6 @@ public class Service {
         updatedAt = LocalDateTime.now();
     }
 
-    @OneToMany(mappedBy = "service", cascade = CascadeType.ALL, orphanRemoval = true)
-    List<ServiceBenefit> benefits;
+    @OneToMany(mappedBy = "bookingPlan", cascade = CascadeType.ALL, orphanRemoval = true)
+    List<BookingPlanBenefit> benefits;
 }

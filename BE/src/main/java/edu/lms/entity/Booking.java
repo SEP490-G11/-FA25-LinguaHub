@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "Booking")
 public class Booking {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long bookingID;
@@ -27,12 +28,20 @@ public class Booking {
     @ManyToOne @JoinColumn(name = "scheduleID")
     Schedule schedule;
 
-    @ManyToOne @JoinColumn(name = "userServiceID")
-    UserService userService;
+    @ManyToOne @JoinColumn(name = "userBookingPlanID")
+    UserBookingPlan userBookingPlan;
 
     @Enumerated(EnumType.STRING)
     BookingStatus status = BookingStatus.Pending;
 
+    @Builder.Default
     LocalDateTime createdAt = LocalDateTime.now();
+
+    @Builder.Default
     LocalDateTime updatedAt = LocalDateTime.now();
+
+    @PreUpdate
+    public void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 }

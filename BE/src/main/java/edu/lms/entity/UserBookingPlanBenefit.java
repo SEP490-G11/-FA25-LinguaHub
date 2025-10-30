@@ -10,15 +10,16 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-@Table(name = "UserServiceBenefit")
-public class UserServiceBenefit {
+@Table(name = "UserBookingPlanBenefit")
+public class UserBookingPlanBenefit {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Long userServiceBenefitID;
+    Long userBookingPlanBenefitID;
 
     @ManyToOne
-    @JoinColumn(name = "userServiceID")
-    UserService userService;
+    @JoinColumn(name = "userBookingPlanID")
+    UserBookingPlan userBookingPlan;
 
     String title;
     String description;
