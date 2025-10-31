@@ -34,36 +34,46 @@ public class Payment {
     @Column(nullable = false)
     PaymentMethod paymentMethod; // PAYOS | VNPAY | BANK
 
-    //NEW: Mã định danh giao dịch để PayOS hoặc VNPAY nhận dạng
+    // Mã định danh giao dịch để PayOS hoặc VNPAY nhận dạng
     @Column(unique = true, length = 100)
     String orderCode;
 
-    //NEW: Mã link thanh toán (PayOS trả về)
+    // Mã link thanh toán (PayOS trả về)
     @Column(length = 100)
     String paymentLinkId;
 
-    //NEW: URL để FE redirect người học tới trang thanh toán
+    // URL để FE redirect người học tới trang thanh toán
     @Column(length = 500)
     String checkoutUrl;
 
-    //NEW: QR code link nếu muốn hiển thị trực tiếp trên FE
+    // QR code link nếu muốn hiển thị trực tiếp trên FE
     @Column(length = 500)
     String qrCodeUrl;
 
-    //NEW: Trạng thái (Pending, Paid, Failed, Refund)
+    // Trạng thái (Pending, Paid, Failed, Refund)
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
     PaymentStatus status;
 
-
-    //NEW: Thời điểm giao dịch hoàn tất (PayOS gửi về qua webhook)
+    // Thời điểm giao dịch hoàn tất (PayOS gửi về qua webhook)
     LocalDateTime paidAt;
 
-    //NEW: Dữ liệu phản hồi gốc (raw) để đối soát
+    // Dữ liệu phản hồi gốc (raw) để đối soát
     @Lob
     String transactionResponse;
 
-    // Giữ nguyên các liên kết logic
+    // ===============================
+    // ⚡️ Thêm mới: Lưu user và mục tiêu thanh toán
+    // ===============================
+    @Column(name = "targetId")
+    Long targetId; // CourseID hoặc BookingPlanID
+
+    @Column(name = "userId")
+    Long userId; // Ai là người thanh toán
+
+    // ===============================
+    // Liên kết logic sau khi thanh toán thành công
+    // ===============================
     @ManyToOne
     @JoinColumn(name = "enrollmentID")
     Enrollment enrollment; // Khi thanh toán Course
