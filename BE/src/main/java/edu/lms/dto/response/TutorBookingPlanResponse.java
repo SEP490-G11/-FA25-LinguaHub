@@ -10,7 +10,7 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class TutorServiceResponse {
+public class TutorBookingPlanResponse {
     Long serviceID;
     String title;
     Integer duration;

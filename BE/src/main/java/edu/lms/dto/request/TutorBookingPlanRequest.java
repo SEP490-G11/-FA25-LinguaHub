@@ -14,7 +14,7 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class TutorServiceRequest {
+public class TutorBookingPlanRequest {
 
     @NotNull(message = "TutorID is required")
     Long tutorID;

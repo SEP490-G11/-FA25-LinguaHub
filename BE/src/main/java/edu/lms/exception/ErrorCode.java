@@ -41,8 +41,8 @@ public enum ErrorCode {
     PAYMENT_FAILED(6002, "Payment transaction failed", HttpStatus.BAD_REQUEST),
     REFUND_NOT_ALLOWED(6003, "Refund not allowed for this transaction", HttpStatus.FORBIDDEN),
 
-    // SERVICE & BOOKING
-    SERVICE_NOT_FOUND(7001, "Service not found", HttpStatus.NOT_FOUND),
+    // BOOKING_PLAN & BOOKING
+    BOOKING_PLAN_NOT_FOUND(7001, "BookingPlan not found", HttpStatus.NOT_FOUND),
     BOOKING_NOT_FOUND(7002, "Booking not found", HttpStatus.NOT_FOUND),
     BOOKING_ALREADY_CONFIRMED(7003, "Booking is already confirmed", HttpStatus.BAD_REQUEST),
     BOOKING_TIME_CONFLICT(7004, "Tutor schedule conflict at this time", HttpStatus.CONFLICT),
