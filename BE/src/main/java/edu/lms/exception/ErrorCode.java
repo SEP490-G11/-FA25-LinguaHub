@@ -49,7 +49,10 @@ public enum ErrorCode {
 
     //  CHAT & POLICY
     CHAT_ROOM_NOT_FOUND(8001, "Chat room not found", HttpStatus.NOT_FOUND),
-    POLICY_NOT_FOUND(8002, "Policy not found", HttpStatus.NOT_FOUND);
+    POLICY_NOT_FOUND(8002, "Policy not found", HttpStatus.NOT_FOUND),
+
+    //PAYMENT
+    INVALID_PAYMENT_TYPE(8003, "Ivalid Payment Type", HttpStatus.NOT_FOUND),;
 
 
     ErrorCode(int code, String message,HttpStatusCode httpStatusCode) {

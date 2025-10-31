@@ -13,7 +13,7 @@ import java.util.List;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-@Table(name = "BookingPlan")
+@Table(name = "BookingPlans")
 public class BookingPlan {
 
     @Id
@@ -32,6 +32,8 @@ public class BookingPlan {
     @Column(columnDefinition = "TEXT")
     String description;
 
+    //chuẩn kiểu DECIMAL(10,2)
+    @Column(precision = 10, scale = 2, nullable = false)
     @Builder.Default
     BigDecimal price = BigDecimal.ZERO;
 

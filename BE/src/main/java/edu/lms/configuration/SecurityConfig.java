@@ -37,7 +37,7 @@ public class SecurityConfig {
     private UserDetailsService userDetailsService;
 
     private static final String[] PUBLIC_ENDPOINTS = {
-            // ✅ Swagger UI + OpenAPI
+            //  Swagger UI + OpenAPI
             "/swagger-ui.html",
             "/swagger-ui/**",
             "/swagger-resources/**",
@@ -47,33 +47,14 @@ public class SecurityConfig {
             "/webjars/**",
             "/configuration/ui",
             "/configuration/security",
-
-            // ✅ Các endpoint public khác
             "/auth/**",
-            "/api/test/**"
+            "/api/test/**",
+            "/api/payments/webhook",
+            "api/payments/create"
     };
 
 
 
-//    @Bean
-//    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-//        http
-//                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-//                .csrf(AbstractHttpConfigurer::disable)
-//                .authorizeHttpRequests(auth -> auth
-//                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-//                        .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
-//                        .anyRequest().authenticated()
-//                )
-//                .oauth2ResourceServer(oauth2 -> oauth2
-//                        .jwt(jwt -> jwt
-//                                .decoder(customJwtDecoder)
-//                                .jwtAuthenticationConverter(jwtAuthenticationConverter()))
-//                        .authenticationEntryPoint(new JwtAuthenticationEntryPoint())
-//                );
-//
-//        return http.build();
-//    }
 @Bean
 public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     http
