@@ -3,6 +3,7 @@ package edu.lms.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -12,7 +13,7 @@ import java.util.List;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-@Table(name = "UserBookingPlan")
+@Table(name = "UserBookingPlans")
 public class UserBookingPlan {
 
     @Id
@@ -20,18 +21,19 @@ public class UserBookingPlan {
     Long userBookingPlanID;
 
     @ManyToOne
-    @JoinColumn(name = "userID")
+    @JoinColumn(name = "userID", nullable = false)
     User user;
 
     @ManyToOne
-    @JoinColumn(name = "bookingPlanID")
+    @JoinColumn(name = "bookingPlanID", nullable = false)
     BookingPlan bookingPlan;
 
+    @Builder.Default
     LocalDateTime startDate = LocalDateTime.now();
-    Boolean isActive = true;
-    String title;
-    Integer duration;
 
-    @OneToMany(mappedBy = "userBookingPlan", cascade = CascadeType.ALL)
+    @Builder.Default
+    Boolean isActive = true;
+
+    @OneToMany(mappedBy = "userBookingPlan", cascade = CascadeType.ALL, orphanRemoval = true)
     List<UserBookingPlanBenefit> userBookingPlanBenefits;
 }
