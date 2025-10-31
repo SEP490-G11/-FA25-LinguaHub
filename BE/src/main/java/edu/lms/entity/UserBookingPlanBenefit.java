@@ -17,12 +17,19 @@ public class UserBookingPlanBenefit {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long userBookingPlanBenefitID;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "userBookingPlanID")
     UserBookingPlan userBookingPlan;
 
+    @Column(length = 255)
     String title;
+
+    @Column(columnDefinition = "TEXT")
     String description;
+
+    @Builder.Default
     Integer numberUsageRemaining = 0;
+
+    @Builder.Default
     Integer numberBooking = 0;
 }

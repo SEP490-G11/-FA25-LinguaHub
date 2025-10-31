@@ -11,10 +11,14 @@ import java.math.BigDecimal;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class TutorBookingPlanResponse {
-    Long serviceID;
+    Long bookingPlanID;
     String title;
-    Integer duration;
     String description;
-    BigDecimal price;
+    Integer slotDuration;
+    BigDecimal pricePerSlot;
+    String startHour;
+    String endHour;
+    String activeDays;
+    Integer maxLearners;
     String tutorName;
 }

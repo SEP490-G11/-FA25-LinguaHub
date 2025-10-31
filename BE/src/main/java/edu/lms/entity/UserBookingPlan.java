@@ -28,9 +28,19 @@ public class UserBookingPlan {
     @JoinColumn(name = "bookingPlanID", nullable = false)
     BookingPlan bookingPlan;
 
+    // Ngày bắt đầu kích hoạt gói học
     @Builder.Default
     LocalDateTime startDate = LocalDateTime.now();
 
+    // Số slot người dùng mua
+    @Builder.Default
+    Integer purchasedSlots = 1;
+
+    // Số slot còn lại có thể sử dụng
+    @Builder.Default
+    Integer remainingSlots = 1;
+
+    // Trạng thái hoạt động của gói
     @Builder.Default
     Boolean isActive = true;
 

@@ -19,26 +19,40 @@ public class Booking {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long bookingID;
 
-    @ManyToOne @JoinColumn(name = "userID")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "userID")
     User user;
 
-    @ManyToOne @JoinColumn(name = "tutorID")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tutorID")
     Tutor tutor;
 
-    @ManyToOne @JoinColumn(name = "scheduleID")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "scheduleID")
     Schedule schedule;
 
-    @ManyToOne @JoinColumn(name = "userBookingPlanID")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "userBookingPlanID")
     UserBookingPlan userBookingPlan;
 
     @Enumerated(EnumType.STRING)
-    BookingStatus status = BookingStatus.Pending;
+    @Column(length = 20, nullable = false)
+    @Builder.Default
+    BookingStatus status = BookingStatus.Paid;
+
+    String meetingLink;
 
     @Builder.Default
     LocalDateTime createdAt = LocalDateTime.now();
 
     @Builder.Default
     LocalDateTime updatedAt = LocalDateTime.now();
+
+    @PrePersist
+    public void prePersist() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
 
     @PreUpdate
     public void onUpdate() {

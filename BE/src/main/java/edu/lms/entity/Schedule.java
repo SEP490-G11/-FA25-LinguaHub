@@ -3,7 +3,8 @@ package edu.lms.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.LocalTime;
 
 @Data
 @NoArgsConstructor
@@ -13,15 +14,28 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "Schedule")
 public class Schedule {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long scheduleID;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tutorID", nullable = false)
     Tutor tutor;
 
-    LocalDateTime startTime;
-    LocalDateTime endTime;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "bookingPlanID", nullable = false)
+    BookingPlan bookingPlan;
+
+    @Column(nullable = false)
+    LocalDate slotDate;
+
+    @Column(nullable = false)
+    LocalTime startTime;
+
+    @Column(nullable = false)
+    LocalTime endTime;
+
+    @Builder.Default
     Boolean isAvailable = true;
 }

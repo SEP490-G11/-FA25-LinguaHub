@@ -30,67 +30,63 @@ public class TutorBookingPlanService {
     UserBookingPlanRepository userBookingPlanRepository;
     TutorBookingPlanMapper mapper;
 
-    // CREATE BOOKING PLAN
+    // CREATE
     public TutorBookingPlanResponse createBookingPlan(TutorBookingPlanRequest request) {
         Tutor tutor = tutorRepository.findById(request.getTutorID())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXIST));
 
-        if (tutor.getStatus() != TutorStatus.APPROVED) {
+        if (tutor.getStatus() != TutorStatus.APPROVED)
             throw new AppException(ErrorCode.UNAUTHORIZED);
-        }
 
         BookingPlan bookingPlan = mapper.toEntity(request);
         bookingPlan.setTutor(tutor);
-
         bookingPlanRepository.save(bookingPlan);
         return mapper.toResponse(bookingPlan);
     }
 
-    // GET ALL BOOKING PLANS BY TUTOR
+    // READ (BY TUTOR)
     public List<TutorBookingPlanResponse> getBookingPlansByTutor(Long tutorID) {
         Tutor tutor = tutorRepository.findById(tutorID)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXIST));
-
         return bookingPlanRepository.findByTutor(tutor)
-                .stream()
-                .map(mapper::toResponse)
-                .toList();
+                .stream().map(mapper::toResponse).toList();
     }
 
-    // GET ALL BOOKING PLANS (Admin view or global list)
+    // READ (ALL)
     public List<TutorBookingPlanResponse> getAllBookingPlans() {
         return bookingPlanRepository.findAll()
-                .stream()
-                .map(mapper::toResponse)
-                .toList();
+                .stream().map(mapper::toResponse).toList();
     }
 
-    // GET BOOKING PLAN BY ID
+    // READ (BY ID)
     public TutorBookingPlanResponse getBookingPlanById(Long id) {
         BookingPlan bookingPlan = bookingPlanRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.INVALID_KEY));
         return mapper.toResponse(bookingPlan);
     }
 
-    // UPDATE BOOKING PLAN
+    // UPDATE
     public TutorBookingPlanResponse updateBookingPlan(Long id, TutorBookingPlanRequest request) {
         BookingPlan bookingPlan = bookingPlanRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.INVALID_KEY));
 
         bookingPlan.setTitle(request.getTitle());
-        bookingPlan.setDuration(request.getDuration());
         bookingPlan.setDescription(request.getDescription());
-        bookingPlan.setPrice(request.getPrice());
+        bookingPlan.setSlotDuration(request.getSlotDuration());
+        bookingPlan.setPricePerSlot(request.getPricePerSlot());
+        bookingPlan.setStartHour(request.getStartHour());
+        bookingPlan.setEndHour(request.getEndHour());
+        bookingPlan.setActiveDays(request.getActiveDays());
+        bookingPlan.setMaxLearners(request.getMaxLearners());
 
         bookingPlanRepository.save(bookingPlan);
         return mapper.toResponse(bookingPlan);
     }
 
-    // DELETE BOOKING PLAN
+    // DELETE
     public void deleteBookingPlan(Long id) {
-        if (userBookingPlanRepository.existsByBookingPlan_BookingPlanID(id)) {
+        if (userBookingPlanRepository.existsByBookingPlan_BookingPlanID(id))
             throw new AppException(ErrorCode.UNAUTHORIZED);
-        }
         bookingPlanRepository.deleteById(id);
     }
 }

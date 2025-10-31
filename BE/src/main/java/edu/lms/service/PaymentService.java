@@ -37,10 +37,20 @@ public class PaymentService {
                     .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
 
             BookingPlan bookingPlan = userBookingPlan.getBookingPlan();
-            amount = bookingPlan.getPrice();
-            description = "Thanh toán gói học: " + bookingPlan.getTitle();
 
-        } else {
+            // Tính tổng tiền = giá mỗi slot * số slot mua
+            BigDecimal pricePerSlot = bookingPlan.getPricePerSlot();
+            int slotsPurchased = userBookingPlan.getPurchasedSlots();
+            amount = pricePerSlot.multiply(BigDecimal.valueOf(slotsPurchased));
+
+            description = String.format(
+                    "Thanh toán gói học: %s (%d slot x %s VND/slot)",
+                    bookingPlan.getTitle(),
+                    slotsPurchased,
+                    pricePerSlot.toPlainString()
+            );
+        }
+        else {
             throw new AppException(ErrorCode.INVALID_PAYMENT_TYPE);
         }
 

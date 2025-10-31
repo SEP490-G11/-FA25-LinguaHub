@@ -19,7 +19,7 @@ import java.util.List;
 @RequestMapping("/tutor/booking-plans")
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-@Tag(name = "Tutor Booking Plan", description = "API quản lý gói học (Booking Plan) 1:1 của Tutor")
+@Tag(name = "Tutor Booking Plan", description = "API quản lý gói học 1:1 (Booking Plan)")
 public class TutorBookingPlanController {
 
     TutorBookingPlanService tutorBookingPlanService;
