@@ -4,6 +4,7 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
@@ -16,9 +17,12 @@ public class TutorBookingPlanResponse {
     String description;
     Integer slotDuration;
     BigDecimal pricePerSlot;
-    String startHour;
-    String endHour;
+    Integer startHour;
+    Integer endHour;
     String activeDays;
     Integer maxLearners;
+    Integer availableSlots;
+    LocalDateTime createdAt;
+    LocalDateTime updatedAt;
     String tutorName;
 }

@@ -9,23 +9,13 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface TutorBookingPlanMapper {
 
-    @Mapping(target = "pricePerSlot", source = "pricePerSlot")
-    @Mapping(target = "slotDuration", source = "slotDuration")
-    @Mapping(target = "startHour", source = "startHour")
-    @Mapping(target = "endHour", source = "endHour")
-    @Mapping(target = "activeDays", source = "activeDays")
-    @Mapping(target = "maxLearners", source = "maxLearners")
+    @Mapping(target = "bookingPlanID", ignore = true)
+    @Mapping(target = "tutor", ignore = true)
+    @Mapping(target = "benefits", ignore = true)
+    @Mapping(target = "createdAt", expression = "java(java.time.LocalDateTime.now())")
+    @Mapping(target = "updatedAt", expression = "java(java.time.LocalDateTime.now())")
     BookingPlan toEntity(TutorBookingPlanRequest request);
 
-    @Mapping(target = "bookingPlanID", source = "bookingPlanID")
-    @Mapping(target = "title", source = "title")
-    @Mapping(target = "description", source = "description")
-    @Mapping(target = "slotDuration", source = "slotDuration")
-    @Mapping(target = "pricePerSlot", source = "pricePerSlot")
-    @Mapping(target = "startHour", source = "startHour")
-    @Mapping(target = "endHour", source = "endHour")
-    @Mapping(target = "activeDays", source = "activeDays")
-    @Mapping(target = "maxLearners", source = "maxLearners")
     @Mapping(target = "tutorName", source = "tutor.user.fullName")
     TutorBookingPlanResponse toResponse(BookingPlan bookingPlan);
 }

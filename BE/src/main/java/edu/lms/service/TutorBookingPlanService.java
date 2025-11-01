@@ -33,42 +33,54 @@ public class TutorBookingPlanService {
     // CREATE
     public TutorBookingPlanResponse createBookingPlan(TutorBookingPlanRequest request) {
         Tutor tutor = tutorRepository.findById(request.getTutorID())
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXIST));
+                .orElseThrow(() -> new AppException(ErrorCode.TUTOR_NOT_FOUND));
 
         if (tutor.getStatus() != TutorStatus.APPROVED)
-            throw new AppException(ErrorCode.UNAUTHORIZED);
+            throw new AppException(ErrorCode.TUTOR_NOT_APPROVED);
 
         BookingPlan bookingPlan = mapper.toEntity(request);
         bookingPlan.setTutor(tutor);
+// Tính tổng số slot khả dụng dựa trên khung giờ và số ngày hoạt động
+        int totalMinutes = (request.getEndHour() - request.getStartHour()) * 60;
+        int slotsPerDay = totalMinutes / request.getSlotDuration();
+// Đếm số ngày trong activeDays (VD: "Mon,Tue,Wed,Thu,Fri" => 5)
+        int daysActive = request.getActiveDays().split(",").length;
+// Tổng số slot = slotsPerDay * daysActive
+        int totalSlots = slotsPerDay * daysActive;
+        bookingPlan.setAvailableSlots(totalSlots);
+
         bookingPlanRepository.save(bookingPlan);
+
+
         return mapper.toResponse(bookingPlan);
     }
 
-    // READ (BY TUTOR)
+    // GET BY TUTOR
     public List<TutorBookingPlanResponse> getBookingPlansByTutor(Long tutorID) {
         Tutor tutor = tutorRepository.findById(tutorID)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXIST));
+                .orElseThrow(() -> new AppException(ErrorCode.TUTOR_NOT_FOUND));
+
         return bookingPlanRepository.findByTutor(tutor)
                 .stream().map(mapper::toResponse).toList();
     }
 
-    // READ (ALL)
+    // GET ALL
     public List<TutorBookingPlanResponse> getAllBookingPlans() {
         return bookingPlanRepository.findAll()
                 .stream().map(mapper::toResponse).toList();
     }
 
-    // READ (BY ID)
+    // GET BY ID
     public TutorBookingPlanResponse getBookingPlanById(Long id) {
         BookingPlan bookingPlan = bookingPlanRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.INVALID_KEY));
+                .orElseThrow(() -> new AppException(ErrorCode.BOOKING_PLAN_NOT_FOUND));
         return mapper.toResponse(bookingPlan);
     }
 
     // UPDATE
     public TutorBookingPlanResponse updateBookingPlan(Long id, TutorBookingPlanRequest request) {
         BookingPlan bookingPlan = bookingPlanRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.INVALID_KEY));
+                .orElseThrow(() -> new AppException(ErrorCode.BOOKING_PLAN_NOT_FOUND));
 
         bookingPlan.setTitle(request.getTitle());
         bookingPlan.setDescription(request.getDescription());
@@ -78,6 +90,7 @@ public class TutorBookingPlanService {
         bookingPlan.setEndHour(request.getEndHour());
         bookingPlan.setActiveDays(request.getActiveDays());
         bookingPlan.setMaxLearners(request.getMaxLearners());
+        bookingPlan.setAvailableSlots(request.getAvailableSlots());
 
         bookingPlanRepository.save(bookingPlan);
         return mapper.toResponse(bookingPlan);
@@ -87,6 +100,8 @@ public class TutorBookingPlanService {
     public void deleteBookingPlan(Long id) {
         if (userBookingPlanRepository.existsByBookingPlan_BookingPlanID(id))
             throw new AppException(ErrorCode.UNAUTHORIZED);
+
         bookingPlanRepository.deleteById(id);
     }
+
 }

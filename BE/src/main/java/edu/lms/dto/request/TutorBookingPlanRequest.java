@@ -22,11 +22,11 @@ public class TutorBookingPlanRequest {
     String description;
 
     @NotNull(message = "Slot duration is required")
-    @Min(15)
+    @Min(value = 15, message = "Slot duration must be at least 15 minutes")
     Integer slotDuration;
 
     @NotNull(message = "Price per slot is required")
-    @DecimalMin(value = "0.0", inclusive = false)
+    @DecimalMin(value = "0.0", inclusive = false, message = "Price per slot must be greater than 0")
     BigDecimal pricePerSlot;
 
     @NotNull(message = "Start hour is required")
@@ -38,8 +38,13 @@ public class TutorBookingPlanRequest {
     Integer endHour;
 
     @NotBlank(message = "Active days are required")
-    String activeDays; // CHUYỂN KIỂU TỪ Integer → String
+    String activeDays; // Ví dụ: "Mon,Tue,Wed,Thu,Fri"
 
     @Builder.Default
+    @Min(1)
     Integer maxLearners = 1;
+
+    @Builder.Default
+    @Min(0)
+    Integer availableSlots = 0;
 }

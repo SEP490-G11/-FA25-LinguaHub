@@ -3,6 +3,7 @@ package edu.lms.controller;
 import edu.lms.dto.request.ApiRespond;
 import edu.lms.dto.request.TutorCourseRequest;
 import edu.lms.dto.response.TutorCourseResponse;
+import edu.lms.dto.response.TutorCourseStudentResponse;
 import edu.lms.service.TutorCourseService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -79,4 +80,17 @@ public class TutorCourseController {
     public void deleteCourse(@PathVariable Long courseID) {
         tutorCourseService.deleteCourse(courseID);
     }
+
+    // GET USERS ENROLL OF COURSE
+    @Operation(summary = "Tutor xem danh sách học viên theo courseID")
+    @GetMapping("/{tutorID}/{courseID}/students")
+    public ApiRespond<List<TutorCourseStudentResponse>> getStudentsByCourse(
+            @PathVariable Long tutorID,
+            @PathVariable Long courseID) {
+
+        return ApiRespond.<List<TutorCourseStudentResponse>>builder()
+                .result(tutorCourseService.getStudentsByCourse(courseID, tutorID))
+                .build();
+    }
+
 }
