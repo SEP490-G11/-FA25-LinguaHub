@@ -52,7 +52,8 @@ public enum ErrorCode {
     POLICY_NOT_FOUND(8002, "Policy not found", HttpStatus.NOT_FOUND),
 
     //PAYMENT
-    INVALID_PAYMENT_TYPE(8003, "Ivalid Payment Type", HttpStatus.NOT_FOUND),;
+    INVALID_PAYMENT_TYPE(8003, "Ivalid Payment Type", HttpStatus.NOT_FOUND),
+    BOOKING_SLOT_NOT_AVAILABLE(8004, "Booking Slot Amount of this Tutor is 0, Please Choose other Tutor ", HttpStatus.NOT_FOUND),;
 
 
     ErrorCode(int code, String message,HttpStatusCode httpStatusCode) {
