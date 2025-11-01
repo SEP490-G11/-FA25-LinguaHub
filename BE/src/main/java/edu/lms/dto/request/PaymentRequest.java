@@ -12,5 +12,6 @@ import lombok.experimental.FieldDefaults;
 public class PaymentRequest {
     PaymentType paymentType; // COURSE hoặc BOOKING
     Long targetId; // CourseID hoặc UserBookingPlanID
-    Long userId;   // Người thanh toán
+    Long userId;
+    Integer purchasedSlots; // Người thanh toán
 }

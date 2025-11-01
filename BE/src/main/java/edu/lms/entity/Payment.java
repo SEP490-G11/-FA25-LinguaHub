@@ -92,7 +92,4 @@ public class Payment {
     @JoinColumn(name = "receivedID")
     User received; // Người nhận tiền (Tutor hoặc Admin)
 
-    @Builder.Default
-    @Column(precision = 10, scale = 2)
-    BigDecimal amountPaid = BigDecimal.ZERO;
 }
