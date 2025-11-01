@@ -23,7 +23,6 @@ spring:
     port: 587
     username: trungdev234@gmail.com
     password: ehfd fjkm jbom aktq
-
     properties:
       mail:
         smtp:
@@ -32,6 +31,9 @@ spring:
             enable: true
     default-encoding: UTF-8
 
+  jackson:
+    time-zone: Asia/Ho_Chi_Minh   # ✅ Đưa ra đúng chỗ này
+
 google:
   client-id: "42781484149-pel6vfv7rb7ih298ru93t6vq1fg8q3sq.apps.googleusercontent.com"
 
@@ -39,19 +41,12 @@ logging:
   level:
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql: TRACE
-    org.springframework.mail: DEBUG          # log thêm để xem quá trình gửi mail
+    org.springframework.mail: DEBUG
 
 jwt:
   signerKey: "1TjXchw5FLOEsb63KcDFhTARvPWL4jUGCWfGWxgSS1f/1y/LgJxHnMqaF6A/ijXY"
 
-# ==============================
-#  PAYOS CONFIGURATION (NEW)
-# ==============================
 payos:
   client-id: "b57a3e3a-0b2b-4a8a-b0a1-2f8a1b9231a3"
   api-key: "dbf2b2a5-f0f2-48dc-8b6e-bb3bb46e21a5"
   secret-key: "payos-sandbox-secret"
-
-
-#Nếu bạn chưa có tài khoản PayOS, dùng test key tạm thời
-# Sau này khi deploy, bạn đổi các giá trị trên bằng key thật.
