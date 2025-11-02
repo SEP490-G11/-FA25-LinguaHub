@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import BaseRequest from '@/lib/api';
-import type { User } from '@/types';
+import BaseRequest from '@/api/api.ts';
+import type { User } from '@/types/User.ts';
 import {AxiosError} from "axios";
 
 // interface cho response API
@@ -86,6 +86,7 @@ export const testConnection = createAsyncThunk(
 );
 // ======= SignIn =======
 export const signIn = createAsyncThunk(
+    //name/prefix (tên tiền tố) của thunk
     'auth/signIn',
     async (credentials: SignInCredentials, { rejectWithValue }) => {
         try {
@@ -105,11 +106,11 @@ export const signIn = createAsyncThunk(
             if (!authenticated || !accessToken) {
                 return rejectWithValue('Sai tên đăng nhập hoặc mật khẩu');
             }
-            //Tự Động Gửi Kèm Request
             const expiresDays = credentials.rememberMe ? 7 : 1;
+            //tự động gửi cùng request.
             cookie_set('AT', accessToken, expiresDays);
             cookie_set('RT', refreshToken, expiresDays);
-            // Dễ Access Từ JS
+            //dễ thao tác bằng JS
             localStorage.setItem('access_token', accessToken);
             localStorage.setItem('refresh_token', refreshToken);
             // Lấy thông tin người dùng

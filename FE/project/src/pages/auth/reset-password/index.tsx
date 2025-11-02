@@ -114,14 +114,14 @@ const ResetPassword = () => {
               <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
                 <CheckCircle className="w-8 h-8 text-green-500" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Mật khẩu đã được cập nhật!</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Password has been updated!</h2>
               <p className="text-gray-600">
-                Mật khẩu của bạn đã được cập nhật thành công. Vui lòng xác thực email để hoàn tất quá trình.
+                Your password has been updated successfully. Please verify your email to complete the process.
               </p>
             </div>
 
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-            <p className="text-sm text-gray-500">Đang chuyển đến xác thực email...</p>
+            <p className="text-sm text-gray-500">Moving to email verification...</p>
           </motion.div>
         </motion.div>
       </div>
@@ -138,10 +138,10 @@ const ResetPassword = () => {
           variants={fadeInUp}
         >
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Link không hợp lệ</h2>
-            <p className="text-gray-600 mb-8">Link đặt lại mật khẩu này không hợp lệ hoặc đã hết hạn.</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Invalid link</h2>
+            <p className="text-gray-600 mb-8">This password reset link is invalid or has expired.</p>
             <Button asChild>
-              <Link to="/auth/forgot-password">Yêu cầu link mới</Link>
+              <Link to="/auth/forgot-password">Request new link</Link>
             </Button>
           </div>
         </motion.div>
@@ -167,8 +167,8 @@ const ResetPassword = () => {
               Lingua<span className="text-blue-500">Hub</span>
             </div>
           </Link>
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Đặt lại mật khẩu</h2>
-          <p className="text-gray-600">Nhập mật khẩu mới của bạn</p>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">Reset Password</h2>
+          <p className="text-gray-600">Enter your new password</p>
         </div>
 
         {/* Form */}
@@ -183,7 +183,7 @@ const ResetPassword = () => {
             {/* New Password */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                Mật khẩu mới
+                New password
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -197,7 +197,7 @@ const ResetPassword = () => {
                   value={formData.password}
                   onChange={handleChange}
                   className="pl-10 pr-10"
-                  placeholder="Nhập mật khẩu mới"
+                  placeholder="Enter new password"
                 />
                 <button
                   type="button"
@@ -217,7 +217,7 @@ const ResetPassword = () => {
             {/* Confirm Password */}
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                Nhập lại mật khẩu
+                Re-enter password
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -231,7 +231,7 @@ const ResetPassword = () => {
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   className="pl-10 pr-10"
-                  placeholder="Xác nhận mật khẩu mới"
+                  placeholder="Confirm new password"
                 />
                 <button
                   type="button"
@@ -250,7 +250,7 @@ const ResetPassword = () => {
 
             {/* Submit Button */}
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? <LoadingSpinner size="sm" /> : 'Cập nhật mật khẩu'}
+              {isLoading ? <LoadingSpinner size="sm" /> : 'Update password'}
             </Button>
           </form>
         </motion.div>

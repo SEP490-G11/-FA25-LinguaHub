@@ -56,7 +56,7 @@ const VerifyEmail = () => {
     e.preventDefault();
 
     if (!otpCode.trim() || otpCode.length !== 6) {
-      setErrors({ otp: otpCode.length !== 6 ? 'Mã OTP phải có 6 chữ số' : 'Vui lòng nhập mã OTP' });
+      setErrors({ otp: otpCode.length !== 6 ? 'OTP code must be 6 digits' : 'Please enter OTP code' });
       return;
     }
 
@@ -67,7 +67,7 @@ const VerifyEmail = () => {
 
     const verifyEmail = decodeURIComponent(email || localStorage.getItem('temp_verify_email') || '');
     if (!verifyEmail) {
-      setErrors({ otp: 'Email không tồn tại để verify. Hãy resend OTP.' });
+      setErrors({ otp: 'Email does not exist for verification. Please resend OTP.' });
       setIsVerifying(false);
       return;
     }
@@ -102,10 +102,10 @@ const VerifyEmail = () => {
       const beError = axiosError.response?.data;
 
       if (axiosError.response?.status === 401 || beError?.code === 1006) {
-        setErrors({ otp: '401/1006 error. Token/session invalid. Try resend OTP.' });
+        setErrors({ otp: '401/1006 error. Token/session invalid. Try resending OTP.' });
         localStorage.removeItem('accessToken');
       } else {
-        setErrors({ otp: beError?.message || 'Mã OTP không chính xác' });
+        setErrors({ otp: beError?.message || 'Invalid OTP code' });
       }
       setCanResend(true);
       setCountdown(0);
@@ -117,7 +117,7 @@ const VerifyEmail = () => {
   const handleResendEmail = async () => {
     // FIXED: Check email trước
     if (!email) {
-      setMessage('Email không được cung cấp');
+      setMessage('Email not provided');
       return;
     }
 
@@ -134,7 +134,7 @@ const VerifyEmail = () => {
         withCredentials: true  // Để set session mới
       });
       console.log('Resend OTP success:', response.data);
-      setMessage('Mã OTP mới đã được gửi đến email của bạn. Session đã được cập nhật để đăng ký tài khoản.');
+      setMessage('A new OTP code has been sent to your email. Session has been updated for account registration.');
 
       // FIXED: Nếu backend trả token sau resend, set nó (giả sử response.data.token tồn tại)
       const newToken = response.data.token;
@@ -150,7 +150,7 @@ const VerifyEmail = () => {
       const axiosError = error as AxiosError<BeErrorResponse>;
       const beError = axiosError.response?.data;
       console.log('Full error response for resend:', axiosError.response);
-      setMessage(beError?.message || 'Gửi lại thất bại (401). Kiểm tra backend: Endpoint /auth/resend-otp có yêu cầu auth không? Hoặc CORS credentials.');
+      setMessage(beError?.message || 'Resend failed (401). Check backend: Does /auth/resend-otp endpoint require auth? Or CORS credentials.');
     }
 
     // Reset countdown
@@ -166,24 +166,24 @@ const VerifyEmail = () => {
   };
 
   const getTitle = () => {
-    if (isVerified) return 'Email đã được xác thực!';
-    if (type === 'password-reset') return 'Xác thực Email để đặt lại mật khẩu';
-    return 'Xác thực Email để hoàn tất đăng ký';
+    if (isVerified) return 'Email Verified!';
+    if (type === 'password-reset') return 'Verify Email to Reset Password';
+    return 'Verify Email to Complete Registration';
   };
 
   const getDescription = () => {
     if (isVerified) {
       if (type === 'password-reset') {
-        return 'Email của bạn đã được xác thực. Quá trình đặt lại mật khẩu đã hoàn tất.';
+        return 'Your email has been verified. The password reset process is complete.';
       }
-      return 'Email của bạn đã được xác thực thành công. Tài khoản với email này đã được tạo, bạn có thể đăng nhập ngay.';
+      return 'Your email has been successfully verified. An account with this email has been created, you can log in now.';
     }
 
     if (type === 'password-reset') {
-      return 'Vui lòng nhập mã OTP được gửi đến email của bạn để hoàn tất việc đặt lại mật khẩu.';
+      return 'Please enter the OTP code sent to your email to complete the password reset.';
     }
     // FIXED: Hiển thị email để user confirm, nhấn mạnh đăng ký
-    return `Chúng tôi đã gửi mã OTP 6 chữ số đến ${decodeURIComponent(email || '')}. Nhập mã để xác thực và hoàn tất tạo tài khoản.`;
+    return `We have sent a 6-digit OTP code to ${decodeURIComponent(email || '')}. Enter the code to verify and complete account creation.`;
   };
 
   if (isVerified) {
@@ -223,7 +223,7 @@ const VerifyEmail = () => {
 
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
               <p className="text-sm text-gray-500">
-                {type === 'password-reset' ? 'Hoàn tất đặt lại mật khẩu...' : 'Đang chuyển đến đăng nhập...'}
+                {type === 'password-reset' ? 'Completing password reset...' : 'Redirecting to login...'}
               </p>
             </motion.div>
           </motion.div>
@@ -268,7 +268,7 @@ const VerifyEmail = () => {
               <form onSubmit={handleManualVerify} className="space-y-4">
                 <div>
                   <label htmlFor="otp" className="block text-sm font-medium text-gray-700 mb-2">
-                    Mã OTP (6 chữ số)
+                    OTP Code (6 digits)
                   </label>
                   <Input
                       id="otp"
@@ -294,7 +294,7 @@ const VerifyEmail = () => {
                     className="w-full"
                     disabled={isVerifying || otpCode.length !== 6}
                 >
-                  {isVerifying ? <LoadingSpinner size="sm" /> : 'Xác thực'}
+                  {isVerifying ? <LoadingSpinner size="sm" /> : 'Verify'}
                 </Button>
               </form>
             </div>
@@ -302,7 +302,7 @@ const VerifyEmail = () => {
             {/* FIXED: Thêm button resend nổi bật nếu 401/1006 error */}
             {errors.otp?.includes('401') || errors.otp?.includes('1006') && (
                 <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <p className="text-sm text-yellow-800 mb-2">Để tiếp tục đăng ký, hãy gửi lại OTP (có thể do CORS/session):</p>
+                  <p className="text-sm text-yellow-800 mb-2">To continue registration, please resend OTP (possibly due to CORS/session):</p>
                   <Button
                       onClick={handleResendEmail}
                       variant="outline"
@@ -310,7 +310,7 @@ const VerifyEmail = () => {
                       size="sm"
                   >
                     <RefreshCw className="w-4 h-4 mr-2" />
-                    Gửi lại OTP ngay
+                    Resend OTP Now
                   </Button>
                 </div>
             )}
@@ -331,7 +331,7 @@ const VerifyEmail = () => {
             {/* Resend code button */}
             <div className="space-y-4">
               <p className="text-sm text-gray-500 text-center">
-                Không nhận được mã? Kiểm tra thư mục spam.
+                Didn't receive the code? Check your spam folder.
               </p>
 
               <div className="flex flex-col space-y-3">
@@ -342,11 +342,11 @@ const VerifyEmail = () => {
                     className="w-full"
                 >
                   <RefreshCw className="w-4 h-4 mr-2" />
-                  {canResend ? 'Gửi lại mã' : `Gửi lại sau ${countdown}s`}
+                  {canResend ? 'Resend Code' : `Resend in ${countdown}s`}
                 </Button>
 
                 <Button asChild variant="ghost" className="w-full">
-                  <Link to="/signin">Quay lại đăng nhập</Link>
+                  <Link to="/signin">Back to Login</Link>
                 </Button>
               </div>
             </div>

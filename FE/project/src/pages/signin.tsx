@@ -6,15 +6,16 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion } from 'framer-motion';
 import { User, Lock, Eye, EyeOff, Languages } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
-import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
-import { ErrorMessage } from '@/components/shared/ErrorMessage';
-import { signIn } from '@/redux/slices/authSlice';
-import type { RootState, AppDispatch } from '@/redux/store';
-import { clearError } from '@/redux/slices/authSlice';
-import { ROUTES } from '@/constants';
+import { Button } from '@/components/ui/button.tsx';
+import { Input } from '@/components/ui/input.tsx';
+import { Checkbox } from '@/components/ui/checkbox.tsx';
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner.tsx';
+import { ErrorMessage } from '@/components/shared/ErrorMessage.tsx';
+import { signIn } from '@/store/authSlice.ts';
+import type { RootState, AppDispatch } from '@/store/store.ts';
+import { clearError } from '@/store/authSlice.ts';
+import { ROUTES } from '@/constants/colors.ts';
+// Xác thực dữ liệu form
 const signInSchema = z.object({
   username: z.string().min(3, 'Login name must be at least 3 characters'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
@@ -23,20 +24,26 @@ const signInSchema = z.object({
 
 type SignInForm = z.infer<typeof signInSchema>;
 
+//setup component SignIn
 const SignIn = () => {
   const [showPassword, setShowPassword] = React.useState(false);
+  //Hook từ react-router-dom để điều hướng page
   const navigate = useNavigate();
+  //gửi credentials đến BE,xóa error state
   const dispatch = useDispatch<AppDispatch>();
   const { isLoading, error } = useSelector((state: RootState) => state.auth);
-// ⬇️ Thêm useEffect này
+// Thêm useEffect
   React.useEffect(() => {
     dispatch(clearError());
   }, [dispatch]);
+  //Setup Form Với React Hook Form & Zod
   const {
     register,
     handleSubmit,
     formState: { errors, isValid },
-  } = useForm<SignInForm>({
+  }
+  //Hook khởi tạo form với type SignInForm
+  = useForm<SignInForm>({
     resolver: zodResolver(signInSchema),
     mode: 'onChange',
     defaultValues: {
@@ -98,6 +105,7 @@ const SignIn = () => {
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <User className="h-5 w-5 text-gray-400" />  {/* User icon */}
                   </div>
+                  {/*input field*/}
                   <Input
                       id="username"
                       {...register('username')}

@@ -11,16 +11,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { cn } from '@/lib/utils';
-import { ROUTES } from '@/constants';
+import { cn } from '@/utils/utils.ts';
+import { ROUTES } from '@/constants/colors.ts';
 import { useSelector, useDispatch } from 'react-redux';
-import { RootState, AppDispatch } from '@/redux/store';
-import { signOut } from '@/redux/slices/authSlice';
+import { RootState, AppDispatch } from '@/store/store.ts';
+import { signOut } from '@/store/authSlice.ts';
 
 const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
+  //lấy dữ liệu người dùng
   const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 

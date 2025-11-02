@@ -1,9 +1,9 @@
 import { Routes, Route } from 'react-router-dom';
-import { ROUTES } from '@/constants';
+import { ROUTES } from '@/constants/routes.ts';
 
 // Pages
 import HomePage from '@/pages/HomePage';
-import SignIn from '@/pages/auth/signin';
+import SignIn from '@/pages/signin.tsx';
 import SignUp from '@/pages/SignUp/index';
 import Languages from '@/pages/Languages/index';
 import Tutors from '@/pages/Tutors/index';
