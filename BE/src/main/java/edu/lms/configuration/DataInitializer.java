@@ -2,7 +2,6 @@ package edu.lms.configuration;
 
 import edu.lms.entity.Permission;
 import edu.lms.entity.Role;
-import edu.lms.exception.ErrorCode;
 import edu.lms.repository.PermissionRepository;
 import edu.lms.repository.RoleRepository;
 import jakarta.transaction.Transactional;
@@ -112,9 +111,10 @@ public class DataInitializer {
         tutor.getPermissions().add(permissionRepository.findById("VIEW_TUTOR_STATUS").orElseThrow());
         tutor.getPermissions().add(permissionRepository.findById("CHANGE_PASSWORD").orElseThrow());
 
-        //Learner – chỉ được xem thông tin bản thân, apply tutor, enroll course
+        //Learner – chỉ được xem thông tin bản thân, apply tutor, enroll course, xem trạng thái đơn apply
         learner.getPermissions().add(permissionRepository.findById("VIEW_USER").orElseThrow());
         learner.getPermissions().add(permissionRepository.findById("APPLY_TUTOR").orElseThrow());
+        learner.getPermissions().add(permissionRepository.findById("VIEW_TUTOR_STATUS").orElseThrow());
         learner.getPermissions().add(permissionRepository.findById("LOGIN").orElseThrow());
         learner.getPermissions().add(permissionRepository.findById("LOGOUT").orElseThrow());
         learner.getPermissions().add(permissionRepository.findById("CHANGE_PASSWORD").orElseThrow());
