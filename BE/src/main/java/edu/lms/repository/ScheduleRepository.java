@@ -18,7 +18,7 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
     List<Schedule> findByTutor_TutorID(Long tutorID);
 
     @Query("SELECT s FROM Schedule s WHERE s.tutor.tutorID = :tutorID " +
-            "AND s.startTime >= :startTime AND s.startTime < :endTime " +
+            "AND s.startTime >= :startTime AND s.startTime <= :endTime " +
             "ORDER BY s.startTime ASC")
     List<Schedule> findByTutorAndTimeRange(
             @Param("tutorID") Long tutorID,
