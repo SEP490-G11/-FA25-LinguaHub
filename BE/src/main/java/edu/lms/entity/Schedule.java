@@ -3,8 +3,7 @@ package edu.lms.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import java.time.LocalDate;
-import java.time.LocalTime;
+import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
@@ -28,13 +27,10 @@ public class Schedule {
     BookingPlan bookingPlan;
 
     @Column(nullable = false)
-    LocalDate slotDate;
+    LocalDateTime startTime;
 
     @Column(nullable = false)
-    LocalTime startTime;
-
-    @Column(nullable = false)
-    LocalTime endTime;
+    LocalDateTime endTime;
 
     @Builder.Default
     Boolean isAvailable = true;

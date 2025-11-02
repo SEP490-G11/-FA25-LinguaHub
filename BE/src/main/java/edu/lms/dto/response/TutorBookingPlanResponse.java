@@ -20,9 +20,11 @@ public class TutorBookingPlanResponse {
     Integer startHour;
     Integer endHour;
     String activeDays;
+    Integer weekToGenerate;
     Integer maxLearners;
     Integer availableSlots;
     LocalDateTime createdAt;
     LocalDateTime updatedAt;
     String tutorName;
+    Integer numberOfGeneratedSlots;
 }

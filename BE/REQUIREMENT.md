@@ -194,8 +194,78 @@
 - Method: DELETE /tutors/resources/{resourceId}
 - Description: Delete a resource associated with a lesson. (Soft delete)
 
+
+
+### Booking slot
+## Entity Booking plan
+- BookingPlanID
+- TutorID
+- Title
+- Description
+- SlotDuration int default 30
+- PricePerSlot
+- StartHour
+- EndHour
+- ActiveDays: Mon, Tue, Wed, Thu, Fri
+- WeekToGenerate: 1,2,3,4....
+- MaxLearner default 1
+- CreatedAt
+- UpdateAt
+
+## Entity Schedule
+- ScheduleID
+- TutorID
+- StartTime
+- EndTime
+- IsAvailable default true
+
+
+## API Tutor create slot booking
+- Method POST /tutors/booking-plans
+- Allow approved Tutors (Status = APPROVED) to create a teaching plan (BookingPlan),
+the system will automatically generate slots (Schedule) for the following weeks.
+
+1. Activity Flow
+- Tutor (approved) sends request to create plan.
+- System checks: 
+  - Tutor.status =  APPROVED
+  - StartHour < EndHour
+  - SlotDuration is divisible by total teaching minutes per day
+  - Does not overlap with other plans of the same tutor.
+- System creates record in BookingPlan.
+- Based on values:
+  - ActiveDays
+  - StartHour & EndHour
+  - SlotDuration
+  - WeekToGenerate
+    → Generate Schedule (each slot is a record in the Schedule table).
+- Each slot is initialized with IsAvailable = TRUE.
+- Returns plan information and number of generated slots.
+## API Tutor view booking slot
+- Method GET /tutors/{tutorId}/schedules
+- Displays all tutor schedules for the week, along with availability.
+
+1. Activity Flow
+- Tutor sends a request to view slots (with week or dateRange). 
+- The system retrieves slots in the Schedule by TutorID in the corresponding time period. 
+- The result returns a list of slots (sorted by time). 
+
+## Business Rules
+- Only approved tutors can create booking plans. mApplies to: BookingPlan
+Description: Only tutors with status Tutor.Status = 'APPROVED' are allowed to create booking plans. 
+- A tutor cannot create overlapping booking plans. Applies to: BookingPlan
+Description: A tutor is not allowed to create booking plans with overlapping time slots. The system needs to check and validate to avoid time conflicts when creating new ones.
+- Generated schedules cannot overlap existing ones. Applies to: Schedule
+Description: Schedules (slots) generated from booking plans cannot overlap with existing slots of the same tutor. The system needs to ensure that each StartTime is unique for each tutor.
+- When a slot is booked → IsAvailable = FALSE. Applies to: Schedule
+Description: When a learner successfully books a slot, the IsAvailable field of the corresponding slot in the Schedule table must be updated to FALSE.
+- When booking is cancelled → IsAvailable = TRUE. Applies to: Schedule
+Description: When a learner cancels the booking, the corresponding slot needs to be reopened so that others can book. The system will update IsAvailable = TRUE to mark the slot as empty again.
+
+
 <<<<<<< HEAD
 =======
 
 >>>>>>> origin/main
 >
+                                                   
