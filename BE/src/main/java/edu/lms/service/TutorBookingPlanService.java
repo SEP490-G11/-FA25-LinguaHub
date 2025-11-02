@@ -40,14 +40,19 @@ public class TutorBookingPlanService {
     ScheduleRepository scheduleRepository;
     TutorBookingPlanMapper mapper;
 
-    // CREATE
+    /**
+     * Tạo booking plan mới và tự động generate schedules
+     * @param request Request tạo booking plan
+     * @return Response với thông tin booking plan và số lượng slots đã generate
+     */
     public TutorBookingPlanResponse createBookingPlan(TutorBookingPlanRequest request) {
         Tutor tutor = tutorRepository.findById(request.getTutorID())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXIST));
 
-        // Validate tutor status
-        if (tutor.getStatus() != TutorStatus.APPROVED)
+        // Validate tutor status - chỉ tutor đã APPROVED mới được tạo booking plan
+        if (tutor.getStatus() != TutorStatus.APPROVED) {
             throw new AppException(ErrorCode.TUTOR_NOT_APPROVED);
+        }
 
         // Validate startHour < endHour
         if (request.getStartHour() >= request.getEndHour()) {
@@ -69,7 +74,7 @@ public class TutorBookingPlanService {
         bookingPlan.setTutor(tutor);
         bookingPlanRepository.save(bookingPlan);
 
-        // Generate schedules
+        // Generate schedules automatically
         int numberOfSlots = generateSchedules(bookingPlan, request);
 
         // Update response with number of generated slots
@@ -80,6 +85,9 @@ public class TutorBookingPlanService {
         return response;
     }
 
+    /**
+     * Validate không có booking plans trùng lặp (cùng tutor, cùng ngày, cùng giờ)
+     */
     private void validateNoOverlappingPlans(Tutor tutor, Integer startHour, Integer endHour, String activeDays) {
         List<BookingPlan> existingPlans = bookingPlanRepository.findByTutor(tutor);
         List<String> newActiveDays = Arrays.asList(activeDays.split(","));
@@ -101,6 +109,12 @@ public class TutorBookingPlanService {
         }
     }
 
+    /**
+     * Generate schedules (slots) cho booking plan
+     * @param bookingPlan Booking plan đã được tạo
+     * @param request Request chứa thông tin để generate
+     * @return Số lượng slots đã được generate
+     */
     private int generateSchedules(BookingPlan bookingPlan, TutorBookingPlanRequest request) {
         List<Schedule> schedules = new ArrayList<>();
         LocalDate today = LocalDate.now();
@@ -147,6 +161,7 @@ public class TutorBookingPlanService {
                     
                     // Skip if slot is in the past (check both date and time)
                     if (slotStart.isBefore(now)) {
+                        currentSlotStart = currentSlotStart.plusMinutes(request.getSlotDuration());
                         continue;
                     }
                     
@@ -154,6 +169,7 @@ public class TutorBookingPlanService {
                     List<Schedule> overlapping = scheduleRepository.findOverlappingSchedules(
                             bookingPlan.getTutor().getTutorID(), slotStart, slotEnd);
                     
+                    // Only create slot if no overlap exists
                     if (overlapping.isEmpty()) {
                         Schedule schedule = Schedule.builder()
                                 .tutor(bookingPlan.getTutor())
@@ -175,6 +191,11 @@ public class TutorBookingPlanService {
         return schedules.size();
     }
 
+    /**
+     * Parse day name string to DayOfWeek enum
+     * @param dayName Day name (Mon, Tue, Wed, etc.)
+     * @return DayOfWeek enum
+     */
     private DayOfWeek parseDayOfWeek(String dayName) {
         switch (dayName.toUpperCase()) {
             case "MON": return DayOfWeek.MONDAY;
@@ -231,8 +252,9 @@ public class TutorBookingPlanService {
 
     // DELETE
     public void deleteBookingPlan(Long id) {
-        if (userBookingPlanRepository.existsByBookingPlan_BookingPlanID(id))
+        if (userBookingPlanRepository.existsByBookingPlan_BookingPlanID(id)) {
             throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
         bookingPlanRepository.deleteById(id);
     }
 }

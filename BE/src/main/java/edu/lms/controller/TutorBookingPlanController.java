@@ -24,56 +24,55 @@ public class TutorBookingPlanController {
 
     TutorBookingPlanService tutorBookingPlanService;
 
-    // CREATE
     @Operation(summary = "Tutor tạo booking plan mới")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ApiRespond<TutorBookingPlanResponse> create(@RequestBody @Valid TutorBookingPlanRequest request) {
         return ApiRespond.<TutorBookingPlanResponse>builder()
                 .result(tutorBookingPlanService.createBookingPlan(request))
+                .message("Booking plan created successfully")
                 .build();
     }
 
-    // GET BY TUTOR
-    @Operation(summary = "Lấy danh sách tất cả booking plan của 1 tutor")
+    @Operation(summary = "Lấy danh sách booking plan của 1 tutor")
     @GetMapping("/tutor/{tutorID}")
     public ApiRespond<List<TutorBookingPlanResponse>> getByTutor(@PathVariable Long tutorID) {
         return ApiRespond.<List<TutorBookingPlanResponse>>builder()
                 .result(tutorBookingPlanService.getBookingPlansByTutor(tutorID))
+                .message("Booking plans retrieved successfully")
                 .build();
     }
 
-    // GET ALL (Admin view / global)
-    @Operation(summary = "Lấy danh sách tất cả booking plan trong hệ thống")
+    @Operation(summary = "Lấy tất cả booking plan trong hệ thống")
     @GetMapping
     public ApiRespond<List<TutorBookingPlanResponse>> getAll() {
         return ApiRespond.<List<TutorBookingPlanResponse>>builder()
                 .result(tutorBookingPlanService.getAllBookingPlans())
+                .message("All booking plans retrieved successfully")
                 .build();
     }
 
-    // GET DETAIL BY ID
-    @Operation(summary = "Lấy chi tiết 1 booking plan theo ID")
+    @Operation(summary = "Lấy chi tiết booking plan theo ID")
     @GetMapping("/{id}")
     public ApiRespond<TutorBookingPlanResponse> getById(@PathVariable Long id) {
         return ApiRespond.<TutorBookingPlanResponse>builder()
                 .result(tutorBookingPlanService.getBookingPlanById(id))
+                .message("Booking plan details retrieved successfully")
                 .build();
     }
 
-    // UPDATE
-    @Operation(summary = "Cập nhật thông tin booking plan theo ID")
+    @Operation(summary = "Cập nhật thông tin booking plan")
     @PutMapping("/{id}")
     public ApiRespond<TutorBookingPlanResponse> update(
             @PathVariable Long id,
             @RequestBody @Valid TutorBookingPlanRequest request) {
         return ApiRespond.<TutorBookingPlanResponse>builder()
                 .result(tutorBookingPlanService.updateBookingPlan(id, request))
+                .message("Booking plan updated successfully")
                 .build();
     }
 
-    // DELETE
-    @Operation(summary = "Xóa booking plan (chỉ khi chưa có user mua)")
+    @Operation(summary = "Xóa booking plan (khi chưa có user mua)")
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id) {

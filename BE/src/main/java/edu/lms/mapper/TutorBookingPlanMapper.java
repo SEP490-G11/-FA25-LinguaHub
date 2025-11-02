@@ -9,8 +9,15 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface TutorBookingPlanMapper {
 
-    @Mapping(target = "pricePerSlot", source = "pricePerSlot")
+    /**
+     * Map từ Request sang Entity
+     * Bỏ qua các fields: bookingPlanID (auto-generated), tutor (set thủ công),
+     * availableSlots (tính toán), createdAt/updatedAt (tự động), benefits (không có trong request)
+     */
+    @Mapping(target = "title", source = "title")
+    @Mapping(target = "description", source = "description")
     @Mapping(target = "slotDuration", source = "slotDuration")
+    @Mapping(target = "pricePerSlot", source = "pricePerSlot")
     @Mapping(target = "startHour", source = "startHour")
     @Mapping(target = "endHour", source = "endHour")
     @Mapping(target = "activeDays", source = "activeDays")
@@ -24,16 +31,23 @@ public interface TutorBookingPlanMapper {
     @Mapping(target = "benefits", ignore = true)
     BookingPlan toEntity(TutorBookingPlanRequest request);
 
+    /**
+     * Map từ Entity sang Response
+     * startHour và endHour là Integer trong cả Entity và Response nên map trực tiếp
+     */
     @Mapping(target = "bookingPlanID", source = "bookingPlanID")
     @Mapping(target = "title", source = "title")
     @Mapping(target = "description", source = "description")
     @Mapping(target = "slotDuration", source = "slotDuration")
     @Mapping(target = "pricePerSlot", source = "pricePerSlot")
-    @Mapping(target = "startHour", expression = "java(bookingPlan.getStartHour() != null ? bookingPlan.getStartHour().toString() : null)")
-    @Mapping(target = "endHour", expression = "java(bookingPlan.getEndHour() != null ? bookingPlan.getEndHour().toString() : null)")
+    @Mapping(target = "startHour", source = "startHour")
+    @Mapping(target = "endHour", source = "endHour")
     @Mapping(target = "activeDays", source = "activeDays")
     @Mapping(target = "weekToGenerate", source = "weekToGenerate")
     @Mapping(target = "maxLearners", source = "maxLearners")
+    @Mapping(target = "availableSlots", source = "availableSlots")
+    @Mapping(target = "createdAt", source = "createdAt")
+    @Mapping(target = "updatedAt", source = "updatedAt")
     @Mapping(target = "tutorName", source = "tutor.user.fullName")
     @Mapping(target = "numberOfGeneratedSlots", ignore = true)
     TutorBookingPlanResponse toResponse(BookingPlan bookingPlan);
