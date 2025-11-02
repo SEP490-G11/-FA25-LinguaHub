@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/tutor/booking-plans")
+@RequestMapping("/tutors/booking-plans")
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Tag(name = "Tutor Booking Plan", description = "API quản lý gói học 1:1 (Booking Plan)")
