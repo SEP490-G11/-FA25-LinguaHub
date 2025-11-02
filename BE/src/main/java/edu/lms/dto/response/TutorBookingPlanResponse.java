@@ -19,6 +19,8 @@ public class TutorBookingPlanResponse {
     String startHour;
     String endHour;
     String activeDays;
+    Integer weekToGenerate;
     Integer maxLearners;
     String tutorName;
+    Integer numberOfGeneratedSlots;
 }
