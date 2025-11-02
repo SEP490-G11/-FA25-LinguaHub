@@ -21,7 +21,7 @@ public class ScheduleController {
 
     ScheduleService scheduleService;
 
-    @Operation(summary = "Xem lịch dạy của tutor theo tuần")
+    @Operation(summary = "View tutor's weekly schedule")
     @GetMapping("/{tutorID}/schedules")
     public ApiRespond<List<ScheduleResponse>> getSchedules(
             @PathVariable Long tutorID,
