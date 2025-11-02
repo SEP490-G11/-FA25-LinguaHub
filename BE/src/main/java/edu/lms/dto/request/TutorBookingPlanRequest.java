@@ -1,6 +1,5 @@
 package edu.lms.dto.request;
 
-import edu.lms.validator.MaxActiveDays;
 import jakarta.validation.constraints.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -39,7 +38,6 @@ public class TutorBookingPlanRequest {
     Integer endHour;
 
     @NotBlank(message = "Active days are required")
-    @MaxActiveDays(max = 5, message = "Tutors are only allowed to teach a maximum of 5 days a week.")
     String activeDays; // Format: "Mon,Tue,Wed,Thu,Fri" - Max 5 days
 
     @NotNull(message = "Week to generate is required")
