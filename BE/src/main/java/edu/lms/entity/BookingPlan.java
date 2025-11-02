@@ -39,17 +39,21 @@ public class BookingPlan {
     @Builder.Default
     BigDecimal pricePerSlot = BigDecimal.ZERO;
 
-    /** Giờ bắt đầu dạy (VD: 12h) */
-    @Builder.Default
-    Integer startHour = 12;
+    /** Giờ bắt đầu dạy (VD: 12h) - Tutor tự nhập */
+    @Column(nullable = false)
+    Integer startHour;
 
-    /** Giờ kết thúc dạy (VD: 20h) */
-    @Builder.Default
-    Integer endHour = 20;
+    /** Giờ kết thúc dạy (VD: 20h) - Tutor tự nhập */
+    @Column(nullable = false)
+    Integer endHour;
 
     /** Các ngày hoạt động (VD: Mon,Tue,Wed,Thu,Fri) */
     @Builder.Default
     String activeDays = "Mon,Tue,Wed,Thu,Fri";
+
+    /** Số tuần để generate slots (VD: 1,2,3,4...) */
+    @Builder.Default
+    Integer weekToGenerate = 1;
 
     /** Số lượng học viên tối đa được phép đặt cùng slot (dự phòng mở rộng) */
     @Builder.Default
