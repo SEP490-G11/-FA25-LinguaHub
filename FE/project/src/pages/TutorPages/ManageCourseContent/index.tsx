@@ -205,14 +205,6 @@ export default function ManageCourseContent() {
 
           <TabsContent value="info" className="space-y-6">
             <div className="bg-white rounded-lg shadow-sm p-6">
-              <div className="mb-6">
-                <h2 className="text-xl font-semibold text-gray-900">
-                  Course Information
-                </h2>
-                <p className="text-sm text-gray-500 mt-1">
-                  Update course title, description, pricing, and other details
-                </p>
-              </div>
               <Step1CourseInfo
                 data={convertToCourseInfo()}
                 onNext={handleSaveCourseInfo}
@@ -223,19 +215,9 @@ export default function ManageCourseContent() {
 
           <TabsContent value="content" className="space-y-6">
             <div className="bg-white rounded-lg shadow-sm p-6">
-              <div className="mb-6">
-                <h2 className="text-xl font-semibold text-gray-900">
-                  Content Structure
-                </h2>
-                <p className="text-sm text-gray-500 mt-1">
-                  Manage sections, lessons, and resources
-                </p>
-              </div>
               <Step2CourseContent
                 sections={convertToSections()}
                 onSave={handleSaveContent}
-                onBack={handleBack}
-                hideDescription={true}
               />
             </div>
           </TabsContent>

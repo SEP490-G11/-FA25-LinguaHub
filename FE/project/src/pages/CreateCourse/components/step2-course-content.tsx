@@ -36,7 +36,7 @@ import {
 interface Step2Props {
   sections: SectionData[];
   onSave: (sections: SectionData[]) => void;
-  onBack: () => void;
+  onBack?: () => void; // Made optional
 }
 
 interface SectionFormData {
@@ -469,10 +469,10 @@ export function Step2CourseContent({ sections: initialSections, onSave, onBack }
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
+         <div>
           <h3 className="text-lg font-semibold">Course Structure</h3>
           <p className="text-sm text-gray-500">
-            Build your course with sections and lessons
+            Build your course with sections, lessons, and resources.
           </p>
         </div>
         <Button type="button" onClick={addSection}>
@@ -649,10 +649,12 @@ export function Step2CourseContent({ sections: initialSections, onSave, onBack }
         )}
       </div>
 
-      <div className="flex justify-between pt-6 border-t">
-        <Button type="button" variant="outline" onClick={onBack}>
-          Back
-        </Button>
+      <div className={`flex pt-6 border-t ${onBack ? 'justify-between' : 'justify-end'}`}>
+        {onBack && (
+          <Button type="button" variant="outline" onClick={onBack}>
+            Back
+          </Button>
+        )}
         <Button type="button" onClick={handleSubmit}>
           Create Course
         </Button>
