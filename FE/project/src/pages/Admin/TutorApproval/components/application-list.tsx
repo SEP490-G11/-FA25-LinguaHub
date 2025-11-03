@@ -49,7 +49,6 @@ export function ApplicationList({
             <TableHead className="font-bold text-indigo-900">Applicant Name</TableHead>
             <TableHead className="font-bold text-indigo-900">Teaching Languages</TableHead>
             <TableHead className="font-bold text-indigo-900">Specialization</TableHead>
-            <TableHead className="text-center font-bold text-indigo-900">Experience</TableHead>
             <TableHead className="text-center font-bold text-indigo-900">Status</TableHead>
             <TableHead className="text-center font-bold text-indigo-900">Applied Date</TableHead>
             <TableHead className="text-center font-bold text-indigo-900 w-[120px]">Actions</TableHead>
@@ -82,9 +81,6 @@ export function ApplicationList({
               </TableCell>
               <TableCell className="text-gray-700">
                 {application.specialization}
-              </TableCell>
-              <TableCell className="text-center font-semibold text-gray-900">
-                {application.experience} years
               </TableCell>
               <TableCell className="text-center">
                 {getStatusBadge(application.status)}
