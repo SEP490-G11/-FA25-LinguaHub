@@ -30,6 +30,7 @@ import MyEnrollments from "@/pages/MyEnrollments";
 import CreateCourse from '@/pages/CreateCourse/index';
 import CourseApprovalPage from '@/pages/Admin/CourseApproval/index';
 import ApplyTutor from '@/pages/ApplyTutor';
+import TutorApproval from '@/pages/Admin/TutorApproval';
 
 export function AppRoutes() {
         return (
@@ -63,6 +64,7 @@ export function AppRoutes() {
                     <Route path="/tutor/create-courses" element={<CreateCourse />} />
                     <Route path="/admin/course-approval" element={<CourseApprovalPage />} />
                     <Route path="/learner/apply-tutor" element={<ApplyTutor />} />
+                    <Route path="/admin/tutor-approval" element={<TutorApproval />} />
             </Routes>
         );
 }
