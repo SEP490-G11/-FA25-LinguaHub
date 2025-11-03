@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -46,15 +45,19 @@ interface ApplicationDetailModalProps {
   application: Application;
   isOpen: boolean;
   onClose: () => void;
+  onApprove: (applicationId: string, adminNotes?: string) => void;
+  onReject: (applicationId: string, rejectionReason: string) => void;
+  isLoading: boolean;
 }
 
 export default function ApplicationDetailModal({
   application,
   isOpen,
   onClose,
+  onApprove,
+  onReject,
+  isLoading,
 }: ApplicationDetailModalProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
   const {
     register,
     handleSubmit,
@@ -69,17 +72,11 @@ export default function ApplicationDetailModal({
   const selectedStatus = watch('status');
 
   const onSubmit = (data: ApprovalFormData) => {
-    setIsSubmitting(true);
-    console.log('Form submitted:', {
-      applicationId: application.id,
-      ...data,
-    });
-
-    setTimeout(() => {
-      setIsSubmitting(false);
-      reset();
-      onClose();
-    }, 500);
+    if (data.status === 'approved') {
+      onApprove(application.id, data.adminNotes);
+    } else {
+      onReject(application.id, data.adminNotes || 'No reason provided');
+    }
   };
 
   const handleClose = () => {
@@ -299,12 +296,12 @@ export default function ApplicationDetailModal({
                     type="button"
                     variant="outline"
                     onClick={handleClose}
-                    disabled={isSubmitting}
+                    disabled={isLoading}
                   >
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? (
+                  <Button type="submit" disabled={isLoading}>
+                    {isLoading ? (
                       <>
                         <span className="animate-spin mr-2">⏳</span>
                         Submitting...
