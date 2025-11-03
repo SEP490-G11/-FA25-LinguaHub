@@ -8,7 +8,6 @@ import {
   Star,
   DollarSign,
   Clock,
-  Eye,
   AlertCircle,
   CheckCircle,
   XCircle,
@@ -408,7 +407,7 @@ const CourseList = () => {
                         </div>
 
                         {/* Action Buttons */}
-                        <div className="mt-auto space-y-2">
+                        <div className="mt-auto">
                           <Button
                             asChild
                             variant="default"
@@ -418,18 +417,6 @@ const CourseList = () => {
                             <Link to={`/tutor/courses/${course.id}/content`}>
                               <BookOpen className="w-4 h-4 mr-2" />
                               Quản lý khóa học
-                            </Link>
-                          </Button>
-                          
-                          <Button
-                            asChild
-                            variant="outline"
-                            size="sm"
-                            className="w-full"
-                          >
-                            <Link to={`/courses/${course.id}`}>
-                              <Eye className="w-4 h-4 mr-2" />
-                              Xem khóa học
                             </Link>
                           </Button>
                         </div>
