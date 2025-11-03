@@ -262,10 +262,88 @@ Description: When a learner successfully books a slot, the IsAvailable field of 
 - When booking is cancelled → IsAvailable = TRUE. Applies to: Schedule
 Description: When a learner cancels the booking, the corresponding slot needs to be reopened so that others can book. The system will update IsAvailable = TRUE to mark the slot as empty again.
 
+### Entity ChatRoom
+- ChatRoomID
+- Title
+- Description
+- UserID: Learner
+- TutorID
+- ChatRoomType ENUM(Advice, Training) default Training
 
-<<<<<<< HEAD
-=======
+### Entity ChatRoomMessage
+- MessageID
+- ChatRoomID
+- SenderID
+- Context
+- MessageType ENUM(Texr, Image, File) Default Text
+- CreatedAt 
 
->>>>>>> origin/main
->
+### Entity Booking
+- BookingID
+- UserID
+- TutorID
+- ScheduleID
+- UserBookingPlanID
+- Status ENUM (Booked, Cancelled, Completed) default Booked
+- MeetingLink
+- CreatedAt
+- UpdatedAt
+
+### Entity Users
+- UserID
+- Email
+- PasswordHash
+- Role ENUM (Admin, Tutor, Learner) default Learner
+- FullName
+- AvatarURL
+- Gender ENUM (Male, Female, Other)
+- DOB (Date of birth)
+- Phone
+- Country
+- Address
+- Bio
+- IsActive
+- CreatedAt
+- UpdatedAt
+
+### Entity Tutor
+- TutorID
+- UserID
+- Experience
+- Specialization
+- TeachingLanguage
+- Bio
+- Rating
+- Status ENUM(Pending, Approved, Suspended) default Pending
+
+
+## Active flow
+A. Advice chat
+- Allow Learners to ask before booking
+  1. Learner views Tutor profile → click “Chat to Ask” In UI “Tutor Profile” 
+  2. Backend checks if there is an Advice room between Learner & Tutor in ChatRoom 
+  3. If not → create a new ChatRoom 
+  4. Learner can send text messages (or emoji) MessageType='Text'
+  5. Tutor responds to advice (introduce course, price, schedule, etc.)
+  6. Learner decides to Book Tutor → System switches to “Training Chat” flow 
+B. Training Chat
+- Support chat during the learning process - meaning Learner has booked tutor (has Booking record). 
+  1. Learner successfully booked slot (Booking.Status='Booked')
+  2. The system checks if there is a Training room between Learner and Tutor
+  3. If not → create a new room:
+  4. Learner and Tutor can send:
+  • Text messages
+  • Photos (image upload)
+  • PDF files/documents
+  • Google Meet links (MessageType='Text', content contains URL) 
+  5. Tutor can send GG Meet links automatically (from Booking.MeetingLink) into chat
+  6. Learner and Tutor can exchange during the learning process.
+## Business Rule
+- Each Learner-Tutor pair has only 1 Advice room and 1 Training room.
+- Advice can only send text, not files. Advice
+- Training allows sending Text, Image, File, Link
+- When Booking is created → the system automatically generates ChatRoom Training (if not yet available)
+- When Booking is canceled → ChatRoom still keeps history but does not send new messages
+- When Tutor is suspended → both Advice and Training are read-only.
+
                                                    

@@ -1,6 +1,7 @@
 package edu.lms.entity;
 
 import edu.lms.enums.BookingStatus;
+import edu.lms.listener.BookingListener;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -13,6 +14,7 @@ import java.time.LocalDateTime;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
 @Table(name = "Booking")
+@EntityListeners(BookingListener.class)
 public class Booking {
 
     @Id
@@ -38,7 +40,7 @@ public class Booking {
     @Enumerated(EnumType.STRING)
     @Column(length = 20, nullable = false)
     @Builder.Default
-    BookingStatus status = BookingStatus.Paid;
+    BookingStatus status = BookingStatus.Booked;
 
     String meetingLink;
 

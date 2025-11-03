@@ -7,7 +7,6 @@ import edu.lms.service.TutorService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -21,21 +20,19 @@ public class TutorController {
 
     // 1. Submit application
     @PostMapping("/apply")
-    @PreAuthorize("hasAuthority('APPLY_TUTOR')")
     public ResponseEntity<?> applyToBecomeTutor(
             @RequestBody @Valid TutorApplyRequest request
     ) {
-        Long userId = getCurrentUserId();
-        tutorService.applyToBecomeTutor(userId, request);
+        Long userID = getCurrentUserId();
+        tutorService.applyToBecomeTutor(userID, request);
         return ResponseEntity.ok("Application submitted successfully and is now pending review.");
     }
 
     // 2. View application status
     @GetMapping("/apply/status")
-    @PreAuthorize("hasAuthority('VIEW_TUTOR_STATUS')")
     public ResponseEntity<TutorApplyResponse> getApplyStatus() {
-        Long userId = getCurrentUserId();
-        return ResponseEntity.ok(tutorService.getApplicationStatus(userId));
+        Long userID = getCurrentUserId();
+        return ResponseEntity.ok(tutorService.getApplicationStatus(userID));
     }
 
     // Helper method to get current user ID from JWT token

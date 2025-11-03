@@ -1,5 +1,6 @@
 package edu.lms.entity;
 
+import edu.lms.enums.MessageType;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -17,17 +18,30 @@ public class ChatRoomMessage {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long messageID;
 
-    @ManyToOne
-    @JoinColumn(name = "chatRoomID")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "chatRoomID", nullable = false)
     ChatRoom chatRoom;
 
-    @ManyToOne
-    @JoinColumn(name = "senderID")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "senderID", nullable = false)
     User sender;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT", nullable = false)
     String content;
 
-    String messageType; // Text, Image, File
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20, nullable = false)
+    @Builder.Default
+    MessageType messageType = MessageType.Text;
+
+    @Builder.Default
+    @Column(nullable = false)
     LocalDateTime createdAt = LocalDateTime.now();
+
+    @PrePersist
+    public void prePersist() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+    }
 }
