@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
@@ -20,4 +21,5 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
     List<Enrollment> findAllByCourseId(Long courseId);
 
     List<Enrollment> findByUser_UserID(Long userId);
+    Optional<Enrollment> findByUser_UserIDAndCourse_CourseID(Long userId, Long courseId);
 }

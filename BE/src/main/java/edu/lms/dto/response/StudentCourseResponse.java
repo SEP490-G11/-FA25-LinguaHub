@@ -4,6 +4,7 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -19,4 +20,9 @@ public class StudentCourseResponse {
     String thumbnailURL;
     String status; // EnrollmentStatus
     LocalDateTime enrolledAt;
+
+    BigDecimal progressPercent;
+    Boolean isCompleted;
+
+    List<SectionProgressResponse> sectionProgress;
 }
