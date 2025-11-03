@@ -13,8 +13,17 @@ import {
   ArrowUp,
   ArrowDown,
   Video,
+  FileText,
+  Link2,
 } from 'lucide-react';
 import { SectionData, LessonData } from '@/queries/course-api';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -37,7 +46,22 @@ interface SectionFormData {
 interface LessonFormData {
   title: string;
   duration_minutes: number;
-  video_url: string;
+  lesson_type: 'Video' | 'Reading';
+  video_url?: string;
+  content?: string;
+  resources?: LessonResourceData[];
+}
+
+interface LessonResourceData {
+  resource_type: 'PDF' | 'ExternalLink';
+  resource_title: string;
+  resource_url: string;
+}
+
+interface ResourceFormData {
+  resource_type: 'PDF' | 'ExternalLink';
+  resource_title: string;
+  resource_url: string;
 }
 
 export function Step2CourseContent({ sections: initialSections, onSave, onBack }: Step2Props) {
@@ -62,6 +86,17 @@ export function Step2CourseContent({ sections: initialSections, onSave, onBack }
     sectionIndex: number;
     data: LessonFormData;
   } | null>(null);
+
+  // Resource management states
+  const [showNewResourceDialog, setShowNewResourceDialog] = useState(false);
+  const [showEditResourceDialog, setShowEditResourceDialog] = useState(false);
+  const [resourceForm, setResourceForm] = useState<ResourceFormData>({
+    resource_type: 'PDF',
+    resource_title: '',
+    resource_url: '',
+  });
+  const [editingResourceIndex, setEditingResourceIndex] = useState<number | null>(null);
+  const [isEditingLesson, setIsEditingLesson] = useState(false);
 
   const toggleSection = (index: number) => {
     setExpandedSections((prev) => {
@@ -161,17 +196,30 @@ export function Step2CourseContent({ sections: initialSections, onSave, onBack }
   const addLesson = (sectionIndex: number) => {
     setNewLesson({
       sectionIndex,
-      data: { title: '', duration_minutes: 0, video_url: '' },
+      data: {
+        title: '',
+        duration_minutes: 0,
+        lesson_type: 'Video',
+        video_url: '',
+        content: '',
+        resources: [],
+      },
     });
+    setIsEditingLesson(false);
   };
 
   const saveNewLesson = () => {
     if (
       !newLesson ||
       !newLesson.data.title.trim() ||
-      !newLesson.data.video_url.trim() ||
       newLesson.data.duration_minutes <= 0
     ) {
+      return;
+    }
+
+    // Validate based on lesson type
+    if (newLesson.data.lesson_type === 'Video' && !newLesson.data.video_url?.trim()) {
+      alert('Please enter a video URL for this video lesson');
       return;
     }
 
@@ -185,7 +233,7 @@ export function Step2CourseContent({ sections: initialSections, onSave, onBack }
                 {
                   ...newLesson.data,
                   order_index: section.lessons.length,
-                },
+                } as LessonData,
               ],
             }
           : section
@@ -202,18 +250,27 @@ export function Step2CourseContent({ sections: initialSections, onSave, onBack }
       data: {
         title: lesson.title,
         duration_minutes: lesson.duration_minutes,
-        video_url: lesson.video_url,
+        lesson_type: (lesson as any).lesson_type || 'Video',
+        video_url: (lesson as any).video_url || '',
+        content: (lesson as any).content || '',
+        resources: (lesson as any).resources || [],
       },
     });
+    setIsEditingLesson(true);
   };
 
   const saveEditLesson = () => {
     if (
       !editingLesson ||
       !editingLesson.data.title.trim() ||
-      !editingLesson.data.video_url.trim() ||
       editingLesson.data.duration_minutes <= 0
     ) {
+      return;
+    }
+
+    // Validate based on lesson type
+    if (editingLesson.data.lesson_type === 'Video' && !editingLesson.data.video_url?.trim()) {
+      alert('Please enter a video URL for this video lesson');
       return;
     }
 
@@ -224,7 +281,7 @@ export function Step2CourseContent({ sections: initialSections, onSave, onBack }
               ...section,
               lessons: section.lessons.map((lesson, lIdx) =>
                 lIdx === editingLesson.lessonIndex
-                  ? { ...lesson, ...editingLesson.data }
+                  ? { ...lesson, ...editingLesson.data } as LessonData
                   : lesson
               ),
             }
@@ -316,6 +373,84 @@ export function Step2CourseContent({ sections: initialSections, onSave, onBack }
     onSave(sections);
   };
 
+  // Helper functions for lesson data access
+  const getCurrentLessonData = () => {
+    return isEditingLesson ? editingLesson?.data : newLesson?.data;
+  };
+
+  const setCurrentLessonData = (data: LessonFormData) => {
+    if (isEditingLesson && editingLesson) {
+      setEditingLesson({ ...editingLesson, data });
+    } else if (newLesson) {
+      setNewLesson({ ...newLesson, data });
+    }
+  };
+
+  // Resource management functions
+  const addResource = () => {
+    const currentData = getCurrentLessonData();
+    if (!currentData) return;
+
+    if (!resourceForm.resource_title.trim() || !resourceForm.resource_url.trim()) {
+      alert('Please fill in all resource fields');
+      return;
+    }
+
+    const updatedData = {
+      ...currentData,
+      resources: [...(currentData.resources || []), resourceForm],
+    };
+
+    setCurrentLessonData(updatedData);
+    setResourceForm({ resource_type: 'PDF', resource_title: '', resource_url: '' });
+    setShowNewResourceDialog(false);
+  };
+
+  const updateResource = () => {
+    const currentData = getCurrentLessonData();
+    if (!currentData || editingResourceIndex === null) return;
+
+    if (!resourceForm.resource_title.trim() || !resourceForm.resource_url.trim()) {
+      alert('Please fill in all resource fields');
+      return;
+    }
+
+    const updatedResources = [...(currentData.resources || [])];
+    updatedResources[editingResourceIndex] = resourceForm;
+
+    const updatedData = {
+      ...currentData,
+      resources: updatedResources,
+    };
+
+    setCurrentLessonData(updatedData);
+    setResourceForm({ resource_type: 'PDF', resource_title: '', resource_url: '' });
+    setEditingResourceIndex(null);
+    setShowEditResourceDialog(false);
+  };
+
+  const deleteResource = (index: number) => {
+    const currentData = getCurrentLessonData();
+    if (!currentData) return;
+
+    const updatedData = {
+      ...currentData,
+      resources: currentData.resources?.filter((_, i) => i !== index) || [],
+    };
+
+    setCurrentLessonData(updatedData);
+  };
+
+  const startEditResource = (index: number) => {
+    const currentData = getCurrentLessonData();
+    if (!currentData || !currentData.resources) return;
+
+    const resource = currentData.resources[index];
+    setResourceForm(resource);
+    setEditingResourceIndex(index);
+    setShowEditResourceDialog(true);
+  };
+
   const getYouTubeEmbedUrl = (url: string) => {
     const videoIdMatch = url.match(
       /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/
@@ -324,6 +459,10 @@ export function Step2CourseContent({ sections: initialSections, onSave, onBack }
       return `https://www.youtube.com/embed/${videoIdMatch[1]}`;
     }
     return url;
+  };
+
+  const getResourceIcon = (type: 'PDF' | 'ExternalLink') => {
+    return type === 'PDF' ? <FileText className="w-4 h-4" /> : <Link2 className="w-4 h-4" />;
   };
 
   return (
@@ -629,12 +768,22 @@ export function Step2CourseContent({ sections: initialSections, onSave, onBack }
       </Dialog>
 
       <Dialog
-        open={!!newLesson}
-        onOpenChange={(open) => !open && setNewLesson(null)}
+        open={!!newLesson || !!editingLesson}
+        onOpenChange={(open) => {
+          if (!open) {
+            setNewLesson(null);
+            setEditingLesson(null);
+            setShowNewResourceDialog(false);
+            setShowEditResourceDialog(false);
+            setEditingResourceIndex(null);
+          }
+        }}
       >
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Add New Lesson</DialogTitle>
+            <DialogTitle>
+              {isEditingLesson ? 'Edit Lesson' : 'Add New Lesson'}
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -643,18 +792,62 @@ export function Step2CourseContent({ sections: initialSections, onSave, onBack }
               </Label>
               <Input
                 id="lesson-title"
-                value={newLesson?.data.title || ''}
-                onChange={(e) =>
-                  setNewLesson((prev) =>
-                    prev
-                      ? { ...prev, data: { ...prev.data, title: e.target.value } }
-                      : null
-                  )
-                }
+                value={getCurrentLessonData()?.title || ''}
+                onChange={(e) => {
+                  const data = getCurrentLessonData();
+                  if (data) {
+                    setCurrentLessonData({ ...data, title: e.target.value });
+                  }
+                }}
                 placeholder="e.g., Introduction to Present Tense"
                 maxLength={100}
               />
             </div>
+
+            <div>
+              <Label>
+                Lesson Type <span className="text-red-500">*</span>
+              </Label>
+              <div className="flex gap-4 mt-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="lesson-type"
+                    value="Video"
+                    checked={getCurrentLessonData()?.lesson_type === 'Video'}
+                    onChange={(e) => {
+                      const data = getCurrentLessonData();
+                      if (data) {
+                        setCurrentLessonData({
+                          ...data,
+                          lesson_type: e.target.value as 'Video' | 'Reading',
+                        });
+                      }
+                    }}
+                  />
+                  <span className="text-sm">Video Lesson</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="lesson-type"
+                    value="Reading"
+                    checked={getCurrentLessonData()?.lesson_type === 'Reading'}
+                    onChange={(e) => {
+                      const data = getCurrentLessonData();
+                      if (data) {
+                        setCurrentLessonData({
+                          ...data,
+                          lesson_type: e.target.value as 'Video' | 'Reading',
+                        });
+                      }
+                    }}
+                  />
+                  <span className="text-sm">Reading Lesson</span>
+                </label>
+              </div>
+            </div>
+
             <div>
               <Label htmlFor="lesson-duration">
                 Duration (minutes) <span className="text-red-500">*</span>
@@ -664,170 +857,326 @@ export function Step2CourseContent({ sections: initialSections, onSave, onBack }
                 type="number"
                 min="1"
                 max="600"
-                value={newLesson?.data.duration_minutes || ''}
-                onChange={(e) =>
-                  setNewLesson((prev) =>
-                    prev
-                      ? {
-                          ...prev,
-                          data: {
-                            ...prev.data,
-                            duration_minutes: Number(e.target.value),
-                          },
-                        }
-                      : null
-                  )
-                }
+                value={getCurrentLessonData()?.duration_minutes || ''}
+                onChange={(e) => {
+                  const data = getCurrentLessonData();
+                  if (data) {
+                    setCurrentLessonData({
+                      ...data,
+                      duration_minutes: Number(e.target.value),
+                    });
+                  }
+                }}
                 placeholder="e.g., 30"
               />
             </div>
-            <div>
-              <Label htmlFor="lesson-video-url">
-                Video URL <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="lesson-video-url"
-                value={newLesson?.data.video_url || ''}
-                onChange={(e) =>
-                  setNewLesson((prev) =>
-                    prev
-                      ? {
-                          ...prev,
-                          data: { ...prev.data, video_url: e.target.value },
-                        }
-                      : null
-                  )
-                }
-                placeholder="https://www.youtube.com/watch?v=..."
-              />
-              {newLesson?.data.video_url && (
-                <div className="mt-3">
-                  <p className="text-sm text-gray-600 mb-2">Preview:</p>
-                  <div className="aspect-video">
-                    <iframe
-                      src={getYouTubeEmbedUrl(newLesson.data.video_url)}
-                      className="w-full h-full rounded"
-                      allowFullScreen
-                    />
+
+            {getCurrentLessonData()?.lesson_type === 'Video' && (
+              <div>
+                <Label htmlFor="lesson-video-url">
+                  Video URL <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="lesson-video-url"
+                  value={getCurrentLessonData()?.video_url || ''}
+                  onChange={(e) => {
+                    const data = getCurrentLessonData();
+                    if (data) {
+                      setCurrentLessonData({ ...data, video_url: e.target.value });
+                    }
+                  }}
+                  placeholder="https://www.youtube.com/watch?v=..."
+                />
+                {getCurrentLessonData()?.video_url && (
+                  <div className="mt-3">
+                    <p className="text-sm text-gray-600 mb-2">Preview:</p>
+                    <div className="aspect-video">
+                      <iframe
+                        src={getYouTubeEmbedUrl(getCurrentLessonData()!.video_url!)}
+                        className="w-full h-full rounded"
+                        allowFullScreen
+                      />
+                    </div>
                   </div>
+                )}
+              </div>
+            )}
+
+            {getCurrentLessonData()?.lesson_type === 'Reading' && (
+              <div>
+                <Label htmlFor="lesson-content">
+                  Content <span className="text-red-500">*</span>
+                </Label>
+                <Textarea
+                  id="lesson-content"
+                  value={getCurrentLessonData()?.content || ''}
+                  onChange={(e) => {
+                    const data = getCurrentLessonData();
+                    if (data) {
+                      setCurrentLessonData({ ...data, content: e.target.value });
+                    }
+                  }}
+                  placeholder="Enter lesson content here..."
+                  className="min-h-[200px]"
+                />
+              </div>
+            )}
+
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <Label>Resources</Label>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  type="button"
+                  onClick={() => {
+                    setResourceForm({
+                      resource_type: 'PDF',
+                      resource_title: '',
+                      resource_url: '',
+                    });
+                    setShowNewResourceDialog(true);
+                  }}
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  Add Resource
+                </Button>
+              </div>
+
+              {(getCurrentLessonData()?.resources || []).length > 0 && (
+                <div className="space-y-2 bg-gray-50 p-3 rounded">
+                  {getCurrentLessonData()?.resources?.map((resource, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between bg-white p-2 rounded border"
+                    >
+                      <div className="flex items-center gap-2 flex-1">
+                        {getResourceIcon(resource.resource_type)}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">
+                            {resource.resource_title}
+                          </p>
+                          <p className="text-xs text-gray-500 truncate">
+                            {resource.resource_type}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => startEditResource(index)}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => deleteResource(index)}
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setNewLesson(null)}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setNewLesson(null);
+                setEditingLesson(null);
+              }}
+            >
               Cancel
             </Button>
             <Button
-              onClick={saveNewLesson}
+              onClick={isEditingLesson ? saveEditLesson : saveNewLesson}
               disabled={
-                !newLesson?.data.title.trim() ||
-                !newLesson?.data.video_url.trim() ||
-                (newLesson?.data.duration_minutes || 0) <= 0
+                !getCurrentLessonData()?.title.trim() ||
+                (getCurrentLessonData()?.duration_minutes || 0) <= 0 ||
+                (getCurrentLessonData()?.lesson_type === 'Video' &&
+                  !getCurrentLessonData()?.video_url?.trim()) ||
+                (getCurrentLessonData()?.lesson_type === 'Reading' &&
+                  !getCurrentLessonData()?.content?.trim())
               }
             >
-              Add Lesson
+              {isEditingLesson ? 'Save Changes' : 'Add Lesson'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       <Dialog
-        open={!!editingLesson}
-        onOpenChange={(open) => !open && setEditingLesson(null)}
+        open={showNewResourceDialog}
+        onOpenChange={setShowNewResourceDialog}
       >
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Edit Lesson</DialogTitle>
+            <DialogTitle>Add Resource</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="edit-lesson-title">
-                Title <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="edit-lesson-title"
-                value={editingLesson?.data.title || ''}
-                onChange={(e) =>
-                  setEditingLesson((prev) =>
-                    prev
-                      ? { ...prev, data: { ...prev.data, title: e.target.value } }
-                      : null
-                  )
+              <Label>Resource Type</Label>
+              <Select
+                value={resourceForm.resource_type}
+                onValueChange={(value) =>
+                  setResourceForm({
+                    ...resourceForm,
+                    resource_type: value as 'PDF' | 'ExternalLink',
+                  })
                 }
-                maxLength={100}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="PDF">PDF Document</SelectItem>
+                  <SelectItem value="ExternalLink">External Link</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="resource-title">Title</Label>
+              <Input
+                id="resource-title"
+                value={resourceForm.resource_title}
+                onChange={(e) =>
+                  setResourceForm({
+                    ...resourceForm,
+                    resource_title: e.target.value,
+                  })
+                }
+                placeholder="e.g., Grammar Guide"
               />
             </div>
             <div>
-              <Label htmlFor="edit-lesson-duration">
-                Duration (minutes) <span className="text-red-500">*</span>
+              <Label htmlFor="resource-url">
+                {resourceForm.resource_type === 'PDF'
+                  ? 'PDF URL'
+                  : 'Link URL'}
               </Label>
               <Input
-                id="edit-lesson-duration"
-                type="number"
-                min="1"
-                max="600"
-                value={editingLesson?.data.duration_minutes || ''}
+                id="resource-url"
+                value={resourceForm.resource_url}
                 onChange={(e) =>
-                  setEditingLesson((prev) =>
-                    prev
-                      ? {
-                          ...prev,
-                          data: {
-                            ...prev.data,
-                            duration_minutes: Number(e.target.value),
-                          },
-                        }
-                      : null
-                  )
+                  setResourceForm({
+                    ...resourceForm,
+                    resource_url: e.target.value,
+                  })
+                }
+                placeholder={
+                  resourceForm.resource_type === 'PDF'
+                    ? 'https://example.com/file.pdf'
+                    : 'https://example.com'
                 }
               />
-            </div>
-            <div>
-              <Label htmlFor="edit-lesson-video-url">
-                Video URL <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="edit-lesson-video-url"
-                value={editingLesson?.data.video_url || ''}
-                onChange={(e) =>
-                  setEditingLesson((prev) =>
-                    prev
-                      ? {
-                          ...prev,
-                          data: { ...prev.data, video_url: e.target.value },
-                        }
-                      : null
-                  )
-                }
-              />
-              {editingLesson?.data.video_url && (
-                <div className="mt-3">
-                  <p className="text-sm text-gray-600 mb-2">Preview:</p>
-                  <div className="aspect-video">
-                    <iframe
-                      src={getYouTubeEmbedUrl(editingLesson.data.video_url)}
-                      className="w-full h-full rounded"
-                      allowFullScreen
-                    />
-                  </div>
-                </div>
-              )}
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingLesson(null)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowNewResourceDialog(false)}
+            >
               Cancel
             </Button>
             <Button
-              onClick={saveEditLesson}
+              onClick={addResource}
               disabled={
-                !editingLesson?.data.title.trim() ||
-                !editingLesson?.data.video_url.trim() ||
-                (editingLesson?.data.duration_minutes || 0) <= 0
+                !resourceForm.resource_title.trim() ||
+                !resourceForm.resource_url.trim()
               }
             >
-              Save Changes
+              Add
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={showEditResourceDialog}
+        onOpenChange={setShowEditResourceDialog}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Resource</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Resource Type</Label>
+              <Select
+                value={resourceForm.resource_type}
+                onValueChange={(value) =>
+                  setResourceForm({
+                    ...resourceForm,
+                    resource_type: value as 'PDF' | 'ExternalLink',
+                  })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="PDF">PDF Document</SelectItem>
+                  <SelectItem value="ExternalLink">External Link</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="edit-resource-title">Title</Label>
+              <Input
+                id="edit-resource-title"
+                value={resourceForm.resource_title}
+                onChange={(e) =>
+                  setResourceForm({
+                    ...resourceForm,
+                    resource_title: e.target.value,
+                  })
+                }
+                placeholder="e.g., Grammar Guide"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-resource-url">
+                {resourceForm.resource_type === 'PDF'
+                  ? 'PDF URL'
+                  : 'Link URL'}
+              </Label>
+              <Input
+                id="edit-resource-url"
+                value={resourceForm.resource_url}
+                onChange={(e) =>
+                  setResourceForm({
+                    ...resourceForm,
+                    resource_url: e.target.value,
+                  })
+                }
+                placeholder={
+                  resourceForm.resource_type === 'PDF'
+                    ? 'https://example.com/file.pdf'
+                    : 'https://example.com'
+                }
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowEditResourceDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={updateResource}
+              disabled={
+                !resourceForm.resource_title.trim() ||
+                !resourceForm.resource_url.trim()
+              }
+            >
+              Update
             </Button>
           </DialogFooter>
         </DialogContent>
