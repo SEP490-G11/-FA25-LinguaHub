@@ -37,6 +37,7 @@ interface Step2Props {
   sections: SectionData[];
   onSave: (sections: SectionData[]) => void;
   onBack?: () => void; // Made optional
+  submitButtonText?: string; // Customize submit button text
 }
 
 interface SectionFormData {
@@ -65,7 +66,12 @@ interface ResourceFormData {
   resource_url: string;
 }
 
-export function Step2CourseContent({ sections: initialSections, onSave, onBack }: Step2Props) {
+export function Step2CourseContent({ 
+  sections: initialSections, 
+  onSave, 
+  onBack,
+  submitButtonText = 'Create Course' // Default text for CreateCourse
+}: Step2Props) {
   const [sections, setSections] = useState<SectionData[]>(initialSections);
   const [expandedSections, setExpandedSections] = useState<Set<number>>(
     new Set([0])
@@ -656,7 +662,7 @@ export function Step2CourseContent({ sections: initialSections, onSave, onBack }
           </Button>
         )}
         <Button type="button" onClick={handleSubmit}>
-          Submit Course
+          {submitButtonText}
         </Button>
       </div>
 

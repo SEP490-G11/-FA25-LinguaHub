@@ -218,6 +218,7 @@ export default function ManageCourseContent() {
               <Step2CourseContent
                 sections={convertToSections()}
                 onSave={handleSaveContent}
+                submitButtonText="Save Changes"
               />
             </div>
           </TabsContent>

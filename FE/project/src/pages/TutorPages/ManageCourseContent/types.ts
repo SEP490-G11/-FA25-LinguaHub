@@ -39,7 +39,7 @@ export interface CourseContentData {
   Description?: string;
   CategoryID?: string;
   Languages?: string[];
-  Duration?: number;
+  Duration?: number; // in hours
   Price?: number;
   ThumbnailURL?: string;
   Status?: string;

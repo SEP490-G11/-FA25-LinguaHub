@@ -33,7 +33,7 @@ interface Course {
   category: string;
   description: string;
   price: number;
-  duration: string;
+  duration: number; // in hours
   image: string;
   createdAt: string;
   status: 'draft' | 'pending' | 'approved' | 'rejected' | 'disabled';
@@ -44,12 +44,12 @@ interface Course {
 
 const mockCourses: Course[] = [
   {
-    id: 'COURSE_1704123456789',
+    id: '1',
     title: 'Advanced English Business Communication',
     category: 'English',
     description: 'Comprehensive course for professionals looking to improve their business English skills.',
     price: 750000,
-    duration: '12 weeks',
+    duration: 40, // hours
     image: 'https://images.pexels.com/photos/3184339/pexels-photo-3184339.jpeg?auto=compress&cs=tinysrgb&w=800',
     createdAt: '2024-01-15T10:30:00Z',
     status: 'approved',
@@ -58,12 +58,12 @@ const mockCourses: Course[] = [
     reviews: 23
   },
   {
-    id: 'COURSE_1704123456790',
+    id: '2',
     title: 'English Conversation for Beginners',
     category: 'English',
     description: 'Perfect course for beginners who want to start speaking English confidently.',
     price: 450000,
-    duration: '8 weeks',
+    duration: 30, // hours
     image: 'https://images.pexels.com/photos/3184465/pexels-photo-3184465.jpeg?auto=compress&cs=tinysrgb&w=800',
     createdAt: '2024-01-14T14:20:00Z',
     status: 'pending',
@@ -72,12 +72,12 @@ const mockCourses: Course[] = [
     reviews: 0
   },
   {
-    id: 'COURSE_1704123456791',
+    id: '3',
     title: 'IELTS Speaking Preparation',
     category: 'English',
     description: 'Intensive IELTS speaking preparation course with mock tests.',
     price: 680000,
-    duration: '10 weeks',
+    duration: 35, // hours
     image: 'https://images.pexels.com/photos/3184360/pexels-photo-3184360.jpeg?auto=compress&cs=tinysrgb&w=800',
     createdAt: '2024-01-13T09:15:00Z',
     status: 'approved',
@@ -86,12 +86,12 @@ const mockCourses: Course[] = [
     reviews: 18
   },
   {
-    id: 'COURSE_1704123456792',
+    id: '4',
     title: 'Korean Language Fundamentals',
     category: 'Korean',
     description: 'Learn Korean from scratch with systematic approach to grammar and vocabulary.',
     price: 550000,
-    duration: '16 weeks',
+    duration: 60, // hours
     image: 'https://images.pexels.com/photos/4006576/pexels-photo-4006576.jpeg?auto=compress&cs=tinysrgb&w=800',
     createdAt: '2024-01-12T16:45:00Z',
     status: 'draft',
@@ -100,12 +100,12 @@ const mockCourses: Course[] = [
     reviews: 0
   },
   {
-    id: 'COURSE_1704123456793',
+    id: '5',
     title: 'Japanese for Travel',
     category: 'Japanese',
     description: 'Essential Japanese phrases and cultural insights for travelers.',
     price: 400000,
-    duration: '6 weeks',
+    duration: 20, // hours
     image: 'https://images.pexels.com/photos/2070033/pexels-photo-2070033.jpeg?auto=compress&cs=tinysrgb&w=800',
     createdAt: '2024-01-11T11:20:00Z',
     status: 'rejected',
@@ -384,7 +384,7 @@ const CourseList = () => {
                           
                           <div className="flex items-center gap-2">
                             <Clock className="w-4 h-4" />
-                            <span>{course.duration}</span>
+                            <span>{course.duration} hours</span>
                           </div>
                           
                           <div className="flex items-center gap-2">
