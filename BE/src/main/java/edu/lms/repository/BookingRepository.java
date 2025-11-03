@@ -20,3 +20,4 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     boolean existsByUserAndTutorAndStatus(User user, Tutor tutor, BookingStatus status);
 }
 
+
