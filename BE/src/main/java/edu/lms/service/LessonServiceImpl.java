@@ -11,6 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 import edu.lms.dto.response.LessonResourceResponse;
 import edu.lms.dto.response.LessonResponse;
 import edu.lms.entity.Lesson;
+import java.time.LocalDateTime;
+
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -39,6 +41,7 @@ public class LessonServiceImpl implements LessonService {
                                 .videoURL(request.getVideoURL())
                                 .content(request.getContent())
                                 .orderIndex(request.getOrderIndex())
+                                .createdAt(LocalDateTime.now())
                                 .build();
 
                 Lesson saved = lessonRepository.save(lesson);

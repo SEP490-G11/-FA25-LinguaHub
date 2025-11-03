@@ -4,13 +4,20 @@ import edu.lms.dto.request.ApiRespond;
 import edu.lms.dto.request.TutorCourseRequest;
 import edu.lms.dto.response.TutorCourseResponse;
 import edu.lms.dto.response.TutorCourseStudentResponse;
+import edu.lms.entity.Tutor;
+import edu.lms.exception.AppException;
+import edu.lms.exception.ErrorCode;
+import edu.lms.repository.TutorRepository;
 import edu.lms.service.TutorCourseService;
+import edu.lms.service.TutorService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.security.core.Authentication;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,6 +31,7 @@ import java.util.List;
 public class TutorCourseController {
 
     TutorCourseService tutorCourseService;
+    TutorRepository tutorRepository;
 
     // CREATE COURSE
     @Operation(summary = "Tutor tạo khóa học mới (Draft)")
@@ -82,15 +90,20 @@ public class TutorCourseController {
     }
 
     // GET USERS ENROLL OF COURSE
-    @Operation(summary = "Tutor xem danh sách học viên theo courseID")
-    @GetMapping("/{tutorID}/{courseID}/students")
+    @GetMapping("/courses/{courseID}/students")
     public ApiRespond<List<TutorCourseStudentResponse>> getStudentsByCourse(
-            @PathVariable Long tutorID,
-            @PathVariable Long courseID) {
-
+            @PathVariable Long courseID,
+            Authentication authentication) {
+        // Lấy email từ token
+        String email = authentication.getName();
+        // Tìm tutor theo email
+        Tutor tutor = tutorRepository.findByUser_Email(email)
+                .orElseThrow(() -> new AppException(ErrorCode.TUTOR_NOT_FOUND));
+        // Lấy danh sách học viên
         return ApiRespond.<List<TutorCourseStudentResponse>>builder()
-                .result(tutorCourseService.getStudentsByCourse(courseID, tutorID))
+                .result(tutorCourseService.getStudentsByCourse(courseID, tutor.getTutorID()))
                 .build();
     }
+
 
 }

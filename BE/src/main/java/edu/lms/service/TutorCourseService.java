@@ -130,11 +130,16 @@ public class TutorCourseService {
 
         log.warn("Course [{}] deleted successfully", courseID);
     }
+
+
     public List<TutorCourseStudentResponse> getStudentsByCourse(Long courseId, Long tutorId) {
         Course course = courseRepository.findById(courseId)
                 .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
 
-        // Kiểm tra course có thuộc về tutor đang đăng nhập không
+        Tutor tutor = tutorRepository.findById(tutorId)
+                .orElseThrow(() -> new AppException(ErrorCode.TUTOR_NOT_FOUND));
+
+        // Kiểm tra course có thuộc về tutor không
         if (!course.getTutor().getTutorID().equals(tutorId)) {
             throw new AppException(ErrorCode.UNAUTHORIZED);
         }
@@ -153,4 +158,5 @@ public class TutorCourseService {
                     .build();
         }).toList();
     }
+
 }
