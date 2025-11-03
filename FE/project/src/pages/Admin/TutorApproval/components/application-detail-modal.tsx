@@ -3,7 +3,6 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import {
-  X,
   Languages,
   Briefcase,
   Award,
@@ -38,7 +37,7 @@ import { Application, ApprovalFormData } from '../types';
 
 const approvalSchema = z.object({
   status: z.enum(['approved', 'rejected'], {
-    required_error: 'Please select a decision',
+    message: 'Please select a decision',
   }),
   adminNotes: z.string().optional(),
 });

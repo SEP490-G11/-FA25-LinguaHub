@@ -1,31 +1,9 @@
 import { useState, useMemo } from 'react';
-import { Search, Filter, Eye, CheckCircle, XCircle, User, Calendar, Mail } from 'lucide-react';
+import { Filter, CheckCircle2, Users, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import ApplicationDetailModal from './components/application-detail-modal';
+import { ApplicationList } from './components/application-list';
+import { Filters } from './components/filters';
 import { Application } from './types';
 
 const mockApplications: Application[] = [
@@ -111,9 +89,10 @@ const mockApplications: Application[] = [
 
 export default function TutorApproval() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('');
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLoading] = useState(false);
 
   const filteredApplications = useMemo(() => {
     return mockApplications.filter((app) => {
@@ -126,7 +105,7 @@ export default function TutorApproval() {
         );
 
       const matchesStatus =
-        statusFilter === 'all' || app.status === statusFilter;
+        !statusFilter || app.status === statusFilter;
 
       return matchesSearch && matchesStatus;
     });
@@ -142,174 +121,107 @@ export default function TutorApproval() {
     setSelectedApplication(null);
   };
 
-  const getStatusBadge = (status: Application['status']) => {
-    const variants = {
-      pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-      approved: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-      rejected: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-    };
-
-    return (
-      <Badge className={variants[status]}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
-      </Badge>
-    );
-  };
+  const pendingCount = mockApplications.filter(app => app.status === 'pending').length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-slate-900 dark:text-slate-50 mb-2">
-            Tutor Application Management
-          </h1>
-          <p className="text-slate-600 dark:text-slate-400">
-            Review and approve learner applications to become tutors
-          </p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
+      {/* ========== HEADER SECTION ========== */}
+      <div className="bg-gradient-to-r from-indigo-700 via-blue-700 to-blue-600 text-white py-10 px-4 shadow-xl">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-start justify-between mb-6">
+            <div>
+              <h1 className="text-5xl font-bold mb-2 flex items-center gap-3">
+                <div className="bg-white bg-opacity-20 p-3 rounded-lg">
+                  <Users className="w-8 h-8" />
+                </div>
+                Tutor Application Management
+              </h1>
+              <p className="text-blue-100 text-lg">Review and approve learner applications to become tutors</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-6">
+            <div className="bg-white bg-opacity-15 backdrop-blur-sm rounded-xl px-6 py-4 border border-white border-opacity-20 hover:bg-opacity-20 transition-all">
+              <p className="text-blue-100 text-sm font-semibold uppercase tracking-wide">Pending Review</p>
+              <p className="text-4xl font-bold text-white mt-1">{pendingCount}</p>
+            </div>
+            <div className="bg-white bg-opacity-15 backdrop-blur-sm rounded-xl px-6 py-4 border border-white border-opacity-20 hover:bg-opacity-20 transition-all">
+              <p className="text-blue-100 text-sm font-semibold uppercase tracking-wide">Total Applications</p>
+              <p className="text-4xl font-bold text-white mt-1">{mockApplications.length}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ========== MAIN CONTENT ========== */}
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* ========== FILTER SECTION ========== */}
+        <div className="bg-white rounded-xl shadow-md border border-blue-100 p-8 mb-8 hover:shadow-lg transition-all">
+          <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+            <Filter className="w-6 h-6 text-indigo-600" />
+            Search & Filter Applications
+          </h2>
+          <Filters
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            statusFilter={statusFilter}
+            onStatusChange={setStatusFilter}
+          />
+          <div className="mt-6 flex gap-2">
+            <Button
+              onClick={() => {
+                setSearchQuery('');
+                setStatusFilter('');
+              }}
+              variant="outline"
+              className="border-indigo-200 text-indigo-700 hover:bg-indigo-50 hover:border-indigo-300 font-semibold"
+            >
+              ↻ Reset Filters
+            </Button>
+          </div>
         </div>
 
-        <Card className="mb-6 shadow-lg border-slate-200 dark:border-slate-800">
-          <CardHeader>
-            <CardTitle className="text-xl">Filters</CardTitle>
-            <CardDescription>Search and filter applications</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
-                <Input
-                  placeholder="Search by name, email, or language..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
+        {/* ========== APPLICATION LIST SECTION ========== */}
+        {isLoading ? (
+          <div className="flex justify-center items-center py-24">
+            <div className="text-center">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-indigo-100 to-blue-100 rounded-full mb-4">
+                <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
               </div>
-              <div className="w-full md:w-48">
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger>
-                    <Filter className="h-4 w-4 mr-2" />
-                    <SelectValue placeholder="Filter by status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="approved">Approved</SelectItem>
-                    <SelectItem value="rejected">Rejected</SelectItem>
-                  </SelectContent>
-                </Select>
+              <p className="text-gray-700 font-semibold text-lg">Loading applications...</p>
+              <p className="text-gray-500 text-sm mt-2">Please wait while we fetch the applications</p>
+            </div>
+          </div>
+        ) : filteredApplications.length === 0 ? (
+          <div className="bg-white rounded-xl shadow-md border border-blue-100 p-16 text-center hover:shadow-lg transition-all">
+            <div className="flex justify-center mb-6">
+              <div className="w-24 h-24 bg-gradient-to-br from-indigo-100 via-blue-100 to-cyan-100 rounded-full flex items-center justify-center">
+                <CheckCircle2 className="w-12 h-12 text-indigo-500" />
               </div>
             </div>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-lg border-slate-200 dark:border-slate-800">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-xl">Applications</CardTitle>
-                <CardDescription>
-                  Manage tutor applications from learners
-                </CardDescription>
-              </div>
-              <div className="text-sm text-slate-600 dark:text-slate-400">
-                <span className="font-semibold">{filteredApplications.length}</span> application(s)
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {filteredApplications.length === 0 ? (
-              <div className="text-center py-12 text-slate-500 dark:text-slate-400">
-                <p className="text-lg">No applications found</p>
-                <p className="text-sm mt-2">
-                  Try adjusting your search or filter criteria
-                </p>
-              </div>
-            ) : (
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[200px]">Applicant</TableHead>
-                      <TableHead>Languages</TableHead>
-                      <TableHead>Specialization</TableHead>
-                      <TableHead className="text-center">Experience</TableHead>
-                      <TableHead className="text-center">Status</TableHead>
-                      <TableHead className="text-center">Applied Date</TableHead>
-                      <TableHead className="text-center">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredApplications.map((application) => (
-                      <TableRow key={application.id}>
-                        <TableCell>
-                          <div className="flex flex-col">
-                            <div className="font-medium text-slate-900 dark:text-slate-50">
-                              {application.applicantName}
-                            </div>
-                            <div className="text-sm text-slate-500 dark:text-slate-400">
-                              {application.applicantEmail}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            {application.teachingLanguages.map((lang, index) => (
-                              <Badge
-                                key={index}
-                                variant="outline"
-                                className="text-xs bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800"
-                              >
-                                {lang}
-                              </Badge>
-                            ))}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="text-sm text-slate-700 dark:text-slate-300">
-                            {application.specialization}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <div className="text-sm font-medium">
-                            {application.experience} years
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {getStatusBadge(application.status)}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <div className="text-sm text-slate-600 dark:text-slate-400">
-                            {new Date(application.appliedDate).toLocaleDateString('vi-VN')}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleViewDetail(application)}
-                            className="hover:bg-slate-100 dark:hover:bg-slate-800"
-                          >
-                            <Eye className="h-4 w-4 mr-2" />
-                            View
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {selectedApplication && (
-          <ApplicationDetailModal
-            application={selectedApplication}
-            isOpen={isModalOpen}
-            onClose={handleCloseModal}
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">No Applications Found</h3>
+            <p className="text-gray-600 text-lg">
+              {searchQuery || statusFilter
+                ? 'Try adjusting your search or filter criteria'
+                : 'All applications have been reviewed!'}
+            </p>
+          </div>
+        ) : (
+          <ApplicationList
+            applications={filteredApplications}
+            onViewDetails={handleViewDetail}
           />
         )}
       </div>
+
+      {/* ========== Detail Modal ========== */}
+      {selectedApplication && (
+        <ApplicationDetailModal
+          application={selectedApplication}
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+        />
+      )}
     </div>
   );
 }
