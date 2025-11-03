@@ -130,18 +130,18 @@ public class ChatService {
      * - Tutor suspended: read-only
      * - Booking cancelled: read-only
      */
-    public ChatMessageResponse sendMessage(Long senderId, SendMessageRequest request) {
-        log.info("User {} sending message to ChatRoom {}", senderId, request.getChatRoomID());
+    public ChatMessageResponse sendMessage(Long senderID, SendMessageRequest request) {
+        log.info("User {} sending message to ChatRoom {}", senderID, request.getChatRoomID());
 
-        User sender = userRepository.findById(senderId)
+        User sender = userRepository.findById(senderID)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXIST));
 
         ChatRoom chatRoom = chatRoomRepository.findById(request.getChatRoomID())
                 .orElseThrow(() -> new AppException(ErrorCode.CHAT_ROOM_NOT_FOUND));
 
         // Verify sender is either the learner or tutor in this room
-        if (!chatRoom.getUser().getUserID().equals(senderId) &&
-                !chatRoom.getTutor().getUser().getUserID().equals(senderId)) {
+        if (!chatRoom.getUser().getUserID().equals(senderID) &&
+                !chatRoom.getTutor().getUser().getUserID().equals(senderID)) {
             throw new AppException(ErrorCode.UNAUTHORIZED);
         }
 
@@ -217,15 +217,15 @@ public class ChatService {
     /**
      * Get chat room with messages
      */
-    public ChatRoomResponse getChatRoom(Long chatRoomId, Long userId) {
-        log.info("Getting ChatRoom {} for User {}", chatRoomId, userId);
+    public ChatRoomResponse getChatRoom(Long chatRoomId, Long userID) {
+        log.info("Getting ChatRoom {} for User {}", chatRoomId, userID);
 
         ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
                 .orElseThrow(() -> new AppException(ErrorCode.CHAT_ROOM_NOT_FOUND));
 
         // Verify user has access to this room
-        if (!chatRoom.getUser().getUserID().equals(userId) &&
-                !chatRoom.getTutor().getUser().getUserID().equals(userId)) {
+        if (!chatRoom.getUser().getUserID().equals(userID) &&
+                !chatRoom.getTutor().getUser().getUserID().equals(userID)) {
             throw new AppException(ErrorCode.UNAUTHORIZED);
         }
 
@@ -235,10 +235,10 @@ public class ChatService {
     /**
      * Get all chat rooms for a user (both as learner and tutor)
      */
-    public List<ChatRoomResponse> getUserChatRooms(Long userId) {
-        log.info("Getting all chat rooms for User {}", userId);
+    public List<ChatRoomResponse> getUserChatRooms(Long userID) {
+        log.info("Getting all chat rooms for User {}", userID);
 
-        User user = userRepository.findById(userId)
+        User user = userRepository.findById(userID)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXIST));
 
         List<ChatRoom> rooms = chatRoomRepository.findByUser(user);

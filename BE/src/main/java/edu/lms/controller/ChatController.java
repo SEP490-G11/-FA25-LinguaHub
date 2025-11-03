@@ -47,8 +47,8 @@ public class ChatController {
     public ResponseEntity<ApiRespond<ChatMessageResponse>> sendMessage(
             @RequestBody @Valid SendMessageRequest request
     ) {
-        Long senderId = getCurrentUserId();
-        ChatMessageResponse message = chatService.sendMessage(senderId, request);
+        Long senderID = getCurrentUserId();
+        ChatMessageResponse message = chatService.sendMessage(senderID, request);
         return ResponseEntity.ok(ApiRespond.<ChatMessageResponse>builder()
                 .result(message)
                 .build());
@@ -61,8 +61,8 @@ public class ChatController {
     public ResponseEntity<ApiRespond<ChatRoomResponse>> getChatRoom(
             @PathVariable Long chatRoomId
     ) {
-        Long userId = getCurrentUserId();
-        ChatRoomResponse room = chatService.getChatRoom(chatRoomId, userId);
+        Long userID = getCurrentUserId();
+        ChatRoomResponse room = chatService.getChatRoom(chatRoomId, userID);
         return ResponseEntity.ok(ApiRespond.<ChatRoomResponse>builder()
                 .result(room)
                 .build());
@@ -73,8 +73,8 @@ public class ChatController {
      */
     @GetMapping("/rooms")
     public ResponseEntity<ApiRespond<List<ChatRoomResponse>>> getUserChatRooms() {
-        Long userId = getCurrentUserId();
-        List<ChatRoomResponse> rooms = chatService.getUserChatRooms(userId);
+        Long userID = getCurrentUserId();
+        List<ChatRoomResponse> rooms = chatService.getUserChatRooms(userID);
         return ResponseEntity.ok(ApiRespond.<List<ChatRoomResponse>>builder()
                 .result(rooms)
                 .build());
