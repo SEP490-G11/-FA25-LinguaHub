@@ -239,6 +239,79 @@ export const mockCourseContentAPI = {
     return JSON.parse(JSON.stringify(content)); // Deep clone
   },
 
+  // PUT /api/courses/:id - Update course basic information
+  updateCourseInfo: async (
+    courseId: number,
+    data: {
+      Title?: string;
+      Description?: string;
+      CategoryID?: string;
+      Languages?: string[];
+      Duration?: number;
+      Price?: number;
+      ThumbnailURL?: string;
+    }
+  ): Promise<CourseContentData> => {
+    console.log('[Mock API] PUT /api/courses/:id', { courseId, data });
+    await randomDelay();
+
+    const course = mockCourseContent[courseId];
+    if (!course) {
+      throw new Error('Course not found');
+    }
+
+    // Update course fields
+    if (data.Title !== undefined) course.Title = data.Title;
+    if (data.Description !== undefined) course.Description = data.Description;
+    if (data.CategoryID !== undefined) course.CategoryID = data.CategoryID;
+    if (data.Languages !== undefined) course.Languages = data.Languages;
+    if (data.Duration !== undefined) course.Duration = data.Duration;
+    if (data.Price !== undefined) course.Price = data.Price;
+    if (data.ThumbnailURL !== undefined) course.ThumbnailURL = data.ThumbnailURL;
+
+    console.log('[Mock API] Course info updated:', course);
+    return JSON.parse(JSON.stringify(course)); // Deep clone
+  },
+
+  // PUT /api/courses/:id/content - Batch update course content (sections + lessons)
+  updateCourseContent: async (
+    courseId: number,
+    sections: SectionData[]
+  ): Promise<CourseContentData> => {
+    console.log('[Mock API] PUT /api/courses/:id/content', { courseId, sections });
+    await randomDelay();
+
+    const course = mockCourseContent[courseId];
+    if (!course) {
+      throw new Error('Course not found');
+    }
+
+    // Replace all sections with new data
+    course.Sections = sections.map((section, sectionIndex) => ({
+      SectionID: section.SectionID || nextSectionId++,
+      CourseID: courseId,
+      Title: section.Title,
+      Description: section.Description,
+      OrderIndex: sectionIndex,
+      CreatedAt: section.CreatedAt || new Date().toISOString(),
+      Lessons: (section.Lessons || []).map((lesson, lessonIndex) => ({
+        LessonID: lesson.LessonID || nextLessonId++,
+        SectionID: section.SectionID || 0,
+        Title: lesson.Title,
+        Duration: lesson.Duration,
+        LessonType: lesson.LessonType,
+        VideoURL: lesson.VideoURL,
+        Content: lesson.Content,
+        OrderIndex: lessonIndex,
+        CreatedAt: lesson.CreatedAt || new Date().toISOString(),
+        Resources: lesson.Resources || [],
+      })),
+    }));
+
+    console.log('[Mock API] Course content updated:', course);
+    return JSON.parse(JSON.stringify(course)); // Deep clone
+  },
+
   // POST /api/courses/:id/sections - Add section
   addSection: async (
     courseId: number,

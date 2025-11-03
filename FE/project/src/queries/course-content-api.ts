@@ -21,6 +21,40 @@ const realAPI = {
     return response.json();
   },
 
+  updateCourseInfo: async (
+    courseId: number,
+    data: {
+      Title?: string;
+      Description?: string;
+      CategoryID?: string;
+      Languages?: string[];
+      Duration?: number;
+      Price?: number;
+      ThumbnailURL?: string;
+    }
+  ): Promise<CourseContentData> => {
+    const response = await fetch(`/api/courses/${courseId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('Failed to update course info');
+    return response.json();
+  },
+
+  updateCourseContent: async (
+    courseId: number,
+    sections: SectionData[]
+  ): Promise<CourseContentData> => {
+    const response = await fetch(`/api/courses/${courseId}/content`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sections }),
+    });
+    if (!response.ok) throw new Error('Failed to update course content');
+    return response.json();
+  },
+
   addSection: async (
     courseId: number,
     data: AddSectionFormData

@@ -74,9 +74,16 @@ export default function ManageCourseContent() {
   // Mutation to save course info
   const saveInfoMutation = useMutation({
     mutationFn: async (courseInfo: CourseFormData) => {
-      // TODO: Implement API call to update course info
-      console.log('Saving course info:', courseInfo);
-      return courseInfo;
+      // Call API to update course basic information
+      return await courseContentAPI.updateCourseInfo(courseId, {
+        Title: courseInfo.title,
+        Description: courseInfo.description,
+        CategoryID: courseInfo.category_id,
+        Languages: courseInfo.languages,
+        Duration: courseInfo.duration_hours,
+        Price: courseInfo.price_vnd,
+        ThumbnailURL: courseInfo.thumbnail || undefined,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['course-content', courseId] });
@@ -93,9 +100,26 @@ export default function ManageCourseContent() {
   // Mutation to save course content (sections/lessons)
   const saveContentMutation = useMutation({
     mutationFn: async (sections: SectionData[]) => {
-      // TODO: Implement batch update API call
-      console.log('Saving course content:', sections);
-      return sections;
+      // Convert frontend format to backend format
+      const backendSections = sections.map((section, sectionIndex) => ({
+        SectionID: section.id ? parseInt(section.id) : undefined,
+        Title: section.title,
+        Description: section.description || undefined,
+        OrderIndex: sectionIndex,
+        Lessons: section.lessons.map((lesson, lessonIndex) => ({
+          LessonID: lesson.id ? parseInt(lesson.id) : undefined,
+          Title: lesson.title,
+          Duration: lesson.duration_minutes,
+          LessonType: lesson.lesson_type || 'Video',
+          VideoURL: lesson.video_url || undefined,
+          Content: lesson.content || undefined,
+          OrderIndex: lessonIndex,
+          Resources: lesson.resources || [],
+        })),
+      }));
+
+      // Call batch update API
+      return await courseContentAPI.updateCourseContent(courseId, backendSections as any);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['course-content', courseId] });
