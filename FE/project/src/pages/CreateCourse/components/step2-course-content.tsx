@@ -15,6 +15,7 @@ import {
   Video,
   FileText,
   Link2,
+  BookOpen,
 } from 'lucide-react';
 import { SectionData, LessonData } from '@/queries/course-api';
 import {
@@ -564,7 +565,11 @@ export function Step2CourseContent({ sections: initialSections, onSave, onBack }
                     className="flex items-center gap-3 p-3 border rounded-lg bg-gray-50"
                   >
                     <GripVertical className="w-4 h-4 text-gray-400 cursor-move" />
-                    <Video className="w-4 h-4 text-gray-500" />
+                    {((lesson as any).lesson_type || 'Video') === 'Reading' ? (
+                      <BookOpen className="w-4 h-4 text-gray-500" />
+                    ) : (
+                      <Video className="w-4 h-4 text-gray-500" />
+                    )}
                     <div className="flex-1">
                       <h5 className="font-medium text-sm">{lesson.title}</h5>
                       <p className="text-xs text-gray-500">
