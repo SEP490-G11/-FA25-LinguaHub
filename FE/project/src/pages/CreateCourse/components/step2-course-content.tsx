@@ -37,6 +37,7 @@ interface Step2Props {
   sections: SectionData[];
   onSave: (sections: SectionData[]) => void;
   onBack: () => void;
+  hideDescription?: boolean; // Optional prop to hide the description text
 }
 
 interface SectionFormData {
@@ -65,7 +66,7 @@ interface ResourceFormData {
   resource_url: string;
 }
 
-export function Step2CourseContent({ sections: initialSections, onSave, onBack }: Step2Props) {
+export function Step2CourseContent({ sections: initialSections, onSave, onBack, hideDescription = false }: Step2Props) {
   const [sections, setSections] = useState<SectionData[]>(initialSections);
   const [expandedSections, setExpandedSections] = useState<Set<number>>(
     new Set([0])
@@ -471,9 +472,11 @@ export function Step2CourseContent({ sections: initialSections, onSave, onBack }
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold">Course Structure</h3>
-          <p className="text-sm text-gray-500">
-            Build your course with sections and lessons
-          </p>
+          {!hideDescription && (
+            <p className="text-sm text-gray-500">
+              Build your course with sections and lessons
+            </p>
+          )}
         </div>
         <Button type="button" onClick={addSection}>
           <Plus className="w-4 h-4 mr-2" />

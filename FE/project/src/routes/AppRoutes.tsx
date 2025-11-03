@@ -31,6 +31,8 @@ import CreateCourse from '@/pages/CreateCourse/index';
 import CourseApprovalPage from '@/pages/Admin/CourseApproval/index';
 import ApplyTutor from '@/pages/ApplyTutor';
 import TutorApproval from '@/pages/Admin/TutorApproval';
+import ManageCourseContent from '@/pages/TutorPages/ManageCourseContent';
+import CourseList from '@/pages/TutorPages/CourseList';
 
 export function AppRoutes() {
         return (
@@ -65,6 +67,8 @@ export function AppRoutes() {
                     <Route path="/admin/course-approval" element={<CourseApprovalPage />} />
                     <Route path="/learner/apply-tutor" element={<ApplyTutor />} />
                     <Route path="/admin/tutor-approval" element={<TutorApproval />} />
+                    <Route path="/tutor/courses" element={<CourseList />} />
+                    <Route path="/tutor/courses/:id/content" element={<ManageCourseContent />} />
             </Routes>
         );
 }

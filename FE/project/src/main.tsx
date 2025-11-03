@@ -12,6 +12,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ScrollToTop } from '@/routes/ScrollToTop';
 import App from './App';
 import './index.css';
+// Load mock APIs for development
+import '@/queries/course-content-api.mock';
 
 // Create a query client
 const queryClient = new QueryClient({
