@@ -12,6 +12,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -46,7 +47,9 @@ public class TutorCourseController {
 
     // GET ALL COURSES
     @Operation(summary = "Lấy danh sách tất cả khóa học (Admin/Public)")
+
     @GetMapping("/all")
+    @PreAuthorize("permitAll()")
     public ApiRespond<List<TutorCourseResponse>> getAllCourses() {
         return ApiRespond.<List<TutorCourseResponse>>builder()
                 .result(tutorCourseService.getAllCourses())

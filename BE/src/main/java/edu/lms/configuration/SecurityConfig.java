@@ -50,7 +50,8 @@ public class SecurityConfig {
             "/auth/**",
             "/api/test/**",
             "/api/payments/webhook",
-            "api/payments/create"
+            "api/payments/create",
+            "tutor/courses/all"
     };
 
 
