@@ -17,3 +17,4 @@ public interface ChatRoomMessageRepository extends JpaRepository<ChatRoomMessage
     List<ChatRoomMessage> findByChatRoomIDOrderByCreatedAtAsc(@Param("chatRoomID") Long chatRoomID);
 }
 
+
