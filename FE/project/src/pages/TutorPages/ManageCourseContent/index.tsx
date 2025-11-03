@@ -9,8 +9,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { courseContentAPI } from '@/queries/course-content-api';
-import { Step1CourseInfo } from '@/pages/CreateCourse/components/step1-course-info';
-import { Step2CourseContent } from '@/pages/CreateCourse/components/step2-course-content';
+import { Step1CourseInfo } from '@/pages/CreateCourse/components/course-info';
+import { Step2CourseContent } from '@/pages/CreateCourse/components/course-content';
 import type { SectionData, CourseFormData } from '@/queries/course-api';
 
 export default function ManageCourseContent() {

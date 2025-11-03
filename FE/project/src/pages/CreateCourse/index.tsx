@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Step1CourseInfo } from './components/step1-course-info';
-import { Step2CourseContent } from './components/step2-course-content';
+import { Step1CourseInfo } from './components/course-info';
+import { Step2CourseContent } from './components/course-content';
 import { CourseFormData, SectionData, courseApi } from '@/queries/course-api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle2 } from 'lucide-react';
