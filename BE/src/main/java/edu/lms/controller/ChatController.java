@@ -28,12 +28,12 @@ public class ChatController {
      * Get or create Advice chat room
      * Flow A: Learner views Tutor profile → click "Chat to Ask"
      */
-    @PostMapping("/advice/{tutorId}")
+    @PostMapping("/advice/{tutorID}")
     public ResponseEntity<ApiRespond<ChatRoomResponse>> getOrCreateAdviceRoom(
-            @PathVariable Long tutorId
+            @PathVariable Long tutorID
     ) {
-        Long learnerId = getCurrentUserId();
-        ChatRoomResponse room = chatService.getOrCreateAdviceRoom(learnerId, tutorId);
+        Long learnerID = getCurrentUserId();
+        ChatRoomResponse room = chatService.getOrCreateAdviceRoom(learnerID, tutorID);
         return ResponseEntity.ok(ApiRespond.<ChatRoomResponse>builder()
                 .result(room)
                 .build());
@@ -89,8 +89,8 @@ public class ChatController {
             @PathVariable Long chatRoomId,
             @RequestBody String meetingLink
     ) {
-        Long tutorId = getCurrentUserId();
-        ChatMessageResponse message = chatService.sendMeetingLink(tutorId, chatRoomId, meetingLink);
+        Long tutorID = getCurrentUserId();
+        ChatMessageResponse message = chatService.sendMeetingLink(tutorID, chatRoomId, meetingLink);
         return ResponseEntity.ok(ApiRespond.<ChatMessageResponse>builder()
                 .result(message)
                 .build());

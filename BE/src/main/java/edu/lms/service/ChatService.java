@@ -39,20 +39,20 @@ public class ChatService {
      * Get or create Advice chat room between Learner and Tutor
      * Business Rule: Each Learner-Tutor pair has only 1 Advice room
      */
-    public ChatRoomResponse getOrCreateAdviceRoom(Long learnerId, Long tutorId) {
-        log.info("Getting or creating Advice room for Learner {} and Tutor {}", learnerId, tutorId);
+    public ChatRoomResponse getOrCreateAdviceRoom(Long learnerID, Long tutorID) {
+        log.info("Getting or creating Advice room for Learner {} and Tutor {}", learnerID, tutorID);
 
-        User learner = userRepository.findById(learnerId)
+        User learner = userRepository.findById(learnerID)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXIST));
 
-        Tutor tutor = tutorRepository.findById(tutorId)
+        Tutor tutor = tutorRepository.findById(tutorID)
                 .orElseThrow(() -> new AppException(ErrorCode.TUTOR_NOT_FOUND));
 
         // Check if Advice room already exists
         ChatRoom adviceRoom = chatRoomRepository
                 .findByUserAndTutorAndChatRoomType(learner, tutor, ChatRoomType.Advice)
                 .orElseGet(() -> {
-                    log.info("Creating new Advice room for Learner {} and Tutor {}", learnerId, tutorId);
+                    log.info("Creating new Advice room for Learner {} and Tutor {}", learnerID, tutorID);
                     return createAdviceRoom(learner, tutor);
                 });
 
@@ -64,20 +64,20 @@ public class ChatService {
      * Business Rule: Each Learner-Tutor pair has only 1 Training room
      * This is called automatically when Booking is created
      */
-    public ChatRoomResponse getOrCreateTrainingRoom(Long learnerId, Long tutorId) {
-        log.info("Getting or creating Training room for Learner {} and Tutor {}", learnerId, tutorId);
+    public ChatRoomResponse getOrCreateTrainingRoom(Long learnerID, Long tutorID) {
+        log.info("Getting or creating Training room for Learner {} and Tutor {}", learnerID, tutorID);
 
-        User learner = userRepository.findById(learnerId)
+        User learner = userRepository.findById(learnerID)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXIST));
 
-        Tutor tutor = tutorRepository.findById(tutorId)
+        Tutor tutor = tutorRepository.findById(tutorID)
                 .orElseThrow(() -> new AppException(ErrorCode.TUTOR_NOT_FOUND));
 
         // Check if Training room already exists
         ChatRoom trainingRoom = chatRoomRepository
                 .findByUserAndTutorAndChatRoomType(learner, tutor, ChatRoomType.Training)
                 .orElseGet(() -> {
-                    log.info("Creating new Training room for Learner {} and Tutor {}", learnerId, tutorId);
+                    log.info("Creating new Training room for Learner {} and Tutor {}", learnerID, tutorID);
                     return createTrainingRoom(learner, tutor);
                 });
 
@@ -258,14 +258,14 @@ public class ChatService {
      * Send Google Meet link automatically (from Booking.MeetingLink)
      * This is called when tutor wants to share meeting link
      */
-    public ChatMessageResponse sendMeetingLink(Long tutorId, Long chatRoomId, String meetingLink) {
-        log.info("Tutor {} sending meeting link to ChatRoom {}", tutorId, chatRoomId);
+    public ChatMessageResponse sendMeetingLink(Long tutorID, Long chatRoomId, String meetingLink) {
+        log.info("Tutor {} sending meeting link to ChatRoom {}", tutorID, chatRoomId);
 
         ChatRoom chatRoom = chatRoomRepository.findById(chatRoomId)
                 .orElseThrow(() -> new AppException(ErrorCode.CHAT_ROOM_NOT_FOUND));
 
         // Verify tutor owns this room
-        if (!chatRoom.getTutor().getUser().getUserID().equals(tutorId)) {
+        if (!chatRoom.getTutor().getUser().getUserID().equals(tutorID)) {
             throw new AppException(ErrorCode.UNAUTHORIZED);
         }
 
@@ -341,19 +341,19 @@ public class ChatService {
      * Auto-create Training room when Booking is created
      * This should be called from Booking service after creating a booking
      */
-    public void ensureTrainingRoomExists(Long learnerId, Long tutorId) {
-        log.info("Ensuring Training room exists for Learner {} and Tutor {}", learnerId, tutorId);
+    public void ensureTrainingRoomExists(Long learnerID, Long tutorID) {
+        log.info("Ensuring Training room exists for Learner {} and Tutor {}", learnerID, tutorID);
 
-        User learner = userRepository.findById(learnerId)
+        User learner = userRepository.findById(learnerID)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXIST));
 
-        Tutor tutor = tutorRepository.findById(tutorId)
+        Tutor tutor = tutorRepository.findById(tutorID)
                 .orElseThrow(() -> new AppException(ErrorCode.TUTOR_NOT_FOUND));
 
         // Check if Training room already exists, if not create it
         if (!chatRoomRepository.existsByUserAndTutorAndChatRoomType(
                 learner, tutor, ChatRoomType.Training)) {
-            log.info("Auto-creating Training room for Learner {} and Tutor {}", learnerId, tutorId);
+            log.info("Auto-creating Training room for Learner {} and Tutor {}", learnerID, tutorID);
             createTrainingRoom(learner, tutor);
         }
     }
