@@ -17,18 +17,19 @@ Mở dự án tại port `http://localhost:3000`
 ---
 
 ## Cấu trúc thư mục
-
 ```
-src/ 
-  api/               Layer giao tiếp với backend (Axios)
-  assets/            Layer chứa hình ảnh, biểu tượng,...
-  components/        Layer chứa các UI components tái sử dụng
-  constants/         Layer file chứa các hằng số
-  pages/             Layer chứa các màn hình chính
-  routes/            Layer định tuyến (React Router)
-  store/             Layer quản lý state
-  types/             Layer định nghĩa TypeScript types / interfaces
-  utils/             Layer chứa hàm tiện ích 
+src/
+components/        # Chứa các component của dự  án
+pages/             # Các trang của dự án
+routes/            # Router, protected routes, hooks điều hướng
+queries/           # React Query: gọi API theo feature
+redux/             # Redux Toolkit slices và store
+lib/               # utils chung (api.ts, utils.ts)
+hooks/             # hooks dùng chung (debounce, use-mobile, ...)
+constants/         # chứa các biến cố định, mock data, icon svg
+components/ui/     # Bộ component shadcn/ui
+components/shared/ # Component chia sẻ (modal, table, ...)
+type/              # chứa các interface TypeScript mô tả các đối tượng dữ liệu
 ```
 ```
 Ngôn ngữ chính:

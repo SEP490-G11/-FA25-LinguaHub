@@ -1,5 +1,6 @@
 package edu.lms.entity;
 
+import edu.lms.enums.ChatRoomType;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -18,17 +19,23 @@ public class ChatRoom {
     Long chatRoomID;
 
     String title;
+    
     @Column(columnDefinition = "TEXT")
     String description;
 
-    @ManyToOne @JoinColumn(name = "userID")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "userID")
     User user;
 
-    @ManyToOne @JoinColumn(name = "tutorID")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tutorID")
     Tutor tutor;
 
-    String chatRoomType; // Advice / Training
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20, nullable = false)
+    @Builder.Default
+    ChatRoomType chatRoomType = ChatRoomType.Training;
 
-    @OneToMany(mappedBy = "chatRoom", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "chatRoom", cascade = CascadeType.ALL, orphanRemoval = true)
     List<ChatRoomMessage> messages;
 }

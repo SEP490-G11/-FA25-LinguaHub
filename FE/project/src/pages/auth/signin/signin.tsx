@@ -11,10 +11,10 @@ import { Input } from '@/components/ui/input.tsx';
 import { Checkbox } from '@/components/ui/checkbox.tsx';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner.tsx';
 import { ErrorMessage } from '@/components/shared/ErrorMessage.tsx';
-import { signIn } from '@/store/authSlice.ts';
-import type { RootState, AppDispatch } from '@/store/store.ts';
-import { clearError } from '@/store/authSlice.ts';
-import { ROUTES } from '@/constants/colors.ts';
+import type { RootState, AppDispatch } from '@/redux/store.ts';
+import { clearError, signIn } from '@/redux/slices/authSlice.ts';
+import { ROUTES } from '@/constants/routes.ts';
+
 // Xác thực dữ liệu form
 const signInSchema = z.object({
   username: z.string().min(3, 'Login name must be at least 3 characters'),
@@ -27,24 +27,14 @@ type SignInForm = z.infer<typeof signInSchema>;
 //setup component SignIn
 const SignIn = () => {
   const [showPassword, setShowPassword] = React.useState(false);
-  //Hook từ react-router-dom để điều hướng page
   const navigate = useNavigate();
-  //gửi credentials đến BE,xóa error state
   const dispatch = useDispatch<AppDispatch>();
-  const { isLoading, error } = useSelector((state: RootState) => state.auth);
-// Thêm useEffect
-  React.useEffect(() => {
-    dispatch(clearError());
-  }, [dispatch]);
-  //Setup Form Với React Hook Form & Zod
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isValid },
-  }
+  const { isLoading, error: authError } = useSelector((state: RootState) => state.auth);
+
   //Hook khởi tạo form với type SignInForm
-  = useForm<SignInForm>({
+  const { register, handleSubmit, formState: { errors, isValid } } = useForm<SignInForm>({
     resolver: zodResolver(signInSchema),
+    //validate ngay khi người dùng nhập
     mode: 'onChange',
     defaultValues: {
       username: '',
@@ -53,16 +43,55 @@ const SignIn = () => {
     },
   });
 
+  // Destructuring register props cho từng field để chain onChange dễ dàng hơn
+  const usernameRegister = register('username');
+  const passwordRegister = register('password');
+  const rememberMeRegister = register('rememberMe');
+
+  const handleChangeInput = () => {
+    if (authError) {
+      dispatch(clearError());
+    }
+  };
+
+  React.useEffect(() => {
+    dispatch(clearError());
+  }, [dispatch]);
 
   const onSubmit = async (data: SignInForm) => {
-    await dispatch(signIn(data)).unwrap();
-    navigate('/', { replace: true });
+    dispatch(clearError());
+    try {
+      await dispatch(signIn(data)).unwrap();
+      navigate(ROUTES.HOME, { replace: true });
+    } catch (error: unknown) {
+      console.error('Signin error:', error);
+      if (error instanceof Error && error.message.includes('timeout')) {
+      }
+    }
   };
 
   const fadeInUp = {
     initial: { opacity: 0, y: 60 },
     animate: { opacity: 1, y: 0 },
     transition: { duration: 0.6 },
+  };
+
+  // Helper để extract message từ authError (fix "Unknown error")
+  const getErrorMessage = (err: unknown): string => {
+    if (typeof err === 'string') return err;
+    if (err && typeof err === 'object') {
+      if ('message' in err && typeof (err as Record<string, unknown>).message === 'string') {
+        return (err as { message: string }).message;
+      }
+      if ('error' in err && typeof (err as Record<string, unknown>).error === 'string') {
+        return (err as { error: string }).error;
+      }
+      if ('detail' in err && typeof (err as Record<string, unknown>).detail === 'string') {
+        return (err as { detail: string }).detail;
+      }
+      return 'Unknown error';
+    }
+    return 'Unknown error';
   };
 
   return (
@@ -94,26 +123,31 @@ const SignIn = () => {
               transition={{ delay: 0.1 }}
           >
             <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
-              {error && <ErrorMessage message={error} />}
+              {authError && <ErrorMessage message={getErrorMessage(authError)} />}
 
               {/* Username Field */}
               <div>
                 <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
-                  Username  {/* Updated label */}
+                  Username {/* Updated label */}
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <User className="h-5 w-5 text-gray-400" />  {/* User icon */}
+                    <User className="h-5 w-5 text-gray-400" /> {/* User icon */}
                   </div>
                   {/*input field*/}
                   <Input
                       id="username"
-                      {...register('username')}
+                      {...usernameRegister}
+                      onChange={(e) => {
+                        handleChangeInput();
+                        usernameRegister.onChange(e);
+                      }}
                       type="text"
                       autoComplete="username"
                       className="pl-10"
                       placeholder="Enter your username"
                       aria-invalid={errors.username ? 'true' : 'false'}
+                      disabled={isLoading}
                   />
                 </div>
                 {errors.username && <ErrorMessage message={errors.username.message!} />}
@@ -130,18 +164,24 @@ const SignIn = () => {
                   </div>
                   <Input
                       id="password"
-                      {...register('password')}
+                      {...passwordRegister}
+                      onChange={(e) => {
+                        handleChangeInput();
+                        passwordRegister.onChange(e);
+                      }}
                       type={showPassword ? 'text' : 'password'}
                       autoComplete="current-password"
                       className="pl-10 pr-10"
                       placeholder="Enter your password"
                       aria-invalid={errors.password ? 'true' : 'false'}
+                      disabled={isLoading}
                   />
                   <button
                       type="button"
                       className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
                       onClick={() => setShowPassword(!showPassword)}
                       aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      disabled={isLoading}
                   >
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
@@ -152,7 +192,15 @@ const SignIn = () => {
               {/* Remember Me & Forgot Password */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
-                  <Checkbox id="rememberMe" {...register('rememberMe')} />
+                  <Checkbox
+                      id="rememberMe"
+                      {...rememberMeRegister}
+                      onChange={(e) => {
+                        handleChangeInput();
+                        // Note: Checkbox onChange is boolean, but register handles it
+                        rememberMeRegister.onChange(e);
+                      }}
+                  />
                   <label htmlFor="rememberMe" className="text-sm text-gray-700 cursor-pointer">
                     Remember me
                   </label>
@@ -187,10 +235,7 @@ const SignIn = () => {
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-600">
                 Don't have an account?{' '}
-                <Link
-                    to={ROUTES.SIGN_UP}
-                    className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
-                >
+                <Link to={ROUTES.SIGN_UP} className="font-medium text-blue-600 hover:text-blue-500 transition-colors">
                   Sign up now
                 </Link>
               </p>

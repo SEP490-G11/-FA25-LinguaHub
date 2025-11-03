@@ -9,10 +9,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/test")
-@RequiredArgsConstructor // ✅ Tự động tạo constructor để inject EmailService
+@RequiredArgsConstructor //Tự động tạo constructor để inject EmailService
 public class TestController {
 
-    private final EmailService emailService; // ✅ Inject EmailService
+    private final EmailService emailService; //Inject EmailService
 
     @GetMapping
     public ResponseEntity<String> hello() {

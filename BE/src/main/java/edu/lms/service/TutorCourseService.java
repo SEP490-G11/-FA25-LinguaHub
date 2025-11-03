@@ -2,8 +2,10 @@ package edu.lms.service;
 
 import edu.lms.dto.request.TutorCourseRequest;
 import edu.lms.dto.response.TutorCourseResponse;
+import edu.lms.dto.response.TutorCourseStudentResponse;
 import edu.lms.entity.Course;
 import edu.lms.entity.CourseCategory;
+import edu.lms.entity.Enrollment;
 import edu.lms.entity.Tutor;
 import edu.lms.enums.CourseStatus;
 import edu.lms.enums.TutorStatus;
@@ -128,4 +130,33 @@ public class TutorCourseService {
 
         log.warn("Course [{}] deleted successfully", courseID);
     }
+
+
+    public List<TutorCourseStudentResponse> getStudentsByCourse(Long courseId, Long tutorId) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
+
+        Tutor tutor = tutorRepository.findById(tutorId)
+                .orElseThrow(() -> new AppException(ErrorCode.TUTOR_NOT_FOUND));
+
+        // Kiểm tra course có thuộc về tutor không
+        if (!course.getTutor().getTutorID().equals(tutorId)) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
+        List<Enrollment> enrollments = enrollmentRepository.findAllByCourseId(courseId);
+
+        return enrollments.stream().map(e -> {
+            var u = e.getUser();
+            return TutorCourseStudentResponse.builder()
+                    .userId(u.getUserID())
+                    .fullName(u.getFullName())
+                    .email(u.getEmail())
+                    .phone(u.getPhone())
+                    .country(u.getCountry())
+                    .enrolledAt(e.getCreatedAt())
+                    .build();
+        }).toList();
+    }
+
 }

@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { api } from '@/api/api.ts';
+import { api } from '@/lib/api.ts';
 import { Course } from '@/types/Course.ts';
 
 interface CourseState {

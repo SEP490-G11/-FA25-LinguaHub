@@ -11,11 +11,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { cn } from '@/utils/utils.ts';
-import { ROUTES } from '@/constants/colors.ts';
+import { cn } from '@/lib/utils.ts';
+import { ROUTES } from '@/constants/routes.ts';
 import { useSelector, useDispatch } from 'react-redux';
-import { RootState, AppDispatch } from '@/store/store.ts';
-import { signOut } from '@/store/authSlice.ts';
+import { RootState, AppDispatch } from '@/redux/store.ts';
+import { signOut } from '@/redux/slices/authSlice.ts';
 
 const Header = () => {
   const location = useLocation();

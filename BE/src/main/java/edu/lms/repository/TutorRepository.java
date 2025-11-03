@@ -23,4 +23,6 @@ public interface TutorRepository extends JpaRepository<Tutor, Long> {
 
     // Tìm Tutor theo UserID (để lấy TutorID từ UserID đang đăng nhập)
     Optional<Tutor> findByUser_UserID(Long userId);
+
+    Optional<Tutor> findByUser_Email(String email);
 }

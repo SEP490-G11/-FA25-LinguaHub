@@ -1,31 +1,39 @@
-import React, { useState, useEffect } from 'react';
+import  { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import {  CheckCircle, RefreshCw, Languages, Shield } from 'lucide-react';
+import { CheckCircle,  Languages, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { ErrorMessage } from '@/components/shared/ErrorMessage';
-import axios, { AxiosError } from 'axios';
+import { z } from 'zod';
+import { ROUTES } from '@/constants/routes.ts';
+import {  verifyOtp } from '@/redux/slices/authSlice.ts';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import type {  AppDispatch } from '@/redux/store.ts';
+import { useDispatch } from 'react-redux';
 
-interface BeErrorResponse {
-  code?: number;
-  message?: string;
-}
+const verifyEmailSchema = z.object({
+  otpCode: z.string().length(6, 'OTP code must be 6 digits'),
+});
+type verifyEmailForm = z.infer<typeof verifyEmailSchema>;
 
 const VerifyEmail = () => {
-  const [otpCode, setOtpCode] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
-  const [canResend, setCanResend] = useState(false);
-  const [countdown, setCountdown] = useState(60);
-  const [errors, setErrors] = useState<{ otp?: string }>({});
-  const [message, setMessage] = useState<string>('');
+  // const [canResend, setCanResend] = useState(false);
+  // const [countdown, setCountdown] = useState(60);
+  const [message] = useState<string>('');
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const dispatch = useDispatch<AppDispatch>();
 
-  const type = searchParams.get('type') || 'signup';
-  const email = searchParams.get('email');  // Giữ để hiển thị UI và resend
+  const { register, handleSubmit, formState: { errors: formErrors } } = useForm<verifyEmailForm>({
+    resolver: zodResolver(verifyEmailSchema),
+  });
+
+  const email = searchParams.get('email');
 
   const fadeInUp = {
     initial: { opacity: 0, y: 60 },
@@ -34,156 +42,94 @@ const VerifyEmail = () => {
   };
 
   useEffect(() => {
-    // FIXED: Lưu email vào localStorage làm fallback nếu session fail (dùng cho header nếu cần)
     if (email) {
       localStorage.setItem('temp_verify_email', decodeURIComponent(email));
     }
 
-    const timer = setInterval(() => {
-      setCountdown(prev => {
-        if (prev <= 1) {
-          setCanResend(true);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+    // const timer = setInterval(() => {
+    //   setCountdown(prev => {
+    //     if (prev <= 1) {
+    //       setCanResend(true);
+    //       return 0;
+    //     }
+    //     return prev - 1;
+    //   });
+    // }, 1000);
 
-    return () => clearInterval(timer);
+    // return () => clearInterval(timer);
   }, [searchParams]);
 
-  const handleManualVerify = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!otpCode.trim() || otpCode.length !== 6) {
-      setErrors({ otp: otpCode.length !== 6 ? 'OTP code must be 6 digits' : 'Please enter OTP code' });
-      return;
-    }
-
+  const handleManualVerify = async (data: verifyEmailForm) => {
+    const { otpCode } = data;
     setIsVerifying(true);
-    setErrors({});
-    const token = localStorage.getItem('accessToken');
-    console.log('Token before verify:', token);
-
-    const verifyEmail = decodeURIComponent(email || localStorage.getItem('temp_verify_email') || '');
-    if (!verifyEmail) {
-      setErrors({ otp: 'Email does not exist for verification. Please resend OTP.' });
-      setIsVerifying(false);
-      return;
-    }
-
     try {
-      const config: any = { withCredentials: true };
-      if (token) {
-        config.headers = { Authorization: `Bearer ${token}` };
-      } else {
-        console.warn('No token, falling back to session/cookie');
-      }
-
-      const response = await axios.post(
-          'http://localhost:8080/auth/verify',
-          { otp: otpCode, email: verifyEmail },  // Thêm email nếu BE cần
-          config
-      );
-
-      console.log('Verification success:', response.data);
-      const newToken = response.data.token;
-      if (newToken) localStorage.setItem('accessToken', newToken);
+      const result = await dispatch(verifyOtp(otpCode)).unwrap();
+      console.log('Verification success:', result);
 
       setIsVerified(true);
       localStorage.removeItem('temp_verify_email');
 
       setTimeout(() => {
-        navigate(type === 'password-reset' ? '/auth/complete-forgot-password' : '/signin?verified=true');
+        navigate('/signin?verified=true');
       }, 3000);
-    } catch (error: AxiosError<BeErrorResponse> | unknown) {
-      const axiosError = error as AxiosError<BeErrorResponse>;
-      console.error('Verification failed:', axiosError.response);
-      const beError = axiosError.response?.data;
-
-      if (axiosError.response?.status === 401 || beError?.code === 1006) {
-        setErrors({ otp: '401/1006 error. Token/session invalid. Try resending OTP.' });
-        localStorage.removeItem('accessToken');
-      } else {
-        setErrors({ otp: beError?.message || 'Invalid OTP code' });
-      }
-      setCanResend(true);
-      setCountdown(0);
+    } catch (error: unknown) {
+      console.error('Verification failed:', error);
     } finally {
       setIsVerifying(false);
     }
   };
 
-  const handleResendEmail = async () => {
-    // FIXED: Check email trước
-    if (!email) {
-      setMessage('Email not provided');
-      return;
-    }
+  // const handleResendEmail = async () => {
+  //   const verifyEmail = decodeURIComponent(email || localStorage.getItem('temp_verify_email') || '');
+  //   if (!verifyEmail) {
+  //     setMessage('Email not provided');
+  //     return;
+  //   }
 
-    setCanResend(false);
-    setCountdown(60);
-    setMessage('');
-    setErrors({});  // Clear error khi resend
+  //   setCanResend(false);
+  //   setCountdown(60);
+  //   setMessage('');
 
-    try {
-      // FIXED: Gửi { email } cho resend để backend gửi OTP mới + set session (refresh auth state)
-      const response = await axios.post('http://localhost:8080/auth/resend-otp', {
-        email: decodeURIComponent(email)
-      }, {
-        withCredentials: true  // Để set session mới
-      });
-      console.log('Resend OTP success:', response.data);
-      setMessage('A new OTP code has been sent to your email. Session has been updated for account registration.');
+  //   try {
+  //     const response = await BaseRequest.Post('/auth/resend-otp', { email: verifyEmail });
+  //     console.log('Resend OTP success:', response);
+  //     setMessage('A new OTP code has been sent to your email. Session has been updated for account registration.');
 
-      // FIXED: Nếu backend trả token sau resend, set nó (giả sử response.data.token tồn tại)
-      const newToken = response.data.token;
-      if (newToken) {
-        localStorage.setItem('accessToken', newToken);
-        console.log('New token set from resend:', newToken);
-      }
+  //     const newToken = response.token;
+  //     if (newToken) {
+  //       localStorage.setItem('accessToken', newToken);
+  //       console.log('New token set from resend:', newToken);
+  //     }
 
-      // FIXED: Clear temp email vì session mới được set
-      localStorage.removeItem('temp_verify_email');
-    } catch (error: AxiosError<BeErrorResponse> | unknown) {
-      console.error('Resend failed:', error);
-      const axiosError = error as AxiosError<BeErrorResponse>;
-      const beError = axiosError.response?.data;
-      console.log('Full error response for resend:', axiosError.response);
-      setMessage(beError?.message || 'Resend failed (401). Check backend: Does /auth/resend-otp endpoint require auth? Or CORS credentials.');
-    }
+  //     localStorage.removeItem('temp_verify_email');
+  //   } catch (error: unknown) {
+  //     console.error('Resend failed:', error);
+  //     const errorMessage = (error as { message?: string })?.message || 'Resend failed (401). Check backend: Does /auth/resend-otp endpoint require auth? Or CORS credentials.';
+  //     setMessage(errorMessage);
+  //   }
 
-    // Reset countdown
-    const timer = setInterval(() => {
-      setCountdown(prev => {
-        if (prev <= 1) {
-          setCanResend(true);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  };
+  //   const timer = setInterval(() => {
+  //     setCountdown(prev => {
+  //       if (prev <= 1) {
+  //         setCanResend(true);
+  //         return 0;
+  //       }
+  //       return prev - 1;
+  //     });
+  //   }, 1000);
+  // };
 
   const getTitle = () => {
     if (isVerified) return 'Email Verified!';
-    if (type === 'password-reset') return 'Verify Email to Reset Password';
     return 'Verify Email to Complete Registration';
   };
 
   const getDescription = () => {
     if (isVerified) {
-      if (type === 'password-reset') {
-        return 'Your email has been verified. The password reset process is complete.';
-      }
       return 'Your email has been successfully verified. An account with this email has been created, you can log in now.';
     }
-
-    if (type === 'password-reset') {
-      return 'Please enter the OTP code sent to your email to complete the password reset.';
-    }
-    // FIXED: Hiển thị email để user confirm, nhấn mạnh đăng ký
-    return `We have sent a 6-digit OTP code to ${decodeURIComponent(email || '')}. Enter the code to verify and complete account creation.`;
+    const displayEmail = decodeURIComponent(email || localStorage.getItem('temp_verify_email') || 'your email');
+    return `We have sent a 6-digit OTP code to ${displayEmail}. Enter the code to verify and complete account creation.`;
   };
 
   if (isVerified) {
@@ -223,7 +169,7 @@ const VerifyEmail = () => {
 
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
               <p className="text-sm text-gray-500">
-                {type === 'password-reset' ? 'Completing password reset...' : 'Redirecting to login...'}
+                Redirecting to login...
               </p>
             </motion.div>
           </motion.div>
@@ -265,7 +211,7 @@ const VerifyEmail = () => {
               </div>
 
               {/* OTP Form */}
-              <form onSubmit={handleManualVerify} className="space-y-4">
+              <form onSubmit={handleSubmit(handleManualVerify)} className="space-y-4">
                 <div>
                   <label htmlFor="otp" className="block text-sm font-medium text-gray-700 mb-2">
                     OTP Code (6 digits)
@@ -274,25 +220,20 @@ const VerifyEmail = () => {
                       id="otp"
                       type="text"
                       maxLength={6}
-                      value={otpCode}
-                      onChange={(e) => {
-                        const value = e.target.value.replace(/\D/g, '');
-                        setOtpCode(value);
-                        if (errors.otp) {
-                          setErrors({ ...errors, otp: '' });
-                        }
-                      }}
+                      {...register('otpCode', { setValueAs: (v) => v.replace(/\D/g, '') })}
                       className="text-center text-2xl tracking-widest"
                       placeholder="000000"
                       disabled={isVerifying}
                   />
-                  {errors.otp && <ErrorMessage message={errors.otp} />}
+                  {formErrors.otpCode && (
+                      <ErrorMessage message={formErrors.otpCode.message ?? ''} />
+                  )}
                 </div>
 
                 <Button
                     type="submit"
                     className="w-full"
-                    disabled={isVerifying || otpCode.length !== 6}
+                    disabled={isVerifying}
                 >
                   {isVerifying ? <LoadingSpinner size="sm" /> : 'Verify'}
                 </Button>
@@ -300,7 +241,7 @@ const VerifyEmail = () => {
             </div>
 
             {/* FIXED: Thêm button resend nổi bật nếu 401/1006 error */}
-            {errors.otp?.includes('401') || errors.otp?.includes('1006') && (
+            {/* {formErrors.otpCode?.message?.includes('401') || formErrors.otpCode?.message?.includes('1006') && (
                 <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                   <p className="text-sm text-yellow-800 mb-2">To continue registration, please resend OTP (possibly due to CORS/session):</p>
                   <Button
@@ -313,7 +254,7 @@ const VerifyEmail = () => {
                     Resend OTP Now
                   </Button>
                 </div>
-            )}
+            )} */}
 
             {/* Message display */}
             {message && (
@@ -335,7 +276,7 @@ const VerifyEmail = () => {
               </p>
 
               <div className="flex flex-col space-y-3">
-                <Button
+                {/* <Button
                     onClick={handleResendEmail}
                     disabled={!canResend}
                     variant="outline"
@@ -343,10 +284,10 @@ const VerifyEmail = () => {
                 >
                   <RefreshCw className="w-4 h-4 mr-2" />
                   {canResend ? 'Resend Code' : `Resend in ${countdown}s`}
-                </Button>
+                </Button> */}
 
                 <Button asChild variant="ghost" className="w-full">
-                  <Link to="/signin">Back to Login</Link>
+                  <Link to={ROUTES.SIGN_IN}>Back to Login</Link>
                 </Button>
               </div>
             </div>

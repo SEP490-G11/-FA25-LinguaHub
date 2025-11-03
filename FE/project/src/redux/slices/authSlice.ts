@@ -1,20 +1,25 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import BaseRequest from '@/api/api.ts';
+import BaseRequest from '@/lib/api.ts';
 import type { User } from '@/types/User.ts';
-import {AxiosError} from "axios";
+import { AxiosError } from 'axios';
 
-// interface cho response API
-interface ApiRespond<T> {
-    result: T;
+// Interface cho response API chung (thay đổi để linh hoạt hơn, không giả định luôn có 'result')
+interface BeResponse<T = unknown> {
+    code?: number;
     message?: string;
+    result?: T;
+    token?: string; // Thêm cho trường hợp response có token trực tiếp
+   
 }
-//Type cho data đăng nhập
+
+// Type cho data đăng nhập
 interface SignInCredentials {
     username: string;
     password: string;
     rememberMe?: boolean;
 }
-//Type cho data đăng ký
+
+// Type cho data đăng ký
 interface SignUpData {
     fullName: string;
     email: string;
@@ -27,13 +32,19 @@ interface SignUpData {
     address?: string;
     bio?: string;
 }
-//Type cho state của slice
+
+// Type cho fulfilled payload của signUp
+type SignUpFulfilledPayload = { otpSent: boolean; email: string };
+
+// Type cho state của slice (thêm otpSent và otpEmail để xử lý trường hợp OTP)
 interface AuthState {
     user: User | null;
     isAuthenticated: boolean;
     isLoading: boolean;
     error: string | null;
     isConnected: boolean;
+    otpSent: boolean;
+    otpEmail: string;
 }
 
 // ======= Initial State =======
@@ -43,6 +54,8 @@ const initialState: AuthState = {
     isLoading: false,
     error: null,
     isConnected: false,
+    otpSent: false,
+    otpEmail: '',
 };
 
 // ======= Simple Cookie Utils =======
@@ -72,18 +85,32 @@ export const testConnection = createAsyncThunk(
     'auth/testConnection',
     async (_: void, { rejectWithValue }) => {
         try {
-            const response = await BaseRequest.Post<ApiRespond<{ active: boolean; user: User }>>(
+            const response = await BaseRequest.Post<BeResponse<{ active: boolean; user: User }>>(
                 '/auth/introspect',
                 { token: 'test' }
             );
             console.log('ok:', response);
             return { connected: true };
         } catch (error: unknown) {
+            let message = 'Connection failed';
+            if (error && typeof error === 'object') {
+                if ('message' in error && typeof (error as Record<string, unknown>).message === 'string') {
+                    message = (error as { message: string }).message;
+                } else if ('response' in error) {
+                    const axiosError = error as AxiosError<BeResponse>;
+                    if (axiosError.response?.data?.message) {
+                        message = axiosError.response.data.message;
+                    }
+                }
+            } else if (error instanceof Error) {
+                message = error.message;
+            }
             console.error('error:', error);
-            return rejectWithValue((error as Error).message || 'Connection failed');
+            return rejectWithValue(message);
         }
     }
 );
+
 // ======= SignIn =======
 export const signIn = createAsyncThunk(
     //name/prefix (tên tiền tố) của thunk
@@ -94,8 +121,7 @@ export const signIn = createAsyncThunk(
                 username: credentials.username,
                 password: credentials.password,
             };
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const response = await BaseRequest.Post<ApiRespond<any>>('/auth/token', apiData);
+            const response = await BaseRequest.Post<BeResponse<{ authenticated: boolean; accessToken: string; refreshToken: string }>>('/auth/token', apiData);
 
             if (!response || !response.result?.authenticated) {
                 return rejectWithValue(response?.message || 'Sai tên đăng nhập hoặc mật khẩu');
@@ -114,7 +140,7 @@ export const signIn = createAsyncThunk(
             localStorage.setItem('access_token', accessToken);
             localStorage.setItem('refresh_token', refreshToken);
             // Lấy thông tin người dùng
-            const userResponse = await BaseRequest.Get<ApiRespond<User>>('/users/myInfo');
+            const userResponse = await BaseRequest.Get<BeResponse<User>>('/users/myInfo');
             const user = userResponse.result;
 
             if (!user) {
@@ -123,21 +149,22 @@ export const signIn = createAsyncThunk(
 
             localStorage.setItem('user_data', JSON.stringify(user));
             return { user, token: accessToken, authenticated: true };
-        } catch (err: unknown) {
-            const error = err as AxiosError<{ message?: string }>;
-
-            const message =
-                error.response?.data?.message ||
-                (error.response?.status === 401
-                    ? 'Sai tên đăng nhập hoặc mật khẩu'
-                    : 'Đăng nhập thất bại');
-
+        } catch (error: unknown) {
+            let message = 'Đăng nhập thất bại';
+            if (error && typeof error === 'object') {
+                if ('message' in error && typeof (error as Record<string, unknown>).message === 'string') {
+                    message = (error as { message: string }).message;
+                } else if ('response' in error) {
+                    const axiosError = error as AxiosError<{ message?: string }>;
+                    message = axiosError.response?.data?.message || (axiosError.response?.status === 401 ? 'Sai tên đăng nhập hoặc mật khẩu' : 'Đăng nhập thất bại');
+                }
+            } else if (error instanceof Error) {
+                message = error.message;
+            }
             return rejectWithValue(message);
         }
     }
 );
-
-
 
 // ======= SIGN OUT (Logout) =======
 export const signOut = createAsyncThunk(
@@ -152,6 +179,7 @@ export const signOut = createAsyncThunk(
             return true;
         } catch (error: unknown) {
             console.error(' Logout API error:', error);
+            // Vẫn return true để logout local dù API fail
             return true;
         }
     }
@@ -160,69 +188,124 @@ export const signOut = createAsyncThunk(
 // ======= SIGN UP =======
 export const signUp = createAsyncThunk(
     'auth/signUp',
-    async (userData: SignUpData, { rejectWithValue, dispatch }) => {
+    async (userData: SignUpData, { rejectWithValue }) => {
         try {
-            const response = await BaseRequest.Post<ApiRespond<{ token: string; user: User }>>(
+            const response = await BaseRequest.Post<BeResponse<{ token: string; user: User }>>(
                 '/auth/register',
-                userData
+                userData,
+                { withCredentials: true }
             );
-            const { token, user } = response.result;
-
-            if (token) {
-                cookie_set('AT', token, 1);
-                localStorage.setItem('access_token', token);
+            if (response.token || response.result?.token) {
+                console.warn('Signup returned token, but ignoring for verification flow');
             }
-            if (user) {
-                localStorage.setItem('user_data', JSON.stringify(user));
-                // Gửi OTP đến email sau khi đăng ký thành công
-                await dispatch(sendOtp(user.email));
-            }
-
-            return { user, token };
+            return { otpSent: true, email: userData.email };
         } catch (error: unknown) {
-            const message = (error as Error).message || 'Sign up failed';
+            let message = 'Sign up failed';
+            if (error && typeof error === 'object') {
+                if ('message' in error && typeof (error as Record<string, unknown>).message === 'string') {
+                    message = (error as { message: string }).message;
+                } else if ('response' in error) {
+                    const axiosError = error as AxiosError<BeResponse>;
+                    if (axiosError.response?.data?.message) {
+                        message = axiosError.response.data.message;
+                    }
+                }
+            } else if (error instanceof Error) {
+                message = error.message;
+            }
             return rejectWithValue(message);
         }
     }
 );
+
+// ==== VERIFY OTP ====
 export const verifyOtp = createAsyncThunk(
     'auth/verifyOtp',
     async (otp: string, { rejectWithValue }) => {
         try {
-            const token = localStorage.getItem('access_token');
-            if (!token) return rejectWithValue('No token');
-
-            const response = await BaseRequest.Post<ApiRespond<null>>(
-                '/auth/verify',
-                { otp },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
+            const response = await BaseRequest.Post<BeResponse<null>>('/auth/verify', { otp });
+            return response.message || 'Email verified successfully';
+        } catch (error: unknown) {
+            let message = 'OTP verification failed';
+            if (error && typeof error === 'object') {
+                if ('message' in error && typeof (error as Record<string, unknown>).message === 'string') {
+                    message = (error as { message: string }).message;
+                } else if ('response' in error) {
+                    const axiosError = error as AxiosError<BeResponse>;
+                    if (axiosError.response?.data?.message) {
+                        message = axiosError.response.data.message;
                     }
                 }
-            );
-
-            return response.message || 'Email verified successfully';
-        } catch (error) {
-            const message = (error as Error).message || 'OTP verification failed';
+            } else if (error instanceof Error) {
+                message = error.message;
+            }
             return rejectWithValue(message);
         }
     }
 );
-
-// ======= Gửi OTP API =======
-export const sendOtp = createAsyncThunk(
-    'auth/sendOtp',
+// ==== FORGOT-PASSWORD ====
+export const confirmEmail = createAsyncThunk(
+    'auth/confirmEmail',
     async (email: string, { rejectWithValue }) => {
         try {
-            const response = await BaseRequest.Post<ApiRespond<null>>('/auth/send-otp', { email });
-            return response.message || 'OTP sent successfully';
-        } catch (error) {
-            const message = (error as Error).message || 'Gửi OTP thất bại';
+            const response = await BaseRequest.Post<BeResponse<null>>('/auth/forgot-password', { email });
+            return response.message || 'The code has been sent to the corresponding email.';
+        } catch (error: unknown) {
+            let message = 'Wrong email';
+            if (error && typeof error === 'object') {
+                if ('message' in error && typeof (error as Record<string, unknown>).message === 'string') {
+                    message = (error as { message: string }).message;
+                } else if ('response' in error) {
+                    const axiosError = error as AxiosError<BeResponse>;
+                    if (axiosError.response?.data?.message) {
+                        message = axiosError.response.data.message;
+                    }
+                }
+            } else if (error instanceof Error) {
+                message = error.message;
+            }
             return rejectWithValue(message);
         }
     }
 );
+// ==== RESET PASSWORD ====
+interface ResetPasswordData {
+    email: string;
+    newPassword: string;
+    confirmPassword: string;
+    otp: string;
+}
+
+export const resetPassword = createAsyncThunk(
+    'auth/resetPassword',
+    async (data: ResetPasswordData, { rejectWithValue }) => {
+        try {
+            const response = await BaseRequest.Post<BeResponse<string>>('/auth/set-new-password', data);
+
+            if (response.code !== 0) {
+                return rejectWithValue(response.message || 'Password reset failed');
+            }
+
+            return response.message || 'Password reset successfully';
+        } catch (error: unknown) {
+            let message = 'Request failed';
+            if (error && typeof error === 'object') {
+                if ('message' in error && typeof (error as Record<string, unknown>).message === 'string') {
+                    message = (error as { message: string }).message;
+                } else if ('response' in error) {
+                    const axiosError = error as AxiosError<BeResponse>;
+                    if (axiosError.response?.data?.message) {
+                        message = axiosError.response.data.message;
+                    }
+                }
+            } else if (error instanceof Error) {
+                message = error.message;
+            }
+            return rejectWithValue(message);
+        }
+    }
+);
+
 
 // ======= CHECK AUTH =======
 export const checkAuth = createAsyncThunk(
@@ -232,10 +315,13 @@ export const checkAuth = createAsyncThunk(
             const token = cookie_get('AT') || localStorage.getItem('access_token');
             if (!token) return rejectWithValue('No token');
 
-            const response = await BaseRequest.Post<ApiRespond<{ active: boolean; user: User }>>(
+            const response = await BaseRequest.Post<BeResponse<{ active: boolean; user: User }>>(
                 '/auth/introspect',
                 { token }
             );
+            if (!response.result) {
+                throw new Error('Invalid response structure');
+            }
             const { active, user } = response.result;
 
             if (active && user) {
@@ -248,10 +334,23 @@ export const checkAuth = createAsyncThunk(
                 return rejectWithValue('Invalid token');
             }
         } catch (error: unknown) {
+            let message = 'Auth check failed';
+            if (error && typeof error === 'object') {
+                if ('message' in error && typeof (error as Record<string, unknown>).message === 'string') {
+                    message = (error as { message: string }).message;
+                } else if ('response' in error) {
+                    const axiosError = error as AxiosError<BeResponse>;
+                    if (axiosError.response?.data?.message) {
+                        message = axiosError.response.data.message;
+                    }
+                }
+            } else if (error instanceof Error) {
+                message = error.message;
+            }
             cookie_delete('AT');
             localStorage.removeItem('access_token');
             localStorage.removeItem('user_data');
-            return rejectWithValue((error as Error).message || 'Auth check failed');
+            return rejectWithValue(message);
         }
     }
 );
@@ -263,6 +362,10 @@ const authSlice = createSlice({
     reducers: {
         clearError: (state) => {
             state.error = null;
+        },
+        clearOtp: (state) => {
+            state.otpSent = false;
+            state.otpEmail = '';
         },
         loadUserFromStorage: (state) => {
             const userData = localStorage.getItem('user_data');
@@ -336,16 +439,49 @@ const authSlice = createSlice({
             .addCase(signUp.pending, (state) => {
                 state.isLoading = true;
                 state.error = null;
+                state.otpSent = false; // Reset OTP flag
             })
             .addCase(
                 signUp.fulfilled,
-                (state, action: PayloadAction<{ user: User; token: string }>) => {
+                (state, action: PayloadAction<SignUpFulfilledPayload>) => {
                     state.isLoading = false;
-                    state.user = action.payload.user;
-                    state.isAuthenticated = true;
+                    state.otpSent = action.payload.otpSent;
+                    state.otpEmail = action.payload.email || '';
                 }
             )
             .addCase(signUp.rejected, (state, action) => {
+                state.isLoading = false;
+                state.error = action.payload as string;
+                state.otpSent = false;
+            })
+            // ==== FORGOT-PASSWORD ====
+            .addCase(confirmEmail.pending, (state) =>
+                {
+                    state.isLoading = true;
+                    state.error = null;
+                    state.otpSent = false;
+                }
+            )
+            .addCase(confirmEmail.fulfilled, (state) => {
+                state.isLoading = false;
+                state.error = null;
+                state.otpSent = true;
+            })
+            .addCase(confirmEmail.rejected, (state, action) => {
+                state.isLoading = false;
+                state.error = action.payload as string;
+            })
+            // ==== RESET PASSWORD ====
+            .addCase(resetPassword.pending, (state) => {
+                state.isLoading = true;
+                state.error = null;
+            })
+            .addCase(resetPassword.fulfilled, (state) => {
+                state.isLoading = false;
+                state.error = null;
+                state.otpSent = false; // Reset flag sau khi đổi mật khẩu xong
+            })
+            .addCase(resetPassword.rejected, (state, action) => {
                 state.isLoading = false;
                 state.error = action.payload as string;
             })
@@ -364,23 +500,10 @@ const authSlice = createSlice({
                 cookie_delete('AT');
                 localStorage.removeItem('access_token');
                 localStorage.removeItem('user_data');
-            })
-
-            // ===== Gửi OTP =====
-            .addCase(sendOtp.pending, (state) => {
-                state.isLoading = true;
-                state.error = null;
-            })
-            .addCase(sendOtp.fulfilled, (state) => {
-                state.isLoading = false;
-            })
-            .addCase(sendOtp.rejected, (state, action) => {
-                state.isLoading = false;
-                state.error = action.payload as string;
             });
     },
 });
 
 // ======= Exports =======
-export const { clearError, loadUserFromStorage } = authSlice.actions;
+export const { clearError, clearOtp, loadUserFromStorage } = authSlice.actions;
 export default authSlice.reducer;

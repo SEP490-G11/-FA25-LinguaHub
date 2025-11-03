@@ -1,5 +1,7 @@
 package edu.lms.enums;
 
 public enum BookingStatus {
-    Pending, Confirmed, Cancelled, Completed
+    Booked,      // Đã đặt lịch
+    Cancelled,   // Đã hủy
+    Completed    // Đã hoàn thành
 }

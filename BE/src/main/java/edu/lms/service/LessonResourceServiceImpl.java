@@ -14,6 +14,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -26,7 +28,7 @@ public class LessonResourceServiceImpl implements LessonResourceService {
     private final LessonResourceRepository resourceRepository;
     private final LessonRepository lessonRepository;
     private final TutorRepository tutorRepository; // Thêm repo này
-
+    private final UserRepository userRepository;
     private static final Pattern URL_PATTERN = Pattern.compile("^(http|https)://.*$", Pattern.CASE_INSENSITIVE);
 
     @Override
@@ -47,6 +49,7 @@ public class LessonResourceServiceImpl implements LessonResourceService {
                 .resourceType(request.getResourceType() != null ? request.getResourceType() : ResourceType.PDF)
                 .resourceTitle(request.getResourceTitle())
                 .resourceURL(request.getResourceURL())
+                .uploadedAt(LocalDateTime.now())
                 .build();
 
         LessonResource saved = resourceRepository.save(resource);
@@ -115,14 +118,30 @@ public class LessonResourceServiceImpl implements LessonResourceService {
 
     // Helper method to get current tutor ID from security context
     private Long getCurrentTutorId() {
-        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if (principal instanceof UserPrincipal) {
-            Long userId = ((UserPrincipal) principal).getUserId();
-            return tutorRepository.findByUser_UserID(userId)
-                    .map(Tutor::getTutorID)
-                    .orElseThrow(() -> new AccessDeniedException("Current user is not a tutor"));
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) {
+            throw new AccessDeniedException("User not authenticated");
         }
-        // Fallback or error for anonymous/unrecognized principals
-        throw new AccessDeniedException("User not authenticated");
+        Object principal = authentication.getPrincipal();
+        String email = null;
+
+        if (principal instanceof UserPrincipal userPrincipal) {
+            email = userPrincipal.getUsername();
+        } else if (principal instanceof org.springframework.security.oauth2.jwt.Jwt jwt) {
+            email = jwt.getSubject();
+        }
+        if (email == null) {
+            throw new AccessDeniedException("Cannot extract email from token");
+        }
+        final String finalEmail = email;
+        User user = userRepository.findByEmail(finalEmail)
+                .orElseThrow(() -> new AccessDeniedException("User not found with email: " + finalEmail));
+
+        Tutor tutor = tutorRepository.findByUser_UserID(user.getUserID())
+                .orElseThrow(() -> new AccessDeniedException("Current user is not a tutor"));
+
+        return tutor.getTutorID();
     }
+
+
 }

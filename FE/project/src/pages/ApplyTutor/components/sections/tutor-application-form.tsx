@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/components/ui/use-toast';
 import { CheckCircle2 } from 'lucide-react';
-import { LANGUAGES } from '@/constants/colors.ts';
+import { LANGUAGES } from '@/constants/languages.ts';
 
 const formSchema = z.object({
   teachingLanguages: z.array(z.string()).min(1, 'Select at least one language'),

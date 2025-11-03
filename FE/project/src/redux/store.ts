@@ -1,7 +1,7 @@
 // công dụng: đảm bảo state được quản lý tập trung, dễ debug
 import { configureStore } from '@reduxjs/toolkit';
-import authReducer from '@/store/authSlice.ts';
-import courseReducer from '@/store/courseSlice.ts';
+import authReducer from '@/redux/slices/authSlice.ts';
+import courseReducer from '@/redux/slices/courseSlice.ts';
 
 export const store = configureStore({
     reducer: {

@@ -39,7 +39,7 @@ import { useAuth } from '@/routes/hooks/use.auth';
 import { Icons } from '../ui/icons';
 import __helpers from '@/helpers';
 import { useSelector } from 'react-redux';
-import type { RootState } from '@/store/store.ts';
+import type { RootState } from '@/redux/store.ts';
 import { useGetMyInfo } from '@/queries/user.query';
 import LogoPNG from '@/assets/logo.jpg';
 export const company = {

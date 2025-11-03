@@ -30,7 +30,8 @@ const api = axios.create({
     headers: {
         'Content-Type': 'application/json',
     },
-    timeout: 10000,
+    withCredentials: true,
+    timeout: 0,
 });
 //Thêm token vào header
 const onRequestSuccess = (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {

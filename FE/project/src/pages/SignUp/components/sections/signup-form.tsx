@@ -1,179 +1,128 @@
-import axios, { AxiosError } from 'axios';
-import { useState, ChangeEvent, FormEvent } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Mail, Lock, Eye, EyeOff, User, Phone, Languages, Calendar, UserCircle } from 'lucide-react';
 import { useEffect } from 'react';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useDispatch, useSelector } from 'react-redux';
+import type { RootState, AppDispatch } from '@/redux/store.ts';
+import { clearError, signUp } from '@/redux/slices/authSlice.ts';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button.tsx';
+import { ErrorMessage } from '@/components/shared/ErrorMessage.tsx';
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner.tsx';
+import { ROUTES } from '@/constants/routes.ts';
 
+const signUpSchema = z.object({
+  username: z.string().min(3, 'Username must be at least 3 characters'),
+  fullName: z.string().min(3, 'Full name is required'),
+  email: z.string().email('Email is invalid'),
+  phone: z.string()
+      .min(1, 'Phone number is required')
+      .refine((val) => /^\d{10,}$/.test(val.replace(/\D/g, '')), {
+        message: 'Phone number must be at least 10 digits',
+      }),
+  dob: z.string()
+      .min(1, 'Date of birth is required')
+      .refine((val) => {
+        const age = (new Date().getTime() - new Date(val).getTime()) / (1000 * 3600 * 24 * 365.25);
+        return age >= 13;
+      }, { message: 'You must be at least 13 years old' }),
+  gender: z.enum(['Male', 'Female', 'Other'], { message: 'Gender is required' }),
+  password: z.string()
+      .min(8, 'Password must be at least 8 characters')
+      .regex(/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 'Password must contain uppercase, lowercase, and number'),
+  confirmPassword: z.string().min(1, 'Please confirm your password'),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: 'Passwords do not match',
+  path: ['confirmPassword'],
+});
 
-interface FormErrors {
-  username?: string;
-  fullName?: string;
-  email?: string;
-  phone?: string;
-  dob?: string;
-  gender?: string;
-  password?: string;
-  confirmPassword?: string;
-}
-
-interface FormData {
-  username: string;
-  fullName: string;
-  email: string;
-  phone: string;
-  dob: string;
-  gender: string;
-  password: string;
-  confirmPassword: string;
-}
-
-interface BeErrorResponse {
-  code?: number;
-  message?: string;
-}
+type SignUpFormData = z.infer<typeof signUpSchema>;
 
 const SignUpForm = () => {
-  useEffect(() => {
-
-    setMessage('');
-    setErrors({});
-
-
-    return () => {
-      setMessage('');
-      setErrors({});
-    };
-  }, []);
+  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
+  const { isLoading, error: authError, user } = useSelector((state: RootState) => state.auth);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [formData, setFormData] = useState<FormData>({
-    username: '',
-    fullName: '',
-    email: '',
-    phone: '',
-    dob: new Date().toISOString().split('T')[0],  // Default to current date
-    gender: 'Male',
-    password: '',
-    confirmPassword: ''
 
+  const form = useForm<SignUpFormData>({
+    resolver: zodResolver(signUpSchema),
+    mode: 'onChange',
+    defaultValues: {
+      username: '',
+      fullName: '',
+      email: '',
+      phone: '',
+      dob: '',
+      gender: 'Male',
+      password: '',
+      confirmPassword: '',
+    },
   });
 
-  const [errors, setErrors] = useState<FormErrors>({});
-  const [message, setMessage] = useState<string>('');
-  const navigate = useNavigate();
+  const { register, handleSubmit, formState: { errors, isValid }, reset } = form;
 
-  const validateForm = (): boolean => {
-    const newErrors: FormErrors = {};
-    if (!formData.username.trim()) newErrors.username = 'Username is required';
-    else if (formData.username.length < 3) newErrors.username = 'Username must be at least 3 characters';
+  // Destructuring register props cho từng field để chain onChange dễ dàng hơn
+  const usernameRegister = register('username');
+  const fullNameRegister = register('fullName');
+  const emailRegister = register('email');
+  const phoneRegister = register('phone');
+  const dobRegister = register('dob');
+  const genderRegister = register('gender');
+  const passwordRegister = register('password');
+  const confirmPasswordRegister = register('confirmPassword');
 
-    if (!formData.fullName.trim()) newErrors.fullName = 'Full name is required';
-
-    if (!formData.email.trim()) newErrors.email = 'Email is required';
-    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Email is invalid';
-
-    if (!formData.phone.trim()) newErrors.phone = 'Phone number is required';
-    else if (!/^\d{10,}$/.test(formData.phone.replace(/\D/g, '')))
-      newErrors.phone = 'Phone number must be at least 10 digits';
-
-    if (!formData.dob) newErrors.dob = 'Date of birth is required';
-    else {
-      const age = (new Date().getTime() - new Date(formData.dob).getTime()) / (1000 * 3600 * 24 * 365.25);
-      if (age < 13) newErrors.dob = 'You must be at least 13 years old';
-    }
-
-    if (!formData.gender) newErrors.gender = 'Gender is required';
-
-    if (!formData.password) newErrors.password = 'Password is required';
-    else if (formData.password.length < 6)
-      newErrors.password = 'Password must be at least 8 characters';
-    else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password))
-      newErrors.password = 'Password must contain uppercase, lowercase, and number';
-
-    if (!formData.confirmPassword) newErrors.confirmPassword = 'Please confirm your password';
-    else if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-    if (errors[name as keyof FormErrors]) {
-      setErrors({ ...errors, [name]: '' });
+  const handleChangeInput = () => {
+    if (authError) {
+      dispatch(clearError());
     }
   };
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setMessage('');
-    if (validateForm()) {
-      try {
-        const response = await axios.post('http://localhost:8080/auth/register', {
-          username: formData.username,
-          password: formData.password,
-          fullName: formData.fullName,
-          email: formData.email,
-          phone: formData.phone,
-          gender: formData.gender,
-          dob: formData.dob,
-          country: '',
-          address: '',
-          bio: ''
-        }, {
-          withCredentials: true  // Thêm để gửi/set cookie/session
-        });
-        console.log('Registration success:', response.data);
+  useEffect(() => {
+    if (user) {
+      // Reset form after successful signup
+      reset({
+        username: '',
+        fullName: '',
+        email: '',
+        phone: '',
+        dob: '',
+        gender: 'Male',
+        password: '',
+        confirmPassword: '',
+      });
+      // Optionally navigate here if not already handled in onSubmit
+    }
+    // Removed the auto-clear of authError here to allow it to display
+  }, [user, reset]); // Removed authError, navigate, dispatch, getValues from deps
 
-        const token = response.data.token;
-        if (token) {
-          localStorage.setItem('accessToken', token);
-        } else {
-          console.warn('No token in registration response. Verify may fallback to no-auth.');
-        }
-
-
-        if (response.data.code === 0 || response.data.code === 1006) {
-          setMessage('Account created successfully! OTP sent. Redirecting to verification...');
-          setTimeout(() => {
-            navigate(`/auth/verify-email?type=signup&email=${encodeURIComponent(formData.email)}`);
-          }, 1500);
-        } else {
-          setMessage('Registration successful! Redirecting...');
-          setTimeout(() => {
-            navigate('/signin');
-          }, 1500);
-        }
-
-
-        setFormData({
-          username: '',
-          fullName: '',
-          email: '',
-          phone: '',
-          dob: new Date().toISOString().split('T')[0],
-          gender: 'Male',
-          password: '',
-          confirmPassword: ''
-        });
-        setErrors({});
-      } catch (error: AxiosError<BeErrorResponse> | unknown) {
-        console.error('Registration error:', error);
-        const axiosError = error as AxiosError<BeErrorResponse>;
-        const errorData = axiosError.response?.data || { message: 'Unknown error' };
-
-
-        if (errorData.code === 0 || errorData.code === 1006) {
-          setMessage('Account created successfully! OTP sent. Redirecting to verification...');
-          setTimeout(() => {
-            navigate(`/auth/verify-email?type=signup&email=${encodeURIComponent(formData.email)}`);
-          }, 1500);
-          return;
-        }
-
-        setMessage(`Error: ${errorData.message || 'Registration failed. Please try again.'}`);
+  const onSubmit = async (data: SignUpFormData) => {
+    dispatch(clearError()); // Clear any stale errors before submitting
+    try {
+      const userData = {
+        username: data.username,
+        password: data.password,
+        fullName: data.fullName,
+        email: data.email,
+        phone: data.phone,
+        gender: data.gender,
+        dob: data.dob,
+        country: '',
+        address: '',
+        bio: '',
+      };
+      await dispatch(signUp(userData)).unwrap();
+      navigate(ROUTES.VERIFY_EMAIL);
+    } catch (error: unknown) {
+      // Log chi tiết error để debug (kiểm tra console để xem BE trả gì)
+      console.error('Signup error:', error);
+      // Nếu error là timeout, có thể dispatch một error custom nếu cần, nhưng để Redux handle
+      if (error instanceof Error && error.message.includes('timeout')) {
+        // Optional: dispatch một action set error custom, ví dụ: dispatch(setError('Request timed out. Please try again.'));
       }
     }
   };
@@ -182,6 +131,24 @@ const SignUpForm = () => {
     initial: { opacity: 0, y: 60 },
     animate: { opacity: 1, y: 0 },
     transition: { duration: 0.6 }
+  };
+
+  // Helper để extract message từ authError (fix "Unknown error")
+  const getErrorMessage = (err: unknown): string => {
+    if (typeof err === 'string') return err;
+    if (err && typeof err === 'object') {
+      if ('message' in err && typeof (err as Record<string, unknown>).message === 'string') {
+        return (err as { message: string }).message;
+      }
+      if ('error' in err && typeof (err as Record<string, unknown>).error === 'string') {
+        return (err as { error: string }).error;
+      }
+      if ('detail' in err && typeof (err as Record<string, unknown>).detail === 'string') {
+        return (err as { detail: string }).detail;
+      }
+      return 'Unknown error';
+    }
+    return 'Unknown error';
   };
 
   return (
@@ -212,17 +179,8 @@ const SignUpForm = () => {
               variants={fadeInUp}
               transition={{ delay: 0.1 }}
           >
-            <form className="space-y-6" onSubmit={handleSubmit}>
-              {/* Hiển thị message */}
-              {message && (
-                  <div className={`p-3 rounded-lg text-sm ${
-                      message.includes('Error') || message.includes('failed')
-                          ? 'bg-red-50 text-red-700 border border-red-200'
-                          : 'bg-green-50 text-green-700 border border-green-200'
-                  }`}>
-                    {message}
-                  </div>
-              )}
+            <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+              {authError && <ErrorMessage message={getErrorMessage(authError)} />} {/* Sử dụng helper để extract message đúng */}
 
               {/* Username */}
               <div>
@@ -233,20 +191,22 @@ const SignUpForm = () => {
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <User className="h-5 w-5 text-gray-400" />
                   </div>
-                  <input
+                  <Input
                       id="username"
-                      name="username"
+                      {...usernameRegister}
+                      onChange={(e) => {
+                        handleChangeInput();
+                        usernameRegister.onChange(e); // Chain với onChange gốc
+                      }}
                       type="text"
-                      required
-                      value={formData.username}
-                      onChange={handleChange}
-                      className={`block w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                          errors.username ? 'border-red-300' : 'border-gray-300'
-                      }`}
+                      autoComplete="username"
+                      className="pl-10"
                       placeholder="Enter your username"
+                      aria-invalid={errors.username ? 'true' : 'false'}
+                      disabled={isLoading}
                   />
                 </div>
-                {errors.username && <p className="mt-1 text-sm text-red-600">{errors.username}</p>}
+                {errors.username && <ErrorMessage message={errors.username.message!} />}
               </div>
 
               {/* Full Name */}
@@ -258,20 +218,22 @@ const SignUpForm = () => {
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <User className="h-5 w-5 text-gray-400" />
                   </div>
-                  <input
+                  <Input
                       id="fullName"
-                      name="fullName"
+                      {...fullNameRegister}
+                      onChange={(e) => {
+                        handleChangeInput();
+                        fullNameRegister.onChange(e);
+                      }}
                       type="text"
-                      required
-                      value={formData.fullName}
-                      onChange={handleChange}
-                      className={`block w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                          errors.fullName ? 'border-red-300' : 'border-gray-300'
-                      }`}
+                      autoComplete="name"
+                      className="pl-10"
                       placeholder="Enter your full name"
+                      aria-invalid={errors.fullName ? 'true' : 'false'}
+                      disabled={isLoading}
                   />
                 </div>
-                {errors.fullName && <p className="mt-1 text-sm text-red-600">{errors.fullName}</p>}
+                {errors.fullName && <ErrorMessage message={errors.fullName.message!} />}
               </div>
 
               {/* Email */}
@@ -283,20 +245,22 @@ const SignUpForm = () => {
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <Mail className="h-5 w-5 text-gray-400" />
                   </div>
-                  <input
+                  <Input
                       id="email"
-                      name="email"
+                      {...emailRegister}
+                      onChange={(e) => {
+                        handleChangeInput();
+                        emailRegister.onChange(e);
+                      }}
                       type="email"
-                      required
-                      value={formData.email}
-                      onChange={handleChange}
-                      className={`block w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                          errors.email ? 'border-red-300' : 'border-gray-300'
-                      }`}
+                      autoComplete="email"
+                      className="pl-10"
                       placeholder="Enter your email"
+                      aria-invalid={errors.email ? 'true' : 'false'}
+                      disabled={isLoading}
                   />
                 </div>
-                {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
+                {errors.email && <ErrorMessage message={errors.email.message!} />}
               </div>
 
               {/* Phone */}
@@ -308,20 +272,22 @@ const SignUpForm = () => {
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <Phone className="h-5 w-5 text-gray-400" />
                   </div>
-                  <input
+                  <Input
                       id="phone"
-                      name="phone"
+                      {...phoneRegister}
+                      onChange={(e) => {
+                        handleChangeInput();
+                        phoneRegister.onChange(e);
+                      }}
                       type="tel"
-                      required
-                      value={formData.phone}
-                      onChange={handleChange}
-                      className={`block w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                          errors.phone ? 'border-red-300' : 'border-gray-300'
-                      }`}
+                      autoComplete="tel"
+                      className="pl-10"
                       placeholder="Enter your phone number"
+                      aria-invalid={errors.phone ? 'true' : 'false'}
+                      disabled={isLoading}
                   />
                 </div>
-                {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone}</p>}
+                {errors.phone && <ErrorMessage message={errors.phone.message!} />}
               </div>
 
               {/* DOB */}
@@ -333,19 +299,21 @@ const SignUpForm = () => {
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <Calendar className="h-5 w-5 text-gray-400" />
                   </div>
-                  <input
+                  <Input
                       id="dob"
-                      name="dob"
+                      {...dobRegister}
+                      onChange={(e) => {
+                        handleChangeInput();
+                        dobRegister.onChange(e);
+                      }}
                       type="date"
-                      required
-                      value={formData.dob}
-                      onChange={handleChange}
-                      className={`block w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                          errors.dob ? 'border-red-300' : 'border-gray-300'
-                      }`}
+                      className="pl-10"
+                      max={new Date().toISOString().split('T')[0]}
+                      aria-invalid={errors.dob ? 'true' : 'false'}
+                      disabled={isLoading}
                   />
                 </div>
-                {errors.dob && <p className="mt-1 text-sm text-red-600">{errors.dob}</p>}
+                {errors.dob && <ErrorMessage message={errors.dob.message!} />}
               </div>
 
               {/* Gender */}
@@ -359,20 +327,23 @@ const SignUpForm = () => {
                   </div>
                   <select
                       id="gender"
-                      name="gender"
-                      required
-                      value={formData.gender}
-                      onChange={handleChange}
-                      className={`block w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      {...genderRegister}
+                      onChange={(e) => {
+                        handleChangeInput();
+                        genderRegister.onChange(e);
+                      }}
+                      className={`block w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed ${
                           errors.gender ? 'border-red-300' : 'border-gray-300'
                       }`}
+                      aria-invalid={errors.gender ? 'true' : 'false'}
+                      disabled={isLoading}
                   >
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
                     <option value="Other">Other</option>
                   </select>
                 </div>
-                {errors.gender && <p className="mt-1 text-sm text-red-600">{errors.gender}</p>}
+                {errors.gender && <ErrorMessage message={errors.gender.message!} />}
               </div>
 
               {/* Password */}
@@ -384,31 +355,31 @@ const SignUpForm = () => {
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <Lock className="h-5 w-5 text-gray-400" />
                   </div>
-                  <input
+                  <Input
                       id="password"
-                      name="password"
+                      {...passwordRegister}
+                      onChange={(e) => {
+                        handleChangeInput();
+                        passwordRegister.onChange(e);
+                      }}
                       type={showPassword ? 'text' : 'password'}
-                      required
-                      value={formData.password}
-                      onChange={handleChange}
-                      className={`block w-full pl-10 pr-10 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                          errors.password ? 'border-red-300' : 'border-gray-300'
-                      }`}
+                      autoComplete="new-password"
+                      className="pl-10 pr-10"
                       placeholder="Create a password"
+                      aria-invalid={errors.password ? 'true' : 'false'}
+                      disabled={isLoading}
                   />
                   <button
                       type="button"
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
                       onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      disabled={isLoading}
                   >
-                    {showPassword ? (
-                        <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                    ) : (
-                        <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                    )}
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
-                {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
+                {errors.password && <ErrorMessage message={errors.password.message!} />}
               </div>
 
               {/* Confirm Password */}
@@ -420,47 +391,56 @@ const SignUpForm = () => {
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <Lock className="h-5 w-5 text-gray-400" />
                   </div>
-                  <input
+                  <Input
                       id="confirmPassword"
-                      name="confirmPassword"
+                      {...confirmPasswordRegister}
+                      onChange={(e) => {
+                        handleChangeInput();
+                        confirmPasswordRegister.onChange(e);
+                      }}
                       type={showConfirmPassword ? 'text' : 'password'}
-                      required
-                      value={formData.confirmPassword}
-                      onChange={handleChange}
-                      className={`block w-full pl-10 pr-10 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                          errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
-                      }`}
+                      autoComplete="new-password"
+                      className="pl-10 pr-10"
                       placeholder="Confirm your password"
+                      aria-invalid={errors.confirmPassword ? 'true' : 'false'}
+                      disabled={isLoading}
                   />
                   <button
                       type="button"
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                      disabled={isLoading}
                   >
-                    {showConfirmPassword ? (
-                        <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                    ) : (
-                        <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                    )}
+                    {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
-                {errors.confirmPassword && <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>}
+                {errors.confirmPassword && <ErrorMessage message={errors.confirmPassword.message!} />}
               </div>
 
               {/* Submit Button */}
-              <button
+              <Button
                   type="submit"
-                  className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                  className="w-full"
+                  disabled={isLoading || !isValid}
+                  aria-busy={isLoading}
               >
-                Create Account
-              </button>
+                {isLoading ? (
+                    <>
+                      <LoadingSpinner size="sm" className="mr-2" />
+                      Creating Account...
+                    </>
+                ) : (
+                    'Create Account'
+                )}
+              </Button>
             </form>
 
             {/* Sign In Link */}
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-600">
                 Already have an account?{' '}
-                <Link to="/signin" className="font-medium text-blue-600 hover:text-blue-500">
+                <Link to={ROUTES.SIGN_IN} className="font-medium text-blue-600 hover:text-blue-500 transition-colors">
                   Sign in here
                 </Link>
               </p>
