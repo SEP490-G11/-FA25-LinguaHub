@@ -656,7 +656,7 @@ export function Step2CourseContent({ sections: initialSections, onSave, onBack }
           </Button>
         )}
         <Button type="button" onClick={handleSubmit}>
-          Create Course
+          Submit Course
         </Button>
       </div>
 
