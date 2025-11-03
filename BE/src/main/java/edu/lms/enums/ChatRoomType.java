@@ -1,4 +1,6 @@
 package edu.lms.enums;
 
-public class ChatRoomType {
+public enum ChatRoomType {
+    Advice, Training
 }
+
