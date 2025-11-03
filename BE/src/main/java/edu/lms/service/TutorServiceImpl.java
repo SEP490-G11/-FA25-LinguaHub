@@ -57,14 +57,20 @@ public class TutorServiceImpl implements TutorService {
                     return tutorRepository.save(newTutor);
                 });
 
-        // 3. Kiểm tra đã có hồ sơ đang pending chưa
+        // 3. Kiểm tra tutor đã được APPROVED chưa - nếu đã approved thì không cho apply lại
+        if (tutor.getStatus() == TutorStatus.APPROVED) {
+            log.warn("User {} already has an approved tutor status, cannot apply again", userID);
+            throw new TutorApplicationException("You are already an approved tutor. You cannot submit a new application.");
+        }
+
+        // 4. Kiểm tra đã có hồ sơ đang pending chưa
         boolean isPending = tutorVerificationRepository.existsByTutorAndStatus(tutor, TutorVerificationStatus.PENDING);
         if (isPending) {
             log.warn("User {} already has a pending tutor application", userID);
             throw new TutorApplicationException("An application is already pending approval");
         }
 
-        // 4. Tạo đơn xác minh mới
+        // 5. Tạo đơn xác minh mới
         TutorVerification verification = TutorVerification.builder()
                 .tutor(tutor)
                 .experience(request.getExperience())
@@ -88,9 +94,16 @@ public class TutorServiceImpl implements TutorService {
         User user = userRepository.findById(userID)
                 .orElseThrow(() -> new EntityNotFoundException("User not found with ID: " + userID));
 
-        Tutor tutor = tutorRepository.findByUser(user)
-                .orElseThrow(() -> new TutorNotFoundException("Tutor record not found for user ID: " + userID));
+        // Check if tutor record exists
+        Tutor tutor = tutorRepository.findByUser(user).orElse(null);
+        
+        if (tutor == null) {
+            // User hasn't applied yet
+            log.info("No tutor record found for user ID: {}, user hasn't applied yet", userID);
+            throw new TutorNotFoundException("No application found. Please submit an application first.");
+        }
 
+        // Get the latest application
         return tutorVerificationRepository.findTopByTutorOrderBySubmittedAtDesc(tutor)
                 .map(v -> {
                     log.info("Found application with status: {} for user ID: {}", v.getStatus(), userID);
