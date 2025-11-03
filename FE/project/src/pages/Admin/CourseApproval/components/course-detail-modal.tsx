@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Check, X, AlertCircle } from 'lucide-react';
+import { Loader2, Check, X, AlertCircle, Video, BookOpen, FileText, Link2 } from 'lucide-react';
 
 interface CourseDetailModalProps {
   isOpen: boolean;
@@ -216,27 +216,101 @@ export function CourseDetailModal({
                     )}
 
                     {section.lessons && section.lessons.length > 0 && (
-                      <div className="mt-3 ml-4 space-y-2 border-l-2 border-gray-300 pl-3">
-                        {section.lessons.map((lesson, lessonIdx) => (
-                          <div key={lessonIdx} className="text-sm">
-                            <p className="text-gray-900 font-medium">
-                              Lesson {lessonIdx + 1}: {lesson.title}
-                            </p>
-                            <p className="text-gray-600 text-xs mt-1">
-                              Duration: {lesson.duration_minutes} minutes
-                            </p>
-                            {lesson.video_url && (
-                              <a
-                                href={lesson.video_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-blue-600 hover:underline text-xs mt-1 inline-block"
-                              >
-                                🎥 View Video
-                              </a>
-                            )}
-                          </div>
-                        ))}
+                      <div className="mt-3 ml-4 space-y-3 border-l-2 border-gray-300 pl-3">
+                        {section.lessons.map((lesson, lessonIdx) => {
+                          const lessonType = lesson.lesson_type || (lesson.video_url ? 'Video' : 'Reading');
+                          const isVideoLesson = lessonType === 'Video';
+                          const hasResources = !!lesson.resources && lesson.resources.length > 0;
+
+                          return (
+                            <div
+                              key={lessonIdx}
+                              className="text-sm border-b border-gray-200 pb-3 last:border-b-0"
+                            >
+                              <div className="flex items-start gap-2">
+                                {isVideoLesson ? (
+                                  <Video className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                                ) : (
+                                  <BookOpen className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+                                )}
+
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <p className="text-gray-900 font-medium">
+                                      Lesson {lessonIdx + 1}: {lesson.title}
+                                    </p>
+                                    <span
+                                      className={`px-2 py-0.5 rounded text-xs font-medium ${
+                                        isVideoLesson
+                                          ? 'bg-blue-100 text-blue-700'
+                                          : 'bg-green-100 text-green-700'
+                                      }`}
+                                    >
+                                      {lessonType}
+                                    </span>
+                                  </div>
+
+                                  <p className="text-gray-600 text-xs mt-1">
+                                    Duration: {lesson.duration_minutes} minutes
+                                  </p>
+
+                                  {isVideoLesson && lesson.video_url && (
+                                    <a
+                                      href={lesson.video_url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-blue-600 hover:underline text-xs mt-1 inline-block"
+                                    >
+                                      🎥 View Video
+                                    </a>
+                                  )}
+
+                                  {!isVideoLesson && lesson.content && (
+                                    <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded">
+                                      <p className="text-xs text-green-900 font-semibold mb-1">
+                                        Content Preview
+                                      </p>
+                                      <p className="text-xs text-gray-700 whitespace-pre-line line-clamp-3">
+                                        {lesson.content}
+                                      </p>
+                                    </div>
+                                  )}
+
+                                  {hasResources && (
+                                    <div className="mt-2">
+                                      <p className="text-xs text-gray-600 font-semibold mb-1">
+                                        Resources ({lesson.resources!.length})
+                                      </p>
+                                      <div className="space-y-1">
+                                        {lesson.resources!.map((resource, resourceIdx) => (
+                                          <a
+                                            key={resourceIdx}
+                                            href={resource.resource_url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex items-center gap-2 text-xs text-blue-600 hover:text-blue-800 hover:underline"
+                                          >
+                                            {resource.resource_type === 'PDF' ? (
+                                              <FileText className="w-3 h-3" />
+                                            ) : (
+                                              <Link2 className="w-3 h-3" />
+                                            )}
+                                            <span className="truncate max-w-[200px]" title={resource.resource_title}>
+                                              {resource.resource_title}
+                                            </span>
+                                            <span className="text-gray-500">
+                                              ({resource.resource_type})
+                                            </span>
+                                          </a>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </details>

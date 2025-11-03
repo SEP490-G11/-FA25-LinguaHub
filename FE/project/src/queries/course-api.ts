@@ -30,12 +30,21 @@ export interface SectionData {
   lessons: LessonData[];
 }
 
+export interface LessonResourceData {
+  resource_type: 'PDF' | 'ExternalLink';
+  resource_title: string;
+  resource_url: string;
+}
+
 export interface LessonData {
   id?: string;
   title: string;
   duration_minutes: number;
-  video_url: string;
+  lesson_type?: 'Video' | 'Reading';
+  video_url?: string;
+  content?: string;
   order_index: number;
+  resources?: LessonResourceData[];
 }
 
 /**

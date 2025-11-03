@@ -37,22 +37,52 @@ const MOCK_COURSES_WITH_SECTIONS: CourseDetail[] = [
             id: 'les-1-1-1',
             title: 'Introduction to IELTS Listening',
             duration_minutes: 15,
+            lesson_type: 'Video',
             video_url: 'https://example.com/video1.mp4',
             order_index: 0,
+            resources: [
+              {
+                resource_type: 'PDF',
+                resource_title: 'Listening Strategy Guide',
+                resource_url: 'https://cdn.example.com/resources/ielts-listening-strategy.pdf',
+              },
+              {
+                resource_type: 'ExternalLink',
+                resource_title: 'Sample Listening Test',
+                resource_url: 'https://example.com/quizzes/ielts-listening-sample',
+              },
+            ],
           },
           {
             id: 'les-1-1-2',
             title: 'Understanding Question Types',
             duration_minutes: 20,
-            video_url: 'https://example.com/video2.mp4',
+            lesson_type: 'Reading',
+            content:
+              'Review the structure of IELTS listening question types with annotated examples and answer strategies.',
             order_index: 1,
+            resources: [
+              {
+                resource_type: 'PDF',
+                resource_title: 'Question Type Breakdown',
+                resource_url: 'https://cdn.example.com/resources/question-type-breakdown.pdf',
+              },
+            ],
           },
           {
             id: 'les-1-1-3',
             title: 'Practice Exercise 1',
             duration_minutes: 30,
+            lesson_type: 'Video',
             video_url: 'https://example.com/video3.mp4',
             order_index: 2,
+            resources: [
+              {
+                resource_type: 'ExternalLink',
+                resource_title: 'Interactive Listening Drills',
+                resource_url: 'https://example.com/interactives/listening-drills',
+              },
+            ],
           },
         ],
       },
@@ -66,15 +96,32 @@ const MOCK_COURSES_WITH_SECTIONS: CourseDetail[] = [
             id: 'les-1-2-1',
             title: 'Skimming and Scanning',
             duration_minutes: 25,
+            lesson_type: 'Video',
             video_url: 'https://example.com/video4.mp4',
             order_index: 0,
+            resources: [
+              {
+                resource_type: 'PDF',
+                resource_title: 'Reading Skimming Techniques',
+                resource_url: 'https://cdn.example.com/resources/skimming-techniques.pdf',
+              },
+            ],
           },
           {
             id: 'les-1-2-2',
             title: 'Vocabulary Building',
             duration_minutes: 20,
-            video_url: 'https://example.com/video5.mp4',
+            lesson_type: 'Reading',
+            content:
+              'Enhance vocabulary through contextual reading passages and targeted practice exercises.',
             order_index: 1,
+            resources: [
+              {
+                resource_type: 'ExternalLink',
+                resource_title: 'Interactive Vocabulary Game',
+                resource_url: 'https://example.com/games/ielts-vocabulary',
+              },
+            ],
           },
         ],
       },
@@ -88,22 +135,52 @@ const MOCK_COURSES_WITH_SECTIONS: CourseDetail[] = [
             id: 'les-1-3-1',
             title: 'Task 1: Academic Writing',
             duration_minutes: 35,
-            video_url: 'https://example.com/video6.mp4',
+            lesson_type: 'Reading',
+            content:
+              'Study model academic writing responses and learn how to structure data-driven essays.',
             order_index: 0,
+            resources: [
+              {
+                resource_type: 'PDF',
+                resource_title: 'Academic Writing Samples',
+                resource_url: 'https://cdn.example.com/resources/academic-writing-samples.pdf',
+              },
+              {
+                resource_type: 'ExternalLink',
+                resource_title: 'Essay Planning Worksheet',
+                resource_url: 'https://example.com/tools/essay-planner',
+              },
+            ],
           },
           {
             id: 'les-1-3-2',
             title: 'Task 2: Essay Writing',
             duration_minutes: 40,
+            lesson_type: 'Video',
             video_url: 'https://example.com/video7.mp4',
             order_index: 1,
+            resources: [
+              {
+                resource_type: 'PDF',
+                resource_title: 'Essay Structure Checklist',
+                resource_url: 'https://cdn.example.com/resources/essay-structure-checklist.pdf',
+              },
+            ],
           },
           {
             id: 'les-1-3-3',
             title: 'Common Mistakes to Avoid',
             duration_minutes: 20,
+            lesson_type: 'Video',
             video_url: 'https://example.com/video8.mp4',
             order_index: 2,
+            resources: [
+              {
+                resource_type: 'ExternalLink',
+                resource_title: 'Writing Mistakes Quiz',
+                resource_url: 'https://example.com/quizzes/writing-mistakes',
+              },
+            ],
           },
         ],
       },
@@ -135,15 +212,32 @@ const MOCK_COURSES_WITH_SECTIONS: CourseDetail[] = [
             id: 'les-2-1-1',
             title: 'Passive Voice and Causative',
             duration_minutes: 30,
+            lesson_type: 'Video',
             video_url: 'https://example.com/video9.mp4',
             order_index: 0,
+            resources: [
+              {
+                resource_type: 'PDF',
+                resource_title: 'Grammar Reference Sheet',
+                resource_url: 'https://cdn.example.com/resources/passive-voice-reference.pdf',
+              },
+            ],
           },
           {
             id: 'les-2-1-2',
             title: 'Conditional Sentences',
             duration_minutes: 25,
-            video_url: 'https://example.com/video10.mp4',
+            lesson_type: 'Reading',
+            content:
+              'Explore advanced conditional structures with scenario-based explanations tailored for TOPIK.',
             order_index: 1,
+            resources: [
+              {
+                resource_type: 'ExternalLink',
+                resource_title: 'Conditional Practice Exercises',
+                resource_url: 'https://example.com/resources/conditional-practice',
+              },
+            ],
           },
         ],
       },
@@ -157,15 +251,32 @@ const MOCK_COURSES_WITH_SECTIONS: CourseDetail[] = [
             id: 'les-2-2-1',
             title: 'Conversation Practice',
             duration_minutes: 35,
+            lesson_type: 'Video',
             video_url: 'https://example.com/video11.mp4',
             order_index: 0,
+            resources: [
+              {
+                resource_type: 'PDF',
+                resource_title: 'Conversation Scripts',
+                resource_url: 'https://cdn.example.com/resources/conversation-scripts.pdf',
+              },
+            ],
           },
           {
             id: 'les-2-2-2',
             title: 'News and Announcements',
             duration_minutes: 30,
-            video_url: 'https://example.com/video12.mp4',
+            lesson_type: 'Reading',
+            content:
+              'Practice listening comprehension with authentic news transcripts and comprehension questions.',
             order_index: 1,
+            resources: [
+              {
+                resource_type: 'ExternalLink',
+                resource_title: 'TOPIK Listening Archive',
+                resource_url: 'https://example.com/resources/topik-listening-archive',
+              },
+            ],
           },
         ],
       },
@@ -197,15 +308,32 @@ const MOCK_COURSES_WITH_SECTIONS: CourseDetail[] = [
             id: 'les-3-1-1',
             title: 'Business Email Writing',
             duration_minutes: 20,
-            video_url: 'https://example.com/video13.mp4',
+            lesson_type: 'Reading',
+            content:
+              'Learn the structure of professional emails with templates, tone guidelines, and actionable tips.',
             order_index: 0,
+            resources: [
+              {
+                resource_type: 'PDF',
+                resource_title: 'Email Templates Pack',
+                resource_url: 'https://cdn.example.com/resources/business-email-templates.pdf',
+              },
+            ],
           },
           {
             id: 'les-3-1-2',
             title: 'Meeting Skills and Etiquette',
             duration_minutes: 25,
+            lesson_type: 'Video',
             video_url: 'https://example.com/video14.mp4',
             order_index: 1,
+            resources: [
+              {
+                resource_type: 'ExternalLink',
+                resource_title: 'Meeting Etiquette Checklist',
+                resource_url: 'https://example.com/resources/meeting-etiquette-checklist',
+              },
+            ],
           },
         ],
       },
@@ -219,15 +347,32 @@ const MOCK_COURSES_WITH_SECTIONS: CourseDetail[] = [
             id: 'les-3-2-1',
             title: 'Structuring Your Presentation',
             duration_minutes: 30,
+            lesson_type: 'Video',
             video_url: 'https://example.com/video15.mp4',
             order_index: 0,
+            resources: [
+              {
+                resource_type: 'PDF',
+                resource_title: 'Presentation Outline Worksheet',
+                resource_url: 'https://cdn.example.com/resources/presentation-outline.pdf',
+              },
+            ],
           },
           {
             id: 'les-3-2-2',
             title: 'Handling Q&A Sessions',
             duration_minutes: 20,
-            video_url: 'https://example.com/video16.mp4',
+            lesson_type: 'Reading',
+            content:
+              'Master Q&A handling with strategies for addressing tough questions and maintaining audience trust.',
             order_index: 1,
+            resources: [
+              {
+                resource_type: 'ExternalLink',
+                resource_title: 'Q&A Practice Scenarios',
+                resource_url: 'https://example.com/resources/qa-practice',
+              },
+            ],
           },
         ],
       },
@@ -259,15 +404,32 @@ const MOCK_COURSES_WITH_SECTIONS: CourseDetail[] = [
             id: 'les-4-1-1',
             title: 'Kanji Stroke Order and Reading',
             duration_minutes: 40,
+            lesson_type: 'Video',
             video_url: 'https://example.com/video17.mp4',
             order_index: 0,
+            resources: [
+              {
+                resource_type: 'PDF',
+                resource_title: 'Kanji Workbook',
+                resource_url: 'https://cdn.example.com/resources/jlpt-kanji-workbook.pdf',
+              },
+            ],
           },
           {
             id: 'les-4-1-2',
             title: 'Context and Synonyms',
             duration_minutes: 30,
-            video_url: 'https://example.com/video18.mp4',
+            lesson_type: 'Reading',
+            content:
+              'Interpret JLPT N2 kanji in real-world contexts and learn nuanced synonym usage.',
             order_index: 1,
+            resources: [
+              {
+                resource_type: 'ExternalLink',
+                resource_title: 'Contextual Vocabulary Tracker',
+                resource_url: 'https://example.com/resources/contextual-vocab-tracker',
+              },
+            ],
           },
         ],
       },
@@ -281,15 +443,32 @@ const MOCK_COURSES_WITH_SECTIONS: CourseDetail[] = [
             id: 'les-4-2-1',
             title: 'Complex Sentence Patterns',
             duration_minutes: 35,
-            video_url: 'https://example.com/video19.mp4',
+            lesson_type: 'Reading',
+            content:
+              'Break down complex grammar structures with bilingual explanations and practice drills.',
             order_index: 0,
+            resources: [
+              {
+                resource_type: 'PDF',
+                resource_title: 'Grammar Pattern Reference',
+                resource_url: 'https://cdn.example.com/resources/complex-grammar-reference.pdf',
+              },
+            ],
           },
           {
             id: 'les-4-2-2',
             title: 'Reading Long Texts',
             duration_minutes: 45,
+            lesson_type: 'Video',
             video_url: 'https://example.com/video20.mp4',
             order_index: 1,
+            resources: [
+              {
+                resource_type: 'ExternalLink',
+                resource_title: 'JLPT Reading Mock Test',
+                resource_url: 'https://example.com/resources/jlpt-reading-mock',
+              },
+            ],
           },
         ],
       },
@@ -321,15 +500,32 @@ const MOCK_COURSES_WITH_SECTIONS: CourseDetail[] = [
             id: 'les-5-1-1',
             title: 'Four Tones of Mandarin',
             duration_minutes: 25,
+            lesson_type: 'Video',
             video_url: 'https://example.com/video21.mp4',
             order_index: 0,
+            resources: [
+              {
+                resource_type: 'PDF',
+                resource_title: 'Tone Practice Workbook',
+                resource_url: 'https://cdn.example.com/resources/mandarin-tone-workbook.pdf',
+              },
+            ],
           },
           {
             id: 'les-5-1-2',
             title: 'Tone Combinations',
             duration_minutes: 20,
-            video_url: 'https://example.com/video22.mp4',
+            lesson_type: 'Reading',
+            content:
+              'Practice tone pairs with audio transcripts and drills for natural speech patterns.',
             order_index: 1,
+            resources: [
+              {
+                resource_type: 'ExternalLink',
+                resource_title: 'Tone Pair Audio Bank',
+                resource_url: 'https://example.com/resources/tone-pair-audio',
+              },
+            ],
           },
         ],
       },
@@ -343,15 +539,32 @@ const MOCK_COURSES_WITH_SECTIONS: CourseDetail[] = [
             id: 'les-5-2-1',
             title: 'Common Radicals (300)',
             duration_minutes: 40,
-            video_url: 'https://example.com/video23.mp4',
+            lesson_type: 'Reading',
+            content:
+              'Study 300 essential radicals with mnemonics and stroke order guidance for character recognition.',
             order_index: 0,
+            resources: [
+              {
+                resource_type: 'PDF',
+                resource_title: 'Radicals Flashcards',
+                resource_url: 'https://cdn.example.com/resources/hsk-radicals-flashcards.pdf',
+              },
+            ],
           },
           {
             id: 'les-5-2-2',
             title: 'Compound Characters',
             duration_minutes: 35,
+            lesson_type: 'Video',
             video_url: 'https://example.com/video24.mp4',
             order_index: 1,
+            resources: [
+              {
+                resource_type: 'ExternalLink',
+                resource_title: 'Character Composition Trainer',
+                resource_url: 'https://example.com/resources/character-trainer',
+              },
+            ],
           },
         ],
       },
@@ -365,15 +578,32 @@ const MOCK_COURSES_WITH_SECTIONS: CourseDetail[] = [
             id: 'les-5-3-1',
             title: 'Subject-Verb-Object Order',
             duration_minutes: 25,
-            video_url: 'https://example.com/video25.mp4',
+            lesson_type: 'Reading',
+            content:
+              'Break down sentence order with color-coded examples and grammar explanations.',
             order_index: 0,
+            resources: [
+              {
+                resource_type: 'PDF',
+                resource_title: 'Sentence Order Worksheets',
+                resource_url: 'https://cdn.example.com/resources/svo-worksheets.pdf',
+              },
+            ],
           },
           {
             id: 'les-5-3-2',
             title: 'Question Formation',
             duration_minutes: 20,
+            lesson_type: 'Video',
             video_url: 'https://example.com/video26.mp4',
             order_index: 1,
+            resources: [
+              {
+                resource_type: 'ExternalLink',
+                resource_title: 'Interactive Question Builder',
+                resource_url: 'https://example.com/resources/question-builder',
+              },
+            ],
           },
         ],
       },
