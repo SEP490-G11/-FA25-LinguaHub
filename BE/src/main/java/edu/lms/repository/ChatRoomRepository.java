@@ -19,3 +19,4 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
     boolean existsByUserAndTutorAndChatRoomType(User user, Tutor tutor, ChatRoomType chatRoomType);
 }
 
+
