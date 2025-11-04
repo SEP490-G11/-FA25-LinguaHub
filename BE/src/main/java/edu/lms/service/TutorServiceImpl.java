@@ -44,7 +44,22 @@ public class TutorServiceImpl implements TutorService {
         User user = userRepository.findById(userID)
                 .orElseThrow(() -> new EntityNotFoundException("User not found with ID: " + userID));
 
-        // 2. Kiểm tra có Tutor record chưa
+        // 2. Validate experience < age (nếu có dob)
+        if (user.getDob() != null) {
+            long age = java.time.temporal.ChronoUnit.YEARS.between(user.getDob(), java.time.LocalDate.now());
+            if (request.getExperience() >= age) {
+                log.warn("User {} has experience ({}) >= age ({})", userID, request.getExperience(), age);
+                throw new TutorApplicationException("Experience must be less than your age. Your age is " + age + " years.");
+            }
+        } else {
+            // Nếu không có dob, vẫn yêu cầu experience hợp lý (tối đa 60 như đã validate trong DTO)
+            if (request.getExperience() > 60) {
+                log.warn("User {} has invalid experience ({}) without dob", userID, request.getExperience());
+                throw new TutorApplicationException("Experience must be reasonable. Please update your date of birth for age validation.");
+            }
+        }
+
+        // 4. Kiểm tra có Tutor record chưa
         Tutor tutor = tutorRepository.findByUser(user)
                 .orElseGet(() -> {
                     log.info("Creating new tutor record for user ID: {}", userID);
@@ -57,20 +72,20 @@ public class TutorServiceImpl implements TutorService {
                     return tutorRepository.save(newTutor);
                 });
 
-        // 3. Kiểm tra tutor đã được APPROVED chưa - nếu đã approved thì không cho apply lại
+        // 6. Kiểm tra tutor đã được APPROVED chưa - nếu đã approved thì không cho apply lại
         if (tutor.getStatus() == TutorStatus.APPROVED) {
             log.warn("User {} already has an approved tutor status, cannot apply again", userID);
             throw new TutorApplicationException("You are already an approved tutor. You cannot submit a new application.");
         }
 
-        // 4. Kiểm tra đã có hồ sơ đang pending chưa
+        // 8. Kiểm tra đã có hồ sơ đang pending chưa
         boolean isPending = tutorVerificationRepository.existsByTutorAndStatus(tutor, TutorVerificationStatus.PENDING);
         if (isPending) {
             log.warn("User {} already has a pending tutor application", userID);
             throw new TutorApplicationException("An application is already pending approval");
         }
 
-        // 5. Tạo đơn xác minh mới
+        // 9. Tạo đơn xác minh mới
         TutorVerification verification = TutorVerification.builder()
                 .tutor(tutor)
                 .experience(request.getExperience())
