@@ -22,10 +22,14 @@ public enum ErrorCode {
     PASSWORD_NOT_MATCH(2003,"Password is not matched" , HttpStatus.BAD_REQUEST),
     PASSWORD_ENABLED(2004,"The password is false", HttpStatus.BAD_REQUEST),
     EMAIL_EXISTED(2005,"This Email has Signed in before", HttpStatus.BAD_REQUEST),
+
+    // COURSE
     COURSE_NOT_FOUND(3001, "Course not found", HttpStatus.NOT_FOUND),
     COURSE_HAS_ENROLLMENT(3002, "Cannot modify or delete a course that already has enrolled learners", HttpStatus.CONFLICT),
     COURSE_CATEGORY_NOT_FOUND(3003, "Course category not found", HttpStatus.NOT_FOUND),
     COURSE_ALREADY_EXISTS(3004, "Course with the same title already exists", HttpStatus.BAD_REQUEST),
+    COURSE_DELETE_ONLY_DRAFT(3005, "Only Draft course can be deleted", HttpStatus.FORBIDDEN),
+
     //  TUTOR MODULE
     TUTOR_NOT_FOUND(4001, "Tutor not found", HttpStatus.NOT_FOUND),
     TUTOR_NOT_APPROVED(4002, "Tutor is not approved yet", HttpStatus.FORBIDDEN),

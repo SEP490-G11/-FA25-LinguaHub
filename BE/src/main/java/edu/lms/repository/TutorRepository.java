@@ -25,4 +25,5 @@ public interface TutorRepository extends JpaRepository<Tutor, Long> {
     Optional<Tutor> findByUser_UserID(Long userId);
 
     Optional<Tutor> findByUser_Email(String email);
+
 }
