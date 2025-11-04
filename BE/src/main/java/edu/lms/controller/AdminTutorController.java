@@ -63,10 +63,11 @@ public class AdminTutorController {
         return ResponseEntity.ok("Application rejected successfully");
     }
 
-    // 5. Xem danh sách tất cả tutors (để admin quản lý)
+    // 5. Xem danh sách các tutor đã được approve (có thể filter theo status)
     @GetMapping("/all")
+    @PreAuthorize("hasAuthority('VIEW_TUTOR_APPLICATIONS')")
     public ResponseEntity<List<TutorApplicationListResponse>> getAllTutors(
-            @RequestParam(required = false) String status
+            @RequestParam(required = false, defaultValue = "APPROVED") String status
     ) {
         List<TutorApplicationListResponse> tutors = tutorService.getAllTutors(status);
         return ResponseEntity.ok(tutors);
@@ -100,7 +101,6 @@ public class AdminTutorController {
             @PathVariable Long tutorId,
             @RequestBody @Valid TutorUpdateRequest request
     ) {
-        Long adminId = getCurrentUserId();
         tutorService.updateTutorInfo(tutorId, request);
         return ResponseEntity.ok("Tutor information updated successfully");
     }
