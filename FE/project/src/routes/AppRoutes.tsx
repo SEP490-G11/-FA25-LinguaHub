@@ -22,9 +22,6 @@ import LanguageCourses from '@/pages/LanguageCourses/index';
 import ForgotPassword from '@/pages/auth/forgot-password';
 import ResetPassword from '@/pages/auth/reset-password';
 import VerifyEmail from '@/pages/auth/verify-email';
-import PendingCourses from '@/pages/PendingCourses/index';
-import TutorCourses from '@/pages/TutorCourses/index';
-import MyCourses from '@/pages/MyCourses/index';
 import PaymentHistory from "@/pages/PaymentHistory";
 import MyEnrollments from "@/pages/MyEnrollments";
 import CreateCourse from '@/pages/CreateCourse/index';
@@ -46,9 +43,6 @@ export function AppRoutes() {
                     <Route path="/auth/verify-email" element={<VerifyEmail />} />
                     <Route path={ROUTES.SIGN_UP} element={<SignUp />} />
                     
-                    <Route path="/admin/pending-courses" element={<PendingCourses />} />
-                    <Route path="/admin/manage-courses" element={<TutorCourses />} />
-                    <Route path="/tutor/manage-courses" element={<MyCourses />} />
                     <Route path={ROUTES.LANGUAGES} element={<Languages />} />
                     <Route path={ROUTES.TUTORS} element={<Tutors />} />
                     <Route path={ROUTES.TUTOR_DETAIL} element={<TutorDetail />} />
