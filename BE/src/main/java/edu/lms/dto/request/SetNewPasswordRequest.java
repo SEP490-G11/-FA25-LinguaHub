@@ -11,10 +11,6 @@ import lombok.*;
 @Builder
 public class SetNewPasswordRequest {
 
-    @NotBlank(message = "Email is required")
-    @Email(message = "Invalid email format")
-    private String email;
-
     @NotBlank(message = "New password is required")
     @Size(min = 8, message = "Password must be at least 8 characters long")
     private String newPassword;
@@ -23,6 +19,4 @@ public class SetNewPasswordRequest {
     @Size(min = 8, message = "Confirm password must be at least 8 characters long")
     private String confirmPassword;
 
-    @NotBlank(message = "OTP is required")
-    private String otp;
 }
