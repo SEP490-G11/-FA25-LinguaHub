@@ -8,9 +8,6 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class VerifyResetOtpRequest {
-    @NotBlank(message = "Email is required")
-    private String email;
-
     @NotBlank(message = "OTP is required")
     private String otp;
 }
