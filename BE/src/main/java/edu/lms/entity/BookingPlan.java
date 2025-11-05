@@ -34,8 +34,9 @@ public class BookingPlan {
     @Column(nullable = false)
     Boolean isOpen = true;
 
-    @Column(nullable = false)
-    Long tutorID; // foreign key
+    @Column(name = "tutor_id", nullable = false)
+    Long tutorID;
+
 
     @Column(nullable = false)
     Double pricePerHours = 0.0;
