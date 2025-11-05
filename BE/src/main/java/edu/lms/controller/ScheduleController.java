@@ -26,9 +26,9 @@ public class ScheduleController {
     public ApiRespond<List<ScheduleResponse>> getSchedules(
             @PathVariable Long tutorID,
             @RequestParam(required = false, defaultValue = "0") Integer week) {
-        
+
         List<ScheduleResponse> schedules = scheduleService.getSchedulesByTutor(tutorID, week);
-        
+
         return ApiRespond.<List<ScheduleResponse>>builder()
                 .result(schedules)
                 .message("Schedules retrieved successfully")

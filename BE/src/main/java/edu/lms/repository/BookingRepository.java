@@ -1,6 +1,5 @@
 package edu.lms.repository;
 
-import edu.lms.entity.Booking;
 import edu.lms.entity.Tutor;
 import edu.lms.entity.User;
 import edu.lms.enums.BookingStatus;

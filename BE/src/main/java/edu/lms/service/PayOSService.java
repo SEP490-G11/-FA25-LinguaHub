@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -35,19 +37,21 @@ public class PayOSService {
     @Value("${payos.api-key}")
     private String apiKey;
 
-    @Value("${payos.secret-key}")
-    private String secretKey;
-
     private static final String PAYOS_API_URL = "https://httpbin.org/post";
 
     public ResponseEntity<?> createPaymentLink(Long userId, PaymentType type, Long targetId, BigDecimal amount, String description) {
         try {
             String orderCode = type + "-" + targetId + "-" + UUID.randomUUID();
 
+            // QR hết hạn sau 15 phút
+            LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(15);
+            long expiredEpoch = expiresAt.atZone(ZoneId.systemDefault()).toEpochSecond();
+
             Map<String, Object> body = new HashMap<>();
             body.put("orderCode", orderCode);
             body.put("amount", amount);
             body.put("description", description);
+            body.put("expiredAt", expiredEpoch);
             body.put("returnUrl", "https://linguahub.vercel.app/payment-success");
             body.put("cancelUrl", "https://linguahub.vercel.app/payment-cancel");
 
@@ -60,11 +64,9 @@ public class PayOSService {
 
             ResponseEntity<Map> response;
             try {
-                log.info("Sending request to PayOS mock API...");
                 response = restTemplate.postForEntity(PAYOS_API_URL, requestEntity, Map.class);
-                log.info("Received response from PayOS: {}", response.getBody());
             } catch (Exception ex) {
-                log.warn("PayOS not reachable, using mock response: {}", ex.getMessage());
+                log.warn("PayOS mock fallback: {}", ex.getMessage());
                 response = ResponseEntity.ok(Map.of("data", "mock"));
             }
 
@@ -72,17 +74,16 @@ public class PayOSService {
             data.put("checkoutUrl", "https://linguahub.vercel.app/payment/checkout");
             data.put("qrCode", "https://linguahub.vercel.app/qr/test.png");
             data.put("paymentLinkId", "MOCK-" + orderCode);
+            data.put("expiredAt", expiresAt.toString());
 
             return ResponseEntity.ok(Map.of(
-                    "message", "Payment link generated successfully",
+                    "message", "Payment link generated successfully (valid 15 minutes)",
                     "orderCode", orderCode,
                     "data", data
             ));
 
         } catch (Exception e) {
-            log.error("PayOS request failed: {}", e.getMessage(), e);
-            return ResponseEntity.internalServerError()
-                    .body(Map.of("code", 9999, "message", e.getMessage()));
+            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
         }
     }
 }

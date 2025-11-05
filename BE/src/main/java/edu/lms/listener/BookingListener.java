@@ -1,6 +1,5 @@
 package edu.lms.listener;
 
-import edu.lms.entity.Booking;
 import edu.lms.enums.BookingStatus;
 import edu.lms.service.ChatService;
 import jakarta.persistence.PostPersist;
