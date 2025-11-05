@@ -32,7 +32,7 @@ public class PaymentService {
     private final PayOSService payOSService;
 
     // ======================================================
-    // 1️⃣ TẠO THANH TOÁN (PENDING)
+    //TẠO THANH TOÁN (PENDING)
     // ======================================================
     @Transactional
     public ResponseEntity<?> createPayment(PaymentRequest request) {
@@ -120,7 +120,7 @@ public class PaymentService {
                 bookingPlanSlotRepository.save(slot);
             }
 
-            // ====== 💳 TẠO PAYMENT PENDING ======
+            // ====== TẠO PAYMENT PENDING ======
             Payment payment = Payment.builder()
                     .userId(user.getUserID())
                     .targetId(plan.getBookingPlanID())
@@ -159,7 +159,7 @@ public class PaymentService {
     }
 
     // ======================================================
-    // 2️⃣ HẬU THANH TOÁN (PAYMENT SUCCESS)
+    //HẬU THANH TOÁN (PAYMENT SUCCESS)
     // ======================================================
     @Transactional
     public void processPostPayment(Payment payment) {
@@ -208,7 +208,7 @@ public class PaymentService {
     }
 
     // ======================================================
-    // 3️⃣ ROLLBACK (FAILED / EXPIRED)
+    //ROLLBACK (FAILED / EXPIRED)
     // ======================================================
     @Transactional
     public void rollbackBookingPayment(Payment payment) {
@@ -229,7 +229,7 @@ public class PaymentService {
     }
 
     // ======================================================
-    // 4️⃣ CẬP NHẬT PAYMENT SAU KHI NHẬN LINK PAYOS
+    // CẬP NHẬT PAYMENT SAU KHI NHẬN LINK PAYOS
     // ======================================================
     @SuppressWarnings("unchecked")
     private void updatePaymentWithPayOSResponse(Payment payment, ResponseEntity<?> response) {

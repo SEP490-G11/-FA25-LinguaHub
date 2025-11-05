@@ -38,6 +38,8 @@ public class Tutor {
     @OneToMany(mappedBy = "tutor", cascade = CascadeType.ALL)
     List<TutorVerification> verifications;
 
-    @OneToMany(mappedBy = "tutor", cascade = CascadeType.ALL)
+    @OneToMany
+    @JoinColumn(name = "tutor_id", referencedColumnName = "tutorID")
     List<BookingPlan> bookingPlans;
+
 }
