@@ -239,14 +239,22 @@ public class TutorServiceImpl implements TutorService {
                         tutorVerificationRepository.findTopByTutorOrderBySubmittedAtDesc(tutor)
                             .orElse(null);
                     
+                    // Ưu tiên dùng dữ liệu từ verification nếu có, nếu không thì dùng từ tutor
+                    String specialization = latestVerification != null && latestVerification.getSpecialization() != null
+                            ? latestVerification.getSpecialization()
+                            : tutor.getSpecialization();
+                    String teachingLanguage = latestVerification != null && latestVerification.getTeachingLanguage() != null
+                            ? latestVerification.getTeachingLanguage()
+                            : tutor.getTeachingLanguage();
+                    
                     return TutorApplicationListResponse.builder()
                             .verificationId(latestVerification != null ? latestVerification.getTutorVerificationID() : null)
                             .tutorId(tutor.getTutorID())
                             .userId(tutor.getUser().getUserID())
                             .userEmail(tutor.getUser().getEmail())
                             .userName(tutor.getUser().getFullName())
-                            .specialization(tutor.getSpecialization())
-                            .teachingLanguage(tutor.getTeachingLanguage())
+                            .specialization(specialization)
+                            .teachingLanguage(teachingLanguage)
                             .status(tutor.getStatus().name())
                             .submittedAt(latestVerification != null ? latestVerification.getSubmittedAt() : null)
                             .reviewedAt(latestVerification != null ? latestVerification.getReviewedAt() : null)
