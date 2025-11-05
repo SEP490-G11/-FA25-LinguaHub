@@ -3,16 +3,13 @@ package edu.lms.service;
 import edu.lms.dto.request.TutorBookingPlanRequest;
 import edu.lms.dto.response.TutorBookingPlanResponse;
 import edu.lms.entity.BookingPlan;
-import edu.lms.entity.Schedule;
 import edu.lms.entity.Tutor;
 import edu.lms.enums.TutorStatus;
 import edu.lms.exception.AppException;
 import edu.lms.exception.ErrorCode;
 import edu.lms.mapper.TutorBookingPlanMapper;
 import edu.lms.repository.BookingPlanRepository;
-import edu.lms.repository.ScheduleRepository;
 import edu.lms.repository.TutorRepository;
-import edu.lms.repository.UserBookingPlanRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -66,7 +63,7 @@ public class TutorBookingPlanService {
         }
 
         // Check for overlapping booking plans
-        validateNoOverlappingPlans(tutor, request.getStartHour(), request.getEndHour(), 
+        validateNoOverlappingPlans(tutor, request.getStartHour(), request.getEndHour(),
                                    request.getActiveDays());
 
         // Create booking plan
@@ -81,7 +78,7 @@ public class TutorBookingPlanService {
         TutorBookingPlanResponse response = mapper.toResponse(bookingPlan);
         response.setNumberOfGeneratedSlots(numberOfSlots);
         response.setWeekToGenerate(request.getWeekToGenerate());
-        
+
         return response;
     }
 
@@ -94,14 +91,14 @@ public class TutorBookingPlanService {
 
         for (BookingPlan plan : existingPlans) {
             List<String> planActiveDays = Arrays.asList(plan.getActiveDays().split(","));
-            
+
             // Check if there's any day overlap
             boolean hasDayOverlap = newActiveDays.stream().anyMatch(planActiveDays::contains);
-            
+
             if (hasDayOverlap) {
                 // Check time overlap
                 boolean timeOverlaps = !(startHour >= plan.getEndHour() || endHour <= plan.getStartHour());
-                
+
                 if (timeOverlaps) {
                     throw new AppException(ErrorCode.BOOKING_TIME_CONFLICT);
                 }
@@ -120,7 +117,7 @@ public class TutorBookingPlanService {
         LocalDate today = LocalDate.now();
         LocalDateTime now = LocalDateTime.now();
         int weeksToGenerate = request.getWeekToGenerate();
-        
+
         List<String> activeDaysList = Arrays.stream(request.getActiveDays().split(","))
                 .map(String::trim)
                 .collect(Collectors.toList());
@@ -134,41 +131,41 @@ public class TutorBookingPlanService {
         for (int week = 0; week < weeksToGenerate; week++) {
             // Get Monday of the target week
             LocalDate targetWeekMonday = today.plusWeeks(week).with(DayOfWeek.MONDAY);
-            
+
             // For each active day in the week
             for (DayOfWeek dayOfWeek : dayOfWeeks) {
                 // Calculate the date of the target day in this week
                 LocalDate targetDate = targetWeekMonday.plusDays(dayOfWeek.getValue() - DayOfWeek.MONDAY.getValue());
-                
+
                 // Skip if the date is in the past (only check date, not time)
                 if (targetDate.isBefore(today)) {
                     continue;
                 }
-                
+
                 // Generate slots for this day
                 LocalTime startTimeOfDay = LocalTime.of(request.getStartHour(), 0);
                 LocalTime endTimeOfDay = LocalTime.of(request.getEndHour(), 0);
-                
+
                 LocalTime currentSlotStart = startTimeOfDay;
-                
+
                 while (currentSlotStart.plusMinutes(request.getSlotDuration()).isBefore(endTimeOfDay) ||
                        currentSlotStart.plusMinutes(request.getSlotDuration()).equals(endTimeOfDay)) {
-                    
+
                     LocalTime currentSlotEnd = currentSlotStart.plusMinutes(request.getSlotDuration());
-                    
+
                     LocalDateTime slotStart = LocalDateTime.of(targetDate, currentSlotStart);
                     LocalDateTime slotEnd = LocalDateTime.of(targetDate, currentSlotEnd);
-                    
+
                     // Skip if slot is in the past (check both date and time)
                     if (slotStart.isBefore(now)) {
                         currentSlotStart = currentSlotStart.plusMinutes(request.getSlotDuration());
                         continue;
                     }
-                    
+
                     // Check for overlapping schedules
                     List<Schedule> overlapping = scheduleRepository.findOverlappingSchedules(
                             bookingPlan.getTutor().getTutorID(), slotStart, slotEnd);
-                    
+
                     // Only create slot if no overlap exists
                     if (overlapping.isEmpty()) {
                         Schedule schedule = Schedule.builder()
@@ -180,7 +177,7 @@ public class TutorBookingPlanService {
                                 .build();
                         schedules.add(schedule);
                     }
-                    
+
                     currentSlotStart = currentSlotStart.plusMinutes(request.getSlotDuration());
                 }
             }

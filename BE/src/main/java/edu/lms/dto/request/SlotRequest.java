@@ -4,7 +4,7 @@ import edu.lms.enums.PaymentType;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import java.util.List;
+import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
@@ -12,9 +12,8 @@ import java.util.List;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 
-public class PaymentRequest {
-    private Long userId;
-    private Long targetId;
-    private PaymentType paymentType;
-    private List<SlotRequest> slots;
+
+public class SlotRequest {
+    private LocalDateTime startTime;
+    private LocalDateTime endTime;
 }

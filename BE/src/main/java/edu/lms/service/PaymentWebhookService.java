@@ -1,17 +1,20 @@
 package edu.lms.service;
 
 import edu.lms.entity.BookingPlan;
+import edu.lms.entity.BookingPlanSlot;
 import edu.lms.entity.Payment;
-import edu.lms.entity.UserBookingPlan;
 import edu.lms.enums.PaymentStatus;
+import edu.lms.enums.PaymentType;
+import edu.lms.enums.SlotStatus;
 import edu.lms.repository.BookingPlanRepository;
+import edu.lms.repository.BookingPlanSlotRepository;
 import edu.lms.repository.PaymentRepository;
-import edu.lms.repository.UserBookingPlanRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -21,7 +24,7 @@ public class PaymentWebhookService {
 
     private final PaymentRepository paymentRepository;
     private final BookingPlanRepository bookingPlanRepository;
-    private final UserBookingPlanRepository userBookingPlanRepository;
+    private final BookingPlanSlotRepository bookingPlanSlotRepository;
     private final PaymentService paymentService;
 
     public void handleWebhook(String orderCode, String status, Map<String, Object> payload) {
@@ -57,23 +60,28 @@ public class PaymentWebhookService {
     }
 
     private void handlePaymentRollback(Payment payment, String reason) {
-        if (payment.getPaymentType() == null || payment.getUserBookingPlan() == null) return;
+        if (payment.getPaymentType() != PaymentType.Booking) return;
 
-        UserBookingPlan userBookingPlan = payment.getUserBookingPlan();
-        BookingPlan plan = userBookingPlan.getBookingPlan();
+        // Lấy danh sách slot liên quan tới PaymentID
+        List<BookingPlanSlot> slots = bookingPlanSlotRepository.findAllByPaymentID(payment.getPaymentID());
+        if (slots.isEmpty()) return;
 
-        if (!userBookingPlan.getIsActive()) {
-            plan.setAvailableSlots(plan.getAvailableSlots() + userBookingPlan.getPurchasedSlots());
-            bookingPlanRepository.save(plan);
-
-            userBookingPlanRepository.delete(userBookingPlan);
-
-            payment.setStatus(PaymentStatus.valueOf(reason));
-            payment.setIsPaid(false);
-            paymentRepository.save(payment);
-
-            log.warn("[ROLLBACK] Payment {} marked as {}, restored {} slots to plan '{}'",
-                    payment.getOrderCode(), reason, userBookingPlan.getPurchasedSlots(), plan.getTitle());
+        // Xử lý rollback: chỉ xóa các slot Locked chưa thanh toán
+        for (BookingPlanSlot slot : slots) {
+            if (slot.getStatus() == SlotStatus.Locked) {
+                bookingPlanSlotRepository.delete(slot);
+                log.warn("[ROLLBACK] Xóa slot {} ({} - {}) do thanh toán {}",
+                        slot.getSlotID(), slot.getStartTime(), slot.getEndTime(), reason);
+            }
         }
+
+        // Cập nhật trạng thái payment
+        payment.setStatus(PaymentStatus.valueOf(reason));
+        payment.setIsPaid(false);
+        paymentRepository.save(payment);
+
+        log.warn("[ROLLBACK] Payment {} marked as {}. {} slot(s) removed.",
+                payment.getOrderCode(), reason, slots.size());
     }
+
 }
