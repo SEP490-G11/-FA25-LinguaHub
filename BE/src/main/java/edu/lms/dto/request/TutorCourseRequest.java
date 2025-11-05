@@ -12,8 +12,6 @@ import java.math.BigDecimal;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class TutorCourseRequest {
-    @NotNull(message = "TutorID is required")
-    Long tutorID;
 
     @NotBlank(message = "Title is required")
     @Size(min = 3, max = 255)

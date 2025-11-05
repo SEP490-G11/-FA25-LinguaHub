@@ -17,10 +17,10 @@ const Languages = () => {
       image: 'https://images.pexels.com/photos/267669/pexels-photo-267669.jpeg?auto=compress&cs=tinysrgb&w=800',
       tutors: 1250,
       students: 45000,
-      difficulty: 'Easy',
+      difficulty: 'Beginner Friendly',
       certificates: ['IELTS', 'TOEFL', 'Cambridge'],
       description: 'Master the global language of business and communication',
-      priceRange: '100.000-200.00đ',
+      priceRange: '$15-45',
       popularity: 95,
       features: ['Business English', 'Academic Writing', 'Conversation Practice', 'Exam Preparation']
     },
@@ -33,7 +33,7 @@ const Languages = () => {
       difficulty: 'Easy',
       certificates: ['DELE', 'SIELE'],
       description: 'Learn the second most spoken language in the world',
-      priceRange: '100.000-200.00đ',
+      priceRange: '$12-35',
       popularity: 88,
       features: ['Latin American Spanish', 'European Spanish', 'Business Spanish', 'Cultural Immersion']
     },
@@ -46,7 +46,7 @@ const Languages = () => {
       difficulty: 'Moderate',
       certificates: ['DELF', 'DALF', 'TCF'],
       description: 'Discover the language of love, culture, and diplomacy',
-      priceRange: '100.000-200.00đ',
+      priceRange: '$18-40',
       popularity: 82,
       features: ['French Culture', 'Business French', 'Literature', 'Pronunciation']
     },
@@ -59,7 +59,7 @@ const Languages = () => {
       difficulty: 'Challenging',
       certificates: ['TestDaF', 'DSH', 'Goethe'],
       description: 'Learn the language of innovation and engineering',
-      priceRange: '100.000-200.00đ',
+      priceRange: '$20-50',
       popularity: 75,
       features: ['Technical German', 'Business German', 'Grammar Focus', 'Cultural Context']
     },
@@ -72,7 +72,7 @@ const Languages = () => {
       difficulty: 'Very Challenging',
       certificates: ['HSK', 'HSKK'],
       description: 'Master the most spoken language in the world',
-      priceRange: '100.000-200.00đ',
+      priceRange: '$16-42',
       popularity: 79,
       features: ['Character Writing', 'Pinyin System', 'Business Chinese', 'Cultural Studies']
     },
@@ -85,7 +85,7 @@ const Languages = () => {
       difficulty: 'Very Challenging',
       certificates: ['JLPT'],
       description: 'Explore Japanese culture through language learning',
-      priceRange: '100.000-200.00đ',
+      priceRange: '$22-48',
       popularity: 73,
       features: ['Hiragana & Katakana', 'Kanji Characters', 'Anime Culture', 'Business Etiquette']
     },
@@ -98,7 +98,7 @@ const Languages = () => {
       difficulty: 'Challenging',
       certificates: ['TOPIK'],
       description: 'Learn Korean and dive into K-culture',
-      priceRange: '100.000-200.00đ',
+      priceRange: '$18-40',
       popularity: 85,
       features: ['Hangul Writing', 'K-Pop Culture', 'Business Korean', 'Drama & Media']
     },
@@ -111,7 +111,7 @@ const Languages = () => {
       difficulty: 'Moderate',
       certificates: ['CILS', 'CELI'],
       description: 'Learn the melodious language of art and cuisine',
-      priceRange: '100.000-200.00đ',
+      priceRange: '$15-38',
       popularity: 68,
       features: ['Italian Culture', 'Art & History', 'Culinary Terms', 'Regional Dialects']
     }
@@ -132,12 +132,8 @@ const Languages = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <HeroSection />
-      <SearchSection 
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-      />
       <LanguagesGrid languages={paginatedLanguages} />
-      <Pagination 
+      <Pagination
         currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={setCurrentPage}

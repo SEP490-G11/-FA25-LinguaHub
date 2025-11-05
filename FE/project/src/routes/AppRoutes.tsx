@@ -29,6 +29,8 @@ import MyCourses from '@/pages/MyCourses/index';
 import PaymentHistory from "@/pages/PaymentHistory";
 import MyEnrollments from "@/pages/MyEnrollments";
 import ApplyTutor from '@/pages/ApplyTutor/index';
+import Profile from '@/pages/Profile/Profile.tsx';
+import ChangePassword from '@/pages/ChangePassword/index';
 
 export function AppRoutes() {
     return (
@@ -60,6 +62,8 @@ export function AppRoutes() {
             <Route path={ROUTES.PAYMENT_HISTORY } element={<PaymentHistory />} />
             <Route path={ROUTES.MY_ENROLLMENTS} element={<MyEnrollments />} />
             <Route path={ROUTES.APPLY_TUTOR} element={<ApplyTutor />} />
+                <Route path={ROUTES.PROFILE} element={<Profile />} />
+                <Route path={ROUTES.CHANGE_PASSWORD} element={<ChangePassword />} />
         </Routes>
     );
 }

@@ -9,7 +9,7 @@ interface BeResponse<T = unknown> {
     message?: string;
     result?: T;
     token?: string; // Thêm cho trường hợp response có token trực tiếp
-   
+
 }
 
 // Type cho data đăng nhập
@@ -379,6 +379,13 @@ const authSlice = createSlice({
                 }
             }
         },
+        updateAuthUser: (state, action: PayloadAction<Partial<User>>) => {
+            if (state.user) {
+                state.user = { ...state.user, ...action.payload };
+                localStorage.setItem('user_data', JSON.stringify(state.user));
+            }
+        },
+
     },
     extraReducers: (builder) => {
         builder
@@ -505,5 +512,5 @@ const authSlice = createSlice({
 });
 
 // ======= Exports =======
-export const { clearError, clearOtp, loadUserFromStorage } = authSlice.actions;
+export const { clearError, clearOtp, loadUserFromStorage, updateAuthUser  } = authSlice.actions;
 export default authSlice.reducer;

@@ -11,6 +11,7 @@ import { store } from '@/redux/store.ts';
 import { ScrollToTop } from '@/hooks/ScrollToTop.tsx';
 import App from './App';
 import './index.css';
+// import { GoogleOAuthProvider } from '@react-oauth/google';
 
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

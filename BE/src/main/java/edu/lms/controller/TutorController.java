@@ -2,6 +2,7 @@ package edu.lms.controller;
 
 import edu.lms.dto.request.TutorApplyRequest;
 import edu.lms.dto.response.TutorApplyResponse;
+import edu.lms.dto.response.TutorApplicationListResponse;
 import edu.lms.security.UserPrincipal;
 import edu.lms.service.TutorService;
 import jakarta.validation.Valid;
@@ -10,6 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/tutors")
@@ -33,6 +36,13 @@ public class TutorController {
     public ResponseEntity<TutorApplyResponse> getApplyStatus() {
         Long userID = getCurrentUserId();
         return ResponseEntity.ok(tutorService.getApplicationStatus(userID));
+    }
+
+    // 3. Xem danh sách tất cả tutors đã được approve (tất cả role đều xem được)
+    @GetMapping("/approved")
+    public ResponseEntity<List<TutorApplicationListResponse>> getAllApprovedTutors() {
+        List<TutorApplicationListResponse> tutors = tutorService.getAllTutors("APPROVED");
+        return ResponseEntity.ok(tutors);
     }
 
     // Helper method to get current user ID from JWT token

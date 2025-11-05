@@ -14,6 +14,7 @@ export const ROUTES = {
     WISHLIST: '/wishlist',
     PAYMENT: '/payment/:id',
     POLICY: '/policy',
+    CHANGE_PASSWORD: '/change-password',
 
     // Auth routes
     COMPLETE_FORGOT_PASSWORD: '/auth/complete-forgot-password',

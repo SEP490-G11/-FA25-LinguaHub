@@ -48,6 +48,9 @@ const SignUpForm = () => {
   const { isLoading, error: authError, user } = useSelector((state: RootState) => state.auth);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  useEffect(() => {
+    dispatch(clearError());
+  }, [dispatch]);
 
   const form = useForm<SignUpFormData>({
     resolver: zodResolver(signUpSchema),

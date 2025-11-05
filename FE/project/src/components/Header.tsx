@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Bell, Menu, Languages, Heart, User, LogOut, BookOpen, Settings, GraduationCap, CreditCard } from 'lucide-react';
+import { Bell, Menu, X, Languages, Heart, User, LogOut, BookOpen, Settings, GraduationCap, CreditCard, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -21,52 +21,37 @@ const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
-  //lấy dữ liệu người dùng
   const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   const handleLogout = async () => {
-    try {
+
       await dispatch(signOut()).unwrap();
       navigate(ROUTES.SIGN_IN, { replace: true });
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (err) {
-      navigate(ROUTES.SIGN_IN, { replace: true });
-    }
+
   };
 
   const isActive = (path: string) => location.pathname === path;
 
   const mockNotifications = [
-    {
-      id: '1',
-      title: 'Khóa học mới',
-      message: 'Khóa học tiếng Anh mới đã được thêm vào hệ thống',
-      time: '5 phút trước',
-      read: false,
-    },
-    {
-      id: '2',
-      title: 'Bài học đã hoàn thành',
-      message: 'Bạn đã hoàn thành bài học "Basic Grammar"',
-      time: '1 giờ trước',
-      read: false,
-    },
-    {
-      id: '3',
-      title: 'Tin nhắn mới',
-      message: 'Giáo viên của bạn đã gửi tin nhắn',
-      time: '2 giờ trước',
-      read: true,
-    },
+    { id: '1', title: 'Khóa học mới', message: 'Khóa học tiếng Anh mới đã được thêm vào hệ thống', time: '5 phút trước', read: false },
+    { id: '2', title: 'Bài học đã hoàn thành', message: 'Bạn đã hoàn thành bài học "Basic Grammar"', time: '1 giờ trước', read: false },
+    { id: '3', title: 'Tin nhắn mới', message: 'Giáo viên của bạn đã gửi tin nhắn', time: '2 giờ trước', read: true },
   ];
 
   const getUserInitials = () => {
-    if (user?.fullName) {  // Sửa lowercase f (match BE)
-      return user.fullName.split(' ').map((n: string) => n[0]).join('').toLocaleUpperCase('vi-VN').slice(0, 2);  // Handle Unicode Đ/đ
+    if (user?.fullName) {
+      return user.fullName
+          .split(' ')
+          .map((n: string) => n[0])
+          .join('')
+          .toLocaleUpperCase('vi-VN')
+          .slice(0, 2);
     }
-    if (user?.email) {  // Sửa lowercase e
-      return user.email.split('@')[0].slice(0, 2).toLocaleUpperCase('vi-VN');  // 'GI' từ 'giaxuyen66'
+    if (user?.email) {
+      return user.email.split('@')[0].slice(0, 2).toLocaleUpperCase('vi-VN');
     }
     return 'U';
   };
@@ -92,8 +77,10 @@ const Header = () => {
               <Link
                   to={ROUTES.HOME}
                   className={cn(
-                      "transition-colors font-medium",
-                      isActive(ROUTES.HOME) ? 'text-primary' : 'text-muted-foreground hover:text-primary'
+                      'transition-colors font-medium',
+                      isActive(ROUTES.HOME)
+                          ? 'text-primary'
+                          : 'text-muted-foreground hover:text-primary'
                   )}
               >
                 Home
@@ -101,8 +88,10 @@ const Header = () => {
               <Link
                   to={ROUTES.LANGUAGES}
                   className={cn(
-                      "transition-colors font-medium",
-                      isActive(ROUTES.LANGUAGES) ? 'text-primary' : 'text-muted-foreground hover:text-primary'
+                      'transition-colors font-medium',
+                      isActive(ROUTES.LANGUAGES)
+                          ? 'text-primary'
+                          : 'text-muted-foreground hover:text-primary'
                   )}
               >
                 Languages
@@ -110,8 +99,10 @@ const Header = () => {
               <Link
                   to={ROUTES.TUTORS}
                   className={cn(
-                      "transition-colors font-medium",
-                      isActive(ROUTES.TUTORS) ? 'text-primary' : 'text-muted-foreground hover:text-primary'
+                      'transition-colors font-medium',
+                      isActive(ROUTES.TUTORS)
+                          ? 'text-primary'
+                          : 'text-muted-foreground hover:text-primary'
                   )}
               >
                 Tutors
@@ -119,8 +110,10 @@ const Header = () => {
               <Link
                   to={ROUTES.BECOME_TUTOR}
                   className={cn(
-                      "transition-colors font-medium",
-                      isActive(ROUTES.BECOME_TUTOR) ? 'text-primary' : 'text-muted-foreground hover:text-primary'
+                      'transition-colors font-medium',
+                      isActive(ROUTES.BECOME_TUTOR)
+                          ? 'text-primary'
+                          : 'text-muted-foreground hover:text-primary'
                   )}
               >
                 Become a Tutor
@@ -149,7 +142,7 @@ const Header = () => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="relative">
                     <Bell className="w-5 h-5" />
-                    {mockNotifications.some(n => !n.read) && (
+                    {mockNotifications.some((n) => !n.read) && (
                         <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
                     )}
                   </Button>
@@ -165,10 +158,12 @@ const Header = () => {
                         >
                           <div className="flex items-start justify-between w-full">
                             <div className="flex-1">
-                              <p className={cn(
-                                  "text-sm font-medium",
-                                  !notification.read && "text-primary"
-                              )}>
+                              <p
+                                  className={cn(
+                                      'text-sm font-medium',
+                                      !notification.read && 'text-primary'
+                                  )}
+                              >
                                 {notification.title}
                               </p>
                               <p className="text-xs text-muted-foreground mt-1">
@@ -202,7 +197,7 @@ const Header = () => {
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                         <Avatar className="h-10 w-10">
-                          <AvatarImage src={user?.AvatarURL || undefined} alt={user?.fullName || 'User'} />
+                          <AvatarImage src={user?.avatarURL || undefined} alt={user?.fullName || 'User'} />
                           <AvatarFallback className="bg-primary text-primary-foreground">
                             {getUserInitials()}
                           </AvatarFallback>
@@ -220,7 +215,7 @@ const Header = () => {
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem asChild>
-                        <Link to="/profile" className="cursor-pointer">
+                        <Link to={ROUTES.PROFILE} className="cursor-pointer">
                           <User className="mr-2 h-4 w-4" />
                           <span>Hồ sơ</span>
                         </Link>
@@ -244,11 +239,19 @@ const Header = () => {
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <Link to="/settings" className="cursor-pointer">
-                          <Settings className="mr-2 h-4 w-4" />
-                          <span>Cài đặt</span>
+                        <Link to={ROUTES.CHANGE_PASSWORD} className="cursor-pointer">
+                          <Lock className="mr-2 h-4 w-4" />
+                          <span>Đổi mật khẩu</span>
                         </Link>
                       </DropdownMenuItem>
+                      {user?.role === 'Admin' && (
+                          <DropdownMenuItem asChild>
+                            <Link to="/settings" className="cursor-pointer">
+                              <Settings className="mr-2 h-4 w-4" />
+                              <span>Cài đặt</span>
+                            </Link>
+                          </DropdownMenuItem>
+                      )}
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600">
                         <LogOut className="mr-2 h-4 w-4" />
@@ -258,11 +261,30 @@ const Header = () => {
                   </DropdownMenu>
               )}
 
-              <Button variant="ghost" size="icon" className="md:hidden">
-                <Menu className="w-5 h-5" />
+              {/* ✅ Nút menu 3 gạch (đã thêm toggle mở/đóng) */}
+              <Button
+                  variant="ghost"
+                  size="icon"
+                  className="md:hidden"
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              >
+                {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </Button>
             </div>
           </div>
+
+          {/* ✅ Menu mobile hiển thị khi mở */}
+          {mobileMenuOpen && (
+              <div className="md:hidden border-t bg-white shadow-md">
+                <nav className="flex flex-col p-4 space-y-2">
+                  <Link to={ROUTES.HOME} onClick={() => setMobileMenuOpen(false)}>Home</Link>
+                  <Link to={ROUTES.LANGUAGES} onClick={() => setMobileMenuOpen(false)}>Languages</Link>
+                  <Link to={ROUTES.TUTORS} onClick={() => setMobileMenuOpen(false)}>Tutors</Link>
+                  <Link to={ROUTES.BECOME_TUTOR} onClick={() => setMobileMenuOpen(false)}>Become Tutor</Link>
+                  <Link to={ROUTES.POLICY} onClick={() => setMobileMenuOpen(false)}>Privacy & Terms</Link>
+                </nav>
+              </div>
+          )}
         </div>
       </header>
   );
