@@ -2,7 +2,6 @@ package edu.lms.service;
 
 import edu.lms.dto.request.ChangePasswordRequest;
 import edu.lms.dto.request.UserCreationRequest;
-import edu.lms.dto.request.UserUpdateRequest;
 import edu.lms.dto.response.UserResponse;
 import edu.lms.entity.Role;
 import edu.lms.entity.User;

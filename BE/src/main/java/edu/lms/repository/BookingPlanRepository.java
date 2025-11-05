@@ -9,5 +9,6 @@ import java.util.List;
 
 @Repository
 public interface BookingPlanRepository extends JpaRepository<BookingPlan, Long> {
-    List<BookingPlan> findByTutor(Tutor tutor);
+    List<BookingPlan> findByTutorID(Long tutorID);
+
 }

@@ -3,79 +3,47 @@ package edu.lms.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import java.math.BigDecimal;
+
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-@Table(name = "BookingPlans")
+@Table(name = "BookingPlan")
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class BookingPlan {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long bookingPlanID;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "tutorID", nullable = false)
-    Tutor tutor;
+    @Column(nullable = false, length = 50)
+    String title; // e.g., T2, T3, T4, T5, T6, T7, CN
 
-    @Column(nullable = false, length = 255)
-    String title;
-
-    @Column(columnDefinition = "TEXT")
-    String description;
-
-    /** Thời lượng mỗi slot (VD: 30 phút) */
-    @Builder.Default
-    Integer slotDuration = 30;
-
-    /** Giá cho mỗi slot */
-    @Column(precision = 10, scale = 2, nullable = false)
-    @Builder.Default
-    BigDecimal pricePerSlot = BigDecimal.ZERO;
-
-    /** Giờ bắt đầu dạy (VD: 12h) - Tutor tự nhập */
     @Column(nullable = false)
-    Integer startHour;
+    Integer startHours; // e.g., 8
 
-    /** Giờ kết thúc dạy (VD: 20h) - Tutor tự nhập */
     @Column(nullable = false)
-    Integer endHour;
+    Integer endHours; // e.g., 22
 
-    /** Các ngày hoạt động (VD: Mon,Tue,Wed,Thu,Fri) */
-    @Builder.Default
-    String activeDays = "Mon,Tue,Wed,Thu,Fri";
+    @Column(nullable = false)
+    Boolean isActive = true;
 
-    /** Số tuần để generate slots (VD: 1,2,3,4...) */
-    @Builder.Default
-    Integer weekToGenerate = 1;
+    @Column(nullable = false)
+    Boolean isOpen = true;
 
-    /** Số lượng học viên tối đa được phép đặt cùng slot (dự phòng mở rộng) */
-    @Builder.Default
-    Integer maxLearners = 1;
+    @Column(name = "tutor_id", nullable = false)
+    Long tutorID;
 
-    /** Số lượng slot còn khả dụng mà tutor có thể bán */
-    @Builder.Default
-    Integer availableSlots = 0;
 
-    /** Thời điểm tạo và cập nhật */
-    @Builder.Default
+    @Column(nullable = false)
+    Double pricePerHours = 0.0;
+
+    @Column(nullable = false, updatable = false)
     LocalDateTime createdAt = LocalDateTime.now();
 
-    @Builder.Default
+    @Column(nullable = false)
     LocalDateTime updatedAt = LocalDateTime.now();
-
-    @PreUpdate
-    public void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
-
-    /** Danh sách lợi ích (benefits) kèm theo plan */
-    @OneToMany(mappedBy = "bookingPlan", cascade = CascadeType.ALL, orphanRemoval = true)
-    List<BookingPlanBenefit> benefits;
 }

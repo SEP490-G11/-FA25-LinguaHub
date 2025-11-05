@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import  { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Lock, Eye, EyeOff, Languages, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,16 +7,16 @@ import { Input } from '@/components/ui/input';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { ErrorMessage } from '@/components/shared/ErrorMessage';
 import { useDispatch } from 'react-redux';
-import { AppDispatch } from '@/redux/store.ts';
-import { resetPassword } from '@/redux/slices/authSlice.ts';
+import { AppDispatch } from '@/redux/store';
+import { resetPassword } from '@/redux/slices/authSlice';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ROUTES } from '@/constants/routes';
 
+// ✅ Validate form theo BE
 const resetPasswordSchema = z
     .object({
-      otp: z.string().length(6, 'OTP must be 6 digits'),
       newPassword: z.string().min(8, 'Password must be at least 8 characters'),
       confirmPassword: z.string().min(8, 'Please confirm your password'),
     })
@@ -35,8 +35,6 @@ const ResetPassword = () => {
 
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const location = useLocation();
-  const email = location.state?.email;
 
   const {
     register,
@@ -46,24 +44,19 @@ const ResetPassword = () => {
     resolver: zodResolver(resetPasswordSchema),
     mode: 'onChange',
     defaultValues: {
-      otp: '',
       newPassword: '',
       confirmPassword: '',
     },
   });
 
+  // ✅ Gửi đúng body theo BE
   const onSubmitResetPassword = async (data: ResetPasswordForm) => {
     setIsLoading(true);
     try {
-      const result = await dispatch(
-          resetPassword({ email, otp: data.otp, password: data.newPassword })
-      );
-      console.log('Reset result:', result);
+      const result = await dispatch(resetPassword(data)).unwrap();
+      console.log('Reset success:', result);
       setSuccess(true);
-
-      setTimeout(() => {
-        navigate(ROUTES.SIGN_IN);
-      }, 2000);
+      setTimeout(() => navigate(ROUTES.SIGN_IN), 2000);
     } catch (err) {
       console.error('Error resetting password:', err);
     } finally {
@@ -77,6 +70,7 @@ const ResetPassword = () => {
     transition: { duration: 0.6 },
   };
 
+  // ✅ Trang báo thành công
   if (success) {
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -106,8 +100,10 @@ const ResetPassword = () => {
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
                   <CheckCircle className="w-8 h-8 text-green-500" />
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">Password has been updated!</h2>
-                <p className="text-gray-600">Redirecting to sign in page...</p>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  Password updated successfully!
+                </h2>
+                <p className="text-gray-600">Redirecting to sign-in page...</p>
               </div>
             </motion.div>
           </motion.div>
@@ -115,6 +111,7 @@ const ResetPassword = () => {
     );
   }
 
+  // ✅ Form chính
   return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <motion.div
@@ -133,7 +130,7 @@ const ResetPassword = () => {
               </div>
             </Link>
             <h2 className="text-3xl font-bold text-gray-900 mb-2">Reset Password</h2>
-            <p className="text-gray-600">Enter your new password</p>
+            <p className="text-gray-600">Enter and confirm your new password below.</p>
           </div>
 
           <motion.div
@@ -142,24 +139,13 @@ const ResetPassword = () => {
               transition={{ delay: 0.1 }}
           >
             <form className="space-y-6" onSubmit={handleSubmit(onSubmitResetPassword)}>
-              {/* OTP */}
-              <div>
-                <label htmlFor="otp" className="block text-sm font-medium text-gray-700 mb-2">
-                  OTP Code
-                </label>
-                <Input
-                    id="otp"
-                    type="text"
-                    placeholder="Enter OTP"
-                    {...register('otp')}
-                />
-                {errors.otp && <ErrorMessage message={errors.otp.message} />}
-              </div>
-
               {/* New Password */}
               <div>
-                <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                  New password
+                <label
+                    htmlFor="newPassword"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  New Password
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -169,8 +155,8 @@ const ResetPassword = () => {
                       id="newPassword"
                       type={showPassword ? 'text' : 'password'}
                       {...register('newPassword')}
-                      className="pl-10 pr-10"
                       placeholder="Enter new password"
+                      className="pl-10 pr-10"
                   />
                   <button
                       type="button"
@@ -184,16 +170,20 @@ const ResetPassword = () => {
                     )}
                   </button>
                 </div>
-                {errors.newPassword && <ErrorMessage message={errors.newPassword.message} />}
+                {errors.newPassword && <ErrorMessage  message={errors.newPassword.message} />}
               </div>
+
               {/* Confirm Password */}
               <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                <label
+                    htmlFor="confirmPassword"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                >
                   Confirm Password
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Lock className="h-5 w-5 text-gray-400"/>
+                    <Lock className="h-5 w-5 text-gray-400" />
                   </div>
                   <Input
                       id="confirmPassword"
@@ -208,13 +198,15 @@ const ResetPassword = () => {
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   >
                     {showConfirmPassword ? (
-                        <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600"/>
+                        <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
                     ) : (
-                        <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600"/>
+                        <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
                     )}
                   </button>
                 </div>
-                {errors.confirmPassword && <ErrorMessage message={errors.confirmPassword.message}/>}
+                {errors.confirmPassword && (
+                    <ErrorMessage message={errors.confirmPassword.message} />
+                )}
               </div>
 
               {/* Submit */}

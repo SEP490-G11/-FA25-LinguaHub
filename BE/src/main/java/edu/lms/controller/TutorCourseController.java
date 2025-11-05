@@ -156,13 +156,13 @@ public class TutorCourseController {
 //                .build();
 //    }
 
-//    @Operation(summary = "Lấy danh sách tất cả khóa học (legacy)")
-//    @GetMapping("/all")
-//    public ApiRespond<List<TutorCourseResponse>> getAllCourses() {
-//        return ApiRespond.<List<TutorCourseResponse>>builder()
-//                .result(tutorCourseService.getAllCourses())
-//                .build();
-//    }
+    @Operation(summary = "Lấy danh sách tất cả khóa học (legacy)")
+    @GetMapping("/all")
+    public ApiRespond<List<TutorCourseResponse>> getAllCourses() {
+        return ApiRespond.<List<TutorCourseResponse>>builder()
+                .result(tutorCourseService.getAllCourses())
+                .build();
+    }
 
 
 

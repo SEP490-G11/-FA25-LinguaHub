@@ -269,26 +269,51 @@ export const confirmEmail = createAsyncThunk(
     }
 );
 // ==== RESET PASSWORD ====
-interface ResetPasswordData {
-    email: string;
-    newPassword: string;
-    confirmPassword: string;
-    otp: string;
-}
-
 export const resetPassword = createAsyncThunk(
     'auth/resetPassword',
-    async (data: ResetPasswordData, { rejectWithValue }) => {
+    async (data: { newPassword: string; confirmPassword: string }, { rejectWithValue }) => {
         try {
             const response = await BaseRequest.Post<BeResponse<string>>('/auth/set-new-password', data);
 
             if (response.code !== 0) {
-                return rejectWithValue(response.message || 'Password reset failed');
+                return rejectWithValue(response.message ?? 'Password reset failed');
             }
 
-            return response.message || 'Password reset successfully';
+            return response.message ?? 'Password reset successfully';
         } catch (error: unknown) {
             let message = 'Request failed';
+            if (error && typeof error === 'object') {
+                if ('message' in error && typeof (error as Record<string, unknown>).message === 'string') {
+                    message = (error as { message: string }).message;
+                } else if ('response' in error) {
+                    const axiosError = error as AxiosError<BeResponse>;
+                    if (axiosError.response?.data?.message) {
+                        message = axiosError.response.data.message;
+                    }
+                }
+            } else if (error instanceof Error) {
+                message = error.message;
+            }
+            return rejectWithValue(message);
+        }
+    }
+);
+
+
+// ==== VERIFY RESET OTP ====
+export const verifyResetOtp = createAsyncThunk(
+    'auth/verifyResetOtp',
+    async (otp: string, { rejectWithValue }) => {
+        try {
+            const response = await BaseRequest.Post<BeResponse<string>>('/auth/verify-reset-otp', { otp });
+
+            if (response.code !== 0) {
+                return rejectWithValue(response.message ?? 'Password reset failed');
+            }
+            return response.message ?? 'Password reset successfully';
+
+        } catch (error: unknown) {
+            let message = 'OTP verification failed';
             if (error && typeof error === 'object') {
                 if ('message' in error && typeof (error as Record<string, unknown>).message === 'string') {
                     message = (error as { message: string }).message;

@@ -15,7 +15,7 @@ export const ROUTES = {
     PAYMENT: '/payment/:id',
     POLICY: '/policy',
     CHANGE_PASSWORD: '/change-password',
-
+    VERIFY_EMAIL_FORGOT_PASSWORD:'/auth/verify-email-forgot-passwor',
     // Auth routes
     COMPLETE_FORGOT_PASSWORD: '/auth/complete-forgot-password',
     GOOGLE_CALLBACK: '/auth/google-callback',

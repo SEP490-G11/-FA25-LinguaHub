@@ -47,7 +47,7 @@ const ForgotPassword = () => {
     try {
       const result = await dispatch(confirmEmail(data.email));
       console.log('Dispatch result:', result);
-      navigate(ROUTES.RESET_PASSWORD, {
+      navigate(ROUTES.VERIFY_EMAIL_FORGOT_PASSWORD, {
         state: { email: data.email },
       });
     } catch (err) {

@@ -31,6 +31,7 @@ import MyEnrollments from "@/pages/MyEnrollments";
 import ApplyTutor from '@/pages/ApplyTutor/index';
 import Profile from '@/pages/Profile/Profile.tsx';
 import ChangePassword from '@/pages/ChangePassword/index';
+import VerifyEmailForgotPassword from '@/pages/auth/verify-email-forgot-password/verify-email-forgot-password.tsx';
 
 export function AppRoutes() {
     return (
@@ -64,6 +65,7 @@ export function AppRoutes() {
             <Route path={ROUTES.APPLY_TUTOR} element={<ApplyTutor />} />
                 <Route path={ROUTES.PROFILE} element={<Profile />} />
                 <Route path={ROUTES.CHANGE_PASSWORD} element={<ChangePassword />} />
+                <Route path={ROUTES.VERIFY_EMAIL_FORGOT_PASSWORD} element={<VerifyEmailForgotPassword />} />
         </Routes>
     );
 }

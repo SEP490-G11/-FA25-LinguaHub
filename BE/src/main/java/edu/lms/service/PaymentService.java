@@ -1,11 +1,9 @@
 package edu.lms.service;
 
 import edu.lms.dto.request.PaymentRequest;
+import edu.lms.dto.request.SlotRequest;
 import edu.lms.entity.*;
-import edu.lms.enums.EnrollmentStatus;
-import edu.lms.enums.PaymentMethod;
-import edu.lms.enums.PaymentStatus;
-import edu.lms.enums.PaymentType;
+import edu.lms.enums.*;
 import edu.lms.exception.AppException;
 import edu.lms.exception.ErrorCode;
 import edu.lms.repository.*;
@@ -13,9 +11,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -25,22 +25,23 @@ public class PaymentService {
 
     private final CourseRepository courseRepository;
     private final BookingPlanRepository bookingPlanRepository;
+    private final BookingPlanSlotRepository bookingPlanSlotRepository;
     private final EnrollmentRepository enrollmentRepository;
-    private final UserBookingPlanRepository userBookingPlanRepository;
     private final PaymentRepository paymentRepository;
     private final UserRepository userRepository;
     private final PayOSService payOSService;
 
     // ======================================================
-    // 1. TẠO THANH TOÁN (PENDING)
+    //TẠO THANH TOÁN (PENDING)
     // ======================================================
+    @Transactional
     public ResponseEntity<?> createPayment(PaymentRequest request) {
         BigDecimal amount;
         String description;
 
-        // ---------------------------
+        // ======================================================
         // COURSE PAYMENT
-        // ---------------------------
+        // ======================================================
         if (request.getPaymentType() == PaymentType.Course) {
             Course course = courseRepository.findById(request.getTargetId())
                     .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
@@ -60,7 +61,7 @@ public class PaymentService {
 
             paymentRepository.save(payment);
 
-            // Gọi sang PayOS để tạo link thanh toán
+            // Gọi PayOS để tạo link QR (hết hạn sau 15p)
             ResponseEntity<?> response = payOSService.createPaymentLink(
                     request.getUserId(),
                     request.getPaymentType(),
@@ -69,89 +70,98 @@ public class PaymentService {
                     description
             );
 
-            // Cập nhật các trường trả về từ PayOS vào DB
             updatePaymentWithPayOSResponse(payment, response);
-
             return response;
         }
 
-        // ---------------------------
-        // BOOKING PAYMENT
-        // ---------------------------
+        // ======================================================
+        // BOOKING PLAN PAYMENT (1:1 SLOT SYSTEM)
+        // ======================================================
         else if (request.getPaymentType() == PaymentType.Booking) {
             BookingPlan plan = bookingPlanRepository.findById(request.getTargetId())
                     .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
 
-            int purchasedSlots = request.getPurchasedSlots() != null ? request.getPurchasedSlots() : 1;
-
-            // Kiểm tra slot khả dụng
-            if (plan.getAvailableSlots() < purchasedSlots) {
-                throw new AppException(ErrorCode.BOOKING_SLOT_NOT_AVAILABLE);
-            }
-
-            // Tính tổng tiền
-            amount = plan.getPricePerSlot().multiply(BigDecimal.valueOf(purchasedSlots));
-            description = "Thanh toán gói học 1:1: " + plan.getTitle();
-
-            // Cập nhật lại slot còn lại của plan
-            plan.setAvailableSlots(plan.getAvailableSlots() - purchasedSlots);
-            bookingPlanRepository.save(plan);
-
-            // Lấy thông tin user
             User user = userRepository.findById(request.getUserId())
                     .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXIST));
 
-            // Tạo user booking plan (chưa active)
-            UserBookingPlan userBookingPlan = UserBookingPlan.builder()
-                    .user(user)
-                    .bookingPlan(plan)
-                    .purchasedSlots(purchasedSlots)
-                    .remainingSlots(purchasedSlots)
-                    .isActive(false)
-                    .build();
+            List<SlotRequest> slots = request.getSlots();
+            if (slots == null || slots.isEmpty()) {
+                throw new AppException(ErrorCode.BOOKING_SLOT_NOT_AVAILABLE);
+            }
 
-            userBookingPlanRepository.save(userBookingPlan);
+            // ====== 💰 TÍNH TỔNG TIỀN ======
+            BigDecimal pricePerHour = BigDecimal.valueOf(plan.getPricePerHours());
+            BigDecimal totalAmount = pricePerHour.multiply(BigDecimal.valueOf(slots.size()));
 
-            // Lưu payment (PENDING)
+            description = "Thanh toán " + slots.size() + " slot học 1:1 cho " + plan.getTitle();
+
+            // ====== 🕒 TẠO SLOT (LOCKED 15 PHÚT) ======
+            for (SlotRequest s : slots) {
+                LocalDateTime start = s.getStartTime();
+                LocalDateTime end = s.getEndTime();
+
+                boolean isTaken = bookingPlanSlotRepository.existsByTutorIDAndStartTimeAndEndTime(
+                        plan.getTutorID(), start, end);
+                if (isTaken) {
+                    throw new AppException(ErrorCode.BOOKING_SLOT_NOT_AVAILABLE);
+                }
+
+                BookingPlanSlot slot = BookingPlanSlot.builder()
+                        .bookingPlanID(plan.getBookingPlanID())
+                        .tutorID(plan.getTutorID())
+                        .userID(request.getUserId())
+                        .startTime(start)
+                        .endTime(end)
+                        .status(SlotStatus.Locked)
+                        .lockedAt(LocalDateTime.now())
+                        .expiresAt(LocalDateTime.now().plusMinutes(15)) // giữ 15p
+                        .build();
+
+                bookingPlanSlotRepository.save(slot);
+            }
+
+            // ====== TẠO PAYMENT PENDING ======
             Payment payment = Payment.builder()
                     .userId(user.getUserID())
                     .targetId(plan.getBookingPlanID())
                     .paymentType(PaymentType.Booking)
                     .paymentMethod(PaymentMethod.PAYOS)
                     .status(PaymentStatus.PENDING)
-                    .amount(amount)
-                    .userBookingPlan(userBookingPlan)
+                    .amount(totalAmount)
                     .isPaid(false)
                     .build();
 
             paymentRepository.save(payment);
 
-            // Gọi PayOS để tạo link
+            // Gán PaymentID cho tất cả slot Locked
+            bookingPlanSlotRepository.updatePaymentForUserLockedSlots(
+                    user.getUserID(),
+                    plan.getTutorID(),
+                    payment.getPaymentID()
+            );
+
+            // ====== 🔗 GỌI PAYOS TẠO QR CODE (15p) ======
             ResponseEntity<?> response = payOSService.createPaymentLink(
                     request.getUserId(),
                     request.getPaymentType(),
                     request.getTargetId(),
-                    amount,
+                    totalAmount,
                     description
             );
 
-            // Cập nhật lại các trường từ PayOS
             updatePaymentWithPayOSResponse(payment, response);
-
             return response;
         }
 
-        // ---------------------------
-        // INVALID TYPE
-        // ---------------------------
         else {
             throw new AppException(ErrorCode.INVALID_PAYMENT_TYPE);
         }
     }
 
     // ======================================================
-    // 2. HẬU THANH TOÁN (PAYMENT SUCCESS)
+    //HẬU THANH TOÁN (PAYMENT SUCCESS)
     // ======================================================
+    @Transactional
     public void processPostPayment(Payment payment) {
         if (payment.getStatus() != PaymentStatus.PAID) return;
 
@@ -162,74 +172,64 @@ public class PaymentService {
         Long userId = payment.getUserId();
         Long targetId = payment.getTargetId();
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXIST));
-
-        // COURSE PAYMENT
+        // -------- COURSE PAYMENT --------
         if (payment.getPaymentType() == PaymentType.Course) {
             Course course = courseRepository.findById(targetId)
                     .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
 
-            Enrollment enrollment = payment.getEnrollment();
-            if (enrollment == null) {
-                enrollment = Enrollment.builder()
-                        .user(user)
-                        .course(course)
-                        .status(EnrollmentStatus.Active)
-                        .createdAt(LocalDateTime.now())
-                        .build();
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXIST));
 
-                enrollmentRepository.save(enrollment);
-                payment.setEnrollment(enrollment);
-                paymentRepository.save(payment);
-            }
+            Enrollment enrollment = Enrollment.builder()
+                    .user(user)
+                    .course(course)
+                    .status(EnrollmentStatus.Active)
+                    .createdAt(LocalDateTime.now())
+                    .build();
 
-            log.info("[COURSE PAYMENT] User {} enrolled in course '{}'", user.getEmail(), course.getTitle());
-        }
-
-        // BOOKING PAYMENT
-        else if (payment.getPaymentType() == PaymentType.Booking) {
-            BookingPlan plan = bookingPlanRepository.findById(targetId)
-                    .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
-
-            UserBookingPlan userBookingPlan = payment.getUserBookingPlan();
-            if (userBookingPlan != null) {
-                userBookingPlan.setIsActive(true);
-                userBookingPlan.setStartDate(LocalDateTime.now());
-                userBookingPlanRepository.save(userBookingPlan);
-
-                log.info("[BOOKING PAYMENT] User {} activated booking plan '{}'", user.getEmail(), plan.getTitle());
-            }
-        }
-    }
-
-    // ======================================================
-    // 3. HÀM ROLLBACK (FAILED / CANCELLED / EXPIRED)
-    // ======================================================
-    public void rollbackBookingPayment(Payment payment) {
-        if (payment.getPaymentType() != PaymentType.Booking) return;
-        if (payment.getUserBookingPlan() == null) return;
-
-        UserBookingPlan userBookingPlan = payment.getUserBookingPlan();
-        BookingPlan plan = userBookingPlan.getBookingPlan();
-
-        if (!userBookingPlan.getIsActive()) {
-            plan.setAvailableSlots(plan.getAvailableSlots() + userBookingPlan.getPurchasedSlots());
-            bookingPlanRepository.save(plan);
-
-            userBookingPlanRepository.delete(userBookingPlan);
-
-            payment.setStatus(PaymentStatus.CANCELLED);
-            payment.setIsPaid(false);
+            enrollmentRepository.save(enrollment);
+            payment.setEnrollment(enrollment);
             paymentRepository.save(payment);
 
-            log.warn("[ROLLBACK] Payment {} cancelled, restored {} slots for plan '{}'",
-                    payment.getOrderCode(), userBookingPlan.getPurchasedSlots(), plan.getTitle());
+            log.info("[COURSE PAYMENT] User {} enrolled in course '{}'", user.getUserID(), course.getTitle());
+        }
+
+        // -------- BOOKING PLAN PAYMENT --------
+        else if (payment.getPaymentType() == PaymentType.Booking) {
+            // Lấy tất cả slot của payment này và update sang PAID
+            List<BookingPlanSlot> slots = bookingPlanSlotRepository.findAllByPaymentID(payment.getPaymentID());
+            for (BookingPlanSlot s : slots) {
+                s.setStatus(SlotStatus.Paid);
+                bookingPlanSlotRepository.save(s);
+            }
+
+            log.info("[BOOKING PLAN PAID] User {} confirmed {} slots as PAID", userId, slots.size());
         }
     }
 
     // ======================================================
-    // 4. HÀM CẬP NHẬT PAYMENT SAU KHI NHẬN LINK TỪ PAYOS
+    //ROLLBACK (FAILED / EXPIRED)
+    // ======================================================
+    @Transactional
+    public void rollbackBookingPayment(Payment payment) {
+        if (payment.getPaymentType() != PaymentType.Booking) return;
+
+        List<BookingPlanSlot> slots = bookingPlanSlotRepository.findAllByPaymentID(payment.getPaymentID());
+        for (BookingPlanSlot s : slots) {
+            if (s.getStatus() == SlotStatus.Locked) {
+                bookingPlanSlotRepository.delete(s);
+            }
+        }
+
+        payment.setStatus(PaymentStatus.CANCELLED);
+        payment.setIsPaid(false);
+        paymentRepository.save(payment);
+
+        log.warn("[ROLLBACK] Payment {} cancelled, deleted {} locked slots", payment.getOrderCode(), slots.size());
+    }
+
+    // ======================================================
+    // CẬP NHẬT PAYMENT SAU KHI NHẬN LINK PAYOS
     // ======================================================
     @SuppressWarnings("unchecked")
     private void updatePaymentWithPayOSResponse(Payment payment, ResponseEntity<?> response) {

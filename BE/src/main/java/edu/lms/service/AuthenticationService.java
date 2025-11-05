@@ -175,6 +175,7 @@ public class AuthenticationService {
                 .jwtID(UUID.randomUUID().toString())
                 .claim("role", user.getRole().getName())
                 .claim("permissions", permissions)
+                .claim("userId", user.getUserID())
                 .build();
 
         try {
