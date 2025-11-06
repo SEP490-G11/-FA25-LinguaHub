@@ -275,6 +275,7 @@ public class AuthenticationService {
         return IntrospectResponse.builder().valid(true).build();
     }
 // ================= FORGOT / RESET PASSWORD =================
+    @Transactional
     public void forgotPassword(ForgotPasswordRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXIST));
@@ -293,7 +294,7 @@ public class AuthenticationService {
 
         session.setAttribute("resetEmail", user.getEmail());
     }
-
+    @Transactional
     public void verifyResetOtp(VerifyResetOtpRequest request) {
         String email = (String) session.getAttribute("resetEmail");
         if (email == null) throw new AppException(ErrorCode.UNAUTHENTICATED);
