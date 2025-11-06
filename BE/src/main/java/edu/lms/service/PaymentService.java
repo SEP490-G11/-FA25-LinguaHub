@@ -30,6 +30,7 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final UserRepository userRepository;
     private final PayOSService payOSService;
+    private final ChatService chatService;
 
     // ======================================================
     //TẠO THANH TOÁN (PENDING)
@@ -204,6 +205,19 @@ public class PaymentService {
             }
 
             log.info("[BOOKING PLAN PAID] User {} confirmed {} slots as PAID", userId, slots.size());
+            
+            // Auto-create Training chat room nếu chưa có
+            // Lấy tutorID từ slot đầu tiên (tất cả slots trong cùng payment đều cùng tutor)
+            if (!slots.isEmpty()) {
+                Long tutorID = slots.get(0).getTutorID();
+                try {
+                    chatService.ensureTrainingRoomExists(userId, tutorID);
+                    log.info("[CHAT ROOM] Training room ensured for User {} and Tutor {}", userId, tutorID);
+                } catch (Exception e) {
+                    log.warn("[CHAT ROOM] Failed to ensure Training room: {}", e.getMessage());
+                    // Không throw exception để không ảnh hưởng đến payment flow
+                }
+            }
         }
     }
 
