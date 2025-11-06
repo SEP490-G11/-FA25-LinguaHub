@@ -212,12 +212,6 @@
 - CreatedAt
 - UpdateAt
 
-## Entity Schedule
-- ScheduleID
-- TutorID
-- StartTime
-- EndTime
-- IsAvailable default true
 
 
 ## API Tutor create slot booking
