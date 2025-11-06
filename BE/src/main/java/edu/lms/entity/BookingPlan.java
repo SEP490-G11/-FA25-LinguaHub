@@ -37,6 +37,8 @@ public class BookingPlan {
     @Column(name = "tutor_id", nullable = false)
     Long tutorID;
 
+    @Column(nullable = false)
+    Integer slotDuration;
 
     @Column(nullable = false)
     Double pricePerHours = 0.0;

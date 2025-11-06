@@ -41,4 +41,73 @@ public interface BookingPlanSlotRepository extends JpaRepository<BookingPlanSlot
           AND s.expiresAt < :now
     """)
     List<BookingPlanSlot> findAllExpiredSlots(@Param("now") LocalDateTime now);
+
+    /**
+     * Tìm tất cả slots của một tutor
+     */
+    List<BookingPlanSlot> findByTutorIDOrderByStartTimeAsc(Long tutorID);
+
+    /**
+     * Tìm slots của tutor theo booking plan
+     */
+    List<BookingPlanSlot> findByTutorIDAndBookingPlanIDOrderByStartTimeAsc(Long tutorID, Long bookingPlanID);
+
+    /**
+     * Tìm slots của tutor theo status
+     */
+    List<BookingPlanSlot> findByTutorIDAndStatusOrderByStartTimeAsc(Long tutorID, SlotStatus status);
+
+    /**
+     * Tìm slots của tutor trong khoảng thời gian
+     */
+    @Query("""
+        SELECT s FROM BookingPlanSlot s
+        WHERE s.tutorID = :tutorID
+          AND s.startTime >= :startDate
+          AND s.startTime < :endDate
+        ORDER BY s.startTime ASC
+    """)
+    List<BookingPlanSlot> findByTutorIDAndDateRange(
+            @Param("tutorID") Long tutorID,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate
+    );
+
+    /**
+     * Tìm slots đã được book (có userID) của tutor
+     */
+    @Query("""
+        SELECT s FROM BookingPlanSlot s
+        WHERE s.tutorID = :tutorID
+          AND s.userID IS NOT NULL
+        ORDER BY s.startTime ASC
+    """)
+    List<BookingPlanSlot> findBookedSlotsByTutorID(@Param("tutorID") Long tutorID);
+
+    /**
+     * Tìm slots còn trống (chưa có user book) của tutor
+     */
+    @Query("""
+        SELECT s FROM BookingPlanSlot s
+        WHERE s.tutorID = :tutorID
+          AND s.userID IS NULL
+        ORDER BY s.startTime ASC
+    """)
+    List<BookingPlanSlot> findAvailableSlotsByTutorID(@Param("tutorID") Long tutorID);
+
+    /**
+     * Tìm slots đã thanh toán (Paid) của learner với tutor
+     */
+    @Query("""
+        SELECT s FROM BookingPlanSlot s
+        WHERE s.userID = :userID
+          AND s.tutorID = :tutorID
+          AND s.status = 'Paid'
+          AND s.paymentID IS NOT NULL
+        ORDER BY s.startTime ASC
+    """)
+    List<BookingPlanSlot> findPaidSlotsByUserAndTutor(
+            @Param("userID") Long userID,
+            @Param("tutorID") Long tutorID
+    );
 }
