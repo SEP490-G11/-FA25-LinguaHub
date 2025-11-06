@@ -39,4 +39,9 @@ public class AdminCourseService {
                 : courseRepository.findByStatus(status);
         return courses.stream().map(this::toAdmin).toList();
     }
+
+    public List<AdminCourseResponse> getAllCoursesForAdmin() {
+        List<Course> courses = courseRepository.findAll();
+        return courses.stream().map(this::toAdmin).toList();
+    }
 }

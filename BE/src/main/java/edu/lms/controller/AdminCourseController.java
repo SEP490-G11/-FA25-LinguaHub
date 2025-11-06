@@ -35,4 +35,13 @@ public class AdminCourseController {
                         : "Fetched all courses (admin view)")
                 .build();
     }
+
+    @PreAuthorize("principal.claims['role'] == 'Admin'")
+    @Operation(summary = "Admin: Get All courses")
+    @GetMapping()
+    public ApiRespond<List<AdminCourseResponse>> getAll() {
+        return ApiRespond.<List<AdminCourseResponse>>builder()
+                .result(adminCourseService.getAllCoursesForAdmin())
+                .build();
+    }
 }
