@@ -63,6 +63,8 @@ public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
                     .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/courses/public/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/courses/detail/**").permitAll()
                     .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
                     .anyRequest().authenticated()
             )

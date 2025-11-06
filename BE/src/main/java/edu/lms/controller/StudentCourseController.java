@@ -29,7 +29,6 @@ public class StudentCourseController {
     public ApiRespond<List<StudentCourseResponse>> getCoursesByStudent(
             @AuthenticationPrincipal(expression = "claims['sub']") String email
     ) {
-        // Tìm user theo email (vì JWT.sub = email)
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXIST));
 

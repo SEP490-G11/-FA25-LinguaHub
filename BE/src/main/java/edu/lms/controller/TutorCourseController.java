@@ -1,3 +1,4 @@
+// src/main/java/edu/lms/controller/TutorCourseController.java
 package edu.lms.controller;
 
 import edu.lms.dto.request.ApiRespond;
@@ -33,6 +34,7 @@ public class TutorCourseController {
     TutorCourseService tutorCourseService;
     TutorRepository tutorRepository;
 
+    // Create (tutor từ token)
     @Operation(summary = "Tutor tạo khóa học mới (Draft) - lấy tutor từ token")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -45,6 +47,7 @@ public class TutorCourseController {
                 .build();
     }
 
+    // Read (tutor tự xem)
     @Operation(summary = "Tutor xem danh sách khóa học của chính mình (tất cả status)")
     @GetMapping("/me")
     public ApiRespond<List<TutorCourseResponse>> getMyCourses(
@@ -69,6 +72,7 @@ public class TutorCourseController {
                 .build();
     }
 
+    // Update (tutor tự sửa, chỉ khi chưa có enrollment)
     @Operation(summary = "Tutor cập nhật course của chính mình (chỉ khi chưa có learner enroll)")
     @PutMapping("/{courseID}")
     public ApiRespond<TutorCourseResponse> updateMyCourse(
@@ -81,7 +85,8 @@ public class TutorCourseController {
                 .build();
     }
 
-    @Operation(summary = "Tutor xóa course của chính mình (chỉ khi status = Draft). Sẽ xóa Lesson → Section → Course")
+    // Delete (tutor tự xoá, chỉ khi Draft) – xoá Resource→Lesson→Section→Course
+    @Operation(summary = "Tutor xóa course của chính mình (chỉ khi status = Draft). Sẽ xóa LessonResource → Lesson → Section → Course")
     @DeleteMapping("/{courseID}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteMyCourse(
@@ -97,7 +102,7 @@ public class TutorCourseController {
             @PathVariable Long courseID,
             Authentication authentication) {
 
-        String email = authentication.getName(); // lấy email từ token
+        String email = authentication.getName();
         Tutor tutor = tutorRepository.findByUser_Email(email)
                 .orElseThrow(() -> new AppException(ErrorCode.TUTOR_NOT_FOUND));
 
@@ -105,65 +110,4 @@ public class TutorCourseController {
                 .result(tutorCourseService.getStudentsByCourse(courseID, tutor.getTutorID()))
                 .build();
     }
-
-    // PUBLIC (Learner/Guest)
-    @Operation(summary = "Public: Xem tất cả course Approved")
-    @GetMapping("/public/approved")
-    public ApiRespond<List<TutorCourseResponse>> getAllApprovedPublic() {
-        return ApiRespond.<List<TutorCourseResponse>>builder()
-                .result(tutorCourseService.getAllCoursesByStatus(CourseStatus.Approved))
-                .build();
-    }
-
-    @Operation(summary = "Public: Xem course Approved theo một tutor cụ thể")
-    @GetMapping("/public/approved/{tutorID}")
-    public ApiRespond<List<TutorCourseResponse>> getApprovedByTutorPublic(@PathVariable Long tutorID) {
-        return ApiRespond.<List<TutorCourseResponse>>builder()
-                .result(tutorCourseService.getCoursesByTutorAndStatus(tutorID, CourseStatus.Approved))
-                .build();
-    }
-
-    // ADMIN/PUBLIC All by status
-
-    @Operation(summary = "Admin lấy danh sách tất cả khóa học theo trạng thái (Draft, Pending, Approved, Rejected, Disabled)")
-    @GetMapping("/all/by-status")
-    public ApiRespond<List<TutorCourseResponse>> getAllCoursesByStatus(
-            @RequestParam(required = false) CourseStatus status
-    ) {
-        return ApiRespond.<List<TutorCourseResponse>>builder()
-                .result(tutorCourseService.getAllCoursesByStatus(status))
-                .message(status != null
-                        ? "Fetched all courses with status " + status
-                        : "Fetched all courses (all statuses)")
-                .build();
-    }
-
-    // OTHER
-
-    @Operation(summary = "Lấy chi tiết khóa học theo CourseID")
-    @GetMapping("/detail/{courseID}")
-    public ApiRespond<TutorCourseResponse> getCourseById(@PathVariable Long courseID) {
-        return ApiRespond.<TutorCourseResponse>builder()
-                .result(tutorCourseService.getCourseById(courseID))
-                .build();
-    }
-
-//    @Operation(summary = "Lấy danh sách khóa học của Tutor theo ID (legacy)")
-//    @GetMapping("/{tutorID}")
-//    public ApiRespond<List<TutorCourseResponse>> getCoursesByTutor(@PathVariable Long tutorID) {
-//        return ApiRespond.<List<TutorCourseResponse>>builder()
-//                .result(tutorCourseService.getCoursesByTutorID(tutorID))
-//                .build();
-//    }
-
-    @Operation(summary = "Lấy danh sách tất cả khóa học (legacy)")
-    @GetMapping("/all")
-    public ApiRespond<List<TutorCourseResponse>> getAllCourses() {
-        return ApiRespond.<List<TutorCourseResponse>>builder()
-                .result(tutorCourseService.getAllCourses())
-                .build();
-    }
-
-
-
 }

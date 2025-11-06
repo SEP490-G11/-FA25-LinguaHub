@@ -27,15 +27,13 @@ import java.util.List;
 public class TutorCourseService {
 
     TutorRepository tutorRepository;
-    UserRepository userRepository;
     CourseRepository courseRepository;
     CourseCategoryRepository courseCategoryRepository;
     EnrollmentRepository enrollmentRepository;
     CourseSectionRepository courseSectionRepository;
     LessonRepository lessonRepository;
-    TutorCourseMapper tutorCourseMapper;
     LessonResourceRepository lessonResourceRepository;
-
+    TutorCourseMapper tutorCourseMapper;
 
     private Tutor resolveTutorByEmail(String email) {
         return tutorRepository.findByUser_Email(email)
@@ -48,8 +46,7 @@ public class TutorCourseService {
         }
     }
 
-    // Create
-
+    // Create (me)
     public TutorCourseResponse createCourseForCurrentTutor(String email, TutorCourseRequest request) {
         Tutor tutor = resolveTutorByEmail(email);
 
@@ -70,12 +67,11 @@ public class TutorCourseService {
         return tutorCourseMapper.toTutorCourseResponse(course);
     }
 
-    //View
-
+    // View (me)
     public List<TutorCourseResponse> getMyCourses(String email) {
         Tutor tutor = resolveTutorByEmail(email);
-        List<Course> courses = courseRepository.findByTutor(tutor);
-        return courses.stream().map(tutorCourseMapper::toTutorCourseResponse).toList();
+        return courseRepository.findByTutor(tutor).stream()
+                .map(tutorCourseMapper::toTutorCourseResponse).toList();
     }
 
     public List<TutorCourseResponse> getMyCoursesByStatus(String email, CourseStatus status) {
@@ -86,11 +82,9 @@ public class TutorCourseService {
         return courses.stream().map(tutorCourseMapper::toTutorCourseResponse).toList();
     }
 
-    // Update
-
+    // Update (me)
     public TutorCourseResponse updateCourseForCurrentTutor(String email, Long courseID, TutorCourseRequest request) {
         Tutor tutor = resolveTutorByEmail(email);
-
         Course course = courseRepository.findById(courseID)
                 .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
 
@@ -118,7 +112,7 @@ public class TutorCourseService {
         return tutorCourseMapper.toTutorCourseResponse(course);
     }
 
-    // Delete
+    // Delete (me): chỉ khi Draft, xoá Resource -> Lesson -> Section -> Course
     @Transactional
     public void deleteCourseForCurrentTutor(String email, Long courseID) {
         Tutor tutor = resolveTutorByEmail(email);
@@ -127,67 +121,32 @@ public class TutorCourseService {
                 .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
 
         ensureCourseOwner(course, tutor.getTutorID());
-        // Chỉ cho xóa khi status = Draft
+
         if (course.getStatus() != CourseStatus.Draft) {
             throw new AppException(ErrorCode.COURSE_DELETE_ONLY_DRAFT);
         }
+
         var sections = courseSectionRepository.findByCourse_CourseID(course.getCourseID());
-        if (sections.isEmpty()) {
-            courseRepository.delete(course);
-            log.warn("Tutor [{}] deleted draft course [{}] (no sections)", tutor.getTutorID(), courseID);
-            return;
-        }
-        var sectionIds = sections.stream().map(s -> s.getSectionID()).toList();
-        var lessons = lessonRepository.findBySection_SectionIDIn(sectionIds);
-        if (!lessons.isEmpty()) {
-            var lessonIds = lessons.stream().map(l -> l.getLessonID()).toList();
-            var resources = lessonResourceRepository.findByLesson_LessonIDIn(lessonIds);
-            if (!resources.isEmpty()) {
-                lessonResourceRepository.deleteAllInBatch(resources);
+        if (!sections.isEmpty()) {
+            var sectionIds = sections.stream().map(s -> s.getSectionID()).toList();
+            var lessons = lessonRepository.findBySection_SectionIDIn(sectionIds);
+            if (!lessons.isEmpty()) {
+                var lessonIds = lessons.stream().map(l -> l.getLessonID()).toList();
+                var resources = lessonResourceRepository.findByLesson_LessonIDIn(lessonIds);
+                if (!resources.isEmpty()) {
+                    lessonResourceRepository.deleteAllInBatch(resources);
+                }
+                lessonRepository.deleteAllInBatch(lessons);
             }
-            lessonRepository.deleteAllInBatch(lessons);
+            courseSectionRepository.deleteAllInBatch(sections);
         }
-        courseSectionRepository.deleteAllInBatch(sections);
         courseRepository.delete(course);
+
         log.warn("Tutor [{}] deleted draft course [{}] with resources -> lessons -> sections -> course",
                 tutor.getTutorID(), courseID);
     }
 
-    //Admin
-    public List<TutorCourseResponse> getCoursesByTutorID(Long tutorID) {
-        Tutor tutor = tutorRepository.findById(tutorID)
-                .orElseThrow(() -> new AppException(ErrorCode.TUTOR_NOT_FOUND));
-        List<Course> courses = courseRepository.findByTutor(tutor);
-        return courses.stream().map(tutorCourseMapper::toTutorCourseResponse).toList();
-    }
-
-    public List<TutorCourseResponse> getCoursesByTutorAndStatus(Long tutorID, CourseStatus status) {
-        Tutor tutor = tutorRepository.findById(tutorID)
-                .orElseThrow(() -> new AppException(ErrorCode.TUTOR_NOT_FOUND));
-        List<Course> courses = (status == null)
-                ? courseRepository.findByTutor(tutor)
-                : courseRepository.findByTutorAndStatus(tutor, status);
-        return courses.stream().map(tutorCourseMapper::toTutorCourseResponse).toList();
-    }
-
-    public List<TutorCourseResponse> getAllCourses() {
-        return courseRepository.findAll().stream()
-                .map(tutorCourseMapper::toTutorCourseResponse).toList();
-    }
-
-    public List<TutorCourseResponse> getAllCoursesByStatus(CourseStatus status) {
-        List<Course> courses = (status == null)
-                ? courseRepository.findAll()
-                : courseRepository.findByStatus(status);
-        return courses.stream().map(tutorCourseMapper::toTutorCourseResponse).toList();
-    }
-
-    public TutorCourseResponse getCourseById(Long courseID) {
-        Course course = courseRepository.findById(courseID)
-                .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
-        return tutorCourseMapper.toTutorCourseResponse(course);
-    }
-
+   //Lấy student đã enroll khóa học của tutor
     public List<TutorCourseStudentResponse> getStudentsByCourse(Long courseId, Long tutorId) {
         Course course = courseRepository.findById(courseId)
                 .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
