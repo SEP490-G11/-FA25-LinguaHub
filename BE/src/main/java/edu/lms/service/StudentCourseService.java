@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class StudentCourseService {
@@ -45,17 +46,14 @@ public class StudentCourseService {
                         .build();
             }
 
-            // Lấy progress cho từng section + lesson
-
-            List<SectionProgressResponse> sectionProgressList = sections.stream().map(section -> {
+            var sectionProgressList = sections.stream().map(section -> {
                 var ucs = userCourseSectionRepository
                         .findByUser_UserIDAndSection_SectionID(userId, section.getSectionID())
                         .orElse(null);
                 BigDecimal sectionProgress = (ucs != null) ? ucs.getProgress() : BigDecimal.ZERO;
                 boolean sectionDone = sectionProgress.compareTo(BigDecimal.valueOf(100)) >= 0;
 
-                // Lấy list lesson
-                List<LessonInSectionResponse> lessonList = section.getLessons().stream().map(lesson -> {
+                var lessonList = section.getLessons().stream().map(lesson -> {
                     boolean isDone = userLessonRepository
                             .findByUser_UserIDAndLesson_LessonID(userId, lesson.getLessonID())
                             .map(UserLesson::getIsDone)
@@ -76,7 +74,6 @@ public class StudentCourseService {
                         .build();
             }).toList();
 
-            // Tính tổng progress khóa học
             double totalProgress = sectionProgressList.stream()
                     .mapToDouble(sp -> sp.getProgress().doubleValue())
                     .average()
@@ -99,6 +96,3 @@ public class StudentCourseService {
         }).toList();
     }
 }
-
-
-

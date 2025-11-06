@@ -18,41 +18,49 @@ const CourseSidebar = ({ course }: CourseSidebarProps) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: 'VND'
-    }).format(price*1000);
+    }).format(price);
   };
 
   return (
     <div className="lg:col-span-1">
       {/* Instructor Card */}
-      <motion.div 
-        className="bg-white rounded-xl p-6 shadow-md mb-8"
-        initial="initial"
-        whileInView="animate"
-        viewport={{ once: true }}
-        variants={fadeInUp}
-      >
-        <h3 className="text-xl font-bold text-gray-900 mb-4">Your Instructor</h3>
-        <div className="flex items-center space-x-4 mb-4">
-          <img
-            src={course.instructor.image}
-            alt={course.instructor.name}
-            className="w-16 h-16 rounded-full object-cover"
-          />
-          <div>
-            <h4 className="font-semibold text-gray-900">{course.instructor.name}</h4>
-            <p className="text-sm text-gray-600">{course.instructor.flag} {course.instructor.country}</p>
-            <div className="flex items-center space-x-1 mt-1">
-              <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-              <span className="text-sm">{course.instructor.rating}</span>
-              <span className="text-sm text-gray-500">({course.instructor.students} students)</span>
+      {course.instructor && (
+          <motion.div
+              className="bg-white rounded-xl p-6 shadow-md mb-8"
+              initial="initial"
+              whileInView="animate"
+              viewport={{ once: true }}
+              variants={fadeInUp}
+          >
+            <h3 className="text-xl font-bold text-gray-900 mb-4">Your Instructor</h3>
+            <div className="flex items-center space-x-4 mb-4">
+              <img
+                  src={course.instructor.image}
+                  alt={course.instructor.name}
+                  className="w-16 h-16 rounded-full object-cover"
+              />
+              <div>
+                <h4 className="font-semibold text-gray-900">{course.instructor.name}</h4>
+                <p className="text-sm text-gray-600">
+                  {course.instructor.flag} {course.instructor.country}
+                </p>
+                <div className="flex items-center space-x-1 mt-1">
+                  <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                  <span className="text-sm">{course.instructor.rating}</span>
+                  <span className="text-sm text-gray-500">
+            ({course.instructor.students} students)
+          </span>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-        <p className="text-gray-600 text-sm mb-4">{course.instructor.experience} of teaching experience</p>
-        <button className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition-colors">
-          View Profile
-        </button>
-      </motion.div>
+            <p className="text-gray-600 text-sm mb-4">
+              {course.instructor.experience} of teaching experience
+            </p>
+            <button className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition-colors">
+              View Profile
+            </button>
+          </motion.div>
+      )}
 
       {/* Course Info */}
       <motion.div 

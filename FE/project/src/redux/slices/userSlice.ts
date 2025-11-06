@@ -23,7 +23,7 @@ export const updateProfile = createAsyncThunk(
             const response = await BaseRequest.Patch<BeResponse<User>>(`/users/${userID}`, data);
             if (!response.result) throw new Error('Cập nhật thất bại');
 
-            // ✅ Cập nhật lại auth.user trong Redux sau khi PATCH thành công
+            //  Cập nhật lại auth.user trong Redux sau khi PATCH thành công
             dispatch(updateAuthUser(response.result));
 
             localStorage.setItem('user_data', JSON.stringify(response.result));

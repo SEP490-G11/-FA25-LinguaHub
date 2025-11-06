@@ -517,6 +517,18 @@ const authSlice = createSlice({
                 state.isLoading = false;
                 state.error = action.payload as string;
             })
+            .addCase(verifyResetOtp.pending, (state) => {
+                state.isLoading = true;
+                state.error = null;
+            })
+            .addCase(verifyResetOtp.fulfilled, (state) => {
+                state.isLoading = false;
+                state.error = null;
+            })
+            .addCase(verifyResetOtp.rejected, (state, action) => {
+                state.isLoading = false;
+                state.error = action.payload as string;
+            })
 
             // ===== Check Auth =====
             .addCase(

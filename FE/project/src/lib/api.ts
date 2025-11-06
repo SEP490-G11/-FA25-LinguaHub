@@ -45,6 +45,7 @@ const api = axios.create({
 });
 
 // ===== Add token to request =====
+//Tự động lấy token từ cookie/localStorage → gắn vào header request
 const onRequestSuccess = (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
     const token = cookie_get('AT') || localStorage.getItem('access_token');
 

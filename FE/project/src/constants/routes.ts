@@ -8,14 +8,14 @@ export const ROUTES = {
     TUTORS: '/tutors',
     TUTOR_DETAIL: '/tutor/:id',
     COURSE_DETAIL: '/course/:id',
-    LESSON_DETAIL: '/lesson/:id',  // Adjusted to match AppRoutes; use dynamic params as needed
+    LESSON_DETAIL: '/lesson/:id',
     PRACTICE_TEST: '/practice-test',
     BECOME_TUTOR: '/become-tutor',
     WISHLIST: '/wishlist',
     PAYMENT: '/payment/:id',
     POLICY: '/policy',
     CHANGE_PASSWORD: '/change-password',
-    VERIFY_EMAIL_FORGOT_PASSWORD:'/auth/verify-email-forgot-passwor',
+    VERIFY_EMAIL_FORGOT_PASSWORD:'/auth/verify-email-forgot-password',
     // Auth routes
     COMPLETE_FORGOT_PASSWORD: '/auth/complete-forgot-password',
     GOOGLE_CALLBACK: '/auth/google-callback',

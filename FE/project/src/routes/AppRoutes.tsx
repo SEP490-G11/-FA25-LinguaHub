@@ -37,40 +37,49 @@ import CourseList from '@/pages/TutorPages/CourseList';
 export function AppRoutes() {
     return (
         <Routes>
-            <Route path={ROUTES.HOME} element={<HomePage />} />
+            {/* Auth */}
             <Route path={ROUTES.SIGN_IN} element={<SignIn />} />
-            <Route path={ROUTES.COMPLETE_FORGOT_PASSWORD } element={<CompleteForgotPassword />} />
-            <Route path={ROUTES.GOOGLE_CALLBACK } element={<GoogleCallback />} />
-            <Route path={ROUTES.FORGOT_PASSWORD } element={<ForgotPassword />} />
-            <Route path={ROUTES.RESET_PASSWORD } element={<ResetPassword />} />
-            <Route path={ROUTES.VERIFY_EMAIL} element={<VerifyEmail />} />
             <Route path={ROUTES.SIGN_UP} element={<SignUp />} />
-            <Route path={ROUTES.CREATE_COURSE} element={<CreateCourse />} />
+            <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPassword />} />
+            <Route path={ROUTES.VERIFY_EMAIL_FORGOT_PASSWORD} element={<VerifyEmailForgotPassword />} />
+            <Route path={ROUTES.RESET_PASSWORD} element={<ResetPassword />} />
+            <Route path={ROUTES.COMPLETE_FORGOT_PASSWORD} element={<CompleteForgotPassword />} />
+            <Route path={ROUTES.VERIFY_EMAIL} element={<VerifyEmail />} />
+            <Route path={ROUTES.GOOGLE_CALLBACK} element={<GoogleCallback />} />
+
+            {/* Main pages */}
+            <Route path={ROUTES.HOME} element={<HomePage />} />
             <Route path={ROUTES.LANGUAGES} element={<Languages />} />
             <Route path={ROUTES.TUTORS} element={<Tutors />} />
             <Route path={ROUTES.TUTOR_DETAIL} element={<TutorDetail />} />
             <Route path={ROUTES.COURSE_DETAIL} element={<CourseDetail />} />
             <Route path={ROUTES.LESSON_DETAIL} element={<LessonDetail />} />
+            <Route path={ROUTES.LANGUAGE_COURSES} element={<LanguageCourses />} />
             <Route path={ROUTES.PRACTICE_TEST} element={<PracticeTest />} />
             <Route path={ROUTES.BECOME_TUTOR} element={<BecomeTutor />} />
             <Route path={ROUTES.WISHLIST} element={<Wishlist />} />
             <Route path={ROUTES.PAYMENT} element={<Payment />} />
             <Route path={ROUTES.POLICY} element={<PolicyPage />} />
-            <Route path={ROUTES.LANGUAGE_COURSES} element={<LanguageCourses />} />
-            <Route path="*" element={<NotFound />} />
-            <Route path={ROUTES.PAYMENT_HISTORY } element={<PaymentHistory />} />
+
+            {/* User */}
+            <Route path={ROUTES.PROFILE} element={<Profile />} />
+            <Route path={ROUTES.CHANGE_PASSWORD} element={<ChangePassword />} />
+            <Route path={ROUTES.PAYMENT_HISTORY} element={<PaymentHistory />} />
             <Route path={ROUTES.MY_ENROLLMENTS} element={<MyEnrollments />} />
             <Route path={ROUTES.APPLY_TUTOR} element={<ApplyTutor />} />
-                <Route path={ROUTES.PROFILE} element={<Profile />} />
-                <Route path={ROUTES.CHANGE_PASSWORD} element={<ChangePassword />} />
-                <Route path={ROUTES.VERIFY_EMAIL_FORGOT_PASSWORD} element={<VerifyEmailForgotPassword />} />
-                <Route path="/tutor/create-courses" element={<CreateCourse />} />
-                    <Route path="/admin/course-approval" element={<CourseApprovalPage />} />
-                    <Route path="/learner/apply-tutor" element={<ApplyTutor />} />
-                    <Route path="/admin/tutor-approval" element={<TutorApproval />} />
-                    <Route path="/tutor/courses" element={<CourseList />} />
-                    <Route path="/tutor/courses/:id/content" element={<ManageCourseContent />} />
+
+            {/* Admin & Tutor */}
+            <Route path="/admin/course-approval" element={<CourseApprovalPage />} />
+            <Route path="/admin/tutor-approval" element={<TutorApproval />} />
+            <Route path="/tutor/courses" element={<CourseList />} />
+            <Route path="/tutor/courses/:id/content" element={<ManageCourseContent />} />
+            <Route path="/tutor/create-courses" element={<CreateCourse />} />
+
+            {/* Not found */}
+            <Route path="*" element={<NotFound />} />
         </Routes>
     );
-
 }
+
+
+
