@@ -5,11 +5,11 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 //Cho phép dùng Redux
 import { Provider } from 'react-redux';
-import { store } from '@/redux/store';
+import { store } from '@/redux/store.tsx';
 //React Query for server state management
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 //Cuộn lên đầu khi đổi trang
-import { ScrollToTop } from '@/routes/ScrollToTop';
+import { ScrollToTop } from '@/hooks/ScrollToTop.tsx';
 import App from './App';
 import './index.css';
 // Load mock APIs for development
