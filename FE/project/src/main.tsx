@@ -5,7 +5,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 //Cho phép dùng Redux
 import { Provider } from 'react-redux';
-import { store } from '@/redux/store.tsx';
+import { store } from '@/redux/store';
 //React Query for server state management
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 //Cuộn lên đầu khi đổi trang

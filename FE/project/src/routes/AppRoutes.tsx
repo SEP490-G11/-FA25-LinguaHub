@@ -19,6 +19,7 @@ import PolicyPage from '@/pages/PolicyPage/index';
 import CompleteForgotPassword from '@/pages/auth/complete-forgot-password/complete-forgot-password.tsx';
 import GoogleCallback from '@/pages/auth/login-google/login-google.tsx';
 import LanguageCourses from '@/pages/LanguageCourses/index';
+<<<<<<< HEAD
 import ForgotPassword from '@/pages/auth/forgot-password/forgot-password.tsx';
 import ResetPassword from '@/pages/auth/reset-password/reset-password.tsx';
 import VerifyEmail from '@/pages/auth/verify-email/veryfy-email.tsx';
@@ -68,4 +69,52 @@ export function AppRoutes() {
                 <Route path={ROUTES.VERIFY_EMAIL_FORGOT_PASSWORD} element={<VerifyEmailForgotPassword />} />
         </Routes>
     );
+=======
+import ForgotPassword from '@/pages/auth/forgot-password';
+import ResetPassword from '@/pages/auth/reset-password';
+import VerifyEmail from '@/pages/auth/verify-email';
+import PaymentHistory from "@/pages/PaymentHistory";
+import MyEnrollments from "@/pages/MyEnrollments";
+import CreateCourse from '@/pages/CreateCourse/index';
+import CourseApprovalPage from '@/pages/Admin/CourseApproval/index';
+import ApplyTutor from '@/pages/ApplyTutor';
+import TutorApproval from '@/pages/Admin/TutorApproval';
+import ManageCourseContent from '@/pages/TutorPages/ManageCourseContent';
+import CourseList from '@/pages/TutorPages/CourseList';
+
+export function AppRoutes() {
+        return (
+            <Routes>
+                    <Route path={ROUTES.HOME} element={<HomePage />} />
+                    <Route path={ROUTES.SIGN_IN} element={<SignIn />} />
+                    <Route path="/auth/complete-forgot-password" element={<CompleteForgotPassword />} />
+                    <Route path="/auth/google-callback" element={<GoogleCallback />} />
+                    <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+                    <Route path="/auth/reset-password" element={<ResetPassword />} />
+                    <Route path="/auth/verify-email" element={<VerifyEmail />} />
+                    <Route path={ROUTES.SIGN_UP} element={<SignUp />} />
+                    
+                    <Route path={ROUTES.LANGUAGES} element={<Languages />} />
+                    <Route path={ROUTES.TUTORS} element={<Tutors />} />
+                    <Route path={ROUTES.TUTOR_DETAIL} element={<TutorDetail />} />
+                    <Route path={ROUTES.COURSE_DETAIL} element={<CourseDetail />} />
+                    <Route path={ROUTES.LESSON_DETAIL} element={<LessonDetail />} />
+                    <Route path={ROUTES.PRACTICE_TEST} element={<PracticeTest />} />
+                    <Route path={ROUTES.BECOME_TUTOR} element={<BecomeTutor />} />
+                    <Route path={ROUTES.WISHLIST} element={<Wishlist />} />
+                    <Route path={ROUTES.PAYMENT} element={<Payment />} />
+                    <Route path={ROUTES.POLICY} element={<PolicyPage />} />
+                    <Route path="/languages/:language" element={<LanguageCourses />} />
+                    <Route path="*" element={<NotFound />} />
+                    <Route path="/payment-history" element={<PaymentHistory/>}/>
+                    <Route path="/my-enrollments" element={<MyEnrollments/>}/>
+                    <Route path="/tutor/create-courses" element={<CreateCourse />} />
+                    <Route path="/admin/course-approval" element={<CourseApprovalPage />} />
+                    <Route path="/learner/apply-tutor" element={<ApplyTutor />} />
+                    <Route path="/admin/tutor-approval" element={<TutorApproval />} />
+                    <Route path="/tutor/courses" element={<CourseList />} />
+                    <Route path="/tutor/courses/:id/content" element={<ManageCourseContent />} />
+            </Routes>
+        );
+>>>>>>> tutor-manage-course-content
 }
