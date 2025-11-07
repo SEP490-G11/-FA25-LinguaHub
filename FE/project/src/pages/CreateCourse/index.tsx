@@ -5,12 +5,8 @@ import { Step2CourseContent } from './components/course-content';
 import { CourseFormData, SectionData, courseApi } from '@/queries/course-api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle2 } from 'lucide-react';
-import { useRole } from '@/auth';
 
 export default function CreateCourse() {
-  // Role check - Admin hoặc Tutor
-  const { isAuthorized } = useRole(['Admin', 'Tutor']);
-  
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [courseData, setCourseData] = useState<Partial<CourseFormData>>({});
@@ -49,12 +45,9 @@ export default function CreateCourse() {
     if (
       confirm('Are you sure you want to cancel? All progress will be lost.')
     ) {
-      navigate(-1);
+      navigate('/tutor/courses');
     }
   };
-
-  // Return null nếu không có quyền (hook tự redirect)
-  if (!isAuthorized) return null;
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">

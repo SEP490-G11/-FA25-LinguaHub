@@ -25,7 +25,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useRole } from '@/auth';
 
 interface Course {
   id: string;
@@ -162,9 +161,6 @@ const formatDate = (dateString: string) => {
 };
 
 const CourseList = () => {
-  // Role check - Chỉ Tutor
-  const { isAuthorized } = useRole(['Tutor']);
-  
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -180,9 +176,6 @@ const CourseList = () => {
     
     return matchesSearch && matchesStatus && matchesCategory;
   });
-
-  // Return null nếu không có quyền
-  if (!isAuthorized) return null;
 
   // Pagination
   const totalPages = Math.ceil(filteredCourses.length / itemsPerPage);

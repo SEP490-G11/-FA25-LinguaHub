@@ -16,7 +16,6 @@ import { ROUTES } from '@/constants/routes.ts';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '@/redux/store.ts';
 import { signOut } from '@/redux/slices/authSlice.ts';
-import { isAdmin } from '@/auth';
 
 const Header = () => {
   const location = useLocation();
@@ -245,7 +244,7 @@ const Header = () => {
                           <span>Đổi mật khẩu</span>
                         </Link>
                       </DropdownMenuItem>
-                      {isAdmin() && (
+                      {user?.role === 'Admin' && (
                           <DropdownMenuItem asChild>
                             <Link to="/settings" className="cursor-pointer">
                               <Settings className="mr-2 h-4 w-4" />

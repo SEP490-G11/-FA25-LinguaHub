@@ -6,7 +6,6 @@ import { Filters } from './components/filters';
 import { Pagination } from './components/pagination';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, Loader2, CheckCircle2, Filter, BookOpen } from 'lucide-react';
-import { useRole } from '@/auth';
 
 // ============================================================================
 // MOCK DATA - Remove when backend is ready
@@ -614,11 +613,6 @@ const MOCK_COURSES_WITH_SECTIONS: CourseDetail[] = [
 
 export function CourseApprovalPage() {
   // ========================================================================
-  // ROLE CHECK - Chỉ Admin mới truy cập được
-  // ========================================================================
-  const { isAuthorized } = useRole(['Admin']);
-
-  // ========================================================================
   // STATE
   // ========================================================================
 
@@ -639,9 +633,6 @@ export function CourseApprovalPage() {
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
-
-  // Return null nếu không có quyền (hook sẽ tự redirect)
-  if (!isAuthorized) return null;
 
   // ========================================================================
   // FUNCTIONS

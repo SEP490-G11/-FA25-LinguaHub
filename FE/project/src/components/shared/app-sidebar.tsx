@@ -38,7 +38,6 @@ import { usePathname, useRouter } from '@/routes/hooks';
 import { useAuth } from '@/routes/hooks/use.auth';
 import { Icons } from '../ui/icons';
 import __helpers from '@/helpers';
-import { getUserRole } from '@/auth';
 import { useSelector } from 'react-redux';
 import type { RootState } from '@/redux/store.ts';
 import { useGetMyInfo } from '@/queries/user.query';
@@ -59,8 +58,8 @@ export default function AppSidebar() {
     __helpers.cookie_delete('AT');
     window.location.href = '/login';
   };
-  const role = getUserRole();
-  const isCEO = role?.includes('Giám Đốc');
+  const role = __helpers.getUserRole();
+  const isCEO = role.includes('Giám Đốc');
 
   const navItems = isCEO ? ceoNavItems : ceoNavItems;
 
