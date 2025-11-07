@@ -46,7 +46,7 @@ export const ProtectedRoute = ({
 
   // Chưa login → redirect to login
   if (!userRole) {
-    return <Navigate to="/auth/login" replace />;
+    return <Navigate to="/signin" replace />;
   }
 
   // Đã login nhưng không có role phù hợp → redirect
