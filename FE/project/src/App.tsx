@@ -1,7 +1,7 @@
 import  { useEffect } from 'react';//hook của React
 import { useDispatch } from 'react-redux';
 import { AppRoutes } from '@/routes/AppRoutes';
-import { checkAuth } from '@/redux/slices/authSlice.ts';
+import {checkAuth, loadUserFromStorage} from '@/redux/slices/authSlice.ts';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 //kiểu dữ liệu TypeScript định nghĩa loại dispatch
@@ -10,9 +10,9 @@ import type { AppDispatch } from '@/redux/store.ts';
 
 function App() {
     const dispatch = useDispatch<AppDispatch>();
-
     useEffect(() => {
-        dispatch(checkAuth());
+        dispatch(loadUserFromStorage()); // <-- lấy user từ localStorage
+        dispatch(checkAuth());           // <-- xác thực lại token với backend
     }, [dispatch]);
 
     return (

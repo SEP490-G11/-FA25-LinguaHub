@@ -94,7 +94,7 @@ const onResponseError = async (error: AxiosError<ApiErrorData>) => {
         const status = error.response.status;
         const message = error.response.data?.message || '';
 
-        // ✅ Case 1: Token expired -> try refresh
+        //  Case 1: Token expired -> try refresh
         if (status === 403 && message === 'Token expired' && !originalRequest._retry) {
             originalRequest._retry = true;
 
@@ -117,7 +117,7 @@ const onResponseError = async (error: AxiosError<ApiErrorData>) => {
             const refreshToken = cookie_get('RT') || localStorage.getItem('refresh_token');
 
             if (!refreshToken) {
-                console.warn('❌ Missing refresh token, redirecting to sign-in');
+                console.warn(' Missing refresh token, redirecting to sign-in');
                 cookie_delete('AT');
                 cookie_delete('RT');
                 window.location.href = '/sign-in';
@@ -125,7 +125,7 @@ const onResponseError = async (error: AxiosError<ApiErrorData>) => {
             }
 
             try {
-                console.log('🔄 Refreshing access token...');
+                console.log(' Refreshing access token...');
                 const res = await axios.post(`${baseURL}/auth/refresh`, { refreshToken });
                 const newAccess = res.data?.result?.accessToken;
                 const newRefresh = res.data?.result?.refreshToken;
@@ -149,7 +149,7 @@ const onResponseError = async (error: AxiosError<ApiErrorData>) => {
                 cookie_delete('RT');
                 localStorage.removeItem('access_token');
                 localStorage.removeItem('refresh_token');
-                console.error('❌ Refresh token failed:', refreshError);
+                console.error(' Refresh token failed:', refreshError);
                 window.location.href = '/sign-in';
                 return Promise.reject(refreshError);
             } finally {
@@ -157,14 +157,12 @@ const onResponseError = async (error: AxiosError<ApiErrorData>) => {
             }
         }
 
-        // ✅ Case 2: Không có quyền hoặc hết hạn refresh token
         if (status === 401 || status === 403) {
-            console.warn('🚫 Unauthorized, clearing tokens');
-            cookie_delete('AT');
-            cookie_delete('RT');
-            localStorage.removeItem('access_token');
-            localStorage.removeItem('refresh_token');
-            window.location.href = '/sign-in';
+            if (originalRequest.url?.includes('/auth/token') ||
+                window.location.pathname === '/sign-in'
+            ) {
+                return Promise.reject(error);
+            }
         }
     }
 

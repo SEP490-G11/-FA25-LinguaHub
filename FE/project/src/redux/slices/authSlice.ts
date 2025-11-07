@@ -342,8 +342,14 @@ export const checkAuth = createAsyncThunk(
 
             const response = await BaseRequest.Post<BeResponse<{ active: boolean; user: User }>>(
                 '/auth/introspect',
-                { token }
+                {},
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
             );
+
             if (!response.result) {
                 throw new Error('Invalid response structure');
             }
@@ -353,9 +359,6 @@ export const checkAuth = createAsyncThunk(
                 localStorage.setItem('user_data', JSON.stringify(user));
                 return { user, active: true };
             } else {
-                cookie_delete('AT');
-                localStorage.removeItem('access_token');
-                localStorage.removeItem('user_data');
                 return rejectWithValue('Invalid token');
             }
         } catch (error: unknown) {
@@ -372,9 +375,6 @@ export const checkAuth = createAsyncThunk(
             } else if (error instanceof Error) {
                 message = error.message;
             }
-            cookie_delete('AT');
-            localStorage.removeItem('access_token');
-            localStorage.removeItem('user_data');
             return rejectWithValue(message);
         }
     }
@@ -538,13 +538,6 @@ const authSlice = createSlice({
                     state.isAuthenticated = action.payload.active;
                 }
             )
-            .addCase(checkAuth.rejected, (state) => {
-                state.user = null;
-                state.isAuthenticated = false;
-                cookie_delete('AT');
-                localStorage.removeItem('access_token');
-                localStorage.removeItem('user_data');
-            });
     },
 });
 
