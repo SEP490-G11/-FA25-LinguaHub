@@ -17,6 +17,8 @@ public class TutorApplicationListResponse {
     Long userId;
     String userEmail;
     String userName;
+    String avatarURL;
+    String country;
     String specialization;
     String teachingLanguage;
     String status;
