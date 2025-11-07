@@ -2,23 +2,12 @@
  * Auth & Role related types
  */
 
-// Backend trả về: 'Admin' | 'Tutor' | 'Learner'
-export type UserRole = 'Admin' | 'Tutor' | 'Learner';
+export type UserRole = 'Admin' | 'Tutor' | 'Student';
 
 export interface User {
-  userID: string;
-  username: string;
+  id: string;
   email: string;
+  name: string;
   role: UserRole;
-  fullName?: string;
-  avatarURL?: string;
-  gender?: 'Male' | 'Female' | 'Other';
-  dob?: string;
-  phone?: string;
-  country?: string;
-  address?: string;
-  bio?: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
+  avatar?: string;
 }

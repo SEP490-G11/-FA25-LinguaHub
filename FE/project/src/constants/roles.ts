@@ -1,8 +1,5 @@
-// Backend roles: 'Admin' | 'Tutor' | 'Learner'
 export const USER_ROLES = {
-    LEARNER: 'Learner',
-    TUTOR: 'Tutor',
-    ADMIN: 'Admin',
+    STUDENT: 'student',
+    TUTOR: 'tutor',
+    ADMIN: 'admin',
 } as const;
-
-export type UserRole = typeof USER_ROLES[keyof typeof USER_ROLES];
