@@ -5,12 +5,16 @@ import edu.lms.dto.request.TutorUpdateRequest;
 import edu.lms.dto.response.TutorApplicationDetailResponse;
 import edu.lms.dto.response.TutorApplicationListResponse;
 import edu.lms.dto.response.TutorApplyResponse;
+import edu.lms.dto.response.TutorDetailResponse;
 
 import java.util.List;
 
 public interface TutorService {
     void applyToBecomeTutor(Long userID, TutorApplyRequest request);
     TutorApplyResponse getApplicationStatus(Long userID);
+    
+    // Public methods
+    TutorDetailResponse getTutorDetail(Long tutorId);
     
     // Admin methods
     List<TutorApplicationListResponse> getPendingApplications();
