@@ -4,14 +4,13 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class CourseResponse {
+public class CourseDetailResponse {
     Long id;
     String title;
     String description;
@@ -21,6 +20,5 @@ public class CourseResponse {
     String thumbnailURL;
     String categoryName;
     String tutorName;
-    String status;
-    List<CourseSectionResponse> section;
+
 }

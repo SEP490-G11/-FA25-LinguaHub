@@ -1,28 +1,33 @@
-
 package edu.lms.dto.response;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import java.time.LocalDateTime;
+import java.math.BigDecimal;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class TutorApplicationListResponse {
-    Long verificationId;
+public class TutorDetailResponse {
     Long tutorId;
     Long userId;
-    String userEmail;
     String userName;
+    String userEmail;
     String avatarURL;
     String country;
+    String phone;
+    String bio;
+
+    Short experience;
     String specialization;
     String teachingLanguage;
-    Double pricePerHour; // Giá booking/slot mỗi giờ (giá tối thiểu từ các booking plans active)
+    BigDecimal rating;
     String status;
-    LocalDateTime submittedAt;
-    LocalDateTime reviewedAt;
+
+    List<TutorCourseResponse> courses;
+    Double pricePerHour; // Giá booking tối thiểu mỗi giờ (từ các booking plans active)
 }
+

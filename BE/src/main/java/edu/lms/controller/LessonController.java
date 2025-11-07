@@ -1,3 +1,4 @@
+// src/main/java/edu/lms/controller/LessonController.java
 package edu.lms.controller;
 
 import edu.lms.dto.request.ApiRespond;
@@ -24,77 +25,71 @@ public class LessonController {
         // GET LESSONS BY SECTION
         @GetMapping("/{sectionID}/lessons")
         public ApiRespond<List<LessonResponse>> getLessonsBySection(
-                        @PathVariable Long sectionID,
-                        @RequestParam(required = false) String sortBy,
-                        @RequestParam(required = false, defaultValue = "ASC") String order,
-                        @RequestParam(required = false) String keyword) {
-                // Get tutorId from section
-                Long tutorId = lessonService.getTutorIdBySection(sectionID);
-
-                List<LessonResponse> lessons;
-                if (keyword != null || sortBy != null) {
-                        lessons = lessonService.getLessonsBySectionWithFilters(sectionID, tutorId, keyword, sortBy,
-                                        order);
-                } else {
-                        lessons = lessonService.getLessonsBySection(sectionID, tutorId);
-                }
-
+                @PathVariable Long sectionID,
+                @RequestParam(required = false) String sortBy,
+                @RequestParam(required = false, defaultValue = "ASC") String order,
+                @RequestParam(required = false) String keyword,
+                @org.springframework.security.core.annotation.AuthenticationPrincipal(expression = "claims['sub']") String email
+        ) {
+                List<LessonResponse> lessons = lessonService.getLessonsBySectionWithFilters(
+                        sectionID, email, keyword, sortBy, order
+                );
                 return ApiRespond.<List<LessonResponse>>builder()
-                                .result(lessons)
-                                .message("Lessons retrieved successfully")
-                                .build();
+                        .result(lessons)
+                        .message("Lessons retrieved successfully")
+                        .build();
         }
 
         // CREATE LESSON
         @PostMapping("/{sectionID}/lessons")
         public ApiRespond<LessonResponse> createLesson(
-                        @PathVariable Long sectionID,
-                        @RequestBody @Valid LessonRequest request) {
-                Long tutorId = lessonService.getTutorIdBySection(sectionID);
-                LessonResponse lesson = lessonService.createLesson(sectionID, request, tutorId);
-
+                @PathVariable Long sectionID,
+                @RequestBody @Valid LessonRequest request,
+                @org.springframework.security.core.annotation.AuthenticationPrincipal(expression = "claims['sub']") String email
+        ) {
+                LessonResponse lesson = lessonService.createLesson(sectionID, request, email);
                 return ApiRespond.<LessonResponse>builder()
-                                .result(lesson)
-                                .message("Lesson created successfully")
-                                .build();
+                        .result(lesson)
+                        .message("Lesson created successfully")
+                        .build();
         }
 
         // GET LESSON DETAIL
         @GetMapping("/lessons/{lessonId}")
         public ApiRespond<LessonResponse> getLessonDetail(
-                        @PathVariable Long lessonId) {
-                Long tutorId = lessonService.getTutorIdByLesson(lessonId);
-                LessonResponse lesson = lessonService.getLessonDetail(lessonId, tutorId);
-
+                @PathVariable Long lessonId,
+                @org.springframework.security.core.annotation.AuthenticationPrincipal(expression = "claims['sub']") String email
+        ) {
+                LessonResponse lesson = lessonService.getLessonDetail(lessonId, email);
                 return ApiRespond.<LessonResponse>builder()
-                                .result(lesson)
-                                .message("Lesson details retrieved successfully")
-                                .build();
+                        .result(lesson)
+                        .message("Lesson details retrieved successfully")
+                        .build();
         }
 
         // UPDATE LESSON
         @PutMapping("/lessons/{lessonId}")
         public ApiRespond<LessonResponse> updateLesson(
-                        @PathVariable Long lessonId,
-                        @RequestBody @Valid LessonRequest request) {
-                Long tutorId = lessonService.getTutorIdByLesson(lessonId);
-                LessonResponse lesson = lessonService.updateLesson(lessonId, request, tutorId);
-
+                @PathVariable Long lessonId,
+                @RequestBody @Valid LessonRequest request,
+                @org.springframework.security.core.annotation.AuthenticationPrincipal(expression = "claims['sub']") String email
+        ) {
+                LessonResponse lesson = lessonService.updateLesson(lessonId, request, email);
                 return ApiRespond.<LessonResponse>builder()
-                                .result(lesson)
-                                .message("Lesson updated successfully")
-                                .build();
+                        .result(lesson)
+                        .message("Lesson updated successfully")
+                        .build();
         }
 
         // DELETE LESSON
         @DeleteMapping("/lessons/{lessonId}")
         public ApiRespond<Void> deleteLesson(
-                        @PathVariable Long lessonId) {
-                Long tutorId = lessonService.getTutorIdByLesson(lessonId);
-                lessonService.deleteLesson(lessonId, tutorId);
-
+                @PathVariable Long lessonId,
+                @org.springframework.security.core.annotation.AuthenticationPrincipal(expression = "claims['sub']") String email
+        ) {
+                lessonService.deleteLesson(lessonId, email);
                 return ApiRespond.<Void>builder()
-                                .message("Lesson deleted successfully")
-                                .build();
+                        .message("Lesson deleted successfully")
+                        .build();
         }
 }

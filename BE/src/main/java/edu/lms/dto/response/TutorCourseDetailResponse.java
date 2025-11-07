@@ -11,7 +11,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class CourseResponse {
+public class TutorCourseDetailResponse {
     Long id;
     String title;
     String description;
@@ -20,7 +20,8 @@ public class CourseResponse {
     String language;
     String thumbnailURL;
     String categoryName;
-    String tutorName;
     String status;
+
+    // Thêm phần detail
     List<CourseSectionResponse> section;
 }

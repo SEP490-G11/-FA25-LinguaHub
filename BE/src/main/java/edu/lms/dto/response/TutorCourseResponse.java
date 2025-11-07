@@ -19,4 +19,5 @@ public class TutorCourseResponse {
     String language;
     String thumbnailURL;
     String categoryName;
+    String status;
 }

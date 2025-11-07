@@ -4,6 +4,6 @@ import lombok.Data;
 
 @Data
 public class LessonProgressRequest {
-    private Boolean isDone;          // true nếu học xong
-    private Integer watchedDuration; // thời lượng đã xem (giây)
+    private Boolean isDone;
+    private Integer watchedDuration; //giây
 }

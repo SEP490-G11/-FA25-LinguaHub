@@ -5,14 +5,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
@@ -32,9 +30,9 @@ public class SecurityConfig {
 
     @Autowired
     private CustomJwtDecoder customJwtDecoder;
-
-    @Autowired
-    private UserDetailsService userDetailsService;
+    
+    // UserDetailsService bean is automatically detected by Spring Security
+    // No need to inject it manually in Spring Boot 3.x
 
     private static final String[] PUBLIC_ENDPOINTS = {
             //  Swagger UI + OpenAPI
@@ -65,6 +63,8 @@ public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
                     .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/courses/public/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/courses/detail/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/tutors/approved").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/tutors/*").permitAll()
                     .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
                     .anyRequest().authenticated()
             )
@@ -107,15 +107,9 @@ public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return authConfig.getAuthenticationManager();
     }
 
-    //AuthenticationProvider
-    @Bean
-    public DaoAuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-        provider.setUserDetailsService(userDetailsService);
-        provider.setPasswordEncoder(passwordEncoder());
-        return provider;
-    }
-
+    // AuthenticationProvider is automatically configured by Spring Boot
+    // when UserDetailsService and PasswordEncoder beans are available
+    // No need to manually create DaoAuthenticationProvider bean in Spring Boot 3.x
 
     @Bean
     public PasswordEncoder passwordEncoder() {

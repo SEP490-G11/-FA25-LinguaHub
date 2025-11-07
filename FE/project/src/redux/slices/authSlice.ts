@@ -511,7 +511,7 @@ const authSlice = createSlice({
             .addCase(resetPassword.fulfilled, (state) => {
                 state.isLoading = false;
                 state.error = null;
-                state.otpSent = false; // Reset flag sau khi đổi mật khẩu xong
+                state.otpSent = false;
             })
             .addCase(resetPassword.rejected, (state, action) => {
                 state.isLoading = false;

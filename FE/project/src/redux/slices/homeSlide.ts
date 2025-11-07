@@ -20,14 +20,14 @@ interface HomeState {
     error: string | null;
 }
 
-// ✅ initial state
+//  initial state
 const initialState: HomeState = {
     courses: [],
     loading: false,
     error: null,
 };
 
-// ✅ Async thunk: fetch courses
+//  Async thunk: fetch courses
 export const fetchApprovedCourses = createAsyncThunk(
     "home/fetchApprovedCourses",
     async (_, { rejectWithValue }) => {
@@ -44,7 +44,7 @@ export const fetchApprovedCourses = createAsyncThunk(
     }
 );
 
-// ✅ Slice
+//  Slice
 const homeSlice = createSlice({
     name: "home",
     initialState,

@@ -9,7 +9,6 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CourseSectionRequest {
-    Long courseID;
     String title;
     String description;
     Integer orderIndex;

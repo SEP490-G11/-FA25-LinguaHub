@@ -1,4 +1,4 @@
-import api from '@/config/axiosConfig';
+import api from '@/lib/api.ts';
 import { SectionData } from './course-api';
 
 // ============================================================================
@@ -69,7 +69,7 @@ export const adminApi = {
 
       console.log('📤 Fetching pending courses:', params);
 
-      const response = await api.get('/courses', { params });
+      const response = await api.Get('/courses', { params });
       
       // Handle different response formats
       const data = response?.data || response || {};

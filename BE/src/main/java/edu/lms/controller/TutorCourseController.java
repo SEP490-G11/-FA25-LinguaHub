@@ -3,6 +3,7 @@ package edu.lms.controller;
 
 import edu.lms.dto.request.ApiRespond;
 import edu.lms.dto.request.TutorCourseRequest;
+import edu.lms.dto.response.TutorCourseDetailResponse;
 import edu.lms.dto.response.TutorCourseResponse;
 import edu.lms.dto.response.TutorCourseStudentResponse;
 import edu.lms.entity.Tutor;
@@ -108,6 +109,17 @@ public class TutorCourseController {
 
         return ApiRespond.<List<TutorCourseStudentResponse>>builder()
                 .result(tutorCourseService.getStudentsByCourse(courseID, tutor.getTutorID()))
+                .build();
+    }
+
+    @Operation(summary = "Tutor xem chi tiết khóa học của chính mình (kèm Section/Lesson/Resource)")
+    @GetMapping("/{courseID}")
+    public ApiRespond<TutorCourseDetailResponse> getMyCourseDetail(
+            @AuthenticationPrincipal(expression = "claims['sub']") String email,
+            @PathVariable Long courseID
+    ) {
+        return ApiRespond.<TutorCourseDetailResponse>builder()
+                .result(tutorCourseService.getMyCourseDetail(email, courseID))
                 .build();
     }
 }
