@@ -18,7 +18,7 @@ public class PaymentWebhookController {
 
     @PostMapping
     public ResponseEntity<?> handleWebhook(@RequestBody Map<String, Object> payload) {
-        log.info("📩 Received PayOS webhook: {}", payload);
+        log.info(" Received PayOS webhook: {}", payload);
 
         String orderCode = (String) payload.get("orderCode");
         String status = (String) payload.get("status");

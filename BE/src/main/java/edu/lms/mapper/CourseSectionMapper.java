@@ -43,12 +43,7 @@ public interface CourseSectionMapper {
                 .build();
     }
 
-    /**
-     * Helper method to map Lesson to LessonResponse.
-     * This is defined here to avoid circular dependencies if a separate
-     * LessonMapper
-     * were used.
-     */
+
     default LessonResponse lessonToLessonResponse(Lesson lesson) {
         if (lesson == null) {
             return null;
@@ -73,9 +68,7 @@ public interface CourseSectionMapper {
                 .build();
     }
 
-    /**
-     * Helper method to map LessonResource to LessonResourceResponse.
-     */
+
     default LessonResourceResponse resourceToResourceResponse(LessonResource resource) {
         if (resource == null) {
             return null;

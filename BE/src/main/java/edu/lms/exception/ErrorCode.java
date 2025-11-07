@@ -29,6 +29,7 @@ public enum ErrorCode {
     COURSE_CATEGORY_NOT_FOUND(3003, "Course category not found", HttpStatus.NOT_FOUND),
     COURSE_ALREADY_EXISTS(3004, "Course with the same title already exists", HttpStatus.BAD_REQUEST),
     COURSE_DELETE_ONLY_DRAFT(3005, "Only Draft course can be deleted", HttpStatus.FORBIDDEN),
+    SECTION_NOT_FOUND(3006,"Section not found", HttpStatus.NOT_FOUND),
 
     //  TUTOR MODULE
     TUTOR_NOT_FOUND(4001, "Tutor not found", HttpStatus.NOT_FOUND),

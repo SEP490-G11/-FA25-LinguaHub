@@ -19,5 +19,6 @@ public interface TutorCourseMapper {
 
     @Mapping(target = "id", source = "courseID")
     @Mapping(target = "categoryName", source = "category.name")
+    @Mapping(target = "status", source = "status")
     TutorCourseResponse toTutorCourseResponse(Course course);
 }

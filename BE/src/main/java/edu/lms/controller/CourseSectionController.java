@@ -6,6 +6,7 @@ import edu.lms.dto.response.CourseSectionResponse;
 import edu.lms.service.CourseSectionService;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,46 +21,61 @@ public class CourseSectionController {
 
     CourseSectionService courseSectionService;
 
-    // CREATE
-    @PostMapping
-    public ApiRespond<CourseSectionResponse> createSection(@RequestBody CourseSectionRequest request) {
+    // CREATE (Tutor owner)
+    @PostMapping("/{courseID}")
+    public ApiRespond<CourseSectionResponse> createSection(
+            @PathVariable Long courseID,
+            @RequestBody CourseSectionRequest request,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal(expression = "claims['sub']") String email
+    ) {
         return ApiRespond.<CourseSectionResponse>builder()
-                .result(courseSectionService.createSection(request))
+                .result(courseSectionService.createSection(courseID, request, email))
                 .message("Section created successfully")
                 .build();
     }
 
-    // GET ALL BY COURSE
+    // GET ALL BY COURSE (Tutor owner hoặc Learner đã enroll)
     @GetMapping("/{courseID}")
-    public ApiRespond<List<CourseSectionResponse>> getSectionsByCourse(@PathVariable Long courseID) {
+    public ApiRespond<List<CourseSectionResponse>> getSectionsByCourse(
+            @PathVariable Long courseID,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal(expression = "claims['sub']") String email
+    ) {
         return ApiRespond.<List<CourseSectionResponse>>builder()
-                .result(courseSectionService.getSectionsByCourse(courseID))
+                .result(courseSectionService.getSectionsByCourse(courseID, email))
                 .build();
     }
 
-    // GET ONE
+    // GET ONE (Tutor owner hoặc Learner đã enroll)
     @GetMapping("/detail/{sectionID}")
-    public ApiRespond<CourseSectionResponse> getSectionById(@PathVariable Long sectionID) {
+    public ApiRespond<CourseSectionResponse> getSectionById(
+            @PathVariable Long sectionID,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal(expression = "claims['sub']") String email
+    ) {
         return ApiRespond.<CourseSectionResponse>builder()
-                .result(courseSectionService.getSectionById(sectionID))
+                .result(courseSectionService.getSectionById(sectionID, email))
                 .build();
     }
 
-    // UPDATE
+    // UPDATE (Tutor owner)
     @PutMapping("/{sectionID}")
     public ApiRespond<CourseSectionResponse> updateSection(
             @PathVariable Long sectionID,
-            @RequestBody CourseSectionRequest request) {
+            @RequestBody CourseSectionRequest request,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal(expression = "claims['sub']") String email
+    ) {
         return ApiRespond.<CourseSectionResponse>builder()
-                .result(courseSectionService.updateSection(sectionID, request))
+                .result(courseSectionService.updateSection(sectionID, request, email))
                 .message("Section updated successfully")
                 .build();
     }
 
-    // DELETE
+    // DELETE (Tutor owner) — xóa Resource → Lesson → Section
     @DeleteMapping("/{sectionID}")
-    public ApiRespond<Void> deleteSection(@PathVariable Long sectionID) {
-        courseSectionService.deleteSection(sectionID);
+    public ApiRespond<Void> deleteSection(
+            @PathVariable Long sectionID,
+            @org.springframework.security.core.annotation.AuthenticationPrincipal(expression = "claims['sub']") String email
+    ) {
+        courseSectionService.deleteSection(sectionID, email);
         return ApiRespond.<Void>builder()
                 .message("Section deleted successfully")
                 .build();

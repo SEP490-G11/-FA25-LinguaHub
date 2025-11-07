@@ -20,7 +20,7 @@ public class SwaggerConfig {
                         .title("LMS Authentication API")
                         .version("1.0.0")
                         .description("""
-                                🧩 **Mô tả ngắn gọn:**
+                                 **Mô tả ngắn gọn:**
                                 API phục vụ chức năng đăng ký, xác thực và quản lý đăng nhập người dùng trong hệ thống LMS.
                                 
                                 Bao gồm các chức năng:
