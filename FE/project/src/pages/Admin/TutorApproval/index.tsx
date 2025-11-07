@@ -7,8 +7,12 @@ import { ApplicationList } from './components/application-list';
 import { Filters } from './components/filters';
 import { Application } from './types';
 import * as tutorApi from '@/queries/tutor-approval-api';
+import { useRole } from '@/auth';
 
 export default function TutorApproval() {
+  // Role check - Chỉ Admin
+  const { isAuthorized } = useRole(['Admin']);
+  
   // ==========================================================
   // PHASE 3: State Management with React Query
   // ==========================================================
@@ -92,6 +96,9 @@ export default function TutorApproval() {
   const handleReject = (applicationId: string, rejectionReason: string) => {
     rejectMutation.mutate({ id: applicationId, reason: rejectionReason });
   };
+
+  // Return null nếu không có quyền (hook tự redirect)
+  if (!isAuthorized) return null;
 
   // ==========================================================
   // PHASE 4: Render Different States

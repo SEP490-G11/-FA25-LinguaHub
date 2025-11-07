@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import { ROUTES } from '@/constants/routes.ts';
+import { ProtectedRoute } from '@/auth';
 
 // Pages
 import HomePage from '@/pages/HomePage/homepage.tsx';
@@ -61,19 +62,21 @@ export function AppRoutes() {
             <Route path={ROUTES.PAYMENT} element={<Payment />} />
             <Route path={ROUTES.POLICY} element={<PolicyPage />} />
 
-            {/* User */}
-            <Route path={ROUTES.PROFILE} element={<Profile />} />
-            <Route path={ROUTES.CHANGE_PASSWORD} element={<ChangePassword />} />
-            <Route path={ROUTES.PAYMENT_HISTORY} element={<PaymentHistory />} />
-            <Route path={ROUTES.MY_ENROLLMENTS} element={<MyEnrollments />} />
-            <Route path={ROUTES.APPLY_TUTOR} element={<ApplyTutor />} />
+            {/* User - Cần login */}
+            <Route path={ROUTES.PROFILE} element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path={ROUTES.CHANGE_PASSWORD} element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
+            <Route path={ROUTES.PAYMENT_HISTORY} element={<ProtectedRoute><PaymentHistory /></ProtectedRoute>} />
+            <Route path={ROUTES.MY_ENROLLMENTS} element={<ProtectedRoute><MyEnrollments /></ProtectedRoute>} />
+            <Route path={ROUTES.APPLY_TUTOR} element={<ProtectedRoute><ApplyTutor /></ProtectedRoute>} />
 
-            {/* Admin & Tutor */}
-            <Route path="/admin/course-approval" element={<CourseApprovalPage />} />
-            <Route path="/admin/tutor-approval" element={<TutorApproval />} />
-            <Route path="/tutor/courses" element={<CourseList />} />
-            <Route path="/tutor/courses/:id/content" element={<ManageCourseContent />} />
-            <Route path="/tutor/create-courses" element={<CreateCourse />} />
+            {/* Admin only */}
+            <Route path="/admin/course-approval" element={<ProtectedRoute allowedRoles={['Admin']}><CourseApprovalPage /></ProtectedRoute>} />
+            <Route path="/admin/tutor-approval" element={<ProtectedRoute allowedRoles={['Admin']}><TutorApproval /></ProtectedRoute>} />
+            
+            {/* Tutor only */}
+            <Route path="/tutor/courses" element={<ProtectedRoute allowedRoles={['Tutor']}><CourseList /></ProtectedRoute>} />
+            <Route path="/tutor/courses/:id/content" element={<ProtectedRoute allowedRoles={['Tutor']}><ManageCourseContent /></ProtectedRoute>} />
+            <Route path="/tutor/create-courses" element={<ProtectedRoute allowedRoles={['Admin', 'Tutor']}><CreateCourse /></ProtectedRoute>} />
 
             {/* Not found */}
             <Route path="*" element={<NotFound />} />
