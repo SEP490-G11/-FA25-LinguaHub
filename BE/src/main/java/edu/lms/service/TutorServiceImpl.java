@@ -7,6 +7,7 @@ import edu.lms.entity.Tutor;
 import edu.lms.entity.TutorVerification;
 import edu.lms.entity.User;
 import edu.lms.entity.Course;
+import edu.lms.entity.BookingPlan;
 import edu.lms.enums.TutorStatus;
 import edu.lms.enums.TutorVerificationStatus;
 import edu.lms.enums.CourseStatus;
@@ -17,6 +18,7 @@ import edu.lms.repository.TutorRepository;
 import edu.lms.repository.TutorVerificationRepository;
 import edu.lms.repository.UserRepository;
 import edu.lms.repository.CourseRepository;
+import edu.lms.repository.BookingPlanRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +40,7 @@ public class TutorServiceImpl implements TutorService {
     private final TutorVerificationRepository tutorVerificationRepository;
     private final UserRepository userRepository;
     private final CourseRepository courseRepository;
+    private final BookingPlanRepository bookingPlanRepository;
     private final TutorCourseMapper tutorCourseMapper;
 
     @Override
@@ -239,6 +242,9 @@ public class TutorServiceImpl implements TutorService {
                 .map(tutorCourseMapper::toTutorCourseResponse)
                 .collect(Collectors.toList());
         
+        // Tính giá booking tối thiểu từ các booking plans active
+        Double pricePerHour = calculateMinPricePerHour(tutor.getTutorID());
+        
         return TutorDetailResponse.builder()
                 .tutorId(tutor.getTutorID())
                 .userId(user.getUserID())
@@ -254,6 +260,7 @@ public class TutorServiceImpl implements TutorService {
                 .rating(tutor.getRating())
                 .status(tutor.getStatus().name())
                 .courses(courseResponses)
+                .pricePerHour(pricePerHour)
                 .build();
     }
 
@@ -290,6 +297,9 @@ public class TutorServiceImpl implements TutorService {
                             ? latestVerification.getTeachingLanguage()
                             : tutor.getTeachingLanguage();
                     
+                    // Tính giá booking tối thiểu từ các booking plans active
+                    Double pricePerHour = calculateMinPricePerHour(tutor.getTutorID());
+                    
                     return TutorApplicationListResponse.builder()
                             .verificationId(latestVerification != null ? latestVerification.getTutorVerificationID() : null)
                             .tutorId(tutor.getTutorID())
@@ -300,6 +310,7 @@ public class TutorServiceImpl implements TutorService {
                             .country(tutor.getUser().getCountry())
                             .specialization(specialization)
                             .teachingLanguage(teachingLanguage)
+                            .pricePerHour(pricePerHour)
                             .status(tutor.getStatus().name())
                             .submittedAt(latestVerification != null ? latestVerification.getSubmittedAt() : null)
                             .reviewedAt(latestVerification != null ? latestVerification.getReviewedAt() : null)
@@ -376,6 +387,9 @@ public class TutorServiceImpl implements TutorService {
         Tutor tutor = verification.getTutor();
         User user = tutor.getUser();
         
+        // Tính giá booking tối thiểu từ các booking plans active
+        Double pricePerHour = calculateMinPricePerHour(tutor.getTutorID());
+        
         return TutorApplicationListResponse.builder()
                 .verificationId(verification.getTutorVerificationID())
                 .tutorId(tutor.getTutorID())
@@ -386,10 +400,37 @@ public class TutorServiceImpl implements TutorService {
                 .country(user.getCountry())
                 .specialization(verification.getSpecialization())
                 .teachingLanguage(verification.getTeachingLanguage())
+                .pricePerHour(pricePerHour)
                 .status(verification.getStatus().name())
                 .submittedAt(verification.getSubmittedAt())
                 .reviewedAt(verification.getReviewedAt())
                 .build();
+    }
+    
+    /**
+     * Tính giá booking tối thiểu từ các booking plans active của tutor
+     * @param tutorId ID của tutor
+     * @return Giá tối thiểu mỗi giờ, null nếu không có booking plan nào active
+     */
+    private Double calculateMinPricePerHour(Long tutorId) {
+        List<BookingPlan> activeBookingPlans = bookingPlanRepository.findByTutorID(tutorId)
+                .stream()
+                .filter(plan -> Boolean.TRUE.equals(plan.getIsActive()) && Boolean.TRUE.equals(plan.getIsOpen()))
+                .collect(Collectors.toList());
+        
+        if (activeBookingPlans.isEmpty()) {
+            log.debug("No active booking plans found for tutor ID: {}", tutorId);
+            return null;
+        }
+        
+        Double minPrice = activeBookingPlans.stream()
+                .map(BookingPlan::getPricePerHours)
+                .filter(price -> price != null && price > 0)
+                .min(Double::compareTo)
+                .orElse(null);
+        
+        log.debug("Calculated min price per hour for tutor ID {}: {}", tutorId, minPrice);
+        return minPrice;
     }
 
     private TutorApplicationDetailResponse mapToApplicationDetailResponse(TutorVerification verification) {
