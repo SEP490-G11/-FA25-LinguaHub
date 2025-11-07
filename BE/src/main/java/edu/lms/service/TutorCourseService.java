@@ -1,8 +1,7 @@
 package edu.lms.service;
 
 import edu.lms.dto.request.TutorCourseRequest;
-import edu.lms.dto.response.TutorCourseResponse;
-import edu.lms.dto.response.TutorCourseStudentResponse;
+import edu.lms.dto.response.*;
 import edu.lms.entity.*;
 import edu.lms.enums.CourseStatus;
 import edu.lms.enums.TutorStatus;
@@ -170,4 +169,78 @@ public class TutorCourseService {
                     .build();
         }).toList();
     }
+
+    // ------- MAPPERS for detail (Section -> Lesson -> Resource) ------- //
+    private LessonResourceResponse toLessonResourceResponse(LessonResource lr) {
+        return LessonResourceResponse.builder()
+                .resourceID(lr.getResourceID())
+                .resourceType(lr.getResourceType())
+                .resourceTitle(lr.getResourceTitle())
+                .resourceURL(lr.getResourceURL())
+                .uploadedAt(lr.getUploadedAt())
+                .build();
+    }
+
+    private LessonResponse toLessonResponse(Lesson l) {
+        return LessonResponse.builder()
+                .lessonID(l.getLessonID())
+                .title(l.getTitle())
+                .duration(l.getDuration())
+                .lessonType(l.getLessonType())
+                .videoURL(l.getVideoURL())
+                .content(l.getContent())
+                .orderIndex(l.getOrderIndex())
+                .createdAt(l.getCreatedAt())
+                .resources(
+                        l.getResources() == null ? null :
+                                l.getResources().stream().map(this::toLessonResourceResponse).toList()
+                )
+                .build();
+    }
+
+    private CourseSectionResponse toCourseSectionResponse(CourseSection s) {
+        return CourseSectionResponse.builder()
+                .sectionID(s.getSectionID())
+                .courseID(s.getCourse().getCourseID())
+                .title(s.getTitle())
+                .description(s.getDescription())
+                .orderIndex(s.getOrderIndex())
+                .lessons(
+                        s.getLessons() == null ? null :
+                                s.getLessons().stream().map(this::toLessonResponse).toList()
+                )
+                .build();
+    }
+
+    private TutorCourseDetailResponse toTutorCourseDetailResponse(Course c) {
+        return TutorCourseDetailResponse.builder()
+                .id(c.getCourseID())
+                .title(c.getTitle())
+                .description(c.getDescription())
+                .duration(c.getDuration())
+                .price(c.getPrice())
+                .language(c.getLanguage())
+                .thumbnailURL(c.getThumbnailURL())
+                .categoryName(c.getCategory() != null ? c.getCategory().getName() : null)
+                .status(c.getStatus() != null ? c.getStatus().name() : null)
+                .section(
+                        c.getSections() == null ? null :
+                                c.getSections().stream().map(this::toCourseSectionResponse).toList()
+                )
+                .build();
+    }
+
+    // ------- API detail cho tutor (không ảnh hưởng list cũ) ------- //
+    public TutorCourseDetailResponse getMyCourseDetail(String email, Long courseID) {
+        Tutor tutor = resolveTutorByEmail(email);
+
+        Course course = courseRepository.findById(courseID)
+                .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
+
+        ensureCourseOwner(course, tutor.getTutorID());
+
+        // @Transactional trên class sẽ đảm bảo lazy-load an toàn khi map
+        return toTutorCourseDetailResponse(course);
+    }
+
 }
