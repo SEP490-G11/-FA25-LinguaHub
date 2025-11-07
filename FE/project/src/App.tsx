@@ -19,7 +19,7 @@ function App() {
     
     useEffect(() => {
         dispatch(loadUserFromStorage()); // <-- lấy user từ localStorage
-        dispatch(checkAuth());           // <-- xác thực lại token với backend
+        // dispatch(checkAuth());           // <-- TODO: Enable khi backend chạy
     }, [dispatch]);
 
     return (

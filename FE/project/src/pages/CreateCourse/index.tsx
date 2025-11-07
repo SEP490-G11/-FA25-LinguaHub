@@ -5,46 +5,110 @@ import { Step2CourseContent } from './components/course-content';
 import { CourseFormData, SectionData, courseApi } from '@/queries/course-api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle2 } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
 
 export default function CreateCourse() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
+  const [courseId, setCourseId] = useState<string>('');
   const [courseData, setCourseData] = useState<Partial<CourseFormData>>({});
   const [sections, setSections] = useState<SectionData[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleStep1Next = (data: CourseFormData) => {
-    setCourseData(data);
-    setCurrentStep(2);
+  // ============ STEP 1: Create Course with Basic Info ============
+  const handleStep1Next = async (data: CourseFormData) => {
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      // Call API to create course
+      const { courseId: newCourseId } = await courseApi.createCourse(data);
+      
+      // Save courseId and course data
+      setCourseId(newCourseId);
+      setCourseData(data);
+      
+      // Move to step 2
+      setCurrentStep(2);
+      setIsSubmitting(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create course');
+      setIsSubmitting(false);
+    }
   };
 
+  // ============ STEP 2: Save Course Content (Sections + Lessons + Resources) ============
   const handleStep2Save = async (sectionsData: SectionData[]) => {
     setSections(sectionsData);
     setIsSubmitting(true);
     setError(null);
 
     try {
-      const result = await courseApi.createCourse(
-        courseData as CourseFormData,
-        sectionsData
-      );
+      // Loop through each section
+      for (const section of sectionsData) {
+        // Add section with courseID
+        const { sectionId } = await courseApi.addSection(courseId, {
+          courseID: parseInt(courseId),  // Add courseID to section
+          title: section.title,
+          description: section.description,
+          orderIndex: section.orderIndex,  // Changed from order_index
+        });
 
-      navigate(`/tutor/courses`, {
-        state: { message: 'Course created successfully!' },
+        // Loop through each lesson in the section
+        for (const lesson of section.lessons) {
+          // Add lesson
+          const { lessonId } = await courseApi.addLesson(courseId, sectionId, {
+            title: lesson.title,
+            duration: lesson.duration,  // Changed from duration_minutes
+            lessonType: lesson.lessonType || 'Video',  // Changed from lesson_type
+            videoURL: lesson.videoURL,  // Changed from video_url
+            content: lesson.content,
+            orderIndex: lesson.orderIndex,  // Changed from order_index
+          });
+
+          // Loop through each resource in the lesson
+          if (lesson.resources && lesson.resources.length > 0) {
+            for (const resource of lesson.resources) {
+              await courseApi.addLessonResource(courseId, sectionId, lessonId, {
+                resourceType: resource.resourceType,  // Changed from resource_type
+                resourceTitle: resource.resourceTitle,  // Changed from resource_title
+                resourceURL: resource.resourceURL,  // Changed from resource_url
+              });
+            }
+          }
+        }
+      }
+
+      // Success! Show toast notification
+      toast({
+        title: "Success!",
+        description: "Course created successfully! Redirecting...",
+        duration: 2000,
       });
+
+      // Delay navigation to show toast
+      setTimeout(() => {
+        navigate('/tutor/courses', {
+          state: { message: 'Course created successfully!' },
+        });
+      }, 2000);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'Failed to create course'
-      );
+      setError(err instanceof Error ? err.message : 'Failed to save course content');
       setIsSubmitting(false);
+      
+      // Show error toast
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: err instanceof Error ? err.message : 'Failed to save course content',
+      });
     }
   };
 
   const handleCancel = () => {
-    if (
-      confirm('Are you sure you want to cancel? All progress will be lost.')
-    ) {
+    if (confirm('Are you sure you want to cancel? All progress will be lost.')) {
       navigate('/tutor/courses');
     }
   };

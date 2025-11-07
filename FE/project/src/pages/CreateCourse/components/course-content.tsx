@@ -47,23 +47,23 @@ interface SectionFormData {
 
 interface LessonFormData {
   title: string;
-  duration_minutes: number;
-  lesson_type: 'Video' | 'Reading';
-  video_url?: string;
+  duration: number;
+  lessonType: 'Video' | 'Reading';
+  videoURL?: string;
   content?: string;
   resources?: LessonResourceData[];
 }
 
 interface LessonResourceData {
-  resource_type: 'PDF' | 'ExternalLink';
-  resource_title: string;
-  resource_url: string;
+  resourceType: 'PDF' | 'ExternalLink';
+  resourceTitle: string;
+  resourceURL: string;
 }
 
 interface ResourceFormData {
-  resource_type: 'PDF' | 'ExternalLink';
-  resource_title: string;
-  resource_url: string;
+  resourceType: 'PDF' | 'ExternalLink';
+  resourceTitle: string;
+  resourceURL: string;
 }
 
 export function Step2CourseContent({ 
@@ -98,9 +98,9 @@ export function Step2CourseContent({
   const [showNewResourceDialog, setShowNewResourceDialog] = useState(false);
   const [showEditResourceDialog, setShowEditResourceDialog] = useState(false);
   const [resourceForm, setResourceForm] = useState<ResourceFormData>({
-    resource_type: 'PDF',
-    resource_title: '',
-    resource_url: '',
+    resourceType: 'PDF',
+    resourceTitle: '',
+    resourceURL: '',
   });
   const [editingResourceIndex, setEditingResourceIndex] = useState<number | null>(null);
   const [isEditingLesson, setIsEditingLesson] = useState(false);
@@ -129,7 +129,7 @@ export function Step2CourseContent({
       {
         title: newSection.title,
         description: newSection.description,
-        order_index: prev.length,
+        orderIndex: prev.length,
         lessons: [],
       },
     ]);
@@ -171,7 +171,7 @@ export function Step2CourseContent({
       const updated = prev.filter((_, idx) => idx !== index);
       return updated.map((section, idx) => ({
         ...section,
-        order_index: idx,
+        orderIndex: idx,
       }));
     });
   };
@@ -183,7 +183,7 @@ export function Step2CourseContent({
       [updated[index - 1], updated[index]] = [updated[index], updated[index - 1]];
       return updated.map((section, idx) => ({
         ...section,
-        order_index: idx,
+        orderIndex: idx,
       }));
     });
   };
@@ -195,7 +195,7 @@ export function Step2CourseContent({
       [updated[index], updated[index + 1]] = [updated[index + 1], updated[index]];
       return updated.map((section, idx) => ({
         ...section,
-        order_index: idx,
+        orderIndex: idx,
       }));
     });
   };
@@ -205,9 +205,9 @@ export function Step2CourseContent({
       sectionIndex,
       data: {
         title: '',
-        duration_minutes: 0,
-        lesson_type: 'Video',
-        video_url: '',
+        duration: 0,
+        lessonType: 'Video',
+        videoURL: '',
         content: '',
         resources: [],
       },
@@ -219,13 +219,13 @@ export function Step2CourseContent({
     if (
       !newLesson ||
       !newLesson.data.title.trim() ||
-      newLesson.data.duration_minutes <= 0
+      newLesson.data.duration <= 0
     ) {
       return;
     }
 
     // Validate based on lesson type
-    if (newLesson.data.lesson_type === 'Video' && !newLesson.data.video_url?.trim()) {
+    if (newLesson.data.lessonType === 'Video' && !newLesson.data.videoURL?.trim()) {
       alert('Please enter a video URL for this video lesson');
       return;
     }
@@ -239,7 +239,7 @@ export function Step2CourseContent({
                 ...section.lessons,
                 {
                   ...newLesson.data,
-                  order_index: section.lessons.length,
+                  orderIndex: section.lessons.length,
                 } as LessonData,
               ],
             }
@@ -256,9 +256,9 @@ export function Step2CourseContent({
       lessonIndex,
       data: {
         title: lesson.title,
-        duration_minutes: lesson.duration_minutes,
-        lesson_type: (lesson as any).lesson_type || 'Video',
-        video_url: (lesson as any).video_url || '',
+        duration: lesson.duration,
+        lessonType: (lesson as any).lessonType || 'Video',
+        videoURL: (lesson as any).videoURL || '',
         content: (lesson as any).content || '',
         resources: (lesson as any).resources || [],
       },
@@ -270,13 +270,13 @@ export function Step2CourseContent({
     if (
       !editingLesson ||
       !editingLesson.data.title.trim() ||
-      editingLesson.data.duration_minutes <= 0
+      editingLesson.data.duration <= 0
     ) {
       return;
     }
 
     // Validate based on lesson type
-    if (editingLesson.data.lesson_type === 'Video' && !editingLesson.data.video_url?.trim()) {
+    if (editingLesson.data.lessonType === 'Video' && !editingLesson.data.videoURL?.trim()) {
       alert('Please enter a video URL for this video lesson');
       return;
     }
@@ -308,7 +308,7 @@ export function Step2CourseContent({
               ...section,
               lessons: section.lessons
                 .filter((_, lIdx) => lIdx !== lessonIndex)
-                .map((lesson, lIdx) => ({ ...lesson, order_index: lIdx })),
+                .map((lesson, lIdx) => ({ ...lesson, orderIndex: lIdx })),
             }
           : section
       )
@@ -329,7 +329,7 @@ export function Step2CourseContent({
           ...section,
           lessons: updated.map((lesson, lIdx) => ({
             ...lesson,
-            order_index: lIdx,
+            orderIndex: lIdx,
           })),
         };
       })
@@ -351,7 +351,7 @@ export function Step2CourseContent({
           ...section,
           lessons: updated.map((lesson, lIdx) => ({
             ...lesson,
-            order_index: lIdx,
+            orderIndex: lIdx,
           })),
         };
       })
@@ -398,7 +398,7 @@ export function Step2CourseContent({
     const currentData = getCurrentLessonData();
     if (!currentData) return;
 
-    if (!resourceForm.resource_title.trim() || !resourceForm.resource_url.trim()) {
+    if (!resourceForm.resourceTitle.trim() || !resourceForm.resourceURL.trim()) {
       alert('Please fill in all resource fields');
       return;
     }
@@ -409,7 +409,7 @@ export function Step2CourseContent({
     };
 
     setCurrentLessonData(updatedData);
-    setResourceForm({ resource_type: 'PDF', resource_title: '', resource_url: '' });
+    setResourceForm({ resourceType: 'PDF', resourceTitle: '', resourceURL: '' });
     setShowNewResourceDialog(false);
   };
 
@@ -417,7 +417,7 @@ export function Step2CourseContent({
     const currentData = getCurrentLessonData();
     if (!currentData || editingResourceIndex === null) return;
 
-    if (!resourceForm.resource_title.trim() || !resourceForm.resource_url.trim()) {
+    if (!resourceForm.resourceTitle.trim() || !resourceForm.resourceURL.trim()) {
       alert('Please fill in all resource fields');
       return;
     }
@@ -431,7 +431,7 @@ export function Step2CourseContent({
     };
 
     setCurrentLessonData(updatedData);
-    setResourceForm({ resource_type: 'PDF', resource_title: '', resource_url: '' });
+    setResourceForm({ resourceType: 'PDF', resourceTitle: '', resourceURL: '' });
     setEditingResourceIndex(null);
     setShowEditResourceDialog(false);
   };
@@ -571,7 +571,7 @@ export function Step2CourseContent({
                     className="flex items-center gap-3 p-3 border rounded-lg bg-gray-50"
                   >
                     <GripVertical className="w-4 h-4 text-gray-400 cursor-move" />
-                    {((lesson as any).lesson_type || 'Video') === 'Reading' ? (
+                    {((lesson as any).lessonType || 'Video') === 'Reading' ? (
                       <BookOpen className="w-4 h-4 text-gray-500" />
                     ) : (
                       <Video className="w-4 h-4 text-gray-500" />
@@ -579,7 +579,7 @@ export function Step2CourseContent({
                     <div className="flex-1">
                       <h5 className="font-medium text-sm">{lesson.title}</h5>
                       <p className="text-xs text-gray-500">
-                        {lesson.duration_minutes} minutes
+                        {lesson.duration} minutes
                       </p>
                     </div>
 
@@ -827,13 +827,13 @@ export function Step2CourseContent({
                     type="radio"
                     name="lesson-type"
                     value="Video"
-                    checked={getCurrentLessonData()?.lesson_type === 'Video'}
+                    checked={getCurrentLessonData()?.lessonType === 'Video'}
                     onChange={(e) => {
                       const data = getCurrentLessonData();
                       if (data) {
                         setCurrentLessonData({
                           ...data,
-                          lesson_type: e.target.value as 'Video' | 'Reading',
+                          lessonType: e.target.value as 'Video' | 'Reading',
                         });
                       }
                     }}
@@ -845,13 +845,13 @@ export function Step2CourseContent({
                     type="radio"
                     name="lesson-type"
                     value="Reading"
-                    checked={getCurrentLessonData()?.lesson_type === 'Reading'}
+                    checked={getCurrentLessonData()?.lessonType === 'Reading'}
                     onChange={(e) => {
                       const data = getCurrentLessonData();
                       if (data) {
                         setCurrentLessonData({
                           ...data,
-                          lesson_type: e.target.value as 'Video' | 'Reading',
+                          lessonType: e.target.value as 'Video' | 'Reading',
                         });
                       }
                     }}
@@ -870,13 +870,13 @@ export function Step2CourseContent({
                 type="number"
                 min="1"
                 max="600"
-                value={getCurrentLessonData()?.duration_minutes || ''}
+                value={getCurrentLessonData()?.duration || ''}
                 onChange={(e) => {
                   const data = getCurrentLessonData();
                   if (data) {
                     setCurrentLessonData({
                       ...data,
-                      duration_minutes: Number(e.target.value),
+                      duration: Number(e.target.value),
                     });
                   }
                 }}
@@ -884,28 +884,28 @@ export function Step2CourseContent({
               />
             </div>
 
-            {getCurrentLessonData()?.lesson_type === 'Video' && (
+            {getCurrentLessonData()?.lessonType === 'Video' && (
               <div>
                 <Label htmlFor="lesson-video-url">
                   Video URL <span className="text-red-500">*</span>
                 </Label>
                 <Input
                   id="lesson-video-url"
-                  value={getCurrentLessonData()?.video_url || ''}
+                  value={getCurrentLessonData()?.videoURL || ''}
                   onChange={(e) => {
                     const data = getCurrentLessonData();
                     if (data) {
-                      setCurrentLessonData({ ...data, video_url: e.target.value });
+                      setCurrentLessonData({ ...data, videoURL: e.target.value });
                     }
                   }}
                   placeholder="https://www.youtube.com/watch?v=..."
                 />
-                {getCurrentLessonData()?.video_url && (
+                {getCurrentLessonData()?.videoURL && (
                   <div className="mt-3">
                     <p className="text-sm text-gray-600 mb-2">Preview:</p>
                     <div className="aspect-video">
                       <iframe
-                        src={getYouTubeEmbedUrl(getCurrentLessonData()!.video_url!)}
+                        src={getYouTubeEmbedUrl(getCurrentLessonData()!.videoURL!)}
                         className="w-full h-full rounded"
                         allowFullScreen
                       />
@@ -915,7 +915,7 @@ export function Step2CourseContent({
               </div>
             )}
 
-            {getCurrentLessonData()?.lesson_type === 'Reading' && (
+            {getCurrentLessonData()?.lessonType === 'Reading' && (
               <div>
                 <Label htmlFor="lesson-content">
                   Content <span className="text-red-500">*</span>
@@ -944,9 +944,9 @@ export function Step2CourseContent({
                   type="button"
                   onClick={() => {
                     setResourceForm({
-                      resource_type: 'PDF',
-                      resource_title: '',
-                      resource_url: '',
+                      resourceType: 'PDF',
+                      resourceTitle: '',
+                      resourceURL: '',
                     });
                     setShowNewResourceDialog(true);
                   }}
@@ -964,13 +964,13 @@ export function Step2CourseContent({
                       className="flex items-center justify-between bg-white p-2 rounded border"
                     >
                       <div className="flex items-center gap-2 flex-1">
-                        {getResourceIcon(resource.resource_type)}
+                        {getResourceIcon(resource.resourceType)}
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate">
-                            {resource.resource_title}
+                            {resource.resourceTitle}
                           </p>
                           <p className="text-xs text-gray-500 truncate">
-                            {resource.resource_type}
+                            {resource.resourceType}
                           </p>
                         </div>
                       </div>
@@ -1010,10 +1010,10 @@ export function Step2CourseContent({
               onClick={isEditingLesson ? saveEditLesson : saveNewLesson}
               disabled={
                 !getCurrentLessonData()?.title.trim() ||
-                (getCurrentLessonData()?.duration_minutes || 0) <= 0 ||
-                (getCurrentLessonData()?.lesson_type === 'Video' &&
-                  !getCurrentLessonData()?.video_url?.trim()) ||
-                (getCurrentLessonData()?.lesson_type === 'Reading' &&
+                (getCurrentLessonData()?.duration || 0) <= 0 ||
+                (getCurrentLessonData()?.lessonType === 'Video' &&
+                  !getCurrentLessonData()?.videoURL?.trim()) ||
+                (getCurrentLessonData()?.lessonType === 'Reading' &&
                   !getCurrentLessonData()?.content?.trim())
               }
             >
@@ -1035,11 +1035,11 @@ export function Step2CourseContent({
             <div>
               <Label>Resource Type</Label>
               <Select
-                value={resourceForm.resource_type}
+                value={resourceForm.resourceType}
                 onValueChange={(value) =>
                   setResourceForm({
                     ...resourceForm,
-                    resource_type: value as 'PDF' | 'ExternalLink',
+                    resourceType: value as 'PDF' | 'ExternalLink',
                   })
                 }
               >
@@ -1056,11 +1056,11 @@ export function Step2CourseContent({
               <Label htmlFor="resource-title">Title</Label>
               <Input
                 id="resource-title"
-                value={resourceForm.resource_title}
+                value={resourceForm.resourceTitle}
                 onChange={(e) =>
                   setResourceForm({
                     ...resourceForm,
-                    resource_title: e.target.value,
+                    resourceTitle: e.target.value,
                   })
                 }
                 placeholder="e.g., Grammar Guide"
@@ -1068,21 +1068,21 @@ export function Step2CourseContent({
             </div>
             <div>
               <Label htmlFor="resource-url">
-                {resourceForm.resource_type === 'PDF'
+                {resourceForm.resourceType === 'PDF'
                   ? 'PDF URL'
                   : 'Link URL'}
               </Label>
               <Input
                 id="resource-url"
-                value={resourceForm.resource_url}
+                value={resourceForm.resourceURL}
                 onChange={(e) =>
                   setResourceForm({
                     ...resourceForm,
-                    resource_url: e.target.value,
+                    resourceURL: e.target.value,
                   })
                 }
                 placeholder={
-                  resourceForm.resource_type === 'PDF'
+                  resourceForm.resourceType === 'PDF'
                     ? 'https://example.com/file.pdf'
                     : 'https://example.com'
                 }
@@ -1099,8 +1099,8 @@ export function Step2CourseContent({
             <Button
               onClick={addResource}
               disabled={
-                !resourceForm.resource_title.trim() ||
-                !resourceForm.resource_url.trim()
+                !resourceForm.resourceTitle.trim() ||
+                !resourceForm.resourceURL.trim()
               }
             >
               Add
@@ -1121,11 +1121,11 @@ export function Step2CourseContent({
             <div>
               <Label>Resource Type</Label>
               <Select
-                value={resourceForm.resource_type}
+                value={resourceForm.resourceType}
                 onValueChange={(value) =>
                   setResourceForm({
                     ...resourceForm,
-                    resource_type: value as 'PDF' | 'ExternalLink',
+                    resourceType: value as 'PDF' | 'ExternalLink',
                   })
                 }
               >
@@ -1142,11 +1142,11 @@ export function Step2CourseContent({
               <Label htmlFor="edit-resource-title">Title</Label>
               <Input
                 id="edit-resource-title"
-                value={resourceForm.resource_title}
+                value={resourceForm.resourceTitle}
                 onChange={(e) =>
                   setResourceForm({
                     ...resourceForm,
-                    resource_title: e.target.value,
+                    resourceTitle: e.target.value,
                   })
                 }
                 placeholder="e.g., Grammar Guide"
@@ -1154,21 +1154,21 @@ export function Step2CourseContent({
             </div>
             <div>
               <Label htmlFor="edit-resource-url">
-                {resourceForm.resource_type === 'PDF'
+                {resourceForm.resourceType === 'PDF'
                   ? 'PDF URL'
                   : 'Link URL'}
               </Label>
               <Input
                 id="edit-resource-url"
-                value={resourceForm.resource_url}
+                value={resourceForm.resourceURL}
                 onChange={(e) =>
                   setResourceForm({
                     ...resourceForm,
-                    resource_url: e.target.value,
+                    resourceURL: e.target.value,
                   })
                 }
                 placeholder={
-                  resourceForm.resource_type === 'PDF'
+                  resourceForm.resourceType === 'PDF'
                     ? 'https://example.com/file.pdf'
                     : 'https://example.com'
                 }
@@ -1185,8 +1185,8 @@ export function Step2CourseContent({
             <Button
               onClick={updateResource}
               disabled={
-                !resourceForm.resource_title.trim() ||
-                !resourceForm.resource_url.trim()
+                !resourceForm.resourceTitle.trim() ||
+                !resourceForm.resourceURL.trim()
               }
             >
               Update
