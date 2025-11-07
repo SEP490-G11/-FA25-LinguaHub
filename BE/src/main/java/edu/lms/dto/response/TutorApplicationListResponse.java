@@ -21,6 +21,7 @@ public class TutorApplicationListResponse {
     String country;
     String specialization;
     String teachingLanguage;
+    Double pricePerHour; // Giá booking/slot mỗi giờ (giá tối thiểu từ các booking plans active)
     String status;
     LocalDateTime submittedAt;
     LocalDateTime reviewedAt;
