@@ -33,6 +33,14 @@ import ApplyTutor from '@/pages/ApplyTutor';
 import TutorApproval from '@/pages/Admin/TutorApproval';
 import ManageCourseContent from '@/pages/TutorPages/ManageCourseContent';
 import CourseList from '@/pages/TutorPages/CourseList';
+import TutorDashboardLayout from '@/components/layout/TutorDashboardLayout';
+import TutorDashboard from '@/pages/TutorPages/Dashboard';
+import TutorStudents from '@/pages/TutorPages/Students';
+import TutorSettings from '@/pages/TutorPages/Settings';
+import TutorAnalytics from '@/pages/TutorPages/Analytics';
+import TutorSchedule from '@/pages/TutorPages/Schedule';
+import TutorMessages from '@/pages/TutorPages/Messages';
+import TutorResources from '@/pages/TutorPages/Resources';
 
 export function AppRoutes() {
     return (
@@ -71,9 +79,20 @@ export function AppRoutes() {
             {/* Admin & Tutor */}
             <Route path="/admin/course-approval" element={<CourseApprovalPage />} />
             <Route path="/admin/tutor-approval" element={<TutorApproval />} />
-            <Route path="/tutor/courses" element={<CourseList />} />
-            <Route path="/tutor/courses/:id/content" element={<ManageCourseContent />} />
-            <Route path="/tutor/create-courses" element={<CreateCourse />} />
+            
+            {/* Tutor Dashboard with Layout */}
+            <Route path="/tutor" element={<TutorDashboardLayout />}>
+                <Route path="dashboard" element={<TutorDashboard />} />
+                <Route path="courses" element={<CourseList />} />
+                <Route path="courses/:id/content" element={<ManageCourseContent />} />
+                <Route path="create-courses" element={<CreateCourse />} />
+                <Route path="students" element={<TutorStudents />} />
+                <Route path="schedule" element={<TutorSchedule />} />
+                <Route path="analytics" element={<TutorAnalytics />} />
+                <Route path="messages" element={<TutorMessages />} />
+                <Route path="resources" element={<TutorResources />} />
+                <Route path="settings" element={<TutorSettings />} />
+            </Route>
 
             {/* Not found */}
             <Route path="*" element={<NotFound />} />

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Bell, Menu, X, Languages, Heart, User, LogOut, BookOpen, Settings, GraduationCap, CreditCard, Lock } from 'lucide-react';
+import { Bell, Menu, X, Languages, Heart, User, LogOut, BookOpen, Settings, GraduationCap, CreditCard, Lock, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -16,6 +16,7 @@ import { ROUTES } from '@/constants/routes.ts';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '@/redux/store.ts';
 import { signOut } from '@/redux/slices/authSlice.ts';
+import { useSidebar } from '@/contexts/SidebarContext';
 
 const Header = () => {
   const location = useLocation();
@@ -23,8 +24,19 @@ const Header = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
+  // Kiểm tra xem có đang ở trang tutor không
+  const isTutorPage = location.pathname.startsWith('/tutor');
+  
+  // Sử dụng sidebar context nếu đang ở trang tutor
+  let sidebarContext;
+  try {
+    sidebarContext = useSidebar();
+  } catch {
+    // Không có sidebar context - không phải trang tutor
+    sidebarContext = null;
+  }
 
   const handleLogout = async () => {
 
@@ -60,20 +72,32 @@ const Header = () => {
       <header className="bg-background border-b border-border sticky top-0 z-50 shadow-sm">
         <div className="w-full px-8 lg:px-16">
           <div className="flex justify-between items-center h-16">
-            {/* Logo */}
-            <div className="flex items-center">
-              <Link to={ROUTES.HOME} className="flex items-center space-x-2">
+            {/* Logo with optional sidebar toggle */}
+            <div className="flex items-center gap-4">
+              {isTutorPage && sidebarContext && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={sidebarContext.toggle}
+                  className="hover:bg-gray-100"
+                >
+                  <Menu className="w-6 h-6" />
+                </Button>
+              )}
+              <Link to={isTutorPage ? ROUTES.TUTOR_DASHBOARD : ROUTES.HOME} className="flex items-center space-x-2">
                 <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-2 rounded-lg">
                   <Languages className="w-6 h-6 text-white" />
                 </div>
                 <div className="text-2xl font-bold text-foreground">
                   Lingua<span className="text-primary">Hub</span>
+                  {isTutorPage && <span className="ml-2 text-sm font-normal text-gray-500">Tutor</span>}
                 </div>
               </Link>
             </div>
 
-            {/* Navigation */}
-            <nav className="hidden md:flex space-x-8">
+            {/* Navigation - Hide on tutor pages */}
+            {!isTutorPage && (
+              <nav className="hidden md:flex space-x-8">
               <Link
                   to={ROUTES.HOME}
                   className={cn(
@@ -119,16 +143,19 @@ const Header = () => {
                 Become a Tutor
               </Link>
             </nav>
+            )}
 
-            {/* Policy Links - Desktop */}
-            <div className="hidden lg:flex items-center space-x-4 text-sm">
-              <Link
-                  to={ROUTES.POLICY}
-                  className="text-muted-foreground hover:text-primary transition-colors whitespace-nowrap"
-              >
-                Privacy & Terms
-              </Link>
-            </div>
+            {/* Policy Links - Desktop - Hide on tutor pages */}
+            {!isTutorPage && (
+              <div className="hidden lg:flex items-center space-x-4 text-sm">
+                <Link
+                    to={ROUTES.POLICY}
+                    className="text-muted-foreground hover:text-primary transition-colors whitespace-nowrap"
+                >
+                  Privacy & Terms
+                </Link>
+              </div>
+            )}
 
             {/* Right side */}
             <div className="flex items-center space-x-4">
@@ -220,18 +247,35 @@ const Header = () => {
                           <span>Hồ sơ</span>
                         </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link to="/my-courses" className="cursor-pointer">
-                          <BookOpen className="mr-2 h-4 w-4" />
-                          <span>Khóa học của tôi</span>
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link to="/my-enrollments" className="cursor-pointer">
-                          <GraduationCap className="mr-2 h-4 w-4" />
-                          <span>Tiến độ học</span>
-                        </Link>
-                      </DropdownMenuItem>
+                      
+                      {/* Tutor specific menu items */}
+                      {user?.role === 'Tutor' && (
+                        <DropdownMenuItem asChild>
+                          <Link to={ROUTES.TUTOR_DASHBOARD} className="cursor-pointer">
+                            <LayoutDashboard className="mr-2 h-4 w-4" />
+                            <span>Dashboard</span>
+                          </Link>
+                        </DropdownMenuItem>
+                      )}
+                      
+                      {/* Learner specific menu items */}
+                      {user?.role === 'Learner' && (
+                        <>
+                          <DropdownMenuItem asChild>
+                            <Link to="/my-courses" className="cursor-pointer">
+                              <BookOpen className="mr-2 h-4 w-4" />
+                              <span>Khóa học của tôi</span>
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem asChild>
+                            <Link to="/my-enrollments" className="cursor-pointer">
+                              <GraduationCap className="mr-2 h-4 w-4" />
+                              <span>Tiến độ học</span>
+                            </Link>
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                      
                       <DropdownMenuItem asChild>
                         <Link to="/payment-history" className="cursor-pointer">
                           <CreditCard className="mr-2 h-4 w-4" />
@@ -244,9 +288,9 @@ const Header = () => {
                           <span>Đổi mật khẩu</span>
                         </Link>
                       </DropdownMenuItem>
-                      {user?.role === 'Admin' && (
+                      {(user?.role === 'Admin' || user?.role === 'Tutor') && (
                           <DropdownMenuItem asChild>
-                            <Link to="/settings" className="cursor-pointer">
+                            <Link to={user?.role === 'Tutor' ? '/tutor/settings' : '/settings'} className="cursor-pointer">
                               <Settings className="mr-2 h-4 w-4" />
                               <span>Cài đặt</span>
                             </Link>
@@ -273,8 +317,8 @@ const Header = () => {
             </div>
           </div>
 
-          {/* ✅ Menu mobile hiển thị khi mở */}
-          {mobileMenuOpen && (
+          {/* ✅ Menu mobile hiển thị khi mở - Hide on tutor pages */}
+          {mobileMenuOpen && !isTutorPage && (
               <div className="md:hidden border-t bg-white shadow-md">
                 <nav className="flex flex-col p-4 space-y-2">
                   <Link to={ROUTES.HOME} onClick={() => setMobileMenuOpen(false)}>Home</Link>
