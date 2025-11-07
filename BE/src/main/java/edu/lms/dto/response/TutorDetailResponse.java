@@ -28,5 +28,6 @@ public class TutorDetailResponse {
     String status;
 
     List<TutorCourseResponse> courses;
+    Double pricePerHour; // Giá booking tối thiểu mỗi giờ (từ các booking plans active)
 }
 
