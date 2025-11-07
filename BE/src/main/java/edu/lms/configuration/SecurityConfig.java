@@ -65,6 +65,7 @@ public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
                     .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/courses/public/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/courses/detail/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/tutors/approved").permitAll()
                     .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
                     .anyRequest().authenticated()
             )
