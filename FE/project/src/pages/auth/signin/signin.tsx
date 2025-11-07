@@ -61,8 +61,13 @@ const SignIn = () => {
   const onSubmit = async (data: SignInForm) => {
     dispatch(clearError());
     try {
-      await dispatch(signIn(data)).unwrap();
-      navigate(ROUTES.HOME, { replace: true });
+      const result = await dispatch(signIn(data)).unwrap();
+      // Kiểm tra role và redirect tương ứng
+      if (result.user && result.user.role === 'Tutor') {
+        navigate(ROUTES.TUTOR_DASHBOARD, { replace: true });
+      } else {
+        navigate(ROUTES.HOME, { replace: true });
+      }
     } catch (error: unknown) {
       console.error('Signin error:', error);
       if (error instanceof Error && error.message.includes('timeout')) {

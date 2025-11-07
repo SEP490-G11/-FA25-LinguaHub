@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { X } from 'lucide-react';
-import { courseApi } from '@/queries/course-api';
+import { getCategories, getLanguages } from '@/queries/course-api';
 import { CourseFormData, Language, Category } from '@/queries/course-api';
 
 interface Step1Props {
@@ -23,119 +23,31 @@ interface Step1Props {
 interface ValidationErrors {
   title?: string;
   description?: string;
-  category_id?: string;
-  languages?: string;
-  duration_hours?: string;
-  price_vnd?: string;
-  thumbnail?: string;
+  categoryID?: string;
+  language?: string;
+  duration?: string;
+  price?: string;
+  thumbnailURL?: string;
 }
-
-// Default categories for fallback when API is unavailable
-const DEFAULT_CATEGORIES: Category[] = [
-  { id: 'ielts', name: 'IELTS' },
-  { id: 'topik', name: 'TOPIK' },
-  { id: 'toeic', name: 'TOEIC' },
-  { id: 'hsk', name: 'HSK' },
-  { id: 'jlpt', name: 'JLPT' },
-];
-
-// Default languages for fallback when API is unavailable
-const DEFAULT_LANGUAGES: Language[] = [
-  { id: 'en', name: 'English' },
-  { id: 'vi', name: 'Vietnamese' },
-  { id: 'zh', name: 'Chinese' },
-  { id: 'ja', name: 'Japanese' },
-  { id: 'ko', name: 'Korean' },
-  { id: 'es', name: 'Spanish' },
-  { id: 'fr', name: 'French' },
-  { id: 'de', name: 'German' },
-  { id: 'it', name: 'Italian' },
-];
 
 export function Step1CourseInfo({ data, onNext, onCancel }: Step1Props) {
   const [formData, setFormData] = useState<Partial<CourseFormData>>({
     title: data.title || '',
     description: data.description || '',
-    category_id: data.category_id || '',
-    languages: data.languages || [],
-    duration_hours: data.duration_hours || undefined,
-    price_vnd: data.price_vnd || undefined,
-    thumbnail: data.thumbnail,
+    categoryID: data.categoryID || undefined,
+    language: data.language || 'English',  // Default to "English"
+    duration: data.duration || undefined,
+    price: data.price || undefined,
+    thumbnailURL: data.thumbnailURL || '',
   });
 
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
-  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
-  const [categories, setCategories] = useState<Category[]>(DEFAULT_CATEGORIES);
-  const [languages, setLanguages] = useState<Language[]>(DEFAULT_LANGUAGES);
-  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
-  const [isLoadingLanguages, setIsLoadingLanguages] = useState(true);
-
-  // Fetch categories on mount
-  useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        const resp = await courseApi.getCategories();
-        // Normalize possible response shapes
-        let categoriesArray: Category[] = [];
-        if (Array.isArray(resp)) {
-          categoriesArray = resp;
-        } else if (resp && typeof resp === 'object') {
-          const r = resp as Record<string, unknown>;
-          if (Array.isArray(r.data)) {
-            categoriesArray = r.data as Category[];
-          } else if (Array.isArray(r.categories)) {
-            categoriesArray = r.categories as Category[];
-          }
-        }
-
-        // If API returned valid data, use it; otherwise keep defaults
-        if (categoriesArray && categoriesArray.length > 0) {
-          setCategories(categoriesArray);
-        }
-      } catch (error) {
-        console.error('Failed to load categories, using defaults:', error);
-        // Keep using DEFAULT_CATEGORIES
-      } finally {
-        setIsLoadingCategories(false);
-      }
-    };
-
-    loadCategories();
-  }, []);
-
-  // Fetch languages on mount
-  useEffect(() => {
-    const loadLanguages = async () => {
-      try {
-        const resp = await courseApi.getLanguages();
-        // Normalize possible response shapes
-        let languagesArray: Language[] = [];
-        if (Array.isArray(resp)) {
-          languagesArray = resp;
-        } else if (resp && typeof resp === 'object') {
-          const r = resp as Record<string, unknown>;
-          if (Array.isArray(r.data)) {
-            languagesArray = r.data as Language[];
-          } else if (Array.isArray(r.languages)) {
-            languagesArray = r.languages as Language[];
-          }
-        }
-
-        // If API returned valid data, use it; otherwise keep defaults
-        if (languagesArray && languagesArray.length > 0) {
-          setLanguages(languagesArray);
-        }
-      } catch (error) {
-        console.error('Failed to load languages, using defaults:', error);
-        // Keep using DEFAULT_LANGUAGES
-      } finally {
-        setIsLoadingLanguages(false);
-      }
-    };
-
-    loadLanguages();
-  }, []);
+  const [thumbnailURLPreview, setThumbnailPreview] = useState<string | null>(null);
+  
+  // Get hardcoded categories and languages (no API call needed)
+  const categories: Category[] = getCategories();
+  const languages: Language[] = getLanguages();
 
   const validateField = (name: string, value: unknown): string | undefined => {
     switch (name) {
@@ -154,16 +66,15 @@ export function Step1CourseInfo({ data, onNext, onCancel }: Step1Props) {
           return 'Description must not exceed 1000 characters';
         return undefined;
 
-      case 'category_id':
+      case 'categoryID':
         if (!value) return 'Category is required';
         return undefined;
 
-      case 'languages':
-        if (!value || (Array.isArray(value) && value.length === 0))
-          return 'At least one language is required';
+      case 'language':
+        if (!value) return 'Language is required';
         return undefined;
 
-      case 'duration_hours':
+      case 'duration':
         if (!value) return 'Duration is required';
         const duration = Number(value);
         if (isNaN(duration)) return 'Duration must be a number';
@@ -171,7 +82,7 @@ export function Step1CourseInfo({ data, onNext, onCancel }: Step1Props) {
           return 'Duration must be between 1 and 999 hours';
         return undefined;
 
-      case 'price_vnd':
+      case 'price':
         if (value === undefined || value === null || value === '')
           return 'Price is required';
         const price = Number(value);
@@ -181,8 +92,8 @@ export function Step1CourseInfo({ data, onNext, onCancel }: Step1Props) {
         if (!Number.isInteger(price)) return 'Price must be a whole number';
         return undefined;
 
-      case 'thumbnail':
-        if (!value) return 'Thumbnail is required';
+      case 'thumbnailURL':
+        if (!value) return 'thumbnailURL is required';
         return undefined;
 
       default:
@@ -207,27 +118,27 @@ export function Step1CourseInfo({ data, onNext, onCancel }: Step1Props) {
   const handleThumbnailUrlChange = (url: string) => {
     // Validate URL format
     if (!url.trim()) {
-      setFormData((prev) => ({ ...prev, thumbnail: undefined }));
+      setFormData((prev) => ({ ...prev, thumbnailURL: undefined }));
       setThumbnailPreview(null);
-      setErrors((prev) => ({ ...prev, thumbnail: undefined }));
+      setErrors((prev) => ({ ...prev, thumbnailURL: undefined }));
       return;
     }
 
     try {
       new URL(url); // Validate URL syntax
-      setFormData((prev) => ({ ...prev, thumbnail: url }));
+      setFormData((prev) => ({ ...prev, thumbnailURL: url }));
       setThumbnailPreview(url);
-      setErrors((prev) => ({ ...prev, thumbnail: undefined }));
+      setErrors((prev) => ({ ...prev, thumbnailURL: undefined }));
     } catch {
       setErrors((prev) => ({
         ...prev,
-        thumbnail: 'Please enter a valid URL',
+        thumbnailURL: 'Please enter a valid URL',
       }));
     }
   };
 
   const removeThumbnail = () => {
-    setFormData((prev) => ({ ...prev, thumbnail: undefined }));
+    setFormData((prev) => ({ ...prev, thumbnailURL: undefined }));
     setThumbnailPreview(null);
   };
 
@@ -237,16 +148,8 @@ export function Step1CourseInfo({ data, onNext, onCancel }: Step1Props) {
     const allTouched: Record<string, boolean> = {};
     const allErrors: ValidationErrors = {};
 
-    Object.keys(formData).forEach((key) => {
-      allTouched[key] = true;
-      const error = validateField(
-        key,
-        formData[key as keyof CourseFormData]
-      );
-      if (error) allErrors[key as keyof ValidationErrors] = error;
-    });
-
-    ['title', 'description', 'category_id', 'languages', 'duration_hours', 'price_vnd', 'thumbnail'].forEach((key) => {
+    // Validate all required fields
+    ['title', 'description', 'categoryID', 'language', 'duration', 'price'].forEach((key) => {
       allTouched[key] = true;
       const error = validateField(key, formData[key as keyof CourseFormData]);
       if (error) allErrors[key as keyof ValidationErrors] = error;
@@ -314,21 +217,21 @@ export function Step1CourseInfo({ data, onNext, onCancel }: Step1Props) {
             Category <span className="text-red-500">*</span>
           </Label>
           <Select
-            value={formData.category_id || ''}
+            value={formData.categoryID?.toString() || ''}
             onValueChange={(value) => {
-              handleChange('category_id', value);
+              handleChange('categoryID', parseInt(value)); // Store as number
               // Mark as touched only after a selection is made
-              setTouched((prev) => ({ ...prev, category_id: true }));
+              setTouched((prev) => ({ ...prev, categoryID: true }));
             }}
           >
             <SelectTrigger
               className={
-                errors.category_id && touched.category_id
+                errors.categoryID && touched.categoryID
                   ? 'border-red-500'
                   : ''
               }
             >
-              <SelectValue placeholder={isLoadingCategories ? "Loading..." : "Select a category"} />
+              <SelectValue placeholder="Select a category" />
             </SelectTrigger>
             <SelectContent>
               {categories.map((category) => (
@@ -338,8 +241,8 @@ export function Step1CourseInfo({ data, onNext, onCancel }: Step1Props) {
               ))}
             </SelectContent>
           </Select>
-          {errors.category_id && touched.category_id && (
-            <p className="text-sm text-red-500 mt-1">{errors.category_id}</p>
+          {errors.categoryID && touched.categoryID && (
+            <p className="text-sm text-red-500 mt-1">{errors.categoryID}</p>
           )}
         </div>
 
@@ -348,32 +251,31 @@ export function Step1CourseInfo({ data, onNext, onCancel }: Step1Props) {
             Select Instruction Language <span className="text-red-500">*</span>
           </Label>
           <Select
-            value={Array.isArray(formData.languages) && formData.languages.length > 0 ? formData.languages[0] : ''}
+            value={formData.language || 'English'}
             onValueChange={(value) => {
-              handleChange('languages', [value]);
-              // Mark as touched only after a selection is made
-              setTouched((prev) => ({ ...prev, languages: true }));
+              handleChange('language', value);
+              setTouched((prev) => ({ ...prev, language: true }));
             }}
           >
             <SelectTrigger
               className={
-                errors.languages && touched.languages
+                errors.language && touched.language
                   ? 'border-red-500'
                   : ''
               }
             >
-              <SelectValue placeholder={isLoadingLanguages ? "Loading..." : "Select a language"} />
+              <SelectValue placeholder="Select a language" />
             </SelectTrigger>
             <SelectContent>
               {languages.map((lang) => (
-                <SelectItem key={lang.id} value={lang.id}>
+                <SelectItem key={lang.id} value={lang.name}>
                   {lang.name}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          {errors.languages && touched.languages && (
-            <p className="text-sm text-red-500 mt-1">{errors.languages}</p>
+          {errors.language && touched.language && (
+            <p className="text-sm text-red-500 mt-1">{errors.language}</p>
           )}
         </div>
 
@@ -387,21 +289,21 @@ export function Step1CourseInfo({ data, onNext, onCancel }: Step1Props) {
               type="number"
               min="1"
               max="999"
-              value={formData.duration_hours || ''}
+              value={formData.duration || ''}
               onChange={(e) =>
-                handleChange('duration_hours', Number(e.target.value))
+                handleChange('duration', Number(e.target.value))
               }
-              onBlur={() => handleBlur('duration_hours')}
+              onBlur={() => handleBlur('duration')}
               placeholder="e.g., 40"
               className={
-                errors.duration_hours && touched.duration_hours
+                errors.duration && touched.duration
                   ? 'border-red-500'
                   : ''
               }
             />
-            {errors.duration_hours && touched.duration_hours && (
+            {errors.duration && touched.duration && (
               <p className="text-sm text-red-500 mt-1">
-                {errors.duration_hours}
+                {errors.duration}
               </p>
             )}
           </div>
@@ -416,51 +318,51 @@ export function Step1CourseInfo({ data, onNext, onCancel }: Step1Props) {
               min="0"
               max="999999999"
               step="1"
-              value={formData.price_vnd || ''}
+              value={formData.price || ''}
               onChange={(e) =>
-                handleChange('price_vnd', Number(e.target.value))
+                handleChange('price', Number(e.target.value))
               }
-              onBlur={() => handleBlur('price_vnd')}
+              onBlur={() => handleBlur('price')}
               placeholder="e.g., 1500000"
               className={
-                errors.price_vnd && touched.price_vnd ? 'border-red-500' : ''
+                errors.price && touched.price ? 'border-red-500' : ''
               }
             />
-            {errors.price_vnd && touched.price_vnd && (
-              <p className="text-sm text-red-500 mt-1">{errors.price_vnd}</p>
+            {errors.price && touched.price && (
+              <p className="text-sm text-red-500 mt-1">{errors.price}</p>
             )}
           </div>
         </div>
 
         <div>
-          <Label htmlFor="thumbnail-url" className="text-sm font-medium">
-            Thumbnail URL <span className="text-red-500">*</span>
+          <Label htmlFor="thumbnailURL-url" className="text-sm font-medium">
+            thumbnailURL URL <span className="text-red-500">*</span>
           </Label>
           <Input
-            id="thumbnail-url"
+            id="thumbnailURL-url"
             type="url"
             placeholder="https://example.com/image.jpg"
-            value={typeof formData.thumbnail === 'string' ? formData.thumbnail : ''}
+            value={typeof formData.thumbnailURL === 'string' ? formData.thumbnailURL : ''}
             onChange={(e) => handleThumbnailUrlChange(e.target.value)}
-            onBlur={() => handleBlur('thumbnail')}
+            onBlur={() => handleBlur('thumbnailURL')}
             className={
-              errors.thumbnail && touched.thumbnail ? 'border-red-500' : ''
+              errors.thumbnailURL && touched.thumbnailURL ? 'border-red-500' : ''
             }
           />
           <p className="text-xs text-gray-500 mt-1">
             Enter a valid image URL (JPG, PNG, or other web-supported formats)
           </p>
 
-          {thumbnailPreview && (
+          {thumbnailURLPreview && (
             <div className="relative mt-3 rounded-lg overflow-hidden border border-gray-200">
               <img
-                src={thumbnailPreview}
-                alt="Thumbnail preview"
+                src={thumbnailURLPreview}
+                alt="thumbnailURL preview"
                 className="w-full h-48 object-cover"
                 onError={() => {
                   setErrors((prev) => ({
                     ...prev,
-                    thumbnail: 'Unable to load image from URL',
+                    thumbnailURL: 'Unable to load image from URL',
                   }));
                 }}
               />
@@ -474,8 +376,8 @@ export function Step1CourseInfo({ data, onNext, onCancel }: Step1Props) {
             </div>
           )}
 
-          {errors.thumbnail && touched.thumbnail && (
-            <p className="text-sm text-red-500 mt-1">{errors.thumbnail}</p>
+          {errors.thumbnailURL && touched.thumbnailURL && (
+            <p className="text-sm text-red-500 mt-1">{errors.thumbnailURL}</p>
           )}
         </div>
       </div>
