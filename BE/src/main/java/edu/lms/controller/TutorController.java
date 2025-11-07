@@ -3,6 +3,7 @@ package edu.lms.controller;
 import edu.lms.dto.request.TutorApplyRequest;
 import edu.lms.dto.response.TutorApplyResponse;
 import edu.lms.dto.response.TutorApplicationListResponse;
+import edu.lms.dto.response.TutorDetailResponse;
 import edu.lms.security.UserPrincipal;
 import edu.lms.service.TutorService;
 import jakarta.validation.Valid;
@@ -44,6 +45,13 @@ public class TutorController {
     public ResponseEntity<List<TutorApplicationListResponse>> getAllApprovedTutors() {
         List<TutorApplicationListResponse> tutors = tutorService.getAllTutors("APPROVED");
         return ResponseEntity.ok(tutors);
+    }
+
+    // 4. Xem chi tiết tutor và các khóa học đã được approved (tất cả role đều xem được)
+    @GetMapping("/{tutorId}")
+    public ResponseEntity<TutorDetailResponse> getTutorDetail(@PathVariable Long tutorId) {
+        TutorDetailResponse tutorDetail = tutorService.getTutorDetail(tutorId);
+        return ResponseEntity.ok(tutorDetail);
     }
 
     // Helper method to get current user ID from JWT token

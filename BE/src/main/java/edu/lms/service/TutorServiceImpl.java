@@ -2,19 +2,23 @@ package edu.lms.service;
 
 import edu.lms.dto.request.TutorApplyRequest;
 import edu.lms.dto.request.TutorUpdateRequest;
-import edu.lms.dto.response.TutorApplicationDetailResponse;
-import edu.lms.dto.response.TutorApplicationListResponse;
-import edu.lms.dto.response.TutorApplyResponse;
+import edu.lms.dto.response.*;
 import edu.lms.entity.Tutor;
 import edu.lms.entity.TutorVerification;
 import edu.lms.entity.User;
+import edu.lms.entity.Course;
+import edu.lms.entity.BookingPlan;
 import edu.lms.enums.TutorStatus;
 import edu.lms.enums.TutorVerificationStatus;
+import edu.lms.enums.CourseStatus;
 import edu.lms.exception.TutorApplicationException;
 import edu.lms.exception.TutorNotFoundException;
+import edu.lms.mapper.TutorCourseMapper;
 import edu.lms.repository.TutorRepository;
 import edu.lms.repository.TutorVerificationRepository;
 import edu.lms.repository.UserRepository;
+import edu.lms.repository.CourseRepository;
+import edu.lms.repository.BookingPlanRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,6 +39,9 @@ public class TutorServiceImpl implements TutorService {
     private final TutorRepository tutorRepository;
     private final TutorVerificationRepository tutorVerificationRepository;
     private final UserRepository userRepository;
+    private final CourseRepository courseRepository;
+    private final BookingPlanRepository bookingPlanRepository;
+    private final TutorCourseMapper tutorCourseMapper;
 
     @Override
     public void applyToBecomeTutor(Long userID, TutorApplyRequest request) {
@@ -215,6 +222,49 @@ public class TutorServiceImpl implements TutorService {
     }
 
     @Override
+    public TutorDetailResponse getTutorDetail(Long tutorId) {
+        log.info("Getting tutor detail for tutor ID: {}", tutorId);
+        
+        Tutor tutor = tutorRepository.findById(tutorId)
+                .orElseThrow(() -> new TutorNotFoundException("Tutor not found with ID: " + tutorId));
+        
+        // Only return approved tutors
+        if (tutor.getStatus() != TutorStatus.APPROVED) {
+            log.warn("Tutor ID: {} is not approved, status: {}", tutorId, tutor.getStatus());
+            throw new TutorNotFoundException("Tutor not found or not approved");
+        }
+        
+        User user = tutor.getUser();
+        
+        // Get approved courses for this tutor
+        List<Course> approvedCourses = courseRepository.findByTutorAndStatus(tutor, CourseStatus.Approved);
+        List<TutorCourseResponse> courseResponses = approvedCourses.stream()
+                .map(tutorCourseMapper::toTutorCourseResponse)
+                .collect(Collectors.toList());
+        
+        // Tính giá booking tối thiểu từ các booking plans active
+        Double pricePerHour = calculateMinPricePerHour(tutor.getTutorID());
+        
+        return TutorDetailResponse.builder()
+                .tutorId(tutor.getTutorID())
+                .userId(user.getUserID())
+                .userName(user.getFullName())
+                .userEmail(user.getEmail())
+                .avatarURL(user.getAvatarURL())
+                .country(user.getCountry())
+                .phone(user.getPhone())
+                .bio(tutor.getBio())
+                .experience(tutor.getExperience())
+                .specialization(tutor.getSpecialization())
+                .teachingLanguage(tutor.getTeachingLanguage())
+                .rating(tutor.getRating())
+                .status(tutor.getStatus().name())
+                .courses(courseResponses)
+                .pricePerHour(pricePerHour)
+                .build();
+    }
+
+    @Override
     public List<TutorApplicationListResponse> getAllTutors(String status) {
         log.info("Getting all tutors with status filter: {}", status);
         
@@ -247,14 +297,20 @@ public class TutorServiceImpl implements TutorService {
                             ? latestVerification.getTeachingLanguage()
                             : tutor.getTeachingLanguage();
                     
+                    // Tính giá booking tối thiểu từ các booking plans active
+                    Double pricePerHour = calculateMinPricePerHour(tutor.getTutorID());
+                    
                     return TutorApplicationListResponse.builder()
                             .verificationId(latestVerification != null ? latestVerification.getTutorVerificationID() : null)
                             .tutorId(tutor.getTutorID())
                             .userId(tutor.getUser().getUserID())
                             .userEmail(tutor.getUser().getEmail())
                             .userName(tutor.getUser().getFullName())
+                            .avatarURL(tutor.getUser().getAvatarURL())
+                            .country(tutor.getUser().getCountry())
                             .specialization(specialization)
                             .teachingLanguage(teachingLanguage)
+                            .pricePerHour(pricePerHour)
                             .status(tutor.getStatus().name())
                             .submittedAt(latestVerification != null ? latestVerification.getSubmittedAt() : null)
                             .reviewedAt(latestVerification != null ? latestVerification.getReviewedAt() : null)
@@ -331,18 +387,50 @@ public class TutorServiceImpl implements TutorService {
         Tutor tutor = verification.getTutor();
         User user = tutor.getUser();
         
+        // Tính giá booking tối thiểu từ các booking plans active
+        Double pricePerHour = calculateMinPricePerHour(tutor.getTutorID());
+        
         return TutorApplicationListResponse.builder()
                 .verificationId(verification.getTutorVerificationID())
                 .tutorId(tutor.getTutorID())
                 .userId(user.getUserID())
                 .userEmail(user.getEmail())
                 .userName(user.getFullName())
+                .avatarURL(user.getAvatarURL())
+                .country(user.getCountry())
                 .specialization(verification.getSpecialization())
                 .teachingLanguage(verification.getTeachingLanguage())
+                .pricePerHour(pricePerHour)
                 .status(verification.getStatus().name())
                 .submittedAt(verification.getSubmittedAt())
                 .reviewedAt(verification.getReviewedAt())
                 .build();
+    }
+    
+    /**
+     * Tính giá booking tối thiểu từ các booking plans active của tutor
+     * @param tutorId ID của tutor
+     * @return Giá tối thiểu mỗi giờ, null nếu không có booking plan nào active
+     */
+    private Double calculateMinPricePerHour(Long tutorId) {
+        List<BookingPlan> activeBookingPlans = bookingPlanRepository.findByTutorID(tutorId)
+                .stream()
+                .filter(plan -> Boolean.TRUE.equals(plan.getIsActive()) && Boolean.TRUE.equals(plan.getIsOpen()))
+                .collect(Collectors.toList());
+        
+        if (activeBookingPlans.isEmpty()) {
+            log.debug("No active booking plans found for tutor ID: {}", tutorId);
+            return null;
+        }
+        
+        Double minPrice = activeBookingPlans.stream()
+                .map(BookingPlan::getPricePerHours)
+                .filter(price -> price != null && price > 0)
+                .min(Double::compareTo)
+                .orElse(null);
+        
+        log.debug("Calculated min price per hour for tutor ID {}: {}", tutorId, minPrice);
+        return minPrice;
     }
 
     private TutorApplicationDetailResponse mapToApplicationDetailResponse(TutorVerification verification) {
