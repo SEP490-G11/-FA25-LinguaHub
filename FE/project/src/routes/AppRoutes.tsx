@@ -34,6 +34,8 @@ import ApplyTutor from '@/pages/ApplyTutor';
 import TutorApproval from '@/pages/Admin/TutorApproval';
 import ManageCourseContent from '@/pages/TutorPages/ManageCourseContent';
 import CourseList from '@/pages/TutorPages/CourseList';
+import TutorDashboard from '@/pages/TutorPages/TutorDashboard';
+import AdminDashboard from '@/pages/Admin/AdminDashboard';
 
 export function AppRoutes() {
     return (
@@ -68,6 +70,10 @@ export function AppRoutes() {
             <Route path={ROUTES.PAYMENT_HISTORY} element={<ProtectedRoute><PaymentHistory /></ProtectedRoute>} />
             <Route path={ROUTES.MY_ENROLLMENTS} element={<ProtectedRoute><MyEnrollments /></ProtectedRoute>} />
             <Route path={ROUTES.APPLY_TUTOR} element={<ProtectedRoute><ApplyTutor /></ProtectedRoute>} />
+
+            {/* Dashboard Routes */}
+            <Route path={ROUTES.TUTOR_DASHBOARD} element={<ProtectedRoute allowedRoles={['Tutor']}><TutorDashboard /></ProtectedRoute>} />
+            <Route path={ROUTES.ADMIN_DASHBOARD} element={<ProtectedRoute allowedRoles={['Admin']}><AdminDashboard /></ProtectedRoute>} />
 
             {/* Admin only */}
             <Route path="/admin/course-approval" element={<ProtectedRoute allowedRoles={['Admin']}><CourseApprovalPage /></ProtectedRoute>} />

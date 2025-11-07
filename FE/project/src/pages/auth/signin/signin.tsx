@@ -14,6 +14,7 @@ import { ErrorMessage } from '@/components/shared/ErrorMessage.tsx';
 import type { RootState, AppDispatch } from '@/redux/store.ts';
 import { clearError, signIn } from '@/redux/slices/authSlice.ts';
 import { ROUTES } from '@/constants/routes.ts';
+import { getUserRole } from '@/auth';
 
 // Xác thực dữ liệu form
 const signInSchema = z.object({
@@ -62,7 +63,23 @@ const SignIn = () => {
     dispatch(clearError());
     try {
       await dispatch(signIn(data)).unwrap();
-      navigate(ROUTES.HOME, { replace: true });
+      
+      // Lấy role từ localStorage sau khi đăng nhập thành công
+      const role = getUserRole();
+      
+      // Redirect dựa theo role
+      switch(role) {
+        case 'Tutor':
+          navigate('/tutor/dashboard', { replace: true });
+          break;
+        case 'Admin':
+          navigate('/admin/dashboard', { replace: true });
+          break;
+        case 'Learner':
+        default:
+          navigate(ROUTES.HOME, { replace: true });
+          break;
+      }
     } catch (error: unknown) {
       console.error('Signin error:', error);
       if (error instanceof Error && error.message.includes('timeout')) {

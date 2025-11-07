@@ -16,7 +16,7 @@ import { ROUTES } from '@/constants/routes.ts';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '@/redux/store.ts';
 import { signOut } from '@/redux/slices/authSlice.ts';
-import { isAdmin } from '@/auth';
+import { isAdmin, isTutor, getUserRole } from '@/auth';
 
 const Header = () => {
   const location = useLocation();
@@ -24,8 +24,10 @@ const Header = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
+  // Lấy role từ auth helpers (luôn up-to-date)
+  const userRole = getUserRole();
 
   const handleLogout = async () => {
 
@@ -86,39 +88,123 @@ const Header = () => {
               >
                 Home
               </Link>
-              <Link
-                  to={ROUTES.LANGUAGES}
-                  className={cn(
-                      'transition-colors font-medium',
-                      isActive(ROUTES.LANGUAGES)
-                          ? 'text-primary'
-                          : 'text-muted-foreground hover:text-primary'
-                  )}
-              >
-                Languages
-              </Link>
-              <Link
-                  to={ROUTES.TUTORS}
-                  className={cn(
-                      'transition-colors font-medium',
-                      isActive(ROUTES.TUTORS)
-                          ? 'text-primary'
-                          : 'text-muted-foreground hover:text-primary'
-                  )}
-              >
-                Tutors
-              </Link>
-              <Link
-                  to={ROUTES.BECOME_TUTOR}
-                  className={cn(
-                      'transition-colors font-medium',
-                      isActive(ROUTES.BECOME_TUTOR)
-                          ? 'text-primary'
-                          : 'text-muted-foreground hover:text-primary'
-                  )}
-              >
-                Become a Tutor
-              </Link>
+              
+              {/* Learner Navigation */}
+              {(!userRole || userRole === 'Learner') && (
+                <>
+                  <Link
+                      to={ROUTES.LANGUAGES}
+                      className={cn(
+                          'transition-colors font-medium',
+                          isActive(ROUTES.LANGUAGES)
+                              ? 'text-primary'
+                              : 'text-muted-foreground hover:text-primary'
+                      )}
+                  >
+                    Languages
+                  </Link>
+                  <Link
+                      to={ROUTES.TUTORS}
+                      className={cn(
+                          'transition-colors font-medium',
+                          isActive(ROUTES.TUTORS)
+                              ? 'text-primary'
+                              : 'text-muted-foreground hover:text-primary'
+                      )}
+                  >
+                    Tutors
+                  </Link>
+                  <Link
+                      to={ROUTES.BECOME_TUTOR}
+                      className={cn(
+                          'transition-colors font-medium',
+                          isActive(ROUTES.BECOME_TUTOR)
+                              ? 'text-primary'
+                              : 'text-muted-foreground hover:text-primary'
+                      )}
+                  >
+                    Become a Tutor
+                  </Link>
+                </>
+              )}
+
+              {/* Tutor Navigation */}
+              {userRole === 'Tutor' && (
+                <>
+                  <Link
+                      to={ROUTES.TUTOR_DASHBOARD}
+                      className={cn(
+                          'transition-colors font-medium',
+                          isActive(ROUTES.TUTOR_DASHBOARD)
+                              ? 'text-primary'
+                              : 'text-muted-foreground hover:text-primary'
+                      )}
+                  >
+                    Dashboard
+                  </Link>
+                  <Link
+                      to="/tutor/courses"
+                      className={cn(
+                          'transition-colors font-medium',
+                          location.pathname.startsWith('/tutor/courses')
+                              ? 'text-primary'
+                              : 'text-muted-foreground hover:text-primary'
+                      )}
+                  >
+                    My Courses
+                  </Link>
+                  <Link
+                      to="/tutor/create-courses"
+                      className={cn(
+                          'transition-colors font-medium',
+                          isActive('/tutor/create-courses')
+                              ? 'text-primary'
+                              : 'text-muted-foreground hover:text-primary'
+                      )}
+                  >
+                    Create Course
+                  </Link>
+                </>
+              )}
+
+              {/* Admin Navigation */}
+              {userRole === 'Admin' && (
+                <>
+                  <Link
+                      to={ROUTES.ADMIN_DASHBOARD}
+                      className={cn(
+                          'transition-colors font-medium',
+                          isActive(ROUTES.ADMIN_DASHBOARD)
+                              ? 'text-primary'
+                              : 'text-muted-foreground hover:text-primary'
+                      )}
+                  >
+                    Dashboard
+                  </Link>
+                  <Link
+                      to="/admin/course-approval"
+                      className={cn(
+                          'transition-colors font-medium',
+                          isActive('/admin/course-approval')
+                              ? 'text-primary'
+                              : 'text-muted-foreground hover:text-primary'
+                      )}
+                  >
+                    Course Approval
+                  </Link>
+                  <Link
+                      to="/admin/tutor-approval"
+                      className={cn(
+                          'transition-colors font-medium',
+                          isActive('/admin/tutor-approval')
+                              ? 'text-primary'
+                              : 'text-muted-foreground hover:text-primary'
+                      )}
+                  >
+                    Tutor Approval
+                  </Link>
+                </>
+              )}
             </nav>
 
             {/* Policy Links - Desktop */}

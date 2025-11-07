@@ -23,6 +23,10 @@ export const ROUTES = {
     RESET_PASSWORD: '/auth/reset-password',
     VERIFY_EMAIL: '/auth/verify-email',
 
+    // Dashboard routes
+    TUTOR_DASHBOARD: '/tutor/dashboard',
+    ADMIN_DASHBOARD: '/admin/dashboard',
+
     // Course/Tutor routes
     CREATE_COURSE: '/create-course',
     PENDING_COURSES: '/admin/pending-courses',

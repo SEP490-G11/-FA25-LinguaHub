@@ -4,15 +4,26 @@
  */
 
 import type { User, UserRole } from './types';
+import { STORAGE_KEYS } from '@/constants/storageKeys';
 
 /**
  * Lấy thông tin user từ localStorage
  */
 export const getUser = (): User | null => {
   try {
+    // Thử lấy từ user_data trước (format backend)
+    const userDataStr = localStorage.getItem(STORAGE_KEYS.USER_DATA);
+    if (userDataStr) {
+      return JSON.parse(userDataStr);
+    }
+    
+    // Fallback: thử key 'user' (format cũ)
     const userStr = localStorage.getItem('user');
-    if (!userStr) return null;
-    return JSON.parse(userStr);
+    if (userStr) {
+      return JSON.parse(userStr);
+    }
+    
+    return null;
   } catch (error) {
     console.error('Error getting user:', error);
     return null;
@@ -24,6 +35,7 @@ export const getUser = (): User | null => {
  */
 export const getUserRole = (): UserRole | null => {
   const user = getUser();
+  // Backend trả về 'Tutor', 'Admin', 'Learner'
   return user?.role || null;
 };
 
@@ -31,7 +43,9 @@ export const getUserRole = (): UserRole | null => {
  * Kiểm tra user đã login chưa
  */
 export const isAuthenticated = (): boolean => {
-  return !!getUser();
+  const user = getUser();
+  const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+  return !!user && !!token;
 };
 
 /**
