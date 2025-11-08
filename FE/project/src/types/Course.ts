@@ -4,43 +4,17 @@ export interface CourseCategory {
     Description?: string;
     CreatedAt: string;
 }
-
 export interface Course {
-    CourseID: number;
-    Title: string;
-    Description?: string;
-    TutorID?: number;
-    Duration?: number;
-    Price?: number;
-    CategoryID?: number;
-    Language?: string;
-    ThumbnailURL?: string;
-    Status: 'Draft' | 'Pending' | 'Approved' | 'Rejected' | 'Disabled';
-    CreatedAt: string;
-    UpdatedAt: string;
-    sections?: CourseSection[];
-}
-
-export interface CourseSection {
-    SectionID: number;
-    CourseID: number;
-    Title?: string;
-    Description?: string;
-    OrderIndex?: number;
-    lessons?: Lesson[];
-}
-
-export interface Lesson {
-    LessonID: number;
-    SectionID: number;
-    Title: string;
-    Duration?: number;
-    LessonType: 'Video' | 'Reading';
-    VideoURL?: string;
-    Content?: string;
-    OrderIndex?: number;
-    CreatedAt: string;
-    resources?: LessonResource[];
+    id: number;
+    title: string;
+    description: string;
+    duration: number;
+    price: number;
+    language: string;
+    thumbnailURL: string;
+    categoryName: string;
+    tutorName: string;
+    status: string;
 }
 
 export interface LessonResource {
@@ -51,38 +25,46 @@ export interface LessonResource {
     ResourceURL: string;
     UploadedAt: string;
 }
-
-export interface Enrollment {
-    EnrollmentID: number;
-    UserID: string;
-    CourseID: number;
-    Status: 'Active' | 'Completed' | 'Cancelled';
-    CreatedAt: string;
+export interface CourseDetail {
+    id: number;
+    title: string;
+    description: string;
+    duration: number;
+    price: number;
+    language: string;
+    thumbnailURL: string;
+    categoryName: string;
+    tutorName: string;
+    status: string;
+    section: CourseSection[];
 }
 
-export interface UserCourseSection {
-    UserCourseSectionID: number;
-    UserID: string;
-    EnrollmentID: number;
-    SectionID: number;
-    Progress: number;
+
+export interface CourseSection {
+    sectionID: number;
+    courseID: number;
+    title: string;
+    description: string;
+    orderIndex: number;
+    lessons: Lesson[];
 }
 
-export interface UserLesson {
-    UserLessonID: number;
-    LessonID?: number;
-    UserID: string;
-    EnrollmentID?: number;
-    IsDone: boolean;
-    WatchedDuration?: number;
-    CompletedAt?: string;
+export interface Lesson {
+    lessonID: number;
+    title: string;
+    duration: number;
+    lessonType: "Video" | "Reading";
+    videoURL: string | null;
+    content: string;
+    orderIndex: number;
+    createdAt: string;
+    resources: LessonResource[];
 }
 
-export interface CourseReview {
-    ReviewID: number;
-    CourseID: number;
-    UserID: string;
-    Rating: number;
-    Comment?: string;
-    CreatedAt: string;
+export interface LessonResource {
+    resourceID: number;
+    resourceType: "PDF" | "ExternalLink";
+    resourceTitle: string;
+    resourceURL: string;
+    uploadedAt: string;
 }

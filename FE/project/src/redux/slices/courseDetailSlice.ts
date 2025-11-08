@@ -1,21 +1,10 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import BaseRequest from "@/lib/api";
+import { CourseDetail } from "@/types/Course";
 
-export interface CourseDetailResponse {
-  id: number;
-  title: string;
-  description: string;
-  duration: number;
-  price: number;
-  language: string;
-  thumbnailURL: string;
-  categoryName: string;
-  tutorName: string;
-  status: string;
-}
 
 interface CourseDetailState {
-  course: CourseDetailResponse | null;
+  course: CourseDetail | null;
   loading: boolean;
   error: string | null;
 }
@@ -32,7 +21,7 @@ export const fetchCourseDetail = createAsyncThunk(
       try {
         const res = await BaseRequest.Get<{
           code: number;
-          result: CourseDetailResponse;
+          result: CourseDetail;
         }>(`/courses/detail/${courseId}`);
 
         return res.result;

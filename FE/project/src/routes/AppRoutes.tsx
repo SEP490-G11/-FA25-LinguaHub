@@ -2,13 +2,13 @@ import { Routes, Route } from 'react-router-dom';
 import { ROUTES } from '@/constants/routes.ts';
 
 // Pages
-import HomePage from '@/pages/HomePage/homepage.tsx';
+import HomePage from '@/pages/HomePage/HomePage.tsx';
 import SignIn from '@/pages/auth/signin/signin.tsx';
 import SignUp from '@/pages/SignUp/signup.tsx';
-import Languages from '@/pages/Languages/index';
+import Languages from '@/pages/Languages/Languages.tsx';
 import Tutors from '@/pages/Tutors/index';
 import TutorDetail from '@/pages/TutorDetail/index';
-import CourseDetail from '@/pages/CourseDetail/index';
+import CourseDetail from '@/pages/CourseDetail/CourseDetail.tsx';
 import LessonDetail from '@/pages/LessonDetail/index';
 import PracticeTest from '@/pages/PracticeTest/index';
 import BecomeTutor from '@/pages/BecomeTutor/index';
@@ -18,7 +18,7 @@ import NotFound from '@/pages/not-found';
 import PolicyPage from '@/pages/PolicyPage/index';
 import CompleteForgotPassword from '@/pages/auth/complete-forgot-password/complete-forgot-password.tsx';
 import GoogleCallback from '@/pages/auth/login-google/login-google.tsx';
-import LanguageCourses from '@/pages/LanguageCourses/index';
+import LanguageCourses from '@/pages/LanguageCourses/LanguageCourses.tsx';
 import ForgotPassword from '@/pages/auth/forgot-password/forgot-password.tsx';
 import ResetPassword from '@/pages/auth/reset-password/reset-password.tsx';
 import VerifyEmail from '@/pages/auth/verify-email/veryfy-email.tsx';

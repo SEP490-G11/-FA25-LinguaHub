@@ -4,18 +4,21 @@ import { Clock } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-// ✅ Redux
+// Redux
 import { useDispatch, useSelector } from "react-redux";
 import { useEffect } from "react";
 import { fetchApprovedCourses } from "@/redux/slices/homeSlide";
 import { RootState,AppDispatch } from "@/redux/store";
+import { ROUTES } from '@/constants/routes.ts';
 
-
-const ProductSection = () => {
+const CourseSection = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { courses, loading } = useSelector((state: RootState) => state.home);
+  const getRandomCourses = (list: typeof courses, count: number) => {
+    return [...list].sort(() => 0.5 - Math.random()).slice(0, count);
+  };
 
-  // ✅ Call API on first load
+  //  Call API on first load
   useEffect(() => {
     dispatch(fetchApprovedCourses());
   }, [dispatch]);
@@ -42,7 +45,7 @@ const ProductSection = () => {
               className="text-center mb-12"
               initial="initial"
               whileInView="animate"
-              viewport={{ once: true }}
+              viewport={{ once: true, amount: 0.2 }}
               variants={fadeInUp}
           >
             <h2 className="text-3xl font-bold text-foreground mb-4">
@@ -58,16 +61,16 @@ const ProductSection = () => {
               <p className="text-center text-lg py-8">Loading courses...</p>
           )}
 
-          {/* ✅ COURSES LIST */}
+          {/* COURSES LIST */}
           {!loading && (
               <motion.div
                   className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12"
                   initial="initial"
                   whileInView="animate"
-                  viewport={{ once: true }}
+                  viewport={{ once: true, amount: 0.2 }}
                   variants={staggerContainer}
               >
-                {courses.map((course) => (
+                {courses.slice(0, 6).map((course) => (
                     <motion.div key={course.id} variants={fadeInUp}>
                       <Card className="overflow-hidden hover:shadow-xl transition-all duration-300 group cursor-pointer">
                         <Link to={`/course/${course.id}`}>
@@ -105,7 +108,7 @@ const ProductSection = () => {
                         <span className="text-2xl font-bold text-primary">
                           {course.price.toLocaleString()}đ
                         </span>
-                              <Button>Book Lesson</Button>
+                              <Button>Join</Button>
                             </div>
                           </CardContent>
                         </Link>
@@ -114,28 +117,29 @@ const ProductSection = () => {
                 ))}
               </motion.div>
           )}
-
           {/* YOU MIGHT ALSO LIKE */}
           {!loading && courses.length > 0 && (
               <div className="border-t pt-12">
+
                 <motion.h3
                     className="text-2xl font-bold text-foreground mb-8 text-center"
                     initial="initial"
                     whileInView="animate"
-                    viewport={{ once: true }}
+                    viewport={{ once: true, amount: 0.2 }}
                     variants={fadeInUp}
                 >
                   You Might Also Like
                 </motion.h3>
 
+                {/** ✅ RANDOM 4 khóa học */}
                 <motion.div
                     className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
                     initial="initial"
                     whileInView="animate"
-                    viewport={{ once: true }}
+                    viewport={{ once: true, amount: 0.2 }}
                     variants={staggerContainer}
                 >
-                  {courses.slice(0, 4).map((course) => (
+                  {getRandomCourses(courses, 4).map((course) => (
                       <motion.div key={`also-${course.id}`} variants={fadeInUp}>
                         <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer">
                           <Link to={`/course/${course.id}`}>
@@ -143,14 +147,22 @@ const ProductSection = () => {
                                 src={course.thumbnailURL}
                                 alt={course.title}
                                 className="w-full h-32 object-cover"
+                                loading="lazy"
                             />
+
                             <CardContent className="p-4">
-                              <h4 className="font-semibold text-foreground mb-2 text-sm">
+                              <h4 className="font-semibold text-foreground mb-1 text-sm">
                                 {course.title}
                               </h4>
+
+                              {/* ✅ hiển thị tên người tạo khóa học */}
+                              <p className="text-xs text-muted-foreground mb-2">
+                                By {course.tutorName}
+                              </p>
+
                               <span className="text-sm font-bold text-primary">
-                          {course.price.toLocaleString()}đ
-                        </span>
+                  {course.price.toLocaleString()}đ
+                </span>
                             </CardContent>
                           </Link>
                         </Card>
@@ -162,18 +174,19 @@ const ProductSection = () => {
                     className="text-center mt-8"
                     initial="initial"
                     whileInView="animate"
-                    viewport={{ once: true }}
+                    viewport={{ once: true, amount: 0.2 }}
                     variants={fadeInUp}
                 >
                   <Button size="lg" asChild>
-                    <Link to="/tutors">View All Courses</Link>
+                    <Link to={ROUTES.LANGUAGES}>View All Courses</Link>
                   </Button>
                 </motion.div>
               </div>
           )}
+
         </div>
       </section>
   );
 };
 
-export default ProductSection;
+export default CourseSection;

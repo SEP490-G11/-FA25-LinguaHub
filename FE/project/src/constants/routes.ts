@@ -5,7 +5,7 @@ export const ROUTES = {
     SIGN_IN: '/signin',
     SIGN_UP: '/signup',
     LANGUAGES: '/languages',
-    TUTORS: '/tutors',
+    TUTORS: '/list-tutors',
     TUTOR_DETAIL: '/tutor/:id',
     COURSE_DETAIL: '/course/:id',
     LESSON_DETAIL: '/lesson/:id',

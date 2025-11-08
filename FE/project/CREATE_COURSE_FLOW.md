@@ -294,7 +294,7 @@ try {
 ## 📝 File quan trọng
 
 1. **`src/queries/course-api.ts`** - Chứa tất cả API functions
-2. **`src/pages/CreateCourse/index.tsx`** - Main component xử lý luồng
+2. **`src/pages/CreateCourse/LanguageCourses.tsx`** - Main component xử lý luồng
 3. **`src/config/axiosConfig.ts`** - Axios instance với interceptor tự động thêm token
 
 ---

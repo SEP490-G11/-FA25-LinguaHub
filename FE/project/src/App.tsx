@@ -1,35 +1,33 @@
-import  { useEffect } from 'react';//hook của React
+import { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { useLocation } from 'react-router-dom';
 import { AppRoutes } from '@/routes/AppRoutes';
-import {checkAuth, loadUserFromStorage} from '@/redux/slices/authSlice.ts';
+import { loadUserFromStorage } from '@/redux/slices/authSlice.ts';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { SidebarProvider } from '@/contexts/SidebarContext';
-//kiểu dữ liệu TypeScript định nghĩa loại dispatch
-//TypeScript muốn biết trước dispatch sẽ gửi kiểu dữ liệu gì
+import { ScrollToTop } from "@/hooks/ScrollToTop";
+
 import type { AppDispatch } from '@/redux/store.ts';
 
 function App() {
     const dispatch = useDispatch<AppDispatch>();
     const location = useLocation();
-    
-    // Kiểm tra xem có phải trang tutor không
     const isTutorPage = location.pathname.startsWith('/tutor');
-    
+
     useEffect(() => {
-        dispatch(loadUserFromStorage()); // <-- lấy user từ localStorage
-        // dispatch(checkAuth());           // <-- TODO: Enable khi backend chạy
+        dispatch(loadUserFromStorage());
+        // dispatch(checkAuth());
     }, [dispatch]);
 
     return (
         <SidebarProvider>
+            <ScrollToTop />
             <div className="min-h-screen bg-background">
                 <Header />
                 <main>
                     <AppRoutes />
                 </main>
-                {/* Ẩn Footer khi ở trang tutor */}
                 {!isTutorPage && <Footer />}
             </div>
         </SidebarProvider>
