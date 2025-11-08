@@ -1,40 +1,33 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, ArrowLeft, Languages } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { ROUTES } from '@/constants/routes.ts';
-import type { AppDispatch } from '@/redux/store.ts';
-import { clearError, confirmEmail } from '@/redux/slices/authSlice.ts';
 import { Link, useNavigate } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ErrorMessage } from "@/components/shared/ErrorMessage.tsx";
+import { ErrorMessage } from '@/components/shared/ErrorMessage.tsx';
+import api from "@/config/axiosConfig"; // ✅ axios instance
 
-// Xác thực dữ liệu form
+// ✅ Schema validate email
 const emailVerificationSchema = z.object({
   email: z.string().email('Invalid email format'),
 });
-
-type emailVerificationForm = z.infer<typeof emailVerificationSchema>;
+type EmailVerificationForm = z.infer<typeof emailVerificationSchema>;
 
 const ForgotPassword = () => {
   const [isLoading, setIsLoading] = useState(false);
-  const dispatch = useDispatch<AppDispatch>();
+  const [apiError, setApiError] = useState<string | null>(null);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    dispatch(clearError());
-  }, [dispatch]);
 
   const {
     register,
     handleSubmit,
     formState: { errors, isValid },
-  } = useForm<emailVerificationForm>({
+  } = useForm<EmailVerificationForm>({
     resolver: zodResolver(emailVerificationSchema),
     mode: 'onChange',
     defaultValues: {
@@ -42,21 +35,25 @@ const ForgotPassword = () => {
     },
   });
 
-  const onSubmit = async (data: emailVerificationForm) => {
+  const onSubmit = async (data: EmailVerificationForm) => {
     setIsLoading(true);
+    setApiError(null);
+
     try {
-      const result = await dispatch(confirmEmail(data.email));
-      console.log('Dispatch result:', result);
+      const response = await api.post("/auth/forgot-password", {
+        email: data.email,
+      });
+      console.log("✅ OTP sent:", response.data);
       navigate(ROUTES.VERIFY_EMAIL_FORGOT_PASSWORD, {
         state: { email: data.email },
       });
+      localStorage.setItem("temp_forgot_password_email", data.email);
     } catch (err) {
-      console.error('Error sending OTP email:', err);
+      console.error(" Error sending OTP:", err);
     } finally {
       setIsLoading(false);
     }
   };
-
 
   return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -77,7 +74,7 @@ const ForgotPassword = () => {
               </div>
             </div>
             <h2 className="text-3xl font-bold text-gray-900 mb-2">Forgot Password?</h2>
-            <p className="text-gray-600">Enter your email to receive a reset link</p>
+            <p className="text-gray-600">Enter your email to receive a reset code</p>
           </div>
 
           {/* Form */}
@@ -88,6 +85,8 @@ const ForgotPassword = () => {
               transition={{ delay: 0.1 }}
           >
             <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+              {apiError && <ErrorMessage message={apiError} />}
+
               {/* Email */}
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
@@ -115,7 +114,6 @@ const ForgotPassword = () => {
               <Button type="submit" className="w-full" disabled={isLoading || !isValid}>
                 {isLoading ? <LoadingSpinner size="sm" /> : 'Send Reset Link'}
               </Button>
-
             </form>
 
             {/* Back to Sign In */}

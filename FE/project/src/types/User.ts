@@ -17,11 +17,3 @@ export interface User {
     updatedAt: string;
 }
 
-export interface Verification {
-    VerificationID: number;
-    UserID: string;
-    Type: 'Email' | 'Phone' | 'OTP';
-    Code: string;
-    ExpiredAt?: string;
-    IsVerified: boolean;
-}

@@ -10,22 +10,20 @@ import { useEffect } from "react";
 import { fetchApprovedTutors } from "@/redux/slices/tutorSlide.ts";
 import { RootState } from "@/redux/store";
 export const useAppDispatch = () => useDispatch<AppDispatch>();
+import { ROUTES } from '@/constants/routes.ts';
 
 const TopTutors = () => {
   const dispatch = useAppDispatch();
-
   //  Lấy tutors từ Redux
   const { tutors, loading } = useSelector((state: RootState) => state.tutor);
   useEffect(() => {
     dispatch(fetchApprovedTutors() );
   }, [dispatch]);
-
   const fadeInUp = {
     initial: { opacity: 0, y: 60 },
     animate: { opacity: 1, y: 0 },
     transition: { duration: 0.6 }
   };
-
   const staggerContainer = {
     animate: {
       transition: {
@@ -33,12 +31,10 @@ const TopTutors = () => {
       }
     }
   };
-
   const formatPrice = (price: number | null) => {
     if (!price) return "—";
     return new Intl.NumberFormat("vi-VN").format(price) + " ₫";
   };
-
   return (
       <section className="py-16 bg-gradient-to-br from-indigo-50 to-purple-50">
         <div className="w-full px-8 lg:px-16">
@@ -46,13 +42,12 @@ const TopTutors = () => {
           <motion.div className="text-center mb-12" initial="initial" whileInView="animate" viewport={{ once: true }} variants={fadeInUp}>
             <div className="inline-flex items-center space-x-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-4 py-2 rounded-full text-sm font-medium mb-4">
               <Award className="w-4 h-4" />
-              <span>Top Rated Tutors</span>
+              <span>Top Tutors</span>
             </div>
-            <h2 className="text-4xl font-bold text-foreground mb-4">Gặp gỡ các Giáo viên Hàng đầu</h2>
+            <h2 className="text-4xl font-bold text-foreground mb-4">Meet the Top Teachers</h2>
           </motion.div>
-
           {/* Nếu đang loading */}
-          {loading && <p className="text-center text-muted-foreground">Đang tải...</p>}
+          {loading && <p className="text-center text-muted-foreground">Loading...</p>}
 
           <motion.div
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12"
@@ -61,8 +56,7 @@ const TopTutors = () => {
               viewport={{ once: true }}
               variants={staggerContainer}
           >
-
-            {/* ✅ Hiển thị tutors từ Redux */}
+            {/*  Hiển thị tutors từ Redux */}
             {tutors.slice(0, 4).map((tutor) => (
                 <motion.div key={tutor.tutorId} variants={fadeInUp}>
                   <Card className="overflow-hidden hover:shadow-2xl transition-all duration-300 group cursor-pointer border-0 bg-white/80 backdrop-blur-sm">
@@ -74,8 +68,6 @@ const TopTutors = () => {
                             className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
                         />
                       </div>
-
-
                       <CardContent className="p-6">
                         <div className="flex items-center justify-between mb-3">
                           <h3 className="text-xl font-bold text-foreground group-hover:text-indigo-600 transition-colors">
@@ -93,7 +85,6 @@ const TopTutors = () => {
                             {tutor.country || "Unknown"}
                           </span>
                         </div>
-
                         <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
                           {tutor.specialization || "No description"}
                         </p>
@@ -103,7 +94,7 @@ const TopTutors = () => {
                             <div className="text-lg font-bold text-indigo-600">
                               {formatPrice(tutor.pricePerHour)}
                             </div>
-                            <div className="text-xs text-muted-foreground">/giờ</div>
+                            <div className="text-xs text-muted-foreground">/slot</div>
                           </div>
                         </div>
                       </CardContent>
@@ -112,13 +103,12 @@ const TopTutors = () => {
                 </motion.div>
             ))}
           </motion.div>
-
           <motion.div className="text-center" initial="initial" whileInView="animate" viewport={{once: true}}
                       variants={fadeInUp}>
             <Button size="lg" asChild
                     className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700">
-              <Link to="/tutors">
-                Xem tất cả giáo viên
+              <Link to={ROUTES.TUTORS}>
+                View all teachers
                 <ChevronRight className="w-4 h-4 ml-2" />
               </Link>
             </Button>

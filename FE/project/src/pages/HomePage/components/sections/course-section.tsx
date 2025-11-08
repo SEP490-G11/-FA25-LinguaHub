@@ -17,7 +17,6 @@ const CourseSection = () => {
   const getRandomCourses = (list: typeof courses, count: number) => {
     return [...list].sort(() => 0.5 - Math.random()).slice(0, count);
   };
-
   //  Call API on first load
   useEffect(() => {
     dispatch(fetchApprovedCourses());

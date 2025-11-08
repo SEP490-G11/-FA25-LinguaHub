@@ -41,6 +41,7 @@ import TutorAnalytics from '@/pages/TutorPages/Analytics';
 import TutorMessages from '@/pages/TutorPages/Messages';
 import TutorResources from '@/pages/TutorPages/Resources';
 import TutorSettings from '@/pages/TutorPages/Settings';
+import LoginPage2 from "@/pages/LoginPage2";
 
 export function AppRoutes() {
     return (
@@ -68,6 +69,7 @@ export function AppRoutes() {
             <Route path={ROUTES.WISHLIST} element={<Wishlist />} />
             <Route path={ROUTES.PAYMENT} element={<Payment />} />
             <Route path={ROUTES.POLICY} element={<PolicyPage />} />
+            <Route path="/login2" element={<LoginPage2/>} />
 
             {/* User */}
             <Route path={ROUTES.PROFILE} element={<Profile />} />

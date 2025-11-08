@@ -51,7 +51,6 @@ const LanguageCourses = () => {
   const maxPrice = Math.max(...courses.map((c) => c.price), 0);
   const [priceRange, setPriceRange] = useState([0, maxPrice]);
 
-  //  Filter logic chính
   const filteredCourses = courses.filter((course: Course) => {
     const matchesLanguage =
         !currentLang || course.language.toLowerCase() === currentLang.name.toLowerCase();

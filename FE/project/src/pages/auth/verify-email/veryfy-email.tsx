@@ -1,295 +1,219 @@
-import  { useState, useEffect } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { CheckCircle,  Languages, Shield } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
-import { ErrorMessage } from '@/components/shared/ErrorMessage';
-import { z } from 'zod';
-import { ROUTES } from '@/constants/routes.ts';
-import {  verifyOtp } from '@/redux/slices/authSlice.ts';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import type {  AppDispatch } from '@/redux/store.ts';
-import { useDispatch } from 'react-redux';
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { motion } from "framer-motion";
+import { CheckCircle, Languages, Shield, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
+import { ErrorMessage } from "@/components/shared/ErrorMessage";
+import { z } from "zod";
+import { ROUTES } from "@/constants/routes";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import api from "@/config/axiosConfig";
 
+// ✅ Validate form OTP
 const verifyEmailSchema = z.object({
-  otpCode: z.string().length(6, 'OTP code must be 6 digits'),
+  otpCode: z.string().length(6, "OTP code must be 6 digits"),
 });
-type verifyEmailForm = z.infer<typeof verifyEmailSchema>;
+
+type VerifyEmailForm = z.infer<typeof verifyEmailSchema>;
 
 const VerifyEmail = () => {
   const [isVerifying, setIsVerifying] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
-  // const [canResend, setCanResend] = useState(false);
-  // const [countdown, setCountdown] = useState(60);
-  const [message] = useState<string>('');
+  const [apiError, setApiError] = useState<string | null>(null);
+
+  const [resending, setResending] = useState(false);
+  const [resendMessage, setResendMessage] = useState<string | null>(null);
+  const [canResend, setCanResend] = useState(false);
+  const [countdown, setCountdown] = useState(20);
+
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const dispatch = useDispatch<AppDispatch>();
 
-  const { register, handleSubmit, formState: { errors: formErrors } } = useForm<verifyEmailForm>({
+  const emailFromParam = searchParams.get("email");
+  const email =
+      emailFromParam ?? localStorage.getItem("temp_verify_email") ?? "";
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors: formErrors },
+  } = useForm<VerifyEmailForm>({
     resolver: zodResolver(verifyEmailSchema),
   });
 
-  const email = searchParams.get('email');
-
-  const fadeInUp = {
-    initial: { opacity: 0, y: 60 },
-    animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.6 }
-  };
-
+  //  countdown resend button (chạy ngay lần đầu)
   useEffect(() => {
-    if (email) {
-      localStorage.setItem('temp_verify_email', decodeURIComponent(email));
+    if (emailFromParam) {
+      localStorage.setItem("temp_verify_email", emailFromParam);
     }
 
-    // const timer = setInterval(() => {
-    //   setCountdown(prev => {
-    //     if (prev <= 1) {
-    //       setCanResend(true);
-    //       return 0;
-    //     }
-    //     return prev - 1;
-    //   });
-    // }, 1000);
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          setCanResend(true);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
 
-    // return () => clearInterval(timer);
-  }, [searchParams]);
+    return () => clearInterval(timer);
+  }, []);
 
-  const handleManualVerify = async (data: verifyEmailForm) => {
-    const { otpCode } = data;
+  /**  Verify OTP */
+  const handleManualVerify = async (data: VerifyEmailForm) => {
+    setApiError(null);
     setIsVerifying(true);
+
     try {
-      const result = await dispatch(verifyOtp(otpCode)).unwrap();
-      console.log('Verification success:', result);
+      await api.post("/auth/verify", { otp: data.otpCode }, { withCredentials: true });
 
       setIsVerified(true);
-      localStorage.removeItem('temp_verify_email');
+      localStorage.removeItem("temp_verify_email");
 
-      setTimeout(() => {
-        navigate('/signin?verified=true');
-      }, 3000);
-    } catch (error: unknown) {
-      console.error('Verification failed:', error);
+      setTimeout(() => navigate(`${ROUTES.SIGN_IN}?verified=true`), 2000);
+    } catch (error) {
+      const message =
+          typeof error === "object" &&
+          error &&
+          "response" in error &&
+          (error as { response?: { data?: { message?: unknown } } }).response?.data?.message;
+
+      setResendMessage(typeof message === "string" ? message : "Failed to resend OTP.");
+
     } finally {
       setIsVerifying(false);
     }
   };
 
-  // const handleResendEmail = async () => {
-  //   const verifyEmail = decodeURIComponent(email || localStorage.getItem('temp_verify_email') || '');
-  //   if (!verifyEmail) {
-  //     setMessage('Email not provided');
-  //     return;
-  //   }
+  /**  Resend OTP (gửi lại form đăng ký lưu trong localStorage) */
+  const handleResendEmail = async () => {
+    setResending(true);
+    setResendMessage(null);
 
-  //   setCanResend(false);
-  //   setCountdown(60);
-  //   setMessage('');
+    try {
+      const savedForm = localStorage.getItem("temp_signup_data");
 
-  //   try {
-  //     const response = await BaseRequest.Post('/auth/resend-otp', { email: verifyEmail });
-  //     console.log('Resend OTP success:', response);
-  //     setMessage('A new OTP code has been sent to your email. Session has been updated for account registration.');
+      if (!savedForm) {
+        setResendMessage("No registration data found. Try signup again.");
+        return;
+      }
 
-  //     const newToken = response.token;
-  //     if (newToken) {
-  //       localStorage.setItem('accessToken', newToken);
-  //       console.log('New token set from resend:', newToken);
-  //     }
+      const signupData = JSON.parse(savedForm) as Record<string, unknown>;
+      await api.post("/auth/register", signupData);
 
-  //     localStorage.removeItem('temp_verify_email');
-  //   } catch (error: unknown) {
-  //     console.error('Resend failed:', error);
-  //     const errorMessage = (error as { message?: string })?.message || 'Resend failed (401). Check backend: Does /auth/resend-otp endpoint require auth? Or CORS credentials.';
-  //     setMessage(errorMessage);
-  //   }
+      setResendMessage(" A new OTP has been sent to your email.");
 
-  //   const timer = setInterval(() => {
-  //     setCountdown(prev => {
-  //       if (prev <= 1) {
-  //         setCanResend(true);
-  //         return 0;
-  //       }
-  //       return prev - 1;
-  //     });
-  //   }, 1000);
-  // };
+      // 🔥 Reset countdown sau khi BE trả về thành công
+      setCountdown(20);
+      setCanResend(false);
+    } catch (error) {
+      const message =
+          typeof error === "object" &&
+          error &&
+          "response" in error &&
+          (error as { response?: { data?: { message?: unknown } } }).response?.data?.message;
 
-  const getTitle = () => {
-    if (isVerified) return 'Email Verified!';
-    return 'Verify Email to Complete Registration';
+      setResendMessage(typeof message === "string" ? message : "Failed to resend OTP.");
+    } finally {
+      setResending(false);
+    }
   };
 
-  const getDescription = () => {
-    if (isVerified) {
-      return 'Your email has been successfully verified. An account with this email has been created, you can log in now.';
-    }
-    const displayEmail = decodeURIComponent(email || localStorage.getItem('temp_verify_email') || 'your email');
-    return `We have sent a 6-digit OTP code to ${displayEmail}. Enter the code to verify and complete account creation.`;
+  /* ---------------- UI ---------------- */
+
+  const fadeInUp = {
+    initial: { opacity: 0, y: 60 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.6 },
   };
 
   if (isVerified) {
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-          <motion.div
-              className="max-w-md w-full space-y-8"
-              initial="initial"
-              animate="animate"
-              variants={fadeInUp}
-          >
-            {/* Header */}
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50">
+          <motion.div className="max-w-md w-full space-y-8" {...fadeInUp}>
             <div className="text-center">
-              <Link to="/" className="inline-flex items-center space-x-2 mb-6">
-                <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-3 rounded-lg">
-                  <Languages className="w-8 h-8 text-white" />
-                </div>
-                <div className="text-3xl font-bold text-gray-800">
-                  Lingua<span className="text-blue-500">Hub</span>
-                </div>
-              </Link>
+              <CheckCircle className="w-20 h-20 text-green-500 mx-auto" />
+              <h2 className="text-2xl font-bold text-gray-900 mt-4">
+                Email Verified!
+              </h2>
+              <p className="text-gray-600">Redirecting to login...</p>
             </div>
-
-            {/* Success Message */}
-            <motion.div
-                className="bg-white rounded-2xl shadow-xl p-8 text-center"
-                variants={fadeInUp}
-                transition={{ delay: 0.1 }}
-            >
-              <div className="mb-6">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
-                  <CheckCircle className="w-8 h-8 text-green-500" />
-                </div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">{getTitle()}</h2>
-                <p className="text-gray-600">{getDescription()}</p>
-              </div>
-
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-              <p className="text-sm text-gray-500">
-                Redirecting to login...
-              </p>
-            </motion.div>
           </motion.div>
         </div>
     );
   }
 
   return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <motion.div
-            className="max-w-md w-full space-y-8"
-            initial="initial"
-            animate="animate"
-            variants={fadeInUp}
-        >
-          {/* Header */}
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50">
+        <motion.div className="max-w-md w-full space-y-8" {...fadeInUp}>
+          {/* header */}
           <div className="text-center">
             <Link to="/" className="inline-flex items-center space-x-2 mb-6">
-              <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-3 rounded-lg">
-                <Languages className="w-8 h-8 text-white" />
-              </div>
+              <Languages className="w-8 h-8 text-white bg-gradient-to-r from-blue-500 to-purple-600 p-2 rounded-lg" />
               <div className="text-3xl font-bold text-gray-800">
                 Lingua<span className="text-blue-500">Hub</span>
               </div>
             </Link>
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">{getTitle()}</h2>
-            <p className="text-gray-600">{getDescription()}</p>
+            <h2 className="text-3xl font-bold text-gray-900">
+              Verify Email to Complete Registration
+            </h2>
+            <p className="text-gray-600">
+              OTP sent to <strong>{email}</strong>
+            </p>
           </div>
 
-          {/* Verification Card */}
-          <motion.div
-              className="bg-white rounded-2xl shadow-xl p-8"
-              variants={fadeInUp}
-              transition={{ delay: 0.1 }}
-          >
-            <div className="text-center mb-6">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
-                <Shield className="w-8 h-8 text-blue-500" />
-              </div>
-
-              {/* OTP Form */}
-              <form onSubmit={handleSubmit(handleManualVerify)} className="space-y-4">
-                <div>
-                  <label htmlFor="otp" className="block text-sm font-medium text-gray-700 mb-2">
-                    OTP Code (6 digits)
-                  </label>
-                  <Input
-                      id="otp"
-                      type="text"
-                      maxLength={6}
-                      {...register('otpCode', { setValueAs: (v) => v.replace(/\D/g, '') })}
-                      className="text-center text-2xl tracking-widest"
-                      placeholder="000000"
-                      disabled={isVerifying}
-                  />
-                  {formErrors.otpCode && (
-                      <ErrorMessage message={formErrors.otpCode.message ?? ''} />
-                  )}
-                </div>
-
-                <Button
-                    type="submit"
-                    className="w-full"
-                    disabled={isVerifying}
-                >
-                  {isVerifying ? <LoadingSpinner size="sm" /> : 'Verify'}
-                </Button>
-              </form>
+          {/* card */}
+          <motion.div className="bg-white rounded-2xl shadow-xl p-8" {...fadeInUp}>
+            {/*  Shield icon added */}
+            <div className="flex justify-center mb-6">
+              <Shield className="w-14 h-14 text-blue-500" />
             </div>
 
-            {/* FIXED: Thêm button resend nổi bật nếu 401/1006 error */}
-            {/* {formErrors.otpCode?.message?.includes('401') || formErrors.otpCode?.message?.includes('1006') && (
-                <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <p className="text-sm text-yellow-800 mb-2">To continue registration, please resend OTP (possibly due to CORS/session):</p>
-                  <Button
-                      onClick={handleResendEmail}
-                      variant="outline"
-                      className="w-full"
-                      size="sm"
-                  >
-                    <RefreshCw className="w-4 h-4 mr-2" />
-                    Resend OTP Now
-                  </Button>
-                </div>
-            )} */}
+            <form onSubmit={handleSubmit(handleManualVerify)} className="space-y-4">
+              <Input
+                  type="text"
+                  maxLength={6}
+                  {...register("otpCode", { setValueAs: (v) => v.replace(/\D/g, "") })}
+                  className="text-center text-2xl tracking-widest"
+                  placeholder="000000"
+                  disabled={isVerifying}
+              />
 
-            {/* Message display */}
-            {message && (
-                <div
-                    className={`p-3 rounded-lg text-sm mt-4 ${
-                        message.includes('Error') || message.includes('failed') || message.includes('401')
-                            ? 'bg-red-50 text-red-700 border border-red-200'
-                            : 'bg-green-50 text-green-700 border border-green-200'
-                    }`}
-                >
-                  {message}
-                </div>
-            )}
+              {formErrors.otpCode && <ErrorMessage message={formErrors.otpCode.message!} />}
+              {apiError && <ErrorMessage message={apiError} />}
 
-            {/* Resend code button */}
-            <div className="space-y-4">
-              <p className="text-sm text-gray-500 text-center">
-                Didn't receive the code? Check your spam folder.
-              </p>
+              <Button type="submit" className="w-full" disabled={isVerifying}>
+                {isVerifying ? <LoadingSpinner size="sm" /> : "Verify OTP"}
+              </Button>
+            </form>
 
-              <div className="flex flex-col space-y-3">
-                {/* <Button
-                    onClick={handleResendEmail}
-                    disabled={!canResend}
-                    variant="outline"
-                    className="w-full"
-                >
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  {canResend ? 'Resend Code' : `Resend in ${countdown}s`}
-                </Button> */}
+            {/* resend button */}
+            <div className="mt-6 space-y-4 text-center">
+              <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleResendEmail}
+                  disabled={!canResend || resending}
+              >
+                {resending ? (
+                    <LoadingSpinner size="sm" />
+                ) : (
+                    <>
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      {canResend ? "Resend Code" : `Resend in ${countdown}s`}
+                    </>
+                )}
+              </Button>
 
-                <Button asChild variant="ghost" className="w-full">
-                  <Link to={ROUTES.SIGN_IN}>Back to Login</Link>
-                </Button>
-              </div>
+              {resendMessage && <p className="text-sm text-green-700">{resendMessage}</p>}
+
+              <Button asChild variant="ghost" className="w-full">
+                <Link to={ROUTES.SIGN_UP}>Back to Sign Up</Link>
+              </Button>
             </div>
           </motion.div>
         </motion.div>

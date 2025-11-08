@@ -2,6 +2,7 @@ import axios from "axios";
 
 const api = axios.create({
     baseURL: "http://localhost:8080", // ← FIX: Bỏ /api để match với backend routes
+    withCredentials: true,
     headers: {
         "Content-Type": "application/json",
     },

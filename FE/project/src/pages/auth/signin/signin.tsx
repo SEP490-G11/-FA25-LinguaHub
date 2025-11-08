@@ -1,6 +1,5 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -9,103 +8,70 @@ import { User, Lock, Eye, EyeOff, Languages } from 'lucide-react';
 import { Button } from '@/components/ui/button.tsx';
 import { Input } from '@/components/ui/input.tsx';
 import { Checkbox } from '@/components/ui/checkbox.tsx';
-import { LoadingSpinner } from '@/components/shared/LoadingSpinner.tsx';
 import { ErrorMessage } from '@/components/shared/ErrorMessage.tsx';
-import type { RootState, AppDispatch } from '@/redux/store.ts';
-import { clearError, signIn } from '@/redux/slices/authSlice.ts';
+import api from "@/config/axiosConfig.ts";
 import { ROUTES } from '@/constants/routes.ts';
 
-// Xác thực dữ liệu form
+// ✅ Schema validate
 const signInSchema = z.object({
   username: z.string().min(3, 'Login name must be at least 3 characters'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-  rememberMe: z.boolean().default(false).optional(),
+  password: z
+      .string()
+      .min(8, "Password must be at least 8 characters")
+      .regex(/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, "Password must contain uppercase, lowercase, and number"),
+  rememberMe: z.boolean().optional(),
 });
 
 type SignInForm = z.infer<typeof signInSchema>;
 
-//setup component SignIn
 const SignIn = () => {
   const [showPassword, setShowPassword] = React.useState(false);
+  const [apiError, setApiError] = React.useState<string | null>(null);
   const navigate = useNavigate();
-  const dispatch = useDispatch<AppDispatch>();
-  const { isLoading, error: authError } = useSelector((state: RootState) => state.auth);
 
-  //Hook khởi tạo form với type SignInForm
-  const { register, handleSubmit, formState: { errors, isValid } } = useForm<SignInForm>({
-    resolver: zodResolver(signInSchema),
-    //validate ngay khi người dùng nhập
-    mode: 'onChange',
-    defaultValues: {
-      username: '',
-      password: '',
-      rememberMe: false,
-    },
-  });
-
-  // Destructuring register props cho từng field để chain onChange dễ dàng hơn
-  const usernameRegister = register('username');
-  const passwordRegister = register('password');
-  const rememberMeRegister = register('rememberMe');
-
-  const handleChangeInput = () => {
-    if (authError) {
-      dispatch(clearError());
-    }
-  };
-
-  React.useEffect(() => {
-    dispatch(clearError());
-  }, [dispatch]);
+  const { register, handleSubmit, formState: { errors, isValid } } =
+      useForm<SignInForm>({
+        resolver: zodResolver(signInSchema),
+        mode: 'onChange',
+        defaultValues: {
+          username: '',
+          password: '',
+          rememberMe: false,
+        },
+      });
 
   const onSubmit = async (data: SignInForm) => {
-    dispatch(clearError());
+    setApiError(null);
     try {
-      const result = await dispatch(signIn(data)).unwrap();
-      // Kiểm tra role và redirect tương ứng
-      if (result.user && result.user.role === 'Tutor') {
-        navigate(ROUTES.TUTOR_DASHBOARD, { replace: true });
+      const response = await api.post("/auth/token", {
+        username: data.username,
+        password: data.password,
+      });
+
+      const token = response.data.result.accessToken;
+
+      // ✅ Remember me FE logic
+      if (data.rememberMe) {
+        localStorage.setItem("access_token", token);
       } else {
-        navigate(ROUTES.HOME, { replace: true });
+        sessionStorage.setItem("access_token", token);
       }
-    } catch (error: unknown) {
-      console.error('Signin error:', error);
-      if (error instanceof Error && error.message.includes('timeout')) {
-      }
-    }
-  };
 
-  const fadeInUp = {
-    initial: { opacity: 0, y: 60 },
-    animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.6 },
-  };
+      navigate(ROUTES.HOME, { replace: true });
 
-  // Helper để extract message từ authError (fix "Unknown error")
-  const getErrorMessage = (err: unknown): string => {
-    if (typeof err === 'string') return err;
-    if (err && typeof err === 'object') {
-      if ('message' in err && typeof (err as Record<string, unknown>).message === 'string') {
-        return (err as { message: string }).message;
-      }
-      if ('error' in err && typeof (err as Record<string, unknown>).error === 'string') {
-        return (err as { error: string }).error;
-      }
-      if ('detail' in err && typeof (err as Record<string, unknown>).detail === 'string') {
-        return (err as { detail: string }).detail;
-      }
-      return 'Unknown error';
+    } catch (err) {
+      console.error(" Login error:", err);
+      setApiError("Username or password is incorrect.");
     }
-    return 'Unknown error';
   };
 
   return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
         <motion.div
             className="max-w-md w-full space-y-8"
-            initial="initial"
-            animate="animate"
-            variants={fadeInUp}
+            initial={{ opacity: 0, y: 60 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
         >
           {/* Header */}
           <div className="text-center">
@@ -122,125 +88,68 @@ const SignIn = () => {
           </div>
 
           {/* Form */}
-          <motion.div
-              className="bg-white rounded-2xl shadow-xl p-8"
-              variants={fadeInUp}
-              transition={{ delay: 0.1 }}
-          >
+          <motion.div className="bg-white rounded-2xl shadow-xl p-8">
             <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
-              {authError && <ErrorMessage message={getErrorMessage(authError)} />}
 
-              {/* Username Field */}
+              {apiError && <ErrorMessage message={apiError} />}
+
+              {/* Username */}
               <div>
-                <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
-                  Username {/* Updated label */}
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Username</label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <User className="h-5 w-5 text-gray-400" /> {/* User icon */}
-                  </div>
-                  {/*input field*/}
-                  <Input
-                      id="username"
-                      {...usernameRegister}
-                      onChange={(e) => {
-                        handleChangeInput();
-                        usernameRegister.onChange(e);
-                      }}
-                      type="text"
-                      autoComplete="username"
-                      className="pl-10"
-                      placeholder="Enter your username"
-                      aria-invalid={errors.username ? 'true' : 'false'}
-                      disabled={isLoading}
-                  />
+                  <Input {...register("username")} className="pl-10" placeholder="Enter your username" />
+                  <User className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                 </div>
                 {errors.username && <ErrorMessage message={errors.username.message!} />}
               </div>
 
               {/* Password */}
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                  Password
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Lock className="h-5 w-5 text-gray-400" />
-                  </div>
                   <Input
-                      id="password"
-                      {...passwordRegister}
-                      onChange={(e) => {
-                        handleChangeInput();
-                        passwordRegister.onChange(e);
-                      }}
-                      type={showPassword ? 'text' : 'password'}
-                      autoComplete="current-password"
+                      {...register("password")}
+                      type={showPassword ? "text" : "password"}
                       className="pl-10 pr-10"
                       placeholder="Enter your password"
-                      aria-invalid={errors.password ? 'true' : 'false'}
-                      disabled={isLoading}
                   />
+                  <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+
                   <button
                       type="button"
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400"
                       onClick={() => setShowPassword(!showPassword)}
-                      aria-label={showPassword ? 'Hide password' : 'Show password'}
-                      disabled={isLoading}
                   >
-                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    {showPassword ? <EyeOff size={18}/> : <Eye size={18}/>}
                   </button>
                 </div>
                 {errors.password && <ErrorMessage message={errors.password.message!} />}
               </div>
 
-              {/* Remember Me & Forgot Password */}
+              {/* ✅ Remember Me + Forgot Password on SAME ROW */}
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                      id="rememberMe"
-                      {...rememberMeRegister}
-                      onChange={(e) => {
-                        handleChangeInput();
-                        // Note: Checkbox onChange is boolean, but register handles it
-                        rememberMeRegister.onChange(e);
-                      }}
-                  />
-                  <label htmlFor="rememberMe" className="text-sm text-gray-700 cursor-pointer">
-                    Remember me
-                  </label>
-                </div>
-                <Link
-                    to={ROUTES.FORGOT_PASSWORD}
-                    className="text-sm font-medium text-blue-600 hover:text-blue-500 transition-colors"
-                >
-                  Forgot your password?
+                <label className="flex items-center space-x-2 text-sm text-gray-700">
+                  <Checkbox {...register("rememberMe")} />
+                  <span>Remember me</span>
+                </label>
+
+                <Link to={ROUTES.FORGOT_PASSWORD}
+                      className="text-sm font-medium text-blue-600 hover:text-blue-500 hover:underline">
+                  Forgot Password?
                 </Link>
               </div>
 
-              {/* Submit Button */}
-              <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={isLoading || !isValid}
-                  aria-busy={isLoading}
-              >
-                {isLoading ? (
-                    <>
-                      <LoadingSpinner size="sm" className="mr-2" />
-                      Signing in...
-                    </>
-                ) : (
-                    'Sign In'
-                )}
+              {/* Submit */}
+              <Button type="submit" className="w-full" disabled={!isValid}>
+                Sign In
               </Button>
             </form>
 
-            {/* Sign Up Link */}
+            {/* Sign up link */}
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-600">
-                Don't have an account?{' '}
-                <Link to={ROUTES.SIGN_UP} className="font-medium text-blue-600 hover:text-blue-500 transition-colors">
+                Don't have an account?{" "}
+                <Link to={ROUTES.SIGN_UP} className="font-medium text-blue-600 hover:text-blue-500 hover:underline">
                   Sign up now
                 </Link>
               </p>

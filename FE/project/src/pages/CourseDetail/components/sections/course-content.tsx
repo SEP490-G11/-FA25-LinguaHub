@@ -17,7 +17,7 @@ const CourseContent = ({ course }: CourseContentProps) => {
     return (
         <div className="lg:col-span-2">
 
-            {/* ✅ COURSE CURRICULUM FROM API */}
+            {/*  COURSE CURRICULUM FROM API */}
             {course.section && (
                 <motion.div
                     className="bg-white rounded-xl p-8 shadow-md mb-8"

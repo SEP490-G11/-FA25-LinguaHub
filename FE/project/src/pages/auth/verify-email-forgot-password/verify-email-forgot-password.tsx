@@ -1,191 +1,106 @@
-import  { useState, useEffect } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { CheckCircle,  Languages, Shield } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
-import { ErrorMessage } from '@/components/shared/ErrorMessage';
-import { z } from 'zod';
-import { ROUTES } from '@/constants/routes.ts';
-import { verifyResetOtp} from '@/redux/slices/authSlice.ts';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import type {  AppDispatch } from '@/redux/store.ts';
-import { useDispatch } from 'react-redux';
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { motion } from "framer-motion";
+import {  Languages, Shield, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
+import { ErrorMessage } from "@/components/shared/ErrorMessage";
+import { z } from "zod";
+import { ROUTES } from "@/constants/routes";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import api from "@/config/axiosConfig"; // ✅ axios không redux
+import { AxiosError } from "axios";
 
+// ✅ Validate OTP
 const verifyEmailSchema = z.object({
-  otpCode: z.string().length(6, 'OTP code must be 6 digits'),
+  otpCode: z.string().length(6, "OTP code must be 6 digits"),
 });
-type verifyEmailForm = z.infer<typeof verifyEmailSchema>;
+type VerifyEmailForm = z.infer<typeof verifyEmailSchema>;
 
-const VerifyEmail = () => {
+const VerifyEmailForgotPassword = () => {
   const [isVerifying, setIsVerifying] = useState(false);
-  const [isVerified, setIsVerified] = useState(false);
-  // const [canResend, setCanResend] = useState(false);
-  // const [countdown, setCountdown] = useState(60);
-  const [message] = useState<string>('');
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [canResend, setCanResend] = useState(false);
+  const [countdown, setCountdown] = useState(20);
+  const [resending, setResending] = useState(false);
+  const [resendMessage, setResendMessage] = useState<string | null>(null);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const dispatch = useDispatch<AppDispatch>();
+  const emailFromParam = searchParams.get("email");
+  const email = emailFromParam ?? localStorage.getItem("temp_forgot_password_email");
 
-  const { register, handleSubmit, formState: { errors: formErrors } } = useForm<verifyEmailForm>({
+  const {
+    register,
+    handleSubmit,
+    formState: { errors: formErrors },
+  } = useForm<VerifyEmailForm>({
     resolver: zodResolver(verifyEmailSchema),
   });
 
-  const email = searchParams.get('email');
-
-  const fadeInUp = {
-    initial: { opacity: 0, y: 60 },
-    animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.6 }
-  };
-
+  //  Countdown cho resend OTP
   useEffect(() => {
-    if (email) {
-      localStorage.setItem('temp_verify_email', decodeURIComponent(email));
+    if (emailFromParam) {
+      localStorage.setItem("temp_forgot_password_email", emailFromParam);
     }
 
-    // const timer = setInterval(() => {
-    //   setCountdown(prev => {
-    //     if (prev <= 1) {
-    //       setCanResend(true);
-    //       return 0;
-    //     }
-    //     return prev - 1;
-    //   });
-    // }, 1000);
+    // ⏳ chạy timer đếm ngược khi countdown > 0
+    if (countdown > 0) {
+      const timer = setTimeout(() => {
+        setCountdown((prev) => prev - 1);
+      }, 1000);
 
-    // return () => clearInterval(timer);
-  }, [searchParams]);
+      return () => clearTimeout(timer);
+    } else {
+      setCanResend(true);
+    }
+  }, [countdown, emailFromParam]);
 
-  const handleManualVerify = async (data: verifyEmailForm) => {
-    const { otpCode } = data;
+
+  /**  Verify OTP */
+  const handleManualVerify = async (data: VerifyEmailForm) => {
     setIsVerifying(true);
+    setApiError(null); // clear error UI trước đó
+
     try {
-      const result = await dispatch(verifyResetOtp(otpCode)).unwrap();
-      console.log('Verification success:', result);
-
-      setIsVerified(true);
-      localStorage.removeItem('temp_verify_email');
-
-      setTimeout(() => {
-        navigate(ROUTES.RESET_PASSWORD, { state: { verified: true } });
-      }, 3000);
-    } catch (error: unknown) {
-      console.error('Verification failed:', error);
+      await api.post("/auth/verify-reset-otp", { otp: data.otpCode });
+      localStorage.removeItem("temp_forgot_password_email");
+      setTimeout(() => navigate(ROUTES.RESET_PASSWORD), 2000);
+    } catch (err: unknown) {
+      const error = err as AxiosError<{ message?: string }>;
+      const message = error.response?.data?.message ?? "Invalid OTP";
+      setApiError(message);
     } finally {
       setIsVerifying(false);
     }
   };
 
-  // const handleResendEmail = async () => {
-  //   const verifyEmail = decodeURIComponent(email || localStorage.getItem('temp_verify_email') || '');
-  //   if (!verifyEmail) {
-  //     setMessage('Email not provided');
-  //     return;
-  //   }
 
-  //   setCanResend(false);
-  //   setCountdown(60);
-  //   setMessage('');
+  const handleResendOtp = async () => {
+    setApiError(null);
+    setResendMessage(null);
+    setResending(true);
 
-  //   try {
-  //     const response = await BaseRequest.Post('/auth/resend-otp', { email: verifyEmail });
-  //     console.log('Resend OTP success:', response);
-  //     setMessage('A new OTP code has been sent to your email. Session has been updated for account registration.');
+    try {
+      await api.post("/auth/forgot-password", { email });
+      setCountdown(20);
+      setCanResend(false);
 
-  //     const newToken = response.token;
-  //     if (newToken) {
-  //       localStorage.setItem('accessToken', newToken);
-  //       console.log('New token set from resend:', newToken);
-  //     }
+      setResendMessage(" A new OTP has been sent to your email.");
+    } catch (error: unknown) {
 
-  //     localStorage.removeItem('temp_verify_email');
-  //   } catch (error: unknown) {
-  //     console.error('Resend failed:', error);
-  //     const errorMessage = (error as { message?: string })?.message || 'Resend failed (401). Check backend: Does /auth/resend-otp endpoint require auth? Or CORS credentials.';
-  //     setMessage(errorMessage);
-  //   }
-
-  //   const timer = setInterval(() => {
-  //     setCountdown(prev => {
-  //       if (prev <= 1) {
-  //         setCanResend(true);
-  //         return 0;
-  //       }
-  //       return prev - 1;
-  //     });
-  //   }, 1000);
-  // };
-
-  const getTitle = () => {
-    if (isVerified) return 'Email Verified!';
-    return 'Verify Email to Complete Registration';
-  };
-
-  const getDescription = () => {
-    if (isVerified) {
-      return 'Your email has been successfully verified. An account with this email has been created, you can log in now.';
+      console.error(" Failed to resend OTP:", error);
+      setResendMessage(" Failed to resend OTP.");
+    } finally {
+      setResending(false);
     }
-    const displayEmail = decodeURIComponent(email || localStorage.getItem('temp_verify_email') || 'your email');
-    return `We have sent a 6-digit OTP code to ${displayEmail}. Enter the code to verify and complete account creation.`;
   };
-
-  if (isVerified) {
-    return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-          <motion.div
-              className="max-w-md w-full space-y-8"
-              initial="initial"
-              animate="animate"
-              variants={fadeInUp}
-          >
-            {/* Header */}
-            <div className="text-center">
-              <Link to="/" className="inline-flex items-center space-x-2 mb-6">
-                <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-3 rounded-lg">
-                  <Languages className="w-8 h-8 text-white" />
-                </div>
-                <div className="text-3xl font-bold text-gray-800">
-                  Lingua<span className="text-blue-500">Hub</span>
-                </div>
-              </Link>
-            </div>
-
-            {/* Success Message */}
-            <motion.div
-                className="bg-white rounded-2xl shadow-xl p-8 text-center"
-                variants={fadeInUp}
-                transition={{ delay: 0.1 }}
-            >
-              <div className="mb-6">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
-                  <CheckCircle className="w-8 h-8 text-green-500" />
-                </div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">{getTitle()}</h2>
-                <p className="text-gray-600">{getDescription()}</p>
-              </div>
-
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-              <p className="text-sm text-gray-500">
-                Redirecting to login...
-              </p>
-            </motion.div>
-          </motion.div>
-        </div>
-    );
-  }
 
   return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <motion.div
-            className="max-w-md w-full space-y-8"
-            initial="initial"
-            animate="animate"
-            variants={fadeInUp}
-        >
-          {/* Header */}
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
+        <motion.div className="max-w-md w-full space-y-8">
+          {/* ✅ Header */}
           <div className="text-center">
             <Link to="/" className="inline-flex items-center space-x-2 mb-6">
               <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-3 rounded-lg">
@@ -195,101 +110,58 @@ const VerifyEmail = () => {
                 Lingua<span className="text-blue-500">Hub</span>
               </div>
             </Link>
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">{getTitle()}</h2>
-            <p className="text-gray-600">{getDescription()}</p>
+            <h2 className="text-3xl font-bold text-gray-900">Verify OTP</h2>
+            <p className="text-gray-600">Enter the OTP sent to <strong>{email}</strong></p>
           </div>
 
-          {/* Verification Card */}
-          <motion.div
-              className="bg-white rounded-2xl shadow-xl p-8"
-              variants={fadeInUp}
-              transition={{ delay: 0.1 }}
-          >
+          {/* ✅ Card */}
+          <motion.div className="bg-white rounded-2xl shadow-xl p-8">
             <div className="text-center mb-6">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
-                <Shield className="w-8 h-8 text-blue-500" />
-              </div>
+              <Shield className="w-16 h-16 text-blue-500 mx-auto mb-4" />
 
-              {/* OTP Form */}
               <form onSubmit={handleSubmit(handleManualVerify)} className="space-y-4">
-                <div>
-                  <label htmlFor="otp" className="block text-sm font-medium text-gray-700 mb-2">
-                    OTP Code (6 digits)
-                  </label>
-                  <Input
-                      id="otp"
-                      type="text"
-                      maxLength={6}
-                      {...register('otpCode', { setValueAs: (v) => v.replace(/\D/g, '') })}
-                      className="text-center text-2xl tracking-widest"
-                      placeholder="000000"
-                      disabled={isVerifying}
-                  />
-                  {formErrors.otpCode && (
-                      <ErrorMessage message={formErrors.otpCode.message ?? ''} />
-                  )}
-                </div>
-
-                <Button
-                    type="submit"
-                    className="w-full"
+                <Input
+                    type="text"
+                    maxLength={6}
+                    {...register("otpCode", {
+                      setValueAs: (v) => v.replace(/\D/g, ""),
+                    })}
+                    className="text-center text-2xl tracking-widest"
+                    placeholder="000000"
                     disabled={isVerifying}
-                >
-                  {isVerifying ? <LoadingSpinner size="sm" /> : 'Verify'}
+                />
+
+                {formErrors.otpCode && <ErrorMessage message={formErrors.otpCode.message!} />}
+
+                {/* ✅ SHOW LỖI TỪ BE */}
+                {apiError && <ErrorMessage message={apiError} />}
+
+                <Button type="submit" className="w-full" disabled={isVerifying}>
+                  {isVerifying ? <LoadingSpinner size="sm" /> : "Verify OTP"}
                 </Button>
               </form>
             </div>
 
-            {/* FIXED: Thêm button resend nổi bật nếu 401/1006 error */}
-            {/* {formErrors.otpCode?.message?.includes('401') || formErrors.otpCode?.message?.includes('1006') && (
-                <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <p className="text-sm text-yellow-800 mb-2">To continue registration, please resend OTP (possibly due to CORS/session):</p>
-                  <Button
-                      onClick={handleResendEmail}
-                      variant="outline"
-                      className="w-full"
-                      size="sm"
-                  >
-                    <RefreshCw className="w-4 h-4 mr-2" />
-                    Resend OTP Now
-                  </Button>
-                </div>
-            )} */}
+            {/* 🔁 Resend OTP */}
+            <div className="space-y-4 text-center">
+              <p className="text-sm text-gray-500">Didn't receive the code?</p>
 
-            {/* Message display */}
-            {message && (
-                <div
-                    className={`p-3 rounded-lg text-sm mt-4 ${
-                        message.includes('Error') || message.includes('failed') || message.includes('401')
-                            ? 'bg-red-50 text-red-700 border border-red-200'
-                            : 'bg-green-50 text-green-700 border border-green-200'
-                    }`}
-                >
-                  {message}
-                </div>
-            )}
+              <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleResendOtp}
+                  disabled={!canResend || resending}
+              >
+                {resending ? <LoadingSpinner size="sm" /> : <><RefreshCw className="w-4 h-4 mr-2" />
+                  {canResend ? "Resend OTP" : `Resend in ${countdown}s`}</>}
+              </Button>
 
-            {/* Resend code button */}
-            <div className="space-y-4">
-              <p className="text-sm text-gray-500 text-center">
-                Didn't receive the code? Check your spam folder.
-              </p>
-
-              <div className="flex flex-col space-y-3">
-                {/* <Button
-                    onClick={handleResendEmail}
-                    disabled={!canResend}
-                    variant="outline"
-                    className="w-full"
-                >
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  {canResend ? 'Resend Code' : `Resend in ${countdown}s`}
-                </Button> */}
-
-                <Button asChild variant="ghost" className="w-full">
-                  <Link to={ROUTES.SIGN_IN}>Back to Login</Link>
-                </Button>
-              </div>
+              {resendMessage && (
+                  <p className="text-sm text-green-700">{resendMessage}</p>
+              )}
+              <Button asChild variant="ghost" className="w-full">
+                <Link to={ROUTES.FORGOT_PASSWORD}>Back to Forgot Password</Link>
+              </Button>
             </div>
           </motion.div>
         </motion.div>
@@ -297,4 +169,4 @@ const VerifyEmail = () => {
   );
 };
 
-export default VerifyEmail;
+export default VerifyEmailForgotPassword;
