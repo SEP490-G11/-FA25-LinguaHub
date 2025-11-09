@@ -29,7 +29,7 @@ const SignIn = () => {
   const [apiError, setApiError] = React.useState<string | null>(null);
   const navigate = useNavigate();
 
-  const { register, handleSubmit, formState: { errors, isValid } } =
+  const { register, handleSubmit, watch, setValue, formState: { errors, isValid } } =
       useForm<SignInForm>({
         resolver: zodResolver(signInSchema),
         mode: 'onChange',
@@ -129,9 +129,13 @@ const SignIn = () => {
               {/* ✅ Remember Me + Forgot Password on SAME ROW */}
               <div className="flex items-center justify-between">
                 <label className="flex items-center space-x-2 text-sm text-gray-700">
-                  <Checkbox {...register("rememberMe")} />
+                  <Checkbox
+                      checked={watch("rememberMe")}
+                      onCheckedChange={(value) => setValue("rememberMe", value as boolean)}
+                  />
                   <span>Remember me</span>
                 </label>
+
 
                 <Link to={ROUTES.FORGOT_PASSWORD}
                       className="text-sm font-medium text-blue-600 hover:text-blue-500 hover:underline">

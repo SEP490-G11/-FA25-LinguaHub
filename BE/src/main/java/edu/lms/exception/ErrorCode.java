@@ -22,6 +22,7 @@ public enum ErrorCode {
     PASSWORD_NOT_MATCH(2003,"Password is not matched" , HttpStatus.BAD_REQUEST),
     PASSWORD_ENABLED(2004,"The password is false", HttpStatus.BAD_REQUEST),
     EMAIL_EXISTED(2005,"This Email has Signed in before", HttpStatus.BAD_REQUEST),
+    USER_NOT_FOUND(1006,"User not found", HttpStatus.NOT_FOUND),
 
     // COURSE
     COURSE_NOT_FOUND(3001, "Course not found", HttpStatus.NOT_FOUND),
@@ -58,8 +59,10 @@ public enum ErrorCode {
 
     //PAYMENT
     INVALID_PAYMENT_TYPE(8003, "Ivalid Payment Type", HttpStatus.NOT_FOUND),
-    BOOKING_SLOT_NOT_AVAILABLE(8004, "Booking Slot Amount of this Tutor is 0, Please Choose other Tutor ", HttpStatus.NOT_FOUND),;
+    BOOKING_SLOT_NOT_AVAILABLE(8004, "Booking Slot Amount of this Tutor is 0, Please Choose other Tutor ", HttpStatus.NOT_FOUND),
 
+    //WISH LIST
+    ALREADY_IN_WISHLIST(8004, "The course already in wishlist", HttpStatus.CONFLICT),;
 
     ErrorCode(int code, String message,HttpStatusCode httpStatusCode) {
         this.code = code;
