@@ -1,26 +1,27 @@
-export interface Tutor {
-    TutorID: number;
-    UserID: string;
-    Experience: number;
-    Specialization?: string;
-    TeachingLanguage?: string;
-    Bio?: string;
-    Rating: number;
-    Status: 'Pending' | 'Approved' | 'Suspended';
+export interface TutorApiResponse {
+    totalRatings: number;
+    avgRating: number;
+    tutorId: number;
+    userId: number;
+    userEmail: string;
+    userName: string;
+    avatarURL: string | null;
+    country: string | null;
+    specialization: string | null;
+    teachingLanguage: string | null;
+    pricePerHour: number | null;
+    status: string;
 }
-
-export interface TutorVerification {
-    TutorVerificationID: number;
-    UserID: string;
-    Experience: number;
-    Specialization?: string;
-    TeachingLanguage?: string;
-    Bio?: string;
-    CertificateName?: string;
-    DocumentURL?: string;
-    Status: 'Pending' | 'Approved' | 'Rejected';
-    SubmittedAt: string;
-    ReviewedBy?: string;
-    ReviewedAt?: string;
-    ReasonForReject?: string;
+export interface Tutor {
+    id: number;
+    name: string;
+    language: string[];
+    country: string;
+    rating: number;
+    reviews: number;
+    price: number;
+    specialties: string[];
+    image: string;
+    description: string;
+    availability: string;
 }

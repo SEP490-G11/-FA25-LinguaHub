@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import {  MapPin, Award, ChevronRight } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import api from "@/config/axiosConfig.ts";  // ✅ axios instance
+import api from "@/config/axiosConfig.ts";
 import { ROUTES } from '@/constants/routes.ts';
 
 // Interface giống với dữ liệu server trả về
@@ -85,7 +85,7 @@ const TopTutors = () => {
             {tutors.slice(0, 4).map((tutor) => (
                 <motion.div key={tutor.tutorId} variants={fadeInUp}>
                   <Card className="overflow-hidden hover:shadow-2xl transition-all duration-300 group cursor-pointer border-0 bg-white/80 backdrop-blur-sm">
-                    <Link to={`/tutor/${tutor.tutorId}`}>
+                    <Link to={`/tutors-Detail/${tutor.tutorId}`}>
                       <div className="relative w-full h-85 overflow-hidden rounded-t-xl bg-gray-100">
                         <img
                             src={tutor.avatarURL || "https://via.placeholder.com/300x200"}

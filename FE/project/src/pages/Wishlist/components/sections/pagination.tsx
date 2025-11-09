@@ -21,7 +21,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }: PaginationProps) 
   const getPageNumbers = () => {
     const pages = [];
     const maxVisible = 5;
-    
+
     if (totalPages <= maxVisible) {
       for (let i = 1; i <= totalPages; i++) {
         pages.push(i);
@@ -49,12 +49,12 @@ const Pagination = ({ currentPage, totalPages, onPageChange }: PaginationProps) 
         pages.push(totalPages);
       }
     }
-    
+
     return pages;
   };
 
   return (
-    <motion.div 
+    <motion.div
       className="flex justify-center items-center space-x-2 py-8"
       initial="initial"
       animate="animate"

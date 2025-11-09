@@ -1,23 +1,65 @@
-import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { BookOpen } from "lucide-react";
-import { CourseDetail } from "@/types/Course.ts";
+import { useNavigate } from "react-router-dom";
+import { ROUTES } from "@/constants/routes.ts";
 
 interface CourseContentProps {
-    course: CourseDetail;
+    course: {
+        id: number;
+        title: string;
+        description: string;
+        duration: number;
+        price: number;
+        language: string;
+        thumbnailURL: string;
+        categoryName: string;
+        tutorName: string;
+
+        section: {
+            sectionID: number;
+            title: string;
+            orderIndex: number;
+            lessons: {
+                lessonID: number;
+                title: string;
+                duration: number;
+                lessonType: string;
+                videoURL: string | null;
+                content: string;
+                orderIndex: number;
+            }[];
+        }[];
+    };
+    isPurchased: boolean | null;   // ✅ thêm props này
 }
 
-const CourseContent = ({ course }: CourseContentProps) => {
+const CourseContent = ({ course, isPurchased }: CourseContentProps) => {
+    const navigate = useNavigate();
+
     const fadeInUp = {
         initial: { opacity: 0, y: 60 },
         animate: { opacity: 1, y: 0 },
         transition: { duration: 0.6 },
     };
 
+    const handleLessonClick = (lessonId: number) => {
+        const token =
+            localStorage.getItem("access_token") ||
+            sessionStorage.getItem("access_token");
+
+        if (!token) {
+            return navigate(`${ROUTES.SIGN_IN}?redirect=${window.location.pathname}`);
+        }
+
+        if (!isPurchased) {
+            return navigate(`/payment/${course.id}`);
+        }
+
+        navigate(`/lesson/${lessonId}`);
+    };
+
     return (
         <div className="lg:col-span-2">
-
-            {/*  COURSE CURRICULUM FROM API */}
             {course.section && (
                 <motion.div
                     className="bg-white rounded-xl p-8 shadow-md mb-8"
@@ -36,8 +78,8 @@ const CourseContent = ({ course }: CourseContentProps) => {
                                         {section.orderIndex}. {section.title}
                                     </h3>
                                     <span className="text-sm text-gray-500">
-                    {section.lessons.length} lessons
-                  </span>
+                                        {section.lessons.length} lessons
+                                    </span>
                                 </div>
 
                                 <ul className="space-y-2">
@@ -45,18 +87,13 @@ const CourseContent = ({ course }: CourseContentProps) => {
                                         <li
                                             key={lesson.lessonID}
                                             className="flex items-center space-x-2 text-gray-600 hover:text-blue-600 cursor-pointer transition-colors"
+                                            onClick={() => handleLessonClick(lesson.lessonID)}
                                         >
-                                            <Link
-                                                to={`/lesson/${lesson.lessonID}`}
-                                                className="flex items-center space-x-2 w-full"
-                                            >
-                                                <BookOpen className="w-4 h-4 text-blue-500" />
-                                                <span>{lesson.title}</span>
-
-                                                <span className="text-xs text-gray-400 ml-auto">
-                          {lesson.duration} min
-                        </span>
-                                            </Link>
+                                            <BookOpen className="w-4 h-4 text-blue-500" />
+                                            <span>{lesson.title}</span>
+                                            <span className="text-xs text-gray-400 ml-auto">
+                                                {lesson.duration} min
+                                            </span>
                                         </li>
                                     ))}
                                 </ul>

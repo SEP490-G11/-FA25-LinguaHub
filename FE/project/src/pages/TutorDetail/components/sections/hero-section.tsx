@@ -1,31 +1,57 @@
-import { motion } from 'framer-motion';
-import { Star, MapPin, Clock, Users, BookOpen, Video, MessageCircle, Calendar } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { motion } from "framer-motion";
+import {
+  Star,
+  MapPin,
+
+  Users,
+  BookOpen,
+  Video,
+  MessageCircle,
+
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 interface TutorHeroSectionProps {
-  tutor: any;
+  tutor: {
+    id: number;
+    name: string;
+    language: string;
+    country: string;
+    rating: number;
+    price: number;
+    specialties: string[];
+    description: string;
+    image: string;
+    experience?: string;
+    coverImage?: string;
+    teachingLanguage: string | null;
+  };
 }
 
 const formatPrice = (price: number) => {
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND'
-  }).format(price);  // SỬA: Bỏ * 1000 nếu price đã là số đầy đủ (ví dụ: 255000), không nhân thêm
+  return new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+  }).format(price || 0);
 };
 
 const TutorHeroSection = ({ tutor }: TutorHeroSectionProps) => {
   const fadeInUp = {
     initial: { opacity: 0, y: 60 },
     animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.6 }
+    transition: { duration: 0.6 },
   };
 
   return (
       <section className="relative">
+        {/* Background / Cover */}
         <div className="h-64 bg-gradient-to-r from-blue-600 to-purple-700 relative overflow-hidden">
           <img
-              src={tutor.coverImage}
+              src={
+                  tutor.coverImage ||
+                  "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&w=1200&q=80"
+              }
               alt="Background"
               className="w-full h-full object-cover opacity-20"
           />
@@ -43,57 +69,78 @@ const TutorHeroSection = ({ tutor }: TutorHeroSectionProps) => {
               <div className="lg:col-span-2">
                 <div className="flex flex-col md:flex-row items-start md:items-center space-y-4 md:space-y-0 md:space-x-6 mb-6">
                   <img
-                      src={tutor.image}
+                      src={
+                          tutor.image ||
+                          "https://placehold.co/200x200?text=No+Image"
+                      }
                       alt={tutor.name}
                       className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg"
                   />
                   <div className="flex-1">
                     <div className="flex items-center space-x-3 mb-2">
-                      <h1 className="text-3xl font-bold text-gray-900">{tutor.name}</h1>
-                      <span className="text-2xl">{tutor.flag}</span>
+                      <h1 className="text-3xl font-bold text-gray-900">
+                        {tutor.name}
+                      </h1>
                     </div>
-                    <p className="text-lg text-blue-600 font-medium mb-2">{tutor.language} Native Speaker</p>
+                    <p className="text-lg text-blue-600 font-medium mb-2">
+                      {tutor.language || "Unknown"} Tutor
+                    </p>
                     <div className="flex items-center space-x-2 mb-2">
-                      <MapPin className="w-4 h-4 text-gray-500" />
-                      <span className="text-gray-600">{tutor.country}</span>
+                      <MapPin className="w-4 h-4 text-gray-500"/>
+                      <span className="text-gray-600">
+                      {tutor.country || "Country unknown"}
+                    </span>
                     </div>
-                    <div className="flex items-center space-x-6">
+
+                    <div className="flex items-center flex-wrap gap-x-6 gap-y-2">
                       <div className="flex items-center space-x-1">
-                        <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                        <span className="font-medium">{tutor.rating}</span>
-                        <span className="text-gray-500">({tutor.reviews.length} reviews)</span>
+                        <Star className="w-5 h-5 fill-yellow-400 text-yellow-400"/>
+                        <span className="font-medium">
+                        {tutor.rating?.toFixed(1) || "5.0"}
+                      </span>
+                        <span className="text-gray-500">(Evaluate)</span>
                       </div>
                       <div className="flex items-center space-x-1">
-                        <Users className="w-5 h-5 text-gray-500" />
-                        <span className="text-gray-600">{tutor.students.toLocaleString()} students</span>
+                        <Users className="w-5 h-5 text-gray-500"/>
+                        <span className="text-gray-600">
+                         Teaching language: {tutor.teachingLanguage}</span>
                       </div>
-                      <div className="flex items-center space-x-1">
-                        <BookOpen className="w-5 h-5 text-gray-500" />
-                        <span className="text-gray-600">{tutor.lessonsCompleted} lessons</span>
-                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2 flex-wrap mt-2">
+                      <BookOpen className="w-5 h-5 text-gray-500"/>
+                         <span className="text-gray-600">
+                            Experience: {tutor.experience || "Not updated yet"}
+                         </span>
                     </div>
                   </div>
                 </div>
 
                 {/* Specialties */}
-                <div className="mb-6">
-                  <h3 className="font-semibold text-gray-900 mb-3">Specialties</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {tutor.specialties.map((specialty: string, index: number) => (
-                        <Badge
-                            key={index}
-                            className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium"
-                        >
-                          {specialty}
-                        </Badge>
-                    ))}
-                  </div>
-                </div>
+                {tutor.specialties.length > 0 && (
+                    <div className="mb-6">
+                      <h3 className="font-semibold text-gray-900 mb-3">
+                        Specialties
+                      </h3>
+                      <div className="flex flex-wrap gap-2">
+                        {tutor.specialties.map((specialty, index) => (
+                            <Badge
+                                key={index}
+                                className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium"
+                            >
+                              {specialty}
+                            </Badge>
+                        ))}
+                      </div>
+                    </div>
+                )}
 
                 {/* Description */}
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-3">About Me</h3>
-                  <p className="text-gray-700 leading-relaxed">{tutor.description}</p>
+                  <p className="text-gray-700 leading-relaxed whitespace-pre-line">
+                    {tutor.description ||
+                        "This tutor does not have a detailed description yet. Please come back later.."}
+                  </p>
                 </div>
               </div>
 
@@ -102,35 +149,40 @@ const TutorHeroSection = ({ tutor }: TutorHeroSectionProps) => {
                 <div className="bg-gray-50 rounded-xl p-6">
                   <div className="text-center mb-6">
                     <div className="flex items-center justify-center space-x-2 mb-2">
-                      <span className="text-3xl font-bold text-green-500">
-                        {formatPrice(tutor.price)}  {/* SỬA: Dùng formatPrice với locale 'vi-VN' để hiển thị 255.000 ₫ */}
-                      </span>
-                      <span className="text-gray-500">/giờ</span>
+                    <span className="text-3xl font-bold text-green-500">
+                      {formatPrice(tutor.price)}
+                    </span>
+                      <span className="text-gray-500">/slot</span>
                     </div>
-                    <p className="text-sm text-gray-600">Bắt đầu từ buổi học thử</p>
+                    <p className="text-sm text-gray-600">
+                      Sign up now to get the best slot
+                    </p>
                   </div>
 
                   <div className="space-y-3 mb-6">
                     <Button className="w-full bg-orange-500 text-white py-3 rounded-lg font-semibold hover:bg-orange-600 transition-colors flex items-center justify-center space-x-2">
                       <Video className="w-5 h-5" />
-                      <span>Đặt Buổi Học Thử</span>
+                      <span>Booking</span>
                     </Button>
-                    <Button variant="outline" className="w-full border border-blue-500 text-blue-500 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors flex items-center justify-center space-x-2">
+                    <Button
+                        variant="outline"
+                        className="w-full border border-blue-500 text-blue-500 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors flex items-center justify-center space-x-2"
+                    >
                       <MessageCircle className="w-5 h-5" />
-                      <span>Gửi Tin Nhắn</span>
+                      <span>Send Message Now</span>
                     </Button>
                   </div>
 
-                  <div className="text-center text-sm text-gray-600">
-                    <div className="flex items-center justify-center space-x-1 mb-1">
-                      <Clock className="w-4 h-4" />
-                      <span>Thời gian phản hồi: Thường trong vòng 2 giờ</span>
-                    </div>
-                    <div className="flex items-center justify-center space-x-1">
-                      <Calendar className="w-4 h-4" />
-                      <span>Có sẵn hôm nay</span>
-                    </div>
-                  </div>
+                  {/*<div className="text-center text-sm text-gray-600">*/}
+                  {/*  <div className="flex items-center justify-center space-x-1 mb-1">*/}
+                  {/*    <Clock className="w-4 h-4" />*/}
+                  {/*    <span>Phản hồi trung bình: trong 2 giờ</span>*/}
+                  {/*  </div>*/}
+                  {/*  <div className="flex items-center justify-center space-x-1">*/}
+                  {/*    <Calendar className="w-4 h-4" />*/}
+                  {/*    <span>Sẵn sàng dạy hôm nay</span>*/}
+                  {/*  </div>*/}
+                  {/*</div>*/}
                 </div>
               </div>
             </div>
