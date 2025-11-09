@@ -91,7 +91,7 @@ const SignUpForm = () => {
       });
       localStorage.setItem("temp_signup_data", JSON.stringify(data));
       reset();
-      navigate(ROUTES.VERIFY_EMAIL);
+      navigate(`${ROUTES.VERIFY_EMAIL}?email=${data.email}`);
     } catch (err) {
       const errorMessage =
           (err as { response?: { data?: { message?: string } } }).response?.data?.message ??

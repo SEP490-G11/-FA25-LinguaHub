@@ -100,7 +100,7 @@ const VerifyEmailForgotPassword = () => {
   return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
         <motion.div className="max-w-md w-full space-y-8">
-          {/* ✅ Header */}
+          {/*  Header */}
           <div className="text-center">
             <Link to="/" className="inline-flex items-center space-x-2 mb-6">
               <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-3 rounded-lg">

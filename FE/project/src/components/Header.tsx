@@ -19,7 +19,7 @@ import api from "@/config/axiosConfig";
 import { useSidebar } from "@/contexts/SidebarContext";
 
 
-// ✅ User model đúng chuẩn TypeScript, không dùng any nữa
+//  User model đúng chuẩn TypeScript, không dùng any nữa
 interface User {
   fullName: string;
   email: string;
@@ -31,7 +31,7 @@ const Header = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // ✅ must call hook here, không để trong try/catch
+  //  must call hook here, không để trong try/catch
   let sidebarContext: ReturnType<typeof useSidebar> | null = null;
   try {
     sidebarContext = useSidebar();
@@ -42,13 +42,16 @@ const Header = () => {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const token = localStorage.getItem("access_token");
+  const token =
+      localStorage.getItem("access_token") ||
+      sessionStorage.getItem("access_token");
+
   const isAuthenticated = !!token;
 
-  // ✅ user có kiểu User hoặc null, không dùng any
+  //  user có kiểu User hoặc null, không dùng any
   const [user, setUser] = useState<User | null>(null);
 
-  /** ✅ Fetch user thông tin sau khi login */
+  /**  Fetch user thông tin sau khi login */
   useEffect(() => {
     if (!isAuthenticated) return;
 
@@ -56,13 +59,15 @@ const Header = () => {
         .then((res) => setUser(res.data.result as User))
         .catch(() => {
           localStorage.removeItem("access_token");
+          sessionStorage.removeItem("access_token");
           navigate(ROUTES.SIGN_IN);
         });
   }, [isAuthenticated, navigate]);
 
-  /** ✅ Logout không cần redux */
+  /**  Logout không cần redux */
   const handleLogout = () => {
     localStorage.removeItem("access_token");
+    sessionStorage.removeItem("access_token");
     navigate(ROUTES.SIGN_IN, { replace: true });
   };
 
@@ -128,6 +133,18 @@ const Header = () => {
                       className={cn("font-medium transition-colors", isActive(ROUTES.BECOME_TUTOR) ? "text-primary" : "text-muted-foreground hover:text-primary")}
                   >
                     Become Tutor
+                  </Link>
+                  <Link
+                      to={ROUTES.POLICY}
+                      style={{ marginLeft: '4cm' }}
+                      className={cn(
+                          "font-medium transition-colors opacity-70 hover:opacity-100",
+                          isActive(ROUTES.POLICY)
+                              ? "text-primary"
+                              : "text-muted-foreground hover:text-primary"
+                      )}
+                  >
+                    Privacy & Terms
                   </Link>
                 </nav>
             )}
