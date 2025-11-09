@@ -58,7 +58,7 @@ public class TutorCourseService {
         Course course = tutorCourseMapper.toCourse(request);
         course.setTutor(tutor);
         course.setCategory(category);
-        course.setStatus(CourseStatus.Draft);
+        course.setStatus(CourseStatus.Pending);
 
         courseRepository.save(course);
 
@@ -111,7 +111,7 @@ public class TutorCourseService {
         return tutorCourseMapper.toTutorCourseResponse(course);
     }
 
-    // Delete (me): chỉ khi Draft, xoá Resource -> Lesson -> Section -> Course
+    // Delete (me): chỉ khi Pending, xoá Resource -> Lesson -> Section -> Course
     @Transactional
     public void deleteCourseForCurrentTutor(String email, Long courseID) {
         Tutor tutor = resolveTutorByEmail(email);
@@ -121,7 +121,7 @@ public class TutorCourseService {
 
         ensureCourseOwner(course, tutor.getTutorID());
 
-        if (course.getStatus() != CourseStatus.Draft) {
+        if (course.getStatus() != CourseStatus.Pending) {
             throw new AppException(ErrorCode.COURSE_DELETE_ONLY_DRAFT);
         }
 
@@ -141,7 +141,7 @@ public class TutorCourseService {
         }
         courseRepository.delete(course);
 
-        log.warn("Tutor [{}] deleted draft course [{}] with resources -> lessons -> sections -> course",
+        log.warn("Tutor [{}] deleted Pending course [{}] with resources -> lessons -> sections -> course",
                 tutor.getTutorID(), courseID);
     }
 
@@ -230,7 +230,7 @@ public class TutorCourseService {
                 .build();
     }
 
-    // ------- API detail cho tutor (không ảnh hưởng list cũ) ------- //
+    //API detail cho tutor
     public TutorCourseDetailResponse getMyCourseDetail(String email, Long courseID) {
         Tutor tutor = resolveTutorByEmail(email);
 
