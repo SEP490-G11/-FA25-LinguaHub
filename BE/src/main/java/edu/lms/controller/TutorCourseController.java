@@ -122,4 +122,17 @@ public class TutorCourseController {
                 .result(tutorCourseService.getMyCourseDetail(email, courseID))
                 .build();
     }
+
+    @Operation(summary = "Tutor gửi khóa học sang trạng thái Pending (submit for review)")
+    @PutMapping("/{courseID}/submit")
+    public ApiRespond<TutorCourseResponse> submitForReview(
+            @AuthenticationPrincipal(expression = "claims['sub']") String email,
+            @PathVariable Long courseID
+    ) {
+        return ApiRespond.<TutorCourseResponse>builder()
+                .result(tutorCourseService.submitCourseForReview(email, courseID))
+                .message("Course submitted for review (Pending)")
+                .build();
+    }
+
 }

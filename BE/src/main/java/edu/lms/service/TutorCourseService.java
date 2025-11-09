@@ -16,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Slf4j
@@ -58,7 +59,7 @@ public class TutorCourseService {
         Course course = tutorCourseMapper.toCourse(request);
         course.setTutor(tutor);
         course.setCategory(category);
-        course.setStatus(CourseStatus.Pending);
+        course.setStatus(CourseStatus.Draft);
 
         courseRepository.save(course);
 
@@ -111,7 +112,7 @@ public class TutorCourseService {
         return tutorCourseMapper.toTutorCourseResponse(course);
     }
 
-    // Delete (me): chỉ khi Pending, xoá Resource -> Lesson -> Section -> Course
+    // Delete: chỉ khi Pending hoacj laf Draft, xoá Resource -> Lesson -> Section -> Course
     @Transactional
     public void deleteCourseForCurrentTutor(String email, Long courseID) {
         Tutor tutor = resolveTutorByEmail(email);
@@ -121,8 +122,8 @@ public class TutorCourseService {
 
         ensureCourseOwner(course, tutor.getTutorID());
 
-        if (course.getStatus() != CourseStatus.Pending) {
-            throw new AppException(ErrorCode.COURSE_DELETE_ONLY_PENDING);
+        if (course.getStatus() != CourseStatus.Pending && course.getStatus() != CourseStatus.Draft) {
+            throw new AppException(ErrorCode.COURSE_DELETE_ONLY_DRAFT_OR_PENDING);
         }
 
         var sections = courseSectionRepository.findByCourse_CourseID(course.getCourseID());
@@ -141,11 +142,11 @@ public class TutorCourseService {
         }
         courseRepository.delete(course);
 
-        log.warn("Tutor [{}] deleted Pending course [{}] with resources -> lessons -> sections -> course",
-                tutor.getTutorID(), courseID);
+        log.warn("Tutor [{}] deleted [{}] course [{}] with resources -> lessons -> sections -> course",
+                tutor.getTutorID(), course.getStatus(), courseID);
     }
 
-   //Lấy student đã enroll khóa học của tutor
+   //Lấy students đã enroll khóa học của tutor
     public List<TutorCourseStudentResponse> getStudentsByCourse(Long courseId, Long tutorId) {
         Course course = courseRepository.findById(courseId)
                 .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
@@ -170,7 +171,42 @@ public class TutorCourseService {
         }).toList();
     }
 
-    // ------- MAPPERS for detail (Section -> Lesson -> Resource) ------- //
+    //detail cuar tutor
+    public TutorCourseDetailResponse getMyCourseDetail(String email, Long courseID) {
+        Tutor tutor = resolveTutorByEmail(email);
+
+        Course course = courseRepository.findById(courseID)
+                .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
+
+        ensureCourseOwner(course, tutor.getTutorID());
+        return toTutorCourseDetailResponse(course);
+    }
+
+    //submit
+    public TutorCourseResponse submitCourseForReview(String email, Long courseID) {
+        Tutor tutor = resolveTutorByEmail(email);
+
+        Course course = courseRepository.findById(courseID)
+                .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
+
+        ensureCourseOwner(course, tutor.getTutorID());
+
+        if (course.getStatus() == CourseStatus.Approved) {
+            throw new AppException(ErrorCode.CAN_NOT_CHANGE_STATUS);
+        }
+        if (course.getStatus() != CourseStatus.Pending) {
+            course.setStatus(CourseStatus.Pending);
+            course.setUpdatedAt(LocalDateTime.now());
+            courseRepository.save(course);
+            log.info("Tutor [{}] submitted course [{}] for review (-> Pending)", tutor.getTutorID(), courseID);
+        } else {
+            log.info("Tutor [{}] re-submit course [{}] ignored (already Pending)", tutor.getTutorID(), courseID);
+        }
+
+        return tutorCourseMapper.toTutorCourseResponse(course);
+    }
+
+    //MAPPERS for detail (Section -> Lesson -> Resource)
     private LessonResourceResponse toLessonResourceResponse(LessonResource lr) {
         return LessonResourceResponse.builder()
                 .resourceID(lr.getResourceID())
@@ -230,17 +266,6 @@ public class TutorCourseService {
                 .build();
     }
 
-    //API detail cho tutor
-    public TutorCourseDetailResponse getMyCourseDetail(String email, Long courseID) {
-        Tutor tutor = resolveTutorByEmail(email);
 
-        Course course = courseRepository.findById(courseID)
-                .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
-
-        ensureCourseOwner(course, tutor.getTutorID());
-
-        // @Transactional trên class sẽ đảm bảo lazy-load an toàn khi map
-        return toTutorCourseDetailResponse(course);
-    }
 
 }
