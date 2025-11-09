@@ -17,20 +17,21 @@ export default function CreateCourse() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // ============ STEP 1: Create Course with Basic Info ============
   const handleStep1Next = async (data: CourseFormData) => {
     setIsSubmitting(true);
     setError(null);
 
     try {
-      // Call API to create course
+      if (courseId) {
+        setCourseData(data);
+        setCurrentStep(2);
+        setIsSubmitting(false);
+        return;
+      }
+
       const { courseId: newCourseId } = await courseApi.createCourse(data);
-      
-      // Save courseId and course data
       setCourseId(newCourseId);
       setCourseData(data);
-      
-      // Move to step 2
       setCurrentStep(2);
       setIsSubmitting(false);
     } catch (err) {
@@ -39,66 +40,114 @@ export default function CreateCourse() {
     }
   };
 
-  // ============ STEP 2: Save Course Content (Sections + Lessons + Resources) ============
   const handleStep2Save = async (sectionsData: SectionData[]) => {
     setSections(sectionsData);
     setIsSubmitting(true);
     setError(null);
 
     try {
-      // Loop through each section
+      // Validate all data before creating
       for (const section of sectionsData) {
-        // Add section with courseID
-        const { sectionId } = await courseApi.addSection(courseId, {
-          courseID: parseInt(courseId),  // Add courseID to section
-          title: section.title,
-          description: section.description,
-          orderIndex: section.orderIndex,  // Changed from order_index
-        });
+        if (!section.title?.trim()) {
+          throw new Error('Section title is required');
+        }
+        
+        if (section.lessons.length === 0) {
+          throw new Error(`Section "${section.title}" must have at least one lesson`);
+        }
 
-        // Loop through each lesson in the section
         for (const lesson of section.lessons) {
-          // Add lesson
-          const { lessonId } = await courseApi.addLesson(courseId, sectionId, {
-            title: lesson.title,
-            duration: lesson.duration,  // Changed from duration_minutes
-            lessonType: lesson.lessonType || 'Video',  // Changed from lesson_type
-            videoURL: lesson.videoURL,  // Changed from video_url
-            content: lesson.content,
-            orderIndex: lesson.orderIndex,  // Changed from order_index
-          });
+          if (!lesson.title?.trim()) {
+            throw new Error('Lesson title is required');
+          }
 
-          // Loop through each resource in the lesson
           if (lesson.resources && lesson.resources.length > 0) {
             for (const resource of lesson.resources) {
-              await courseApi.addLessonResource(courseId, sectionId, lessonId, {
-                resourceType: resource.resourceType,  // Changed from resource_type
-                resourceTitle: resource.resourceTitle,  // Changed from resource_title
-                resourceURL: resource.resourceURL,  // Changed from resource_url
-              });
+              if (!resource.resourceTitle?.trim()) {
+                throw new Error('Resource title is required');
+              }
+              if (!resource.resourceURL?.trim()) {
+                throw new Error('Resource URL is required');
+              }
             }
           }
         }
       }
 
-      // Success! Show toast notification
+      // All validation passed, proceed with creation
+      for (const section of sectionsData) {
+        let sectionId: string = '';
+        try {
+          const result = await courseApi.addSection(courseId, {
+            courseID: parseInt(courseId),
+            title: section.title,
+            description: section.description,
+            orderIndex: section.orderIndex,
+          });
+          sectionId = result.sectionId;
+        } catch (sectionErr) {
+          throw new Error(`Failed to create section "${section.title}": ${sectionErr instanceof Error ? sectionErr.message : 'Unknown error'}`);
+        }
+
+        for (const lesson of section.lessons) {
+          let lessonId: string = '';
+          try {
+            const result = await courseApi.addLesson(courseId, sectionId, {
+              title: lesson.title,
+              duration: lesson.duration,
+              lessonType: lesson.lessonType || 'Video',
+              videoURL: lesson.videoURL,
+              content: lesson.content,
+              orderIndex: lesson.orderIndex,
+            });
+            lessonId = result.lessonId;
+          } catch (lessonErr) {
+            throw new Error(`Failed to create lesson "${lesson.title}": ${lessonErr instanceof Error ? lessonErr.message : 'Unknown error'}`);
+          }
+
+          if (lesson.resources && lesson.resources.length > 0) {
+            for (const resource of lesson.resources) {
+              try {
+                await courseApi.addLessonResource(courseId, sectionId, lessonId, {
+                  resourceType: resource.resourceType,
+                  resourceTitle: resource.resourceTitle,
+                  resourceURL: resource.resourceURL,
+                });
+              } catch (resourceErr) {
+                throw new Error(`Failed to add resource "${resource.resourceTitle}": ${resourceErr instanceof Error ? resourceErr.message : 'Unknown error'}`);
+              }
+            }
+          }
+        }
+      }
+
       toast({
         title: "Success!",
-        description: "Course created successfully! Redirecting...",
+        description: "Course content saved! Submitting course...",
         duration: 2000,
       });
 
-      // Delay navigation to show toast
-      setTimeout(() => {
-        navigate('/tutor/courses', {
-          state: { message: 'Course created successfully!' },
+      const submitResult = await courseApi.submitCourse(courseId);
+
+      if (submitResult.success && (submitResult.status.toLowerCase() === 'pending' || submitResult.status.toLowerCase() === 'draft')) {
+        setIsSubmitting(false);
+
+        toast({
+          title: "Success!",
+          description: `Course created successfully! Status: ${submitResult.status}`,
+          duration: 3000,
         });
-      }, 2000);
+
+        setTimeout(() => {
+          navigate('/tutor/courses');
+        }, 3000);
+      } else {
+        throw new Error(`Submit failed: Invalid status ${submitResult.status}`);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save course content');
       setIsSubmitting(false);
-      
-      // Show error toast
+
       toast({
         variant: "destructive",
         title: "Error",

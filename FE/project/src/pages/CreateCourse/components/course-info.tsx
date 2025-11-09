@@ -34,7 +34,7 @@ export function Step1CourseInfo({ data, onNext, onCancel }: Step1Props) {
   const [formData, setFormData] = useState<Partial<CourseFormData>>({
     title: data.title || '',
     description: data.description || '',
-    categoryID: data.categoryID || undefined,
+    categoryID: data.categoryID || 1 , // Default to first category
     language: data.language || 'English',  // Default to "English"
     duration: data.duration || undefined,
     price: data.price || undefined,
@@ -219,8 +219,7 @@ export function Step1CourseInfo({ data, onNext, onCancel }: Step1Props) {
           <Select
             value={formData.categoryID?.toString() || ''}
             onValueChange={(value) => {
-              handleChange('categoryID', parseInt(value)); // Store as number
-              // Mark as touched only after a selection is made
+              handleChange('categoryID', parseInt(value));
               setTouched((prev) => ({ ...prev, categoryID: true }));
             }}
           >
@@ -235,7 +234,7 @@ export function Step1CourseInfo({ data, onNext, onCancel }: Step1Props) {
             </SelectTrigger>
             <SelectContent>
               {categories.map((category) => (
-                <SelectItem key={category.id} value={category.id}>
+                <SelectItem key={category.id} value={String(category.id)}>
                   {category.name}
                 </SelectItem>
               ))}
@@ -248,7 +247,7 @@ export function Step1CourseInfo({ data, onNext, onCancel }: Step1Props) {
 
         <div>
           <Label className="text-sm font-medium">
-            Select Instruction Language <span className="text-red-500">*</span>
+            Instruction Language <span className="text-red-500">*</span>
           </Label>
           <Select
             value={formData.language || 'English'}

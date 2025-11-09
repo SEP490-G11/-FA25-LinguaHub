@@ -30,6 +30,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
 
@@ -104,6 +105,10 @@ export function Step2CourseContent({
   });
   const [editingResourceIndex, setEditingResourceIndex] = useState<number | null>(null);
   const [isEditingLesson, setIsEditingLesson] = useState(false);
+  
+  // Custom confirmation dialog state
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [confirmCallback, setConfirmCallback] = useState<(() => void) | null>(null);
 
   const toggleSection = (index: number) => {
     setExpandedSections((prev) => {
@@ -368,13 +373,9 @@ export function Step2CourseContent({
       (section) => section.lessons.length === 0
     );
     if (hasEmptySections) {
-      if (
-        !confirm(
-          'Some sections have no lessons. Continue anyway?'
-        )
-      ) {
-        return;
-      }
+      setConfirmCallback(() => () => onSave(sections));
+      setShowConfirmDialog(true);
+      return;
     }
 
     onSave(sections);
@@ -673,6 +674,7 @@ export function Step2CourseContent({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add New Section</DialogTitle>
+            <DialogDescription>Create a new section for your course</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -725,6 +727,7 @@ export function Step2CourseContent({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Section</DialogTitle>
+            <DialogDescription>Update section details</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -797,6 +800,9 @@ export function Step2CourseContent({
             <DialogTitle>
               {isEditingLesson ? 'Edit Lesson' : 'Add New Lesson'}
             </DialogTitle>
+            <DialogDescription>
+              {isEditingLesson ? 'Update lesson details' : 'Create a new lesson for this section'}
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -1190,6 +1196,37 @@ export function Step2CourseContent({
               }
             >
               Update
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Custom Confirmation Dialog */}
+      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Continue with empty sections?</DialogTitle>
+            <DialogDescription>
+              Some sections have no lessons. You can add lessons later, or continue creating the course now.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowConfirmDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (confirmCallback) {
+                  confirmCallback();
+                }
+                setShowConfirmDialog(false);
+                setConfirmCallback(null);
+              }}
+            >
+              Continue
             </Button>
           </DialogFooter>
         </DialogContent>

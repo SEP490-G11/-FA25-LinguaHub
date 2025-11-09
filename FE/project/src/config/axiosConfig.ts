@@ -16,6 +16,8 @@ api.interceptors.request.use((config) => {
 
     if (token && token.trim() !== "") {
         config.headers.Authorization = `Bearer ${token}`;
+    } else {
+        console.warn('⚠️ No token found in localStorage or sessionStorage');
     }
     return config;
 });
