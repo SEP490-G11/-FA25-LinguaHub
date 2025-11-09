@@ -122,7 +122,7 @@ public class TutorCourseService {
         ensureCourseOwner(course, tutor.getTutorID());
 
         if (course.getStatus() != CourseStatus.Pending) {
-            throw new AppException(ErrorCode.COURSE_DELETE_ONLY_DRAFT);
+            throw new AppException(ErrorCode.COURSE_DELETE_ONLY_PENDING);
         }
 
         var sections = courseSectionRepository.findByCourse_CourseID(course.getCourseID());
