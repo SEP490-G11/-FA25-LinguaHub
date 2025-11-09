@@ -31,7 +31,7 @@ import CreateCourse from '@/pages/CreateCourse/index';
 import CourseApprovalPage from '@/pages/Admin/CourseApproval/index';
 import ApplyTutor from '@/pages/ApplyTutor';
 import TutorApproval from '@/pages/Admin/TutorApproval';
-import ManageCourseContent from '@/pages/TutorPages/ManageCourseContent';
+// import ManageCourseContent from '@/pages/TutorPages/ManageCourseContent';
 import CourseList from '@/pages/TutorPages/CourseList';
 import TutorDashboardLayout from '@/components/layout/TutorDashboardLayout';
 import TutorDashboard from '@/pages/TutorPages/Dashboard';
@@ -86,7 +86,7 @@ export function AppRoutes() {
             <Route path="/tutor" element={<TutorDashboardLayout />}>
                 <Route path="dashboard" element={<TutorDashboard />} />
                 <Route path="courses" element={<CourseList />} />
-                <Route path="courses/:id/content" element={<ManageCourseContent />} />
+                {/* <Route path="courses/:id/content" element={<ManageCourseContent />} /> */}
                 <Route path="create-courses" element={<CreateCourse />} />
                 <Route path="students" element={<TutorStudents />} />
                 <Route path="schedule" element={<TutorSchedule />} />
