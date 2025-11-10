@@ -9,11 +9,11 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class FeedbackResponse {
+public class CourseReviewResponse {
     Long feedbackID;
     String userFullName;
     String userAvatarURL;
-    Integer rating;
+    Double rating;
     String comment;
     LocalDateTime createdAt;
 }

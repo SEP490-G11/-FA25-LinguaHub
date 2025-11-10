@@ -37,5 +37,5 @@ public class CourseDetailResponse {
     Integer totalRatings;
     LocalDateTime createdAt;
 
-    List<FeedbackResponse> feedbacks;
+    List<CourseReviewResponse> review;
 }

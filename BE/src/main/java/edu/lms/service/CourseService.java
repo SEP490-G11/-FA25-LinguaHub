@@ -21,8 +21,7 @@ public class CourseService {
     private final WishlistRepository wishlistRepository;
     private final UserRepository userRepository;
     private final EnrollmentRepository enrollmentRepository;
-    private final FeedbackRepository feedbackRepository;
-
+    private final CourseReviewRepository courseReviewRepository;
 
 
     //Public
@@ -111,34 +110,37 @@ public class CourseService {
 
     //(LEARNER, RATING, FEEDBACK)
 
+    // (COURSE REVIEW)
     private record RatingAgg(double avg, int total) {}
 
     private RatingAgg aggregateRating(Long courseId) {
-        var feedbacks = feedbackRepository.findByPayment_Enrollment_Course_CourseID(courseId);
-        if (feedbacks == null || feedbacks.isEmpty()) return new RatingAgg(0.0, 0);
-        int total = feedbacks.size();
-        int sum = feedbacks.stream().mapToInt(f -> f.getRating() == null ? 0 : f.getRating()).sum();
+        var reviews = courseReviewRepository.findByCourse_CourseID(courseId);
+        if (reviews == null || reviews.isEmpty()) return new RatingAgg(0.0, 0);
+
+        int total = reviews.size();
+        double sum = reviews.stream().mapToDouble(r -> r.getRating() == null ? 0 : r.getRating()).sum();
         double avg = total == 0 ? 0.0 : (double) sum / total;
-        avg = Math.round(avg * 10.0) / 10.0; // làm tròn 1 chữ số
+        avg = Math.round(avg * 10.0) / 10.0; // làm tròn 1 chữ số thập phân
         return new RatingAgg(avg, total);
     }
 
-    private List<FeedbackResponse> mapFeedbacks(Long courseId) {
-        var feedbacks = feedbackRepository.findByPayment_Enrollment_Course_CourseID(courseId);
-        if (feedbacks == null || feedbacks.isEmpty()) return List.of();
-        return feedbacks.stream().map(f -> {
-            var u = f.getUser();
-            var p = f.getPayment();
-            return FeedbackResponse.builder()
-                    .feedbackID(f.getFeedbackID())
+    private List<CourseReviewResponse> mapReviews(Long courseId) {
+        var reviews = courseReviewRepository.findByCourse_CourseID(courseId);
+        if (reviews == null || reviews.isEmpty()) return List.of();
+
+        return reviews.stream().map(r -> {
+            var u = r.getUser();
+            return CourseReviewResponse.builder()
+                    .feedbackID(r.getReviewID()) // reuse DTO
                     .userFullName(u != null ? u.getFullName() : null)
                     .userAvatarURL(u != null ? u.getAvatarURL() : null)
-                    .rating(f.getRating())
-                    .comment(f.getComment())
-                    .createdAt(p != null ? p.getPaidAt() : null)
+                    .rating(r.getRating())
+                    .comment(r.getComment())
+                    .createdAt(r.getCreatedAt())
                     .build();
         }).toList();
     }
+
 
     // COURSE -> DETAIL DTO
 
@@ -192,9 +194,7 @@ public class CourseService {
                 .avgRating(rating.avg())
                 .totalRatings(rating.total())
                 .createdAt(c.getCreatedAt())
-
-                // Feedback cho trang detail
-                .feedbacks(mapFeedbacks(courseId))
+                .review(mapReviews(courseId))
                 .build();
     }
 
@@ -231,8 +231,6 @@ public class CourseService {
                 .status(c.getStatus() != null ? c.getStatus().name() : null)
                 .isWishListed(user != null ? isWishListed : null)
                 .isPurchased(user != null ? isPurchased : null)
-
-                //thống kê + tutor info cho list
                 .learnerCount(learnerCount)
                 .tutorAvatarURL(tutorUser != null ? tutorUser.getAvatarURL() : null)
                 .tutorAddress(tutorUser != null
