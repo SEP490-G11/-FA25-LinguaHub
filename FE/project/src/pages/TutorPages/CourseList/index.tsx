@@ -87,7 +87,7 @@ const CourseList = () => {
               </p>
             </div>
             <Button asChild size="lg" className="gap-2 shadow-lg hover:shadow-xl transition-all">
-              <Link to="/tutor/create-courses">
+              <Link to="/create-courses">
                 <Plus className="w-5 h-5" />
                 Tạo khóa học mới
               </Link>
@@ -155,7 +155,7 @@ const CourseList = () => {
                   : 'Bạn chưa có khóa học nào'}
               </p>
               <Button asChild className="gap-2">
-                <Link to="/tutor/create-courses">
+                <Link to="/create-courses">
                   <Plus className="w-4 h-4" />
                   Tạo khóa học đầu tiên
                 </Link>

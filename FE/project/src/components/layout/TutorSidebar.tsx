@@ -25,42 +25,42 @@ interface MenuItem {
 const menuItems: MenuItem[] = [
   {
     title: 'Dashboard',
-    href: '/tutor/dashboard',
+    href: '/dashboard',
     icon: LayoutDashboard,
   },
   {
     title: 'My Courses',
-    href: '/tutor/courses',
+    href: '/courses',
     icon: BookOpen,
   },
   {
     title: 'Students',
-    href: '/tutor/students',
+    href: '/students',
     icon: Users,
   },
   {
     title: 'Schedule',
-    href: '/tutor/schedule',
+    href: '/schedule',
     icon: Calendar,
   },
   {
     title: 'Analytics',
-    href: '/tutor/analytics',
+    href: '/analytics',
     icon: BarChart3,
   },
   {
     title: 'Messages',
-    href: '/tutor/messages',
+    href: '/messages',
     icon: MessageSquare,
   },
   {
     title: 'Resources',
-    href: '/tutor/resources',
+    href: '/resources',
     icon: FileText,
   },
   {
     title: 'Settings',
-    href: '/tutor/settings',
+    href: '/settings',
     icon: Settings,
   },
 ];

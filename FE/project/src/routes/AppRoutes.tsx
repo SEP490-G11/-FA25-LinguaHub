@@ -83,10 +83,10 @@ export function AppRoutes() {
             <Route path="/admin/tutor-approval" element={<TutorApproval />} />
             
             {/* Tutor Dashboard with Layout */}
-            <Route path="/tutor" element={<TutorDashboardLayout />}>
+            <Route  element={<TutorDashboardLayout />}>
                 <Route path="dashboard" element={<TutorDashboard />} />
                 <Route path="courses" element={<CourseList />} />
-                <Route path="courses/:id/content" element={<ManageCourseContent />} />
+                <Route path="courses/:courseId/content" element={<ManageCourseContent />} />
                 <Route path="create-courses" element={<CreateCourse />} />
                 <Route path="students" element={<TutorStudents />} />
                 <Route path="schedule" element={<TutorSchedule />} />

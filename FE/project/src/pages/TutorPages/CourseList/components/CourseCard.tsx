@@ -100,7 +100,7 @@ export const CourseCard = ({ course, index }: CourseCardProps) => {
               size="sm"
               className="w-full group/btn"
             >
-              <Link to={`/tutor/courses/${course.id}/content`}>
+              <Link to={`/courses/${course.id}/content`}>
                 <BookOpen className="w-4 h-4 mr-2 group-hover/btn:scale-110 transition-transform" />
                 Quản lý nội dung
               </Link>

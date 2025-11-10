@@ -1,70 +1,84 @@
-// TypeScript interfaces for Manage Course Content
-// Matches database schema: CourseSection, Lessons, LessonResource
-
-export interface LessonResourceData {
-  ResourceID?: number;
-  LessonID?: number;
-  ResourceType: 'PDF' | 'ExternalLink';
-  ResourceTitle: string;
-  ResourceURL: string;
-  CreatedAt?: string;
+// Resource types
+export interface Resource {
+  resourceID: number;
+  resourceType: 'PDF' | 'Video' | 'ExternalLink' | 'Document';
+  resourceTitle: string;
+  resourceURL: string;
+  uploadedAt: string;
 }
 
-export interface LessonData {
-  LessonID?: number;
-  SectionID?: number;
-  Title: string;
-  Duration: number; // in minutes
-  LessonType: 'Video' | 'Reading';
-  VideoURL?: string;
-  Content?: string; // For Reading type lessons
-  OrderIndex: number;
-  CreatedAt?: string;
-  Resources?: LessonResourceData[];
+// Lesson types
+export interface Lesson {
+  lessonID: number;
+  title: string;
+  duration: number;
+  lessonType: 'Video' | 'Reading';
+  videoURL?: string;
+  content?: string;
+  orderIndex: number;
+  createdAt: string;
+  resources: Resource[];
 }
 
-export interface SectionData {
-  SectionID?: number;
-  CourseID?: number;
-  Title: string;
-  Description?: string;
-  OrderIndex: number;
-  CreatedAt?: string;
-  Lessons?: LessonData[];
+// Section types
+export interface Section {
+  sectionID: number;
+  courseID: number;
+  title: string;
+  description: string;
+  orderIndex: number;
+  lessons: Lesson[];
 }
 
-export interface CourseContentData {
-  CourseID: number;
-  Title: string;
-  Description?: string;
-  CategoryID?: string;
-  Languages?: string[];
-  Duration?: number; // in hours
-  Price?: number;
-  ThumbnailURL?: string;
-  Status?: string;
-  Sections: SectionData[];
+// Course detail types
+export interface CourseDetail {
+  id: number;
+  title: string;
+  description: string;
+  duration: number;
+  price: number;
+  language: string;
+  thumbnailURL: string;
+  categoryName: string;
+  status: string;
+  section: Section[];
 }
 
-// Form interfaces for modals
-export interface AddSectionFormData {
-  Title: string;
-  Description?: string;
+// API Response type
+export interface ApiResponse<T> {
+  code: number;
+  message?: string;
+  result: T;
 }
 
-export interface AddLessonFormData {
-  Title: string;
-  Duration: number;
-  LessonType: 'Video' | 'Reading';
-  VideoURL?: string;
-  Content?: string;
+// Update request types
+export interface UpdateCourseRequest {
+  title: string;
+  description: string;
+  duration: number;
+  price: number;
+  language: string;
+  thumbnailURL: string;
+  categoryID: number;
 }
 
-export interface EditSectionFormData extends AddSectionFormData {
-  SectionID: number;
+export interface UpdateSectionRequest {
+  title: string;
+  description: string;
+  orderIndex: number;
 }
 
-export interface EditLessonFormData extends AddLessonFormData {
-  LessonID: number;
-  Resources?: LessonResourceData[];
+export interface UpdateLessonRequest {
+  title: string;
+  duration: number;
+  lessonType: 'Video' | 'Reading';
+  videoURL?: string;
+  content?: string;
+  orderIndex: number;
+}
+
+export interface UpdateResourceRequest {
+  resourceType: 'PDF' | 'Video' | 'ExternalLink' | 'Document';
+  resourceTitle: string;
+  resourceURL: string;
 }

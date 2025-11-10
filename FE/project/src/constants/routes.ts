@@ -26,8 +26,8 @@ export const ROUTES = {
     // Course/Tutor routes
     CREATE_COURSE: '/create-course',
     PENDING_COURSES: '/admin/pending-courses',
-    TUTOR_DASHBOARD: '/tutor/dashboard',
-    TUTOR_COURSES: '/tutor/courses',
+    TUTOR_DASHBOARD: '/dashboard',
+    TUTOR_COURSES: '/courses',
     MY_COURSES: '/my-courses',
     LANGUAGE_COURSES: '/languages/:language',  // Dynamic
 
