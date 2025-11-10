@@ -15,10 +15,13 @@ public class LessonResourceRequest {
     @NotNull(message = "Resource type is required")
     ResourceType resourceType;
 
-    @Size(max = 255, message = "Resource title must be less than 255 characters")
+    @NotBlank(message = "Resource title must not be blank")
+    @Size(max = 255, message = "Resource title must be <= 255 characters")
     String resourceTitle;
 
     @NotBlank(message = "Resource URL must not be empty")
-    @Pattern(regexp = "^(http|https)://.*$", message = "Invalid resource URL format")
+    @Size(max = 500, message = "Resource URL must be <= 500 characters")
+    @Pattern(regexp = "^(http|https)://.+$",
+            message = "Resource URL must start with http:// or https://")
     String resourceURL;
 }

@@ -181,6 +181,7 @@ public class CourseService {
 
                 // thống kê + tutor info
                 .learnerCount(learnerCount)
+                .tutorID(tutorUser != null ? tutorUser.getUserID() : null)
                 .tutorAvatarURL(tutorUser != null ? tutorUser.getAvatarURL() : null)
                 .tutorAddress(tutorUser != null
                         ? ((tutorUser.getAddress() != null && tutorUser.getCountry() != null)
