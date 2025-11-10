@@ -50,6 +50,10 @@ public class AuthenticationService {
     @NonFinal
     @Value("${jwt.signerKey}")
     protected String SIGNER_KEY;
+    public void setSignerKey(String key) {
+        this.SIGNER_KEY = key;
+    }
+
 
     // ================= REGISTER =================
     @Transactional
