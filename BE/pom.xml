@@ -104,41 +104,45 @@
             <version>2.2.0</version>
         </dependency>
 
-        <!-- ✅ SPRING BOOT TEST STACK -->
+        <!--SPRING BOOT TEST STACK -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
 
-        <!-- ✅ AutoConfigureTestDatabase, MockMvc, DataJpaTest, etc -->
+        <!--  AutoConfigureTestDatabase, MockMvc, DataJpaTest, etc -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-test-autoconfigure</artifactId>
             <scope>test</scope>
         </dependency>
 
-        <!-- ✅ Mockito core for unit tests -->
+        <!-- Mockito core for unit tests -->
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
             <scope>test</scope>
         </dependency>
 
-        <!-- ✅ Mockito JUnit integration -->
+        <!-- Mockito JUnit integration -->
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
 
-        <!-- ✅ Spring Security testing -->
+        <!--  Spring Security testing -->
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
         </dependency>
-
+        <dependency>
+            <groupId>vn.payos</groupId>
+            <artifactId>payos-java</artifactId>
+            <version>1.0.1</version>
+        </dependency>
     </dependencies>
 
     <build>
