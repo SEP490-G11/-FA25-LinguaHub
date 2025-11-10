@@ -155,11 +155,12 @@ public class CourseService {
             }
         }
 
+
         Long courseId = c.getCourseID();
         long learnerCount = enrollmentRepository.countByCourse_CourseID(courseId);
         var rating = aggregateRating(courseId);
         var tutorUser = (c.getTutor() != null) ? c.getTutor().getUser() : null;
-
+        var tutor = c.getTutor() != null ? c.getTutor() : null;
         return CourseDetailResponse.builder()
                 .id(courseId)
                 .title(c.getTitle())
@@ -181,7 +182,7 @@ public class CourseService {
 
                 // thống kê + tutor info
                 .learnerCount(learnerCount)
-                .tutorID(tutorUser != null ? tutorUser.getUserID() : null)
+                .tutorID(tutor != null ? tutor.getTutorID() : null)
                 .tutorAvatarURL(tutorUser != null ? tutorUser.getAvatarURL() : null)
                 .tutorAddress(tutorUser != null
                         ? ((tutorUser.getAddress() != null && tutorUser.getCountry() != null)
