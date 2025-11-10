@@ -25,14 +25,6 @@ export const getCourseDetail = async (courseId: number): Promise<CourseDetail> =
       throw new Error(response.data.message || 'Failed to fetch course details');
     }
 
-    // Debug: Log full response to check data structure
-    console.log('Course Detail Response:', response.data.result);
-    console.log('Sections:', response.data.result.section);
-    if (response.data.result.section && response.data.result.section.length > 0) {
-      console.log('First Section:', response.data.result.section[0]);
-      console.log('Lessons:', response.data.result.section[0].lessons);
-    }
-
     return response.data.result;
   } catch (error: any) {
     console.error('Error fetching course details:', error);
@@ -225,6 +217,31 @@ export const deleteResource = async (resourceId: number): Promise<void> => {
       error.response?.data?.message ||
       error.message ||
       'Failed to delete resource'
+    );
+  }
+};
+
+/**
+ * API 9: Submit course for approval
+ * PUT /tutor/courses/{courseID}/submit
+ */
+export const submitCourseForApproval = async (courseId: number): Promise<CourseDetail> => {
+  try {
+    const response = await axiosInstance.put<ApiResponse<CourseDetail>>(
+      `/tutor/courses/${courseId}/submit`
+    );
+
+    if (response.data.code !== 0) {
+      throw new Error(response.data.message || 'Failed to submit course');
+    }
+
+    return response.data.result;
+  } catch (error: any) {
+    console.error('Error submitting course:', error);
+    throw new Error(
+      error.response?.data?.message ||
+      error.message ||
+      'Failed to submit course'
     );
   }
 };

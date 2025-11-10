@@ -17,7 +17,6 @@ import { CourseFormData, Language, Category } from '@/queries/course-api';
 interface Step1Props {
   data: Partial<CourseFormData>;
   onNext: (data: CourseFormData) => void;
-  onCancel: () => void;
 }
 
 interface ValidationErrors {
@@ -30,7 +29,7 @@ interface ValidationErrors {
   thumbnailURL?: string;
 }
 
-export function Step1CourseInfo({ data, onNext, onCancel }: Step1Props) {
+export function Step1CourseInfo({ data, onNext }: Step1Props) {
   const [formData, setFormData] = useState<Partial<CourseFormData>>({
     title: data.title || '',
     description: data.description || '',
@@ -381,10 +380,7 @@ export function Step1CourseInfo({ data, onNext, onCancel }: Step1Props) {
         </div>
       </div>
 
-      <div className="flex justify-between pt-6 border-t">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
+      <div className="flex justify-end pt-6">
         <Button type="submit">Next: Course Content</Button>
       </div>
     </form>

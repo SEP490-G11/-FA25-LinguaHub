@@ -13,7 +13,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
 export default function CreateCourse() {
@@ -170,16 +170,19 @@ export default function CreateCourse() {
     }
   };
 
-  const handleCancel = () => {
-    if (confirm('Are you sure you want to cancel? All progress will be lost.')) {
-      navigate('/tutor/courses');
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
+          <Button
+            variant="outline"
+            onClick={() => navigate('/courses')}
+            className="mb-4 gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Course List
+          </Button>
+
           <h1 className="text-3xl font-bold text-gray-900">Create New Course</h1>
           <p className="mt-2 text-sm text-gray-600">
             Share your knowledge by creating an engaging course
@@ -241,7 +244,6 @@ export default function CreateCourse() {
               <Step1CourseInfo
                 data={courseData}
                 onNext={handleStep1Next}
-                onCancel={handleCancel}
               />
             )}
 
