@@ -30,6 +30,7 @@ public class CourseReviewService {
     TutorRepository tutorRepository;
     UserCourseSectionRepository userCourseSectionRepository;
 
+
     @Transactional
     public CourseReviewResponse createReview(Long courseId, CourseReviewRequest request) {
         // Lấy user từ JWT token
@@ -37,11 +38,11 @@ public class CourseReviewService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
-        // Tìm course và kiểm tra tồn tại
+        // Kiểm tra course tồn tại
         Course course = courseRepository.findById(courseId)
                 .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
 
-        //Kiểm tra learner có đăng ký (enrolled) khóa học chưa
+        // Kiểm tra learner có enroll khóa học chưa
         Enrollment enrollment = enrollmentRepository
                 .findByUser_UserIDAndCourse_CourseID(user.getUserID(), courseId)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_ENROLLED));
@@ -50,21 +51,19 @@ public class CourseReviewService {
         List<UserCourseSection> sectionProgressList = userCourseSectionRepository
                 .findByUser_UserIDAndSection_Course_CourseID(user.getUserID(), courseId);
 
-        if (sectionProgressList.isEmpty()) {
-            throw new AppException(ErrorCode.COURSE_NOT_STARTED);
-        }
-
-        double avgProgress = sectionProgressList.stream()
+        double avgProgress = sectionProgressList.isEmpty()
+                ? 0.0
+                : sectionProgressList.stream()
                 .mapToDouble(s -> s.getProgress().doubleValue())
                 .average()
                 .orElse(0.0);
 
-        // Kiểm tra học viên đã hoàn thành ít nhất 50% khóa học
+        // Yêu cầu hoàn thành ít nhất 50%
         if (avgProgress < 50.0) {
             throw new AppException(ErrorCode.COURSE_NOT_COMPLETED_HALF);
         }
 
-        // Kiểm tra học viên đã review khóa học này chưa
+        // Kiểm tra đã review chưa
         boolean alreadyReviewed = courseReviewRepository
                 .findByCourse_CourseIDAndUser_UserID(courseId, user.getUserID())
                 .isPresent();
@@ -73,7 +72,7 @@ public class CourseReviewService {
             throw new AppException(ErrorCode.ALREADY_REVIEWED);
         }
 
-        // Tạo review mới
+        // Tạo review
         CourseReview review = CourseReview.builder()
                 .course(course)
                 .user(user)
@@ -84,21 +83,8 @@ public class CourseReviewService {
 
         courseReviewRepository.save(review);
 
-        //Cập nhật rating trung bình của tutor
-        Tutor tutor = course.getTutor();
-        if (tutor != null) {
-            List<CourseReview> allTutorReviews = courseReviewRepository
-                    .findByCourse_CourseID(tutor.getTutorID());
-
-            double avgRating = courseReviewRepository
-                    .findByCourse_CourseID(courseId).stream()
-                    .mapToDouble(CourseReview::getRating)
-                    .average()
-                    .orElse(0.0);
-
-            tutor.setRating(BigDecimal.valueOf(avgRating));
-            tutorRepository.save(tutor);
-        }
+        // Cập nhật lại rating trung bình của Tutor
+        updateTutorRating(course.getTutor());
 
         return CourseReviewResponse.builder()
                 .feedbackID(review.getReviewID())
@@ -110,6 +96,7 @@ public class CourseReviewService {
                 .build();
     }
 
+    // DELETE REVIEW
 
     @Transactional
     public void deleteReview(Long reviewId) {
@@ -124,6 +111,33 @@ public class CourseReviewService {
             throw new AppException(ErrorCode.UNAUTHORIZED);
         }
 
+        Tutor tutor = review.getCourse().getTutor();
         courseReviewRepository.delete(review);
+        updateTutorRating(tutor);
+    }
+
+
+    //TÍNH LẠI RATING TRUNG BÌNH CỦA TUTOR
+
+    private void updateTutorRating(Tutor tutor) {
+        if (tutor == null) return;
+        List<Course> tutorCourses = courseRepository.findAll().stream()
+                .filter(c -> c.getTutor() != null && c.getTutor().getTutorID().equals(tutor.getTutorID()))
+                .toList();
+
+        // Gom tất cả review của các course đó
+        List<CourseReview> tutorReviews = tutorCourses.stream()
+                .flatMap(c -> courseReviewRepository.findByCourse_CourseID(c.getCourseID()).stream())
+                .toList();
+
+        double avgRating = tutorReviews.isEmpty()
+                ? 0.0
+                : tutorReviews.stream()
+                .mapToDouble(CourseReview::getRating)
+                .average()
+                .orElse(0.0);
+
+        tutor.setRating(BigDecimal.valueOf(avgRating));
+        tutorRepository.save(tutor);
     }
 }
