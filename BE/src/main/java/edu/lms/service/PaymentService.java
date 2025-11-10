@@ -32,17 +32,14 @@ public class PaymentService {
     private final PayOSService payOSService;
     private final ChatService chatService;
 
-    // ======================================================
     //TẠO THANH TOÁN (PENDING)
-    // ======================================================
+
     @Transactional
     public ResponseEntity<?> createPayment(PaymentRequest request) {
         BigDecimal amount;
         String description;
 
-        // ======================================================
         // COURSE PAYMENT
-        // ======================================================
         if (request.getPaymentType() == PaymentType.Course) {
             Course course = courseRepository.findById(request.getTargetId())
                     .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
@@ -75,9 +72,7 @@ public class PaymentService {
             return response;
         }
 
-        // ======================================================
         // BOOKING PLAN PAYMENT (1:1 SLOT SYSTEM)
-        // ======================================================
         else if (request.getPaymentType() == PaymentType.Booking) {
             BookingPlan plan = bookingPlanRepository.findById(request.getTargetId())
                     .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
@@ -121,7 +116,7 @@ public class PaymentService {
                 bookingPlanSlotRepository.save(slot);
             }
 
-            // ====== TẠO PAYMENT PENDING ======
+            //TẠO PAYMENT PENDING
             Payment payment = Payment.builder()
                     .userId(user.getUserID())
                     .targetId(plan.getBookingPlanID())
@@ -141,7 +136,7 @@ public class PaymentService {
                     payment.getPaymentID()
             );
 
-            // ====== 🔗 GỌI PAYOS TẠO QR CODE (15p) ======
+            //🔗 GỌI PAYOS TẠO QR CODE (15p)
             ResponseEntity<?> response = payOSService.createPaymentLink(
                     request.getUserId(),
                     request.getPaymentType(),
@@ -159,9 +154,9 @@ public class PaymentService {
         }
     }
 
-    // ======================================================
+
     //HẬU THANH TOÁN (PAYMENT SUCCESS)
-    // ======================================================
+
     @Transactional
     public void processPostPayment(Payment payment) {
         if (payment.getStatus() != PaymentStatus.PAID) return;
@@ -195,7 +190,7 @@ public class PaymentService {
             log.info("[COURSE PAYMENT] User {} enrolled in course '{}'", user.getUserID(), course.getTitle());
         }
 
-        // -------- BOOKING PLAN PAYMENT --------
+        //BOOKING PLAN PAYMENT
         else if (payment.getPaymentType() == PaymentType.Booking) {
             // Lấy tất cả slot của payment này và update sang PAID
             List<BookingPlanSlot> slots = bookingPlanSlotRepository.findAllByPaymentID(payment.getPaymentID());
