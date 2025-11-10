@@ -5,7 +5,7 @@ server:
 
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3307/linguahub?useSSL=false&serverTimezone=UTC
+    url: jdbc:mysql://localhost:3307/lingua_hub?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh
     username: root
     password: root
 
@@ -47,6 +47,7 @@ jwt:
   signerKey: "1TjXchw5FLOEsb63KcDFhTARvPWL4jUGCWfGWxgSS1f/1y/LgJxHnMqaF6A/ijXY"
 
 payos:
-  client-id: "b57a3e3a-0b2b-4a8a-b0a1-2f8a1b9231a3"
-  api-key: "dbf2b2a5-f0f2-48dc-8b6e-bb3bb46e21a5"
-  secret-key: "payos-sandbox-secret"
+  client-id: "9623941a-cb3b-4bf2-be83-b6d1d4e92b41"
+  api-key: "3aa5b33a-0164-4185-b90c-8532b017e88d"
+  secret-key: "b0dba29a46c36c7f1e3021da6939150f793322ed7f6323bfe98d1042a79cf8cc"
+  verify-signature: false

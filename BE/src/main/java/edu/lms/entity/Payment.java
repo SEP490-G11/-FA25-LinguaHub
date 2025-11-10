@@ -23,55 +23,84 @@ public class Payment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long paymentID;
 
-    @Column(precision = 10, scale = 2)
+    //Số tiền thanh toán
+    @Column(precision = 12, scale = 2, nullable = false)
     BigDecimal amount;
 
+    //Loại thanh toán: COURSE / BOOKING
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    PaymentType paymentType; // COURSE | BOOKING
+    @Column(nullable = false, length = 20)
+    PaymentType paymentType;
 
+    //Phương thức thanh toán: PAYOS / VNPAY / BANK
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    PaymentMethod paymentMethod; // PAYOS | VNPAY | BANK
+    @Column(nullable = false, length = 20)
+    PaymentMethod paymentMethod;
 
-    @Column(unique = true, length = 100)
+    //Mã đơn hàng (unique từ PayOS)
+    @Column(unique = true, length = 150)
     String orderCode;
 
-    @Column(length = 100)
+    //ID của payment link PayOS
+    @Column(length = 150)
     String paymentLinkId;
 
+    //URL checkout của PayOS/VNPAY
     @Column(length = 500)
     String checkoutUrl;
 
+    //QR code link
     @Column(length = 500)
     String qrCodeUrl;
 
+    //Trạng thái thanh toán: PENDING / PAID / EXPIRED / CANCELLED
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
     PaymentStatus status;
 
+    //Thời gian thanh toán thành công
     LocalDateTime paidAt;
 
+    //Phản hồi trả về từ cổng thanh toán
     @Lob
     String transactionResponse;
 
-    @Column(name = "targetId")
+    //Khóa ngoại liên kết mục tiêu (CourseID hoặc BookingPlanID)
+    @Column(name = "target_id")
     Long targetId;
 
-    @Column(name = "userId")
+    //Người mua (Learner)
+    @Column(name = "user_id")
     Long userId;
 
-    @ManyToOne
-    @JoinColumn(name = "enrollmentID")
+    //Tutor nhận tiền (Course owner / Booking owner)
+    @Column(name = "tutor_id")
+    Long tutorId;
+
+    //Liên kết enrollment (nếu thanh toán cho khóa học)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "enrollment_id")
     Enrollment enrollment;
 
+    // 👤 Người nhận tiền (dự phòng cho tính năng payout hoặc refund)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "received_id")
+    User received;
+
+    //Đánh dấu đã thanh toán chưa
     @Builder.Default
     Boolean isPaid = false;
 
+    // Đánh dấu có hoàn tiền không
     @Builder.Default
     Boolean isRefund = false;
 
-    @ManyToOne
-    @JoinColumn(name = "receivedID")
-    User received;
+    // 🕒 Tự động sinh thời gian tạo bản ghi (Spring sẽ set qua @PrePersist)
+    @Column(updatable = false)
+    LocalDateTime createdAt;
+
+    @PrePersist
+    void prePersist() {
+        if (createdAt == null) createdAt = LocalDateTime.now();
+    }
 }
