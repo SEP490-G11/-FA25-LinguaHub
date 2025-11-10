@@ -335,7 +335,7 @@ export function Step1CourseInfo({ data, onNext, onCancel }: Step1Props) {
 
         <div>
           <Label htmlFor="thumbnailURL-url" className="text-sm font-medium">
-            thumbnailURL URL <span className="text-red-500">*</span>
+            Thumbnail <span className="text-red-500">*</span>
           </Label>
           <Input
             id="thumbnailURL-url"

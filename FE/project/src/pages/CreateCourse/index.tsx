@@ -4,6 +4,15 @@ import { Step1CourseInfo } from './components/course-info';
 import { Step2CourseContent } from './components/course-content';
 import { CourseFormData, SectionData, courseApi } from '@/queries/course-api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -16,6 +25,17 @@ export default function CreateCourse() {
   const [sections, setSections] = useState<SectionData[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+
+  // Helper function to validate URL
+  const isValidUrl = (url: string): boolean => {
+    try {
+      new URL(url);
+      return true;
+    } catch {
+      return false;
+    }
+  };
 
   const handleStep1Next = async (data: CourseFormData) => {
     setIsSubmitting(true);
@@ -68,6 +88,9 @@ export default function CreateCourse() {
               }
               if (!resource.resourceURL?.trim()) {
                 throw new Error('Resource URL is required');
+              }
+              if (!isValidUrl(resource.resourceURL)) {
+                throw new Error(`Invalid resource URL: "${resource.resourceURL}". Must start with http:// or https://`);
               }
             }
           }
@@ -131,16 +154,7 @@ export default function CreateCourse() {
 
       if (submitResult.success && (submitResult.status.toLowerCase() === 'pending' || submitResult.status.toLowerCase() === 'draft')) {
         setIsSubmitting(false);
-
-        toast({
-          title: "Success!",
-          description: `Course created successfully! Status: ${submitResult.status}`,
-          duration: 3000,
-        });
-
-        setTimeout(() => {
-          navigate('/tutor/courses');
-        }, 3000);
+        setShowSuccessModal(true);
       } else {
         throw new Error(`Submit failed: Invalid status ${submitResult.status}`);
       }
@@ -241,21 +255,45 @@ export default function CreateCourse() {
           </CardContent>
         </Card>
 
-        {isSubmitting && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-8 max-w-sm w-full mx-4">
-              <div className="flex flex-col items-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4" />
-                <p className="text-lg font-medium text-gray-900">
-                  Creating your course...
-                </p>
-                <p className="text-sm text-gray-500 mt-2">
-                  Please wait while we set everything up
-                </p>
+      {/* Success Modal */}
+      <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
+        <DialogContent className="sm:max-w-md border-0 shadow-lg">
+          <DialogHeader className="text-center space-y-3">
+            <div className="flex justify-center">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-blue-50 rounded-full flex items-center justify-center shadow-md">
+                <CheckCircle2 className="w-8 h-8 text-blue-600" />
               </div>
             </div>
+            <DialogTitle className="text-2xl font-bold text-gray-900">
+              🎉 Course Created Successfully!
+            </DialogTitle>
+            <DialogDescription className="text-base text-gray-600">
+              Your course is now pending admin approval.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-4">
+            <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
+              <p className="text-sm text-gray-600 mb-1"> Course Title</p>
+              <p className="font-semibold text-gray-900 text-lg">{courseData.title}</p>
+            </div>
+
+            <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
+              <p className="text-sm text-gray-600 mb-1"> Status</p>
+              <p className="font-semibold text-blue-600">Pending</p>
+            </div>
           </div>
-        )}
+
+          <DialogFooter className="flex gap-3 mt-6">
+            <Button
+              onClick={() => navigate('/tutor/courses')}
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+            >
+              OK
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       </div>
     </div>
   );

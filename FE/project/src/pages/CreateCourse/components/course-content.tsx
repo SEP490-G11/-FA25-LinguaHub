@@ -105,10 +105,24 @@ export function Step2CourseContent({
   });
   const [editingResourceIndex, setEditingResourceIndex] = useState<number | null>(null);
   const [isEditingLesson, setIsEditingLesson] = useState(false);
+  const [resourceFormErrors, setResourceFormErrors] = useState<{
+    resourceTitle?: string;
+    resourceURL?: string;
+  }>({});
   
   // Custom confirmation dialog state
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [confirmCallback, setConfirmCallback] = useState<(() => void) | null>(null);
+
+  // Helper function to validate URL
+  const isValidUrl = (url: string): boolean => {
+    try {
+      new URL(url);
+      return true;
+    } catch {
+      return false;
+    }
+  };
 
   const toggleSection = (index: number) => {
     setExpandedSections((prev) => {
@@ -399,8 +413,20 @@ export function Step2CourseContent({
     const currentData = getCurrentLessonData();
     if (!currentData) return;
 
-    if (!resourceForm.resourceTitle.trim() || !resourceForm.resourceURL.trim()) {
-      alert('Please fill in all resource fields');
+    const errors: { resourceTitle?: string; resourceURL?: string } = {};
+
+    if (!resourceForm.resourceTitle.trim()) {
+      errors.resourceTitle = 'Resource title is required';
+    }
+    
+    if (!resourceForm.resourceURL.trim()) {
+      errors.resourceURL = 'Resource URL is required';
+    } else if (!isValidUrl(resourceForm.resourceURL)) {
+      errors.resourceURL = 'Invalid URL format. Must start with http:// or https://';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setResourceFormErrors(errors);
       return;
     }
 
@@ -411,6 +437,7 @@ export function Step2CourseContent({
 
     setCurrentLessonData(updatedData);
     setResourceForm({ resourceType: 'PDF', resourceTitle: '', resourceURL: '' });
+    setResourceFormErrors({});
     setShowNewResourceDialog(false);
   };
 
@@ -418,8 +445,20 @@ export function Step2CourseContent({
     const currentData = getCurrentLessonData();
     if (!currentData || editingResourceIndex === null) return;
 
-    if (!resourceForm.resourceTitle.trim() || !resourceForm.resourceURL.trim()) {
-      alert('Please fill in all resource fields');
+    const errors: { resourceTitle?: string; resourceURL?: string } = {};
+
+    if (!resourceForm.resourceTitle.trim()) {
+      errors.resourceTitle = 'Resource title is required';
+    }
+    
+    if (!resourceForm.resourceURL.trim()) {
+      errors.resourceURL = 'Resource URL is required';
+    } else if (!isValidUrl(resourceForm.resourceURL)) {
+      errors.resourceURL = 'Invalid URL format. Must start with http:// or https://';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setResourceFormErrors(errors);
       return;
     }
 
@@ -433,6 +472,7 @@ export function Step2CourseContent({
 
     setCurrentLessonData(updatedData);
     setResourceForm({ resourceType: 'PDF', resourceTitle: '', resourceURL: '' });
+    setResourceFormErrors({});
     setEditingResourceIndex(null);
     setShowEditResourceDialog(false);
   };
@@ -954,6 +994,7 @@ export function Step2CourseContent({
                       resourceTitle: '',
                       resourceURL: '',
                     });
+                    setResourceFormErrors({});
                     setShowNewResourceDialog(true);
                   }}
                 >
@@ -1063,14 +1104,21 @@ export function Step2CourseContent({
               <Input
                 id="resource-title"
                 value={resourceForm.resourceTitle}
-                onChange={(e) =>
+                onChange={(e) => {
                   setResourceForm({
                     ...resourceForm,
                     resourceTitle: e.target.value,
-                  })
-                }
+                  });
+                  if (resourceFormErrors.resourceTitle) {
+                    setResourceFormErrors({ ...resourceFormErrors, resourceTitle: undefined });
+                  }
+                }}
                 placeholder="e.g., Grammar Guide"
+                className={resourceFormErrors.resourceTitle ? 'border-red-500' : ''}
               />
+              {resourceFormErrors.resourceTitle && (
+                <p className="text-sm text-red-500 mt-1">{resourceFormErrors.resourceTitle}</p>
+              )}
             </div>
             <div>
               <Label htmlFor="resource-url">
@@ -1081,18 +1129,25 @@ export function Step2CourseContent({
               <Input
                 id="resource-url"
                 value={resourceForm.resourceURL}
-                onChange={(e) =>
+                onChange={(e) => {
                   setResourceForm({
                     ...resourceForm,
                     resourceURL: e.target.value,
-                  })
-                }
+                  });
+                  if (resourceFormErrors.resourceURL) {
+                    setResourceFormErrors({ ...resourceFormErrors, resourceURL: undefined });
+                  }
+                }}
                 placeholder={
                   resourceForm.resourceType === 'PDF'
                     ? 'https://example.com/file.pdf'
                     : 'https://example.com'
                 }
+                className={resourceFormErrors.resourceURL ? 'border-red-500' : ''}
               />
+              {resourceFormErrors.resourceURL && (
+                <p className="text-sm text-red-500 mt-1">{resourceFormErrors.resourceURL}</p>
+              )}
             </div>
           </div>
           <DialogFooter>
@@ -1149,14 +1204,21 @@ export function Step2CourseContent({
               <Input
                 id="edit-resource-title"
                 value={resourceForm.resourceTitle}
-                onChange={(e) =>
+                onChange={(e) => {
                   setResourceForm({
                     ...resourceForm,
                     resourceTitle: e.target.value,
-                  })
-                }
+                  });
+                  if (resourceFormErrors.resourceTitle) {
+                    setResourceFormErrors({ ...resourceFormErrors, resourceTitle: undefined });
+                  }
+                }}
                 placeholder="e.g., Grammar Guide"
+                className={resourceFormErrors.resourceTitle ? 'border-red-500' : ''}
               />
+              {resourceFormErrors.resourceTitle && (
+                <p className="text-sm text-red-500 mt-1">{resourceFormErrors.resourceTitle}</p>
+              )}
             </div>
             <div>
               <Label htmlFor="edit-resource-url">
@@ -1167,18 +1229,25 @@ export function Step2CourseContent({
               <Input
                 id="edit-resource-url"
                 value={resourceForm.resourceURL}
-                onChange={(e) =>
+                onChange={(e) => {
                   setResourceForm({
                     ...resourceForm,
                     resourceURL: e.target.value,
-                  })
-                }
+                  });
+                  if (resourceFormErrors.resourceURL) {
+                    setResourceFormErrors({ ...resourceFormErrors, resourceURL: undefined });
+                  }
+                }}
                 placeholder={
                   resourceForm.resourceType === 'PDF'
                     ? 'https://example.com/file.pdf'
                     : 'https://example.com'
                 }
+                className={resourceFormErrors.resourceURL ? 'border-red-500' : ''}
               />
+              {resourceFormErrors.resourceURL && (
+                <p className="text-sm text-red-500 mt-1">{resourceFormErrors.resourceURL}</p>
+              )}
             </div>
           </div>
           <DialogFooter>
