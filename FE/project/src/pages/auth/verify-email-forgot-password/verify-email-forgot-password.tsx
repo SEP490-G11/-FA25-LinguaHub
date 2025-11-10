@@ -10,10 +10,10 @@ import { z } from "zod";
 import { ROUTES } from "@/constants/routes";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import api from "@/config/axiosConfig"; // ✅ axios không redux
+import api from "@/config/axiosConfig";
 import { AxiosError } from "axios";
 
-// ✅ Validate OTP
+//  Validate OTP
 const verifyEmailSchema = z.object({
   otpCode: z.string().length(6, "OTP code must be 6 digits"),
 });
@@ -114,7 +114,7 @@ const VerifyEmailForgotPassword = () => {
             <p className="text-gray-600">Enter the OTP sent to <strong>{email}</strong></p>
           </div>
 
-          {/* ✅ Card */}
+          {/*  Card */}
           <motion.div className="bg-white rounded-2xl shadow-xl p-8">
             <div className="text-center mb-6">
               <Shield className="w-16 h-16 text-blue-500 mx-auto mb-4" />
@@ -130,19 +130,15 @@ const VerifyEmailForgotPassword = () => {
                     placeholder="000000"
                     disabled={isVerifying}
                 />
-
                 {formErrors.otpCode && <ErrorMessage message={formErrors.otpCode.message!} />}
-
-                {/* ✅ SHOW LỖI TỪ BE */}
                 {apiError && <ErrorMessage message={apiError} />}
-
                 <Button type="submit" className="w-full" disabled={isVerifying}>
                   {isVerifying ? <LoadingSpinner size="sm" /> : "Verify OTP"}
                 </Button>
               </form>
             </div>
 
-            {/* 🔁 Resend OTP */}
+            {/*  Resend OTP */}
             <div className="space-y-4 text-center">
               <p className="text-sm text-gray-500">Didn't receive the code?</p>
 

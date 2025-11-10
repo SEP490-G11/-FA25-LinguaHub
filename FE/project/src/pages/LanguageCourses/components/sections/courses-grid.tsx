@@ -81,11 +81,14 @@ const CoursesGrid = ({ courses, loading }: CoursesGridProps) => {
                                         </div>
                                         <div className="flex items-center gap-1">
                                             <Star className="w-4 h-4 text-yellow-500 fill-yellow-500"/>
-                                            <span className="font-medium">{course.avgRating?.toFixed(1) || "0.0"}</span>
+                                            <span className="font-medium">
+                                                {course.avgRating?.toFixed(1) || "0.0"}
+                                            </span>
+                                            <span className="text-xs text-muted-foreground ml-1">
+                                                ({course.totalRatings})
+                                            </span>
                                         </div>
                                     </div>
-
-
                                     {/* 🔹 Duration */}
                                     <div className="flex items-center gap-2 text-muted-foreground text-sm mb-4">
                                         <Clock className="w-4 h-4"/>

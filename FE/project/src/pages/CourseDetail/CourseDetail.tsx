@@ -57,7 +57,6 @@ interface CourseDetailResponse {
   categoryName: string;
   tutorName: string;
   status: string;
-
   learnerCount: number;
   tutorAvatarURL: string;
   tutorAddress: string;

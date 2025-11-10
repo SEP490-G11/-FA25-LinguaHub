@@ -49,7 +49,7 @@ const ResetPassword = () => {
     },
   });
 
-  // ✅ Gửi đúng body theo BE
+  //  Gửi đúng body theo BE
   const onSubmitResetPassword = async (data: ResetPasswordForm) => {
     setIsLoading(true);
     try {
@@ -70,7 +70,7 @@ const ResetPassword = () => {
     transition: { duration: 0.6 },
   };
 
-  // ✅ Trang báo thành công
+  //  Trang báo thành công
   if (success) {
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">

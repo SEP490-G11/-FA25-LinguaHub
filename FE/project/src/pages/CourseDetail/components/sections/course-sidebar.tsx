@@ -19,6 +19,7 @@ interface CourseSidebarProps {
     learnerCount: number;
     avgRating: number;
     totalRatings: number;
+    tutorAddress: string;
     section: {
       sectionID: number;
       orderIndex: number;
@@ -73,7 +74,7 @@ const CourseSidebar = ({ course, wishlisted, setWishlisted }: CourseSidebarProps
     }
   };
 
-  /** ✅ Mua khóa học */
+  /**  Mua khóa học */
   const handleBuyNow = () => {
     const token =
         localStorage.getItem("access_token") ||
@@ -121,17 +122,23 @@ const CourseSidebar = ({ course, wishlisted, setWishlisted }: CourseSidebarProps
             <div>
               <h4 className="font-semibold text-gray-900">{course.tutorName}</h4>
 
+              {/* Địa chỉ tutor */}
+              {course.tutorAddress && (
+                  <p className="text-sm text-gray-500 mt-0.5">{course.tutorAddress}</p>
+              )}
+
               <div className="flex items-center space-x-1 mt-1">
-                <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                <Star className="w-4 h-4 fill-yellow-400 text-yellow-400"/>
                 <span className="text-sm">{course.avgRating.toFixed(1)}</span>
                 <span className="text-sm text-gray-500">
-                ({course.totalRatings} reviews)
-              </span>
+                 ({course.totalRatings} reviews)
+                </span>
               </div>
             </div>
+
           </div>
 
-          {/* ✅ Nút xem hồ sơ */}
+          {/*  Nút xem hồ sơ */}
           <button
               onClick={handleViewProfile}
               className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
@@ -143,9 +150,9 @@ const CourseSidebar = ({ course, wishlisted, setWishlisted }: CourseSidebarProps
         {/* Course Info */}
         <motion.div
             className="bg-white rounded-xl p-6 shadow-md mb-8"
-            initial={{ opacity: 0, y: 60 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+            initial={{opacity: 0, y: 60}}
+            whileInView={{opacity: 1, y: 0}}
+            viewport={{once: true }}
             transition={{ duration: 0.6 }}
         >
           <h3 className="text-xl font-bold text-gray-900 mb-4">

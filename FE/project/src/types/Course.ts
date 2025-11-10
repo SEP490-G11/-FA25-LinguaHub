@@ -8,8 +8,6 @@ export interface Course {
     thumbnailURL: string;
     categoryName: string;
     tutorName: string;
-
-    // ✅ Backend trả thêm các field này nhưng bạn chưa khai báo
     avgRating: number;
     totalRatings: number;
     learnerCount: number;

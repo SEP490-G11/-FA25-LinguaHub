@@ -1,8 +1,18 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import BaseRequest from '@/lib/api.ts';
-import {Course} from "@/types/Course.ts";
 
-
+interface Course {
+    id: number;
+    title: string;
+    description: string;
+    duration: number;
+    price: number;
+    language: string;
+    thumbnailURL: string;
+    categoryName: string;
+    tutorName: string;
+    status: string;
+}
 
 interface HomeState {
     courses: Course[];
