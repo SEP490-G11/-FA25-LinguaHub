@@ -223,6 +223,22 @@ public class ChatService {
     }
 
     /**
+     * Get allowed message types based on room type
+     * Advice room: chỉ Text
+     * Training room: Text, Image, File
+     * Link được gửi như Text (không có enum Link riêng)
+     */
+    private List<MessageType> getAllowedMessageTypes(ChatRoomType roomType) {
+        if (roomType == ChatRoomType.Advice) {
+            // Advice room: chỉ cho phép Text
+            return List.of(MessageType.Text);
+        } else {
+            // Training room: cho phép Text, Image, File
+            return List.of(MessageType.Text, MessageType.Image, MessageType.File);
+        }
+    }
+
+    /**
      * Get chat room with messages
      */
     public ChatRoomResponse getChatRoom(Long chatRoomId, Long userID) {
@@ -312,6 +328,9 @@ public class ChatService {
         Tutor tutor = chatRoom.getTutor();
         User tutorUser = tutor.getUser();
 
+        // Lấy danh sách các loại message được phép gửi dựa trên room type
+        List<MessageType> allowedMessageTypes = getAllowedMessageTypes(chatRoom.getChatRoomType());
+
         return ChatRoomResponse.builder()
                 .chatRoomID(chatRoom.getChatRoomID())
                 .title(chatRoom.getTitle())
@@ -325,6 +344,7 @@ public class ChatService {
                 .chatRoomType(chatRoom.getChatRoomType())
                 .messages(messageResponses)
                 .canSendMessage(canSendMessage)
+                .allowedMessageTypes(allowedMessageTypes)
                 .build();
     }
 
