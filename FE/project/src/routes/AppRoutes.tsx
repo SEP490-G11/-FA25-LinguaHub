@@ -27,7 +27,7 @@ import MyEnrollments from "@/pages/MyEnrollments";
 import Profile from '@/pages/Profile/Profile.tsx';
 import ChangePassword from '@/pages/ChangePassword/index';
 import VerifyEmailForgotPassword from '@/pages/auth/verify-email-forgot-password/verify-email-forgot-password.tsx';
-import CreateCourse from '@/pages/CreateCourse/index';
+import CreateCourse from '@/pages/TutorPages/CreateCourse/index';
 import CourseApprovalPage from '@/pages/Admin/CourseApproval/index';
 import ApplyTutor from '@/pages/ApplyTutor';
 import TutorApproval from '@/pages/Admin/TutorApproval';
