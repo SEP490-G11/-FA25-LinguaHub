@@ -188,9 +188,28 @@ export default function EditCourseStructure({
     content: '',
   });
 
-  // Create resource state
-  const [isCreatingResource, setIsCreatingResource] = useState<string | null>(null);
+  // Create resource state (for lesson creation)
+  const [showNewResourceDialog, setShowNewResourceDialog] = useState(false);
   const [newResourceData, setNewResourceData] = useState<ResourceFormData>({
+    resourceType: 'PDF',
+    resourceTitle: '',
+    resourceURL: '',
+  });
+  const [lessonResources, setLessonResources] = useState<ResourceFormData[]>([]);
+
+  // Edit resource state (for lesson editing)
+  const [showEditResourceDialog, setShowEditResourceDialog] = useState(false);
+  const [editResourceData, setEditResourceData] = useState<ResourceFormData>({
+    resourceType: 'PDF',
+    resourceTitle: '',
+    resourceURL: '',
+  });
+  const [editingResourceIndex, setEditingResourceIndex] = useState<number | null>(null);
+  const [editLessonResources, setEditLessonResources] = useState<Resource[]>([]);
+
+  // Create resource state (for standalone resource creation after lesson created)
+  const [isCreatingResource, setIsCreatingResource] = useState<string | null>(null);
+  const [standaloneResourceData, setStandaloneResourceData] = useState<ResourceFormData>({
     resourceType: 'PDF',
     resourceTitle: '',
     resourceURL: '',
@@ -223,6 +242,23 @@ export default function EditCourseStructure({
   };
 
   // Create lesson
+  // Add resource to lesson during creation
+  const addResourceToLesson = () => {
+    if (!newResourceData.resourceTitle.trim() || !newResourceData.resourceURL.trim()) {
+      alert('Please fill in resource title and URL');
+      return;
+    }
+
+    setLessonResources([...lessonResources, newResourceData]);
+    setNewResourceData({ resourceType: 'PDF', resourceTitle: '', resourceURL: '' });
+    setShowNewResourceDialog(false);
+  };
+
+  // Remove resource from lesson during creation
+  const removeResourceFromLesson = (index: number) => {
+    setLessonResources(lessonResources.filter((_, i) => i !== index));
+  };
+
   const createLesson = async () => {
     if (isCreatingLesson !== null && newLessonData && newLessonData.title.trim()) {
       setIsSaving(true);
@@ -238,7 +274,13 @@ export default function EditCourseStructure({
           content: newLessonData.content,
           orderIndex: lessonCount,
           createdAt: new Date().toISOString(),
-          resources: [],
+          resources: lessonResources.map((res) => ({
+            resourceID: Math.floor(Math.random() * 10000),
+            resourceType: res.resourceType,
+            resourceTitle: res.resourceTitle,
+            resourceURL: res.resourceURL,
+            uploadedAt: new Date().toISOString(),
+          })),
         };
 
         onCreateLesson(isCreatingLesson, newLesson);
@@ -250,6 +292,8 @@ export default function EditCourseStructure({
           videoURL: '',
           content: '',
         });
+        setLessonResources([]);
+        setShowNewResourceDialog(false);
       } catch (error) {
         console.error('Error creating lesson:', error);
         alert('Failed to create lesson');
@@ -259,24 +303,24 @@ export default function EditCourseStructure({
     }
   };
 
-  // Create resource
+  // Create resource (after lesson created)
   const createResource = async () => {
-    if (isCreatingResource && newResourceData && newResourceData.resourceTitle.trim()) {
+    if (isCreatingResource && standaloneResourceData && standaloneResourceData.resourceTitle.trim()) {
       setIsSaving(true);
       try {
         const [sectionIndex, lessonIndex] = isCreatingResource.split('-').map(Number);
 
         const newResource: Resource = {
           resourceID: Math.floor(Math.random() * 10000),
-          resourceType: newResourceData.resourceType,
-          resourceTitle: newResourceData.resourceTitle,
-          resourceURL: newResourceData.resourceURL,
+          resourceType: standaloneResourceData.resourceType,
+          resourceTitle: standaloneResourceData.resourceTitle,
+          resourceURL: standaloneResourceData.resourceURL,
           uploadedAt: new Date().toISOString(),
         };
 
         onCreateResource(sectionIndex, lessonIndex, newResource);
         setIsCreatingResource(null);
-        setNewResourceData({
+        setStandaloneResourceData({
           resourceType: 'PDF',
           resourceTitle: '',
           resourceURL: '',
@@ -311,6 +355,64 @@ export default function EditCourseStructure({
       newMap.set(key, true);
     }
     setExpandedLessons(newMap);
+  };
+
+  // Add resource to edit lesson
+  const addResourceToEditLesson = () => {
+    if (!editResourceData.resourceTitle.trim() || !editResourceData.resourceURL.trim()) {
+      alert('Please fill in resource title and URL');
+      return;
+    }
+
+    const newResource: Resource = {
+      resourceID: Math.floor(Math.random() * 10000),
+      resourceType: editResourceData.resourceType,
+      resourceTitle: editResourceData.resourceTitle,
+      resourceURL: editResourceData.resourceURL,
+      uploadedAt: new Date().toISOString(),
+    };
+
+    setEditLessonResources([...editLessonResources, newResource]);
+    setEditResourceData({ resourceType: 'PDF', resourceTitle: '', resourceURL: '' });
+    setShowEditResourceDialog(false);
+  };
+
+  // Update resource in edit lesson
+  const updateEditLessonResource = () => {
+    if (editingResourceIndex === null) return;
+    if (!editResourceData.resourceTitle.trim() || !editResourceData.resourceURL.trim()) {
+      alert('Please fill in resource title and URL');
+      return;
+    }
+
+    const updated = [...editLessonResources];
+    updated[editingResourceIndex] = {
+      ...updated[editingResourceIndex],
+      resourceType: editResourceData.resourceType,
+      resourceTitle: editResourceData.resourceTitle,
+      resourceURL: editResourceData.resourceURL,
+    };
+
+    setEditLessonResources(updated);
+    setEditResourceData({ resourceType: 'PDF', resourceTitle: '', resourceURL: '' });
+    setEditingResourceIndex(null);
+    setShowEditResourceDialog(false);
+  };
+
+  // Remove resource from edit lesson
+  const removeResourceFromEditLesson = (index: number) => {
+    setEditLessonResources(editLessonResources.filter((_, i) => i !== index));
+  };
+
+  // Start editing resource in edit lesson
+  const startEditingEditLessonResource = (index: number) => {
+    setEditResourceData({
+      resourceType: editLessonResources[index].resourceType,
+      resourceTitle: editLessonResources[index].resourceTitle,
+      resourceURL: editLessonResources[index].resourceURL,
+    });
+    setEditingResourceIndex(index);
+    setShowEditResourceDialog(true);
   };
 
   // Open edit section dialog
@@ -358,6 +460,7 @@ export default function EditCourseStructure({
       videoURL: lesson.videoURL || '',
       content: lesson.content || '',
     });
+    setEditLessonResources(lesson.resources || []);
   };
 
   // Save lesson
@@ -376,10 +479,12 @@ export default function EditCourseStructure({
           lessonType: editingLessonData.lessonType,
           videoURL: editingLessonData.videoURL,
           content: editingLessonData.content,
+          resources: editLessonResources,
         };
         onUpdateLesson(sectionIndex, lessonIndex, updatedLesson);
         setEditingLessonKey(null);
         setEditingLessonData(null);
+        setEditLessonResources([]);
       } finally {
         setIsSaving(false);
       }
@@ -463,7 +568,7 @@ export default function EditCourseStructure({
               Course Structure
             </h2>
             <p className="text-gray-600 mt-1">
-              Manage chapters, lessons, and resources for your course
+              Manage sections, lessons, and resources for your course
             </p>
           </div>
           <Button
@@ -471,7 +576,7 @@ export default function EditCourseStructure({
             className="gap-2 bg-blue-600 hover:bg-blue-700"
           >
             <Plus className="w-4 h-4" />
-            Add Chapter
+            Add Section
           </Button>
         </div>
 
@@ -493,7 +598,7 @@ export default function EditCourseStructure({
                   )}
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-gray-900 truncate">
-                      Chapter {sectionIndex + 1}: {section.title}
+                      Section {sectionIndex + 1}: {section.title}
                     </h3>
                     <p className="text-sm text-gray-600 mt-1">
                       {section.lessons?.length || 0} lessons
@@ -702,7 +807,7 @@ export default function EditCourseStructure({
                         ))
                       ) : (
                         <div className="p-4 text-center text-gray-500">
-                          This chapter has no lessons yet
+                          This Section has no lessons yet
                         </div>
                       )}
                     </div>
@@ -725,7 +830,7 @@ export default function EditCourseStructure({
             ))
           ) : (
             <Card className="p-8 text-center text-gray-500">
-              <p>Course has no chapters yet</p>
+              <p>Course has no Sections yet</p>
             </Card>
           )}
         </div>
@@ -771,14 +876,14 @@ export default function EditCourseStructure({
       >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Edit Chapter</DialogTitle>
+            <DialogTitle>Edit Section</DialogTitle>
           </DialogHeader>
 
           {editingSectionData && (
             <div className="space-y-4">
               <div>
                 <Label htmlFor="section-title" className="text-base">
-                  Chapter Title
+                  Section Title
                 </Label>
                 <Input
                   id="section-title"
@@ -794,7 +899,7 @@ export default function EditCourseStructure({
               </div>
               <div>
                 <Label htmlFor="section-description" className="text-base">
-                  Chapter Description
+                  Section Description
                 </Label>
                 <Textarea
                   id="section-description"
@@ -947,6 +1052,65 @@ export default function EditCourseStructure({
                   />
                 </div>
               )}
+
+              {/* Resources Section */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <Label className="text-base">
+                    Resources ({editLessonResources.length})
+                  </Label>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setEditResourceData({ resourceType: 'PDF', resourceTitle: '', resourceURL: '' });
+                      setEditingResourceIndex(null);
+                      setShowEditResourceDialog(true);
+                    }}
+                    className="gap-2"
+                  >
+                    <Plus className="w-3 h-3" />
+                    Add Resource
+                  </Button>
+                </div>
+
+                {editLessonResources.length > 0 && (
+                  <div className="space-y-2 mb-3">
+                    {editLessonResources.map((resource, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-200"
+                      >
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-gray-900">
+                            {resource.resourceTitle}
+                          </p>
+                          <p className="text-xs text-gray-500">{resource.resourceType}</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => startEditingEditLessonResource(index)}
+                          >
+                            <Edit2 className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => removeResourceFromEditLesson(index)}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -956,6 +1120,7 @@ export default function EditCourseStructure({
               onClick={() => {
                 setEditingLessonKey(null);
                 setEditingLessonData(null);
+                setEditLessonResources([]);
               }}
               disabled={isSaving}
             >
@@ -968,7 +1133,93 @@ export default function EditCourseStructure({
         </DialogContent>
       </Dialog>
 
-      {/* Edit Resource Dialog */}
+      {/* Add/Edit Resource Dialog for Edit Lesson */}
+      <Dialog open={showEditResourceDialog} onOpenChange={setShowEditResourceDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {editingResourceIndex !== null ? 'Edit Resource' : 'Add Resource'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="edit-lesson-resource-type">Resource Type</Label>
+              <Select
+                value={editResourceData.resourceType}
+                onValueChange={(value) =>
+                  setEditResourceData({
+                    ...editResourceData,
+                    resourceType: value as 'PDF' | 'ExternalLink',
+                  })
+                }
+              >
+                <SelectTrigger disabled={isSaving}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="PDF">PDF</SelectItem>
+                  <SelectItem value="ExternalLink">External Link</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="edit-lesson-resource-title">Resource Name</Label>
+              <Input
+                id="edit-lesson-resource-title"
+                value={editResourceData.resourceTitle}
+                onChange={(e) =>
+                  setEditResourceData({
+                    ...editResourceData,
+                    resourceTitle: e.target.value,
+                  })
+                }
+                disabled={isSaving}
+                placeholder="e.g., Grammar Guide"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-lesson-resource-url">Resource URL</Label>
+              <Input
+                id="edit-lesson-resource-url"
+                value={editResourceData.resourceURL}
+                onChange={(e) =>
+                  setEditResourceData({
+                    ...editResourceData,
+                    resourceURL: e.target.value,
+                  })
+                }
+                disabled={isSaving}
+                placeholder="https://example.com/resource"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowEditResourceDialog(false);
+                setEditingResourceIndex(null);
+              }}
+              disabled={isSaving}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={
+                editingResourceIndex !== null
+                  ? updateEditLessonResource
+                  : addResourceToEditLesson
+              }
+              disabled={
+                !editResourceData.resourceTitle.trim() ||
+                !editResourceData.resourceURL.trim()
+              }
+            >
+              {editingResourceIndex !== null ? 'Update' : 'Add'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <Dialog
         open={editingResourceKey !== null}
         onOpenChange={(open) => {
@@ -1080,7 +1331,7 @@ export default function EditCourseStructure({
           <AlertDialogTitle>Confirm Delete</AlertDialogTitle>
           <AlertDialogDescription>
             {deleteConfirm?.type === 'section' &&
-              'Are you sure you want to delete this chapter? All lessons in the chapter will be deleted.'}
+              'Are you sure you want to delete this Section? All lessons in the Section will be deleted.'}
             {deleteConfirm?.type === 'lesson' &&
               'Are you sure you want to delete this lesson? All resources will be deleted.'}
             {deleteConfirm?.type === 'resource' &&
@@ -1105,12 +1356,12 @@ export default function EditCourseStructure({
       >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Create New Chapter</DialogTitle>
+            <DialogTitle>Create New Section</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
               <Label htmlFor="new-section-title" className="text-base">
-                Chapter Title
+                Section Title
               </Label>
               <Input
                 id="new-section-title"
@@ -1126,7 +1377,7 @@ export default function EditCourseStructure({
             </div>
             <div>
               <Label htmlFor="new-section-description" className="text-base">
-                Chapter Description
+                Section Description
               </Label>
               <Textarea
                 id="new-section-description"
@@ -1265,11 +1516,60 @@ export default function EditCourseStructure({
                 />
               </div>
             )}
+
+            {/* Resources Section */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <Label className="text-base">
+                  Resources ({lessonResources.length})
+                </Label>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShowNewResourceDialog(true)}
+                  className="gap-2"
+                >
+                  <Plus className="w-3 h-3" />
+                  Add Resource
+                </Button>
+              </div>
+
+              {lessonResources.length > 0 && (
+                <div className="space-y-2 mb-3">
+                  {lessonResources.map((resource, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-200"
+                    >
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">
+                          {resource.resourceTitle}
+                        </p>
+                        <p className="text-xs text-gray-500">{resource.resourceType}</p>
+                      </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => removeResourceFromLesson(index)}
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => setIsCreatingLesson(null)}
+              onClick={() => {
+                setIsCreatingLesson(null);
+                setLessonResources([]);
+                setShowNewResourceDialog(false);
+              }}
               disabled={isSaving}
             >
               Cancel
@@ -1281,22 +1581,15 @@ export default function EditCourseStructure({
         </DialogContent>
       </Dialog>
 
-      {/* Create Resource Dialog */}
-      <Dialog
-        open={isCreatingResource !== null}
-        onOpenChange={(open) => {
-          if (!open) setIsCreatingResource(null);
-        }}
-      >
+      {/* Add Resource to Lesson Dialog (during lesson creation) */}
+      <Dialog open={showNewResourceDialog} onOpenChange={setShowNewResourceDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Create New Resource</DialogTitle>
+            <DialogTitle>Add Resource</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="new-resource-type" className="text-base">
-                Resource Type
-              </Label>
+              <Label htmlFor="lesson-resource-type">Resource Type</Label>
               <Select
                 value={newResourceData.resourceType}
                 onValueChange={(value) =>
@@ -1316,15 +1609,100 @@ export default function EditCourseStructure({
               </Select>
             </div>
             <div>
+              <Label htmlFor="lesson-resource-title">Resource Name</Label>
+              <Input
+                id="lesson-resource-title"
+                value={newResourceData.resourceTitle}
+                onChange={(e) =>
+                  setNewResourceData({
+                    ...newResourceData,
+                    resourceTitle: e.target.value,
+                  })
+                }
+                disabled={isSaving}
+                placeholder="e.g., Grammar Guide"
+              />
+            </div>
+            <div>
+              <Label htmlFor="lesson-resource-url">Resource URL</Label>
+              <Input
+                id="lesson-resource-url"
+                value={newResourceData.resourceURL}
+                onChange={(e) =>
+                  setNewResourceData({
+                    ...newResourceData,
+                    resourceURL: e.target.value,
+                  })
+                }
+                disabled={isSaving}
+                placeholder="https://example.com/resource"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowNewResourceDialog(false)}
+              disabled={isSaving}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={addResourceToLesson}
+              disabled={
+                !newResourceData.resourceTitle.trim() ||
+                !newResourceData.resourceURL.trim()
+              }
+            >
+              Add
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* Create Resource Dialog (Standalone) */}
+      <Dialog
+        open={isCreatingResource !== null}
+        onOpenChange={(open) => {
+          if (!open) setIsCreatingResource(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create New Resource</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="new-resource-type" className="text-base">
+                Resource Type
+              </Label>
+              <Select
+                value={standaloneResourceData.resourceType}
+                onValueChange={(value) =>
+                  setStandaloneResourceData({
+                    ...standaloneResourceData,
+                    resourceType: value as 'PDF' | 'ExternalLink',
+                  })
+                }
+              >
+                <SelectTrigger disabled={isSaving}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="PDF">PDF</SelectItem>
+                  <SelectItem value="ExternalLink">External Link</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
               <Label htmlFor="new-resource-title" className="text-base">
                 Resource Name
               </Label>
               <Input
                 id="new-resource-title"
-                value={newResourceData.resourceTitle}
+                value={standaloneResourceData.resourceTitle}
                 onChange={(e) =>
-                  setNewResourceData({
-                    ...newResourceData,
+                  setStandaloneResourceData({
+                    ...standaloneResourceData,
                     resourceTitle: e.target.value,
                   })
                 }
@@ -1337,10 +1715,10 @@ export default function EditCourseStructure({
               </Label>
               <Input
                 id="new-resource-url"
-                value={newResourceData.resourceURL}
+                value={standaloneResourceData.resourceURL}
                 onChange={(e) =>
-                  setNewResourceData({
-                    ...newResourceData,
+                  setStandaloneResourceData({
+                    ...standaloneResourceData,
                     resourceURL: e.target.value,
                   })
                 }

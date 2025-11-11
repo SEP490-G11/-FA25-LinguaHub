@@ -156,6 +156,22 @@ export const courseApi = {
 
     return { success: false, status: status || 'unknown' };
   },
+
+  updateResource: async (resourceId: string, resourceData: ResourceFormData): Promise<{ resourceId: string }> => {
+    const payload = {
+      resourceType: resourceData.resourceType,
+      resourceTitle: resourceData.resourceTitle,
+      resourceURL: resourceData.resourceURL,
+    };
+
+    const res = await axios.put<any>(`/tutor/resources/${resourceId}`, payload);
+    const resId = res?.data?.result?.resourceID || res?.data?.resourceID || resourceId;
+    return { resourceId: resId.toString() };
+  },
+
+  deleteResource: async (resourceId: string): Promise<void> => {
+    await axios.delete<any>(`/tutor/resources/${resourceId}`);
+  },
 };
 
 export const getCategories = (): Category[] => [...CATEGORIES];

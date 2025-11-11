@@ -183,6 +183,7 @@ const EditCourse = () => {
 
     setIsSaving(true);
     try {
+      // 1. Update lesson basic info
       const updated = await updateLesson(lessonData.lessonID, {
         title: lessonData.title,
         duration: lessonData.duration,
@@ -192,11 +193,67 @@ const EditCourse = () => {
         orderIndex: lessonData.orderIndex,
       });
 
+      // 2. Handle resources
+      const originalResources = course.section[sectionIndex].lessons[lessonIndex].resources || [];
+      const updatedResources = lessonData.resources || [];
+
+      // Find new resources (no resourceID from server means it's newly created)
+      const newResources = updatedResources.filter(r => !originalResources.some(or => or.resourceID === r.resourceID));
+      
+      // Find deleted resources
+      const deletedResources = originalResources.filter(or => !updatedResources.some(r => r.resourceID === or.resourceID));
+      
+      // Find updated resources
+      const changedResources = updatedResources.filter(r => 
+        originalResources.some(or => or.resourceID === r.resourceID && (
+          or.resourceTitle !== r.resourceTitle || 
+          or.resourceURL !== r.resourceURL || 
+          or.resourceType !== r.resourceType
+        ))
+      );
+
+      // Create new resources
+      for (const res of newResources) {
+        if (res.resourceID > 0 && res.resourceID < 10000) {
+          // This is a locally generated ID, create it via API
+          const resourceType = res.resourceType as 'PDF' | 'ExternalLink';
+          await courseApi.addLessonResource(
+            course.id.toString(),
+            course.section[sectionIndex].sectionID.toString(),
+            lessonData.lessonID.toString(),
+            {
+              resourceType,
+              resourceTitle: res.resourceTitle,
+              resourceURL: res.resourceURL,
+            }
+          );
+        }
+      }
+
+      // Update changed resources
+      for (const res of changedResources) {
+        if (res.resourceID) {
+          const resourceType = res.resourceType as 'PDF' | 'ExternalLink';
+          await courseApi.updateResource(res.resourceID.toString(), {
+            resourceType,
+            resourceTitle: res.resourceTitle,
+            resourceURL: res.resourceURL,
+          });
+        }
+      }
+
+      // Delete removed resources
+      for (const res of deletedResources) {
+        if (res.resourceID) {
+          await courseApi.deleteResource(res.resourceID.toString());
+        }
+      }
+
+      // 3. Update state with the updated lesson
       const newSections = [...course.section];
-      // Ensure resources array exists in the updated lesson
       newSections[sectionIndex].lessons[lessonIndex] = {
         ...updated,
-        resources: Array.isArray(updated.resources) ? updated.resources : [],
+        resources: updatedResources,
       };
       setCourse({ ...course, section: newSections });
 
