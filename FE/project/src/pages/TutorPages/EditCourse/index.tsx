@@ -28,6 +28,7 @@ import {
   deleteResource,
   submitCourseForApproval,
 } from './edit-course-api';
+import courseApi from '@/pages/TutorPages/CreateCourse/course-api';
 import { CourseDetail, Section, Lesson, Resource } from './types';
 import { EditCourseInfo, EditCourseStructure } from './components';
 
@@ -383,6 +384,164 @@ const EditCourse = () => {
     }
   };
 
+  // ========== CREATE SECTION ==========
+  const handleCreateSection = async (newSection: Section) => {
+    if (!course) return;
+
+    setIsSaving(true);
+    try {
+      // Call API để create section
+      const result = await courseApi.addSection(
+        course.id.toString(),
+        {
+          courseID: course.id,
+          title: newSection.title,
+          description: newSection.description || null,
+          orderIndex: course.section.length,
+        }
+      );
+
+      // Cập nhật state với section mới từ API response
+      const sectionWithId: Section = {
+        ...newSection,
+        sectionID: parseInt(result.sectionId),
+        lessons: [],
+      };
+
+      setCourse({
+        ...course,
+        section: [...course.section, sectionWithId],
+      });
+
+      toast({
+        title: 'Success',
+        description: 'Chapter created successfully',
+      });
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Failed to create chapter';
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: message,
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // ========== CREATE LESSON ==========
+  const handleCreateLesson = async (
+    sectionIndex: number,
+    newLesson: Lesson
+  ) => {
+    if (!course) return;
+
+    setIsSaving(true);
+    try {
+      const sectionId = course.section[sectionIndex].sectionID;
+
+      // Call API để create lesson
+      const result = await courseApi.addLesson(
+        course.id.toString(),
+        sectionId.toString(),
+        {
+          title: newLesson.title,
+          duration: newLesson.duration,
+          lessonType: newLesson.lessonType,
+          videoURL: newLesson.videoURL || '',
+          content: newLesson.content || '',
+          orderIndex: course.section[sectionIndex].lessons.length,
+        }
+      );
+
+      // Cập nhật state với lesson mới từ API response
+      const lessonWithId: Lesson = {
+        ...newLesson,
+        lessonID: parseInt(result.lessonId),
+        resources: [],
+      };
+
+      const newSections = [...course.section];
+      newSections[sectionIndex].lessons = [
+        ...newSections[sectionIndex].lessons,
+        lessonWithId,
+      ];
+      setCourse({ ...course, section: newSections });
+
+      toast({
+        title: 'Success',
+        description: 'Lesson created successfully',
+      });
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Failed to create lesson';
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: message,
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // ========== CREATE RESOURCE ==========
+  const handleCreateResource = async (
+    sectionIndex: number,
+    lessonIndex: number,
+    newResource: Resource
+  ) => {
+    if (!course) return;
+
+    setIsSaving(true);
+    try {
+      const sectionId = course.section[sectionIndex].sectionID;
+      const lessonId =
+        course.section[sectionIndex].lessons[lessonIndex].lessonID;
+
+      // Call API để create resource
+      const result = await courseApi.addLessonResource(
+        course.id.toString(),
+        sectionId.toString(),
+        lessonId.toString(),
+        {
+          resourceType: newResource.resourceType as 'PDF' | 'ExternalLink',
+          resourceTitle: newResource.resourceTitle,
+          resourceURL: newResource.resourceURL,
+        }
+      );
+
+      // Cập nhật state với resource mới từ API response
+      const resourceWithId: Resource = {
+        ...newResource,
+        resourceID: parseInt(result.resourceId),
+      };
+
+      const newSections = [...course.section];
+      newSections[sectionIndex].lessons[lessonIndex].resources = [
+        ...newSections[sectionIndex].lessons[lessonIndex].resources,
+        resourceWithId,
+      ];
+      setCourse({ ...course, section: newSections });
+
+      toast({
+        title: 'Success',
+        description: 'Resource created successfully',
+      });
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Failed to create resource';
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: message,
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   // ========== LOADING STATE ==========
   if (isLoading) {
     return (
@@ -545,6 +704,9 @@ const EditCourse = () => {
                 onDeleteSection={handleStep2DeleteSection}
                 onDeleteLesson={handleStep2DeleteLesson}
                 onDeleteResource={handleStep2DeleteResource}
+                onCreateSection={handleCreateSection}
+                onCreateLesson={handleCreateLesson}
+                onCreateResource={handleCreateResource}
                 onBack={() => setCurrentStep(1)}
                 onSubmit={handleSubmitCourse}
                 isSubmitting={isSaving}

@@ -36,6 +36,7 @@ import {
   GripVertical,
   CheckCircle2,
   Loader2,
+  Plus,
 } from 'lucide-react';
 import { CourseDetail, Section, Lesson, Resource } from '../types';
 
@@ -60,6 +61,9 @@ interface EditCourseStructureProps {
     lessonIndex: number,
     resourceIndex: number
   ) => void;
+  onCreateSection: (section: Section) => Promise<void>;
+  onCreateLesson: (sectionIndex: number, lesson: Lesson) => Promise<void>;
+  onCreateResource: (sectionIndex: number, lessonIndex: number, resource: Resource) => Promise<void>;
   onBack: () => void;
   onSubmit: () => void;
   isSubmitting: boolean;
@@ -92,6 +96,9 @@ export default function EditCourseStructure({
   onDeleteSection,
   onDeleteLesson,
   onDeleteResource,
+  onCreateSection,
+  onCreateLesson,
+  onCreateResource,
   onBack,
   onSubmit,
   isSubmitting,
@@ -163,6 +170,125 @@ export default function EditCourseStructure({
   } | null>(null);
 
   const [isSaving, setIsSaving] = useState(false);
+
+  // Create section state
+  const [isCreatingSection, setIsCreatingSection] = useState(false);
+  const [newSectionData, setNewSectionData] = useState<SectionFormData>({
+    title: '',
+    description: '',
+  });
+
+  // Create lesson state
+  const [isCreatingLesson, setIsCreatingLesson] = useState<number | null>(null);
+  const [newLessonData, setNewLessonData] = useState<LessonFormData>({
+    title: '',
+    duration: 0,
+    lessonType: 'Video',
+    videoURL: '',
+    content: '',
+  });
+
+  // Create resource state
+  const [isCreatingResource, setIsCreatingResource] = useState<string | null>(null);
+  const [newResourceData, setNewResourceData] = useState<ResourceFormData>({
+    resourceType: 'PDF',
+    resourceTitle: '',
+    resourceURL: '',
+  });
+
+  // Create section
+  const createSection = async () => {
+    if (newSectionData && newSectionData.title.trim()) {
+      setIsSaving(true);
+      try {
+        const newSection: Section = {
+          sectionID: Math.floor(Math.random() * 10000),
+          courseID: course.id,
+          title: newSectionData.title,
+          description: newSectionData.description,
+          orderIndex: course.section.length,
+          lessons: [],
+        };
+
+        onCreateSection(newSection);
+        setIsCreatingSection(false);
+        setNewSectionData({ title: '', description: '' });
+      } catch (error) {
+        console.error('Error creating section:', error);
+        alert('Failed to create section');
+      } finally {
+        setIsSaving(false);
+      }
+    }
+  };
+
+  // Create lesson
+  const createLesson = async () => {
+    if (isCreatingLesson !== null && newLessonData && newLessonData.title.trim()) {
+      setIsSaving(true);
+      try {
+        const lessonCount = course.section[isCreatingLesson].lessons?.length || 0;
+
+        const newLesson: Lesson = {
+          lessonID: Math.floor(Math.random() * 10000),
+          title: newLessonData.title,
+          duration: newLessonData.duration,
+          lessonType: newLessonData.lessonType,
+          videoURL: newLessonData.videoURL,
+          content: newLessonData.content,
+          orderIndex: lessonCount,
+          createdAt: new Date().toISOString(),
+          resources: [],
+        };
+
+        onCreateLesson(isCreatingLesson, newLesson);
+        setIsCreatingLesson(null);
+        setNewLessonData({
+          title: '',
+          duration: 0,
+          lessonType: 'Video',
+          videoURL: '',
+          content: '',
+        });
+      } catch (error) {
+        console.error('Error creating lesson:', error);
+        alert('Failed to create lesson');
+      } finally {
+        setIsSaving(false);
+      }
+    }
+  };
+
+  // Create resource
+  const createResource = async () => {
+    if (isCreatingResource && newResourceData && newResourceData.resourceTitle.trim()) {
+      setIsSaving(true);
+      try {
+        const [sectionIndex, lessonIndex] = isCreatingResource.split('-').map(Number);
+
+        const newResource: Resource = {
+          resourceID: Math.floor(Math.random() * 10000),
+          resourceType: newResourceData.resourceType,
+          resourceTitle: newResourceData.resourceTitle,
+          resourceURL: newResourceData.resourceURL,
+          uploadedAt: new Date().toISOString(),
+        };
+
+        onCreateResource(sectionIndex, lessonIndex, newResource);
+        setIsCreatingResource(null);
+        setNewResourceData({
+          resourceType: 'PDF',
+          resourceTitle: '',
+          resourceURL: '',
+        });
+      } catch (error) {
+        console.error('Error creating resource:', error);
+        alert('Failed to create resource');
+      } finally {
+        setIsSaving(false);
+      }
+    }
+  };
 
   // Toggle section expand
   const toggleSection = (index: number) => {
@@ -340,6 +466,13 @@ export default function EditCourseStructure({
               Manage chapters, lessons, and resources for your course
             </p>
           </div>
+          <Button
+            onClick={() => setIsCreatingSection(true)}
+            className="gap-2 bg-blue-600 hover:bg-blue-700"
+          >
+            <Plus className="w-4 h-4" />
+            Add Chapter
+          </Button>
         </div>
 
         {/* Sections List */}
@@ -548,6 +681,19 @@ export default function EditCourseStructure({
                                           )
                                         )}
                                       </div>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() =>
+                                          setIsCreatingResource(
+                                            `${sectionIndex}-${lessonIndex}`
+                                          )
+                                        }
+                                        className="w-full mt-2 gap-2"
+                                      >
+                                        <Plus className="w-3 h-3" />
+                                        Add Resource
+                                      </Button>
                                     </div>
                                   )}
                               </div>
@@ -559,6 +705,19 @@ export default function EditCourseStructure({
                           This chapter has no lessons yet
                         </div>
                       )}
+                    </div>
+
+                    {/* Add Lesson Button */}
+                    <div className="p-4 border-t bg-gray-50">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setIsCreatingLesson(sectionIndex)}
+                        className="w-full gap-2"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Add Lesson
+                      </Button>
                     </div>
                   </CardContent>
                 )}
@@ -938,6 +1097,272 @@ export default function EditCourseStructure({
           </div>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Create Section Dialog */}
+      <Dialog
+        open={isCreatingSection}
+        onOpenChange={setIsCreatingSection}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create New Chapter</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="new-section-title" className="text-base">
+                Chapter Title
+              </Label>
+              <Input
+                id="new-section-title"
+                value={newSectionData.title}
+                onChange={(e) =>
+                  setNewSectionData({
+                    ...newSectionData,
+                    title: e.target.value,
+                  })
+                }
+                disabled={isSaving}
+              />
+            </div>
+            <div>
+              <Label htmlFor="new-section-description" className="text-base">
+                Chapter Description
+              </Label>
+              <Textarea
+                id="new-section-description"
+                value={newSectionData.description}
+                onChange={(e) =>
+                  setNewSectionData({
+                    ...newSectionData,
+                    description: e.target.value,
+                  })
+                }
+                disabled={isSaving}
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsCreatingSection(false)}
+              disabled={isSaving}
+            >
+              Cancel
+            </Button>
+            <Button onClick={createSection} disabled={isSaving}>
+              {isSaving ? 'Creating...' : 'Create'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Lesson Dialog */}
+      <Dialog
+        open={isCreatingLesson !== null}
+        onOpenChange={(open) => {
+          if (!open) setIsCreatingLesson(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create New Lesson</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="new-lesson-title" className="text-base">
+                Lesson Title
+              </Label>
+              <Input
+                id="new-lesson-title"
+                value={newLessonData.title}
+                onChange={(e) =>
+                  setNewLessonData({
+                    ...newLessonData,
+                    title: e.target.value,
+                  })
+                }
+                disabled={isSaving}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="new-lesson-duration" className="text-sm">
+                  Duration (minutes)
+                </Label>
+                <Input
+                  id="new-lesson-duration"
+                  type="number"
+                  min="1"
+                  value={newLessonData.duration}
+                  onChange={(e) =>
+                    setNewLessonData({
+                      ...newLessonData,
+                      duration: parseInt(e.target.value) || 0,
+                    })
+                  }
+                  disabled={isSaving}
+                />
+              </div>
+              <div>
+                <Label htmlFor="new-lesson-type" className="text-sm">
+                  Lesson Type
+                </Label>
+                <Select
+                  value={newLessonData.lessonType}
+                  onValueChange={(value) =>
+                    setNewLessonData({
+                      ...newLessonData,
+                      lessonType: value as 'Video' | 'Reading',
+                    })
+                  }
+                >
+                  <SelectTrigger disabled={isSaving}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Video">Video</SelectItem>
+                    <SelectItem value="Reading">Reading</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            {newLessonData.lessonType === 'Video' && (
+              <div>
+                <Label htmlFor="new-lesson-video" className="text-base">
+                  Video URL
+                </Label>
+                <Input
+                  id="new-lesson-video"
+                  value={newLessonData.videoURL}
+                  onChange={(e) =>
+                    setNewLessonData({
+                      ...newLessonData,
+                      videoURL: e.target.value,
+                    })
+                  }
+                  disabled={isSaving}
+                  placeholder="https://example.com/video.mp4"
+                />
+              </div>
+            )}
+            {newLessonData.lessonType === 'Reading' && (
+              <div>
+                <Label htmlFor="new-lesson-content" className="text-base">
+                  Lesson Content
+                </Label>
+                <Textarea
+                  id="new-lesson-content"
+                  value={newLessonData.content}
+                  onChange={(e) =>
+                    setNewLessonData({
+                      ...newLessonData,
+                      content: e.target.value,
+                    })
+                  }
+                  disabled={isSaving}
+                  rows={4}
+                />
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsCreatingLesson(null)}
+              disabled={isSaving}
+            >
+              Cancel
+            </Button>
+            <Button onClick={createLesson} disabled={isSaving}>
+              {isSaving ? 'Creating...' : 'Create'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Resource Dialog */}
+      <Dialog
+        open={isCreatingResource !== null}
+        onOpenChange={(open) => {
+          if (!open) setIsCreatingResource(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create New Resource</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="new-resource-type" className="text-base">
+                Resource Type
+              </Label>
+              <Select
+                value={newResourceData.resourceType}
+                onValueChange={(value) =>
+                  setNewResourceData({
+                    ...newResourceData,
+                    resourceType: value as 'PDF' | 'ExternalLink',
+                  })
+                }
+              >
+                <SelectTrigger disabled={isSaving}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="PDF">PDF</SelectItem>
+                  <SelectItem value="ExternalLink">External Link</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="new-resource-title" className="text-base">
+                Resource Name
+              </Label>
+              <Input
+                id="new-resource-title"
+                value={newResourceData.resourceTitle}
+                onChange={(e) =>
+                  setNewResourceData({
+                    ...newResourceData,
+                    resourceTitle: e.target.value,
+                  })
+                }
+                disabled={isSaving}
+              />
+            </div>
+            <div>
+              <Label htmlFor="new-resource-url" className="text-base">
+                Resource URL
+              </Label>
+              <Input
+                id="new-resource-url"
+                value={newResourceData.resourceURL}
+                onChange={(e) =>
+                  setNewResourceData({
+                    ...newResourceData,
+                    resourceURL: e.target.value,
+                  })
+                }
+                disabled={isSaving}
+                placeholder="https://example.com/resource"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsCreatingResource(null)}
+              disabled={isSaving}
+            >
+              Cancel
+            </Button>
+            <Button onClick={createResource} disabled={isSaving}>
+              {isSaving ? 'Creating...' : 'Create'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
