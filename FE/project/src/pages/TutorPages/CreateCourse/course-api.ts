@@ -139,6 +139,13 @@ export const courseApi = {
     return { resourceId: resourceId.toString() };
   },
 
+  uploadThumbnail: async (file: File, courseId: string): Promise<string> => {
+    const form = new FormData();
+    form.append('file', file);
+    const res = await axios.post<ApiResponse<{ url: string }>>(`/tutor/courses/${courseId}/thumbnail`, form, { headers: { 'Content-Type': 'multipart/form-data' } });
+    return res?.data?.result?.url || res?.data?.url || res?.data?.publicUrl || '';
+  },
+
   submitCourse: async (courseId: string): Promise<{ success: boolean; status: string }> => {
     const res = await axios.put<any>(`/tutor/courses/${courseId}/submit`);
     const status = res?.data?.result?.status || res?.data?.status;
