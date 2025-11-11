@@ -40,7 +40,7 @@ export default function CreateCourse() {
   const handleStep1Next = async (data: CourseFormData) => {
     setIsSubmitting(true);
     setError(null);
-
+    // If courseId exists, we are editing an existing course
     try {
       if (courseId) {
         setCourseData(data);
@@ -288,7 +288,7 @@ export default function CreateCourse() {
 
           <DialogFooter className="flex gap-3 mt-6">
             <Button
-              onClick={() => navigate('/tutor/courses')}
+              onClick={() => navigate('/courses')}
               className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold"
             >
               OK
