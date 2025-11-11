@@ -1,5 +1,5 @@
 import api from '@/config/axiosConfig';
-import { SectionData } from './course-api';
+import { SectionData } from '../pages/CreateCourse/course-api';
 
 // ============================================================================
 // INTERFACES & TYPES

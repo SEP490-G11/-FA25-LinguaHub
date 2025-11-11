@@ -11,8 +11,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { X } from 'lucide-react';
-import { getCategories, getLanguages } from '@/queries/course-api';
-import { CourseFormData, Language, Category } from '@/queries/course-api';
+import { getCategories, getLanguages } from '@/pages/CreateCourse/course-api';
+import { CourseFormData, Language, Category } from '@/pages/CreateCourse/course-api';
 
 interface Step1Props {
   data: Partial<CourseFormData>;
