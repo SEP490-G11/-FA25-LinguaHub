@@ -237,11 +237,135 @@ export const submitCourseForApproval = async (courseId: number): Promise<CourseD
 
     return response.data.result;
   } catch (error: any) {
-    console.error('Error submitting course:', error);
+    console.error('=== ERROR SUBMITTING COURSE ===', {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      message: error.response?.data?.message,
+      data: error.response?.data,
+      error: error.message,
+    });
     throw new Error(
       error.response?.data?.message ||
       error.message ||
       'Failed to submit course'
+    );
+  }
+};
+
+/**
+ * API 10: Create section
+ * POST /tutor/courses/sections/{courseId}
+ */
+export const createSection = async (
+  courseId: number,
+  data: UpdateSectionRequest
+): Promise<Section> => {
+  try {
+    const payload = {
+      title: data.title,
+      description: data.description,
+      orderIndex: data.orderIndex,
+    };
+
+    const response = await axiosInstance.post<ApiResponse<Section>>(
+      `/tutor/courses/sections/${courseId}`,
+      payload
+    );
+
+    if (response.data.code !== 0) {
+      throw new Error(response.data.message || 'Failed to create section');
+    }
+
+    return response.data.result;
+  } catch (error: any) {
+    console.error('Error creating section:', error);
+    throw new Error(
+      error.response?.data?.message ||
+      error.message ||
+      'Failed to create section'
+    );
+  }
+};
+
+/**
+ * API 11: Create lesson
+ * POST /tutor/courses/sections/{sectionId}/lessons
+ */
+export const createLesson = async (
+  sectionId: number,
+  data: UpdateLessonRequest
+): Promise<Lesson> => {
+  try {
+    const payload: Record<string, unknown> = {
+      title: data.title,
+      duration: data.duration,
+      lessonType: data.lessonType,
+      orderIndex: data.orderIndex,
+    };
+
+    // Only include optional fields if they have values
+    if (data.videoURL) {
+      payload.videoURL = data.videoURL;
+    }
+    if (data.content) {
+      payload.content = data.content;
+    }
+
+    console.log('=== CREATE LESSON PAYLOAD ===', { sectionId, payload });
+
+    const response = await axiosInstance.post<ApiResponse<Lesson>>(
+      `/tutor/courses/sections/${sectionId}/lessons`,
+      payload
+    );
+
+    console.log('=== CREATE LESSON RESPONSE ===', response.data);
+
+    if (response.data.code !== 0) {
+      throw new Error(response.data.message || 'Failed to create lesson');
+    }
+
+    return response.data.result;
+  } catch (error: any) {
+    console.error('Error creating lesson:', error);
+    throw new Error(
+      error.response?.data?.message ||
+      error.message ||
+      'Failed to create lesson'
+    );
+  }
+};
+
+/**
+ * API 12: Create resource
+ * POST /tutor/lessons/{lessonId}/resources
+ */
+export const createResource = async (
+  lessonId: number,
+  data: UpdateResourceRequest
+): Promise<Resource> => {
+  try {
+    const payload = {
+      resourceType: data.resourceType,
+      resourceTitle: data.resourceTitle,
+      resourceURL: data.resourceURL,
+    };
+
+    const response = await axiosInstance.post<ApiResponse<Resource>>(
+      `/tutor/lessons/${lessonId}/resources`,
+      payload
+    );
+
+    if (response.data.code !== 0) {
+      throw new Error(response.data.message || 'Failed to create resource');
+    }
+
+    return response.data.result;
+  } catch (error: any) {
+    console.error('Error creating resource:', error);
+    throw new Error(
+      error.response?.data?.message ||
+      error.message ||
+      'Failed to create resource'
     );
   }
 };

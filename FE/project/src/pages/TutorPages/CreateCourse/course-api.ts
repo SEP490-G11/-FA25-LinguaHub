@@ -30,7 +30,7 @@ export interface LessonFormData {
 }
 
 export interface ResourceFormData {
-  resourceType: 'PDF' | 'ExternalLink';
+  resourceType: 'PDF' | 'ExternalLink' | 'Video' | 'Document';
   resourceTitle: string;
   resourceURL: string;
 }
@@ -45,7 +45,7 @@ export interface SectionData {
 
 export interface LessonResourceData {
   id?: string;
-  resourceType: 'PDF' | 'ExternalLink';
+  resourceType: 'PDF' | 'ExternalLink' | 'Video' | 'Document';
   resourceTitle: string;
   resourceURL: string;
 }

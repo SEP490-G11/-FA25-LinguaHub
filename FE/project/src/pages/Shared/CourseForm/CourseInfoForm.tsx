@@ -10,13 +10,27 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { X } from 'lucide-react';
-import { getCategories, getLanguages } from '@/pages/CreateCourse/course-api';
-import { CourseFormData, Language, Category } from '@/pages/CreateCourse/course-api';
+import { X, ArrowLeft } from 'lucide-react';
 
-interface Step1Props {
-  data: Partial<CourseFormData>;
-  onNext: (data: CourseFormData) => void;
+export interface CourseInfoFormData {
+  title: string;
+  description: string;
+  categoryID: number;
+  language: string;
+  duration: number;
+  price: number;
+  thumbnailURL: string;
+}
+
+interface CourseInfoFormProps {
+  data: Partial<CourseInfoFormData>;
+  onNext: (data: CourseInfoFormData) => void;
+  onBack?: () => void;
+  categories: { id: number; name: string }[];
+  languages: { id: number; name: string }[];
+  isLoading?: boolean;
+  showBackButton?: boolean;
+  submitButtonText?: string;
 }
 
 interface ValidationErrors {
@@ -29,12 +43,21 @@ interface ValidationErrors {
   thumbnailURL?: string;
 }
 
-export function Step1CourseInfo({ data, onNext }: Step1Props) {
-  const [formData, setFormData] = useState<Partial<CourseFormData>>({
+export function CourseInfoForm({
+  data,
+  onNext,
+  onBack,
+  categories,
+  languages,
+  isLoading = false,
+  showBackButton = false,
+  submitButtonText = 'Next: Course Content',
+}: CourseInfoFormProps) {
+  const [formData, setFormData] = useState<Partial<CourseInfoFormData>>({
     title: data.title || '',
     description: data.description || '',
-    categoryID: data.categoryID || 1 , // Default to first category
-    language: data.language || 'English',  // Default to "English"
+    categoryID: data.categoryID || categories[0]?.id || 1,
+    language: data.language || languages[0]?.name || 'English',
     duration: data.duration || undefined,
     price: data.price || undefined,
     thumbnailURL: data.thumbnailURL || '',
@@ -42,11 +65,9 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
 
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
-  const [thumbnailURLPreview, setThumbnailPreview] = useState<string | null>(null);
-  
-  // Get hardcoded categories and languages (no API call needed)
-  const categories: Category[] = getCategories();
-  const languages: Language[] = getLanguages();
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(
+    data.thumbnailURL || null
+  );
 
   const validateField = (name: string, value: unknown): string | undefined => {
     switch (name) {
@@ -92,7 +113,7 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
         return undefined;
 
       case 'thumbnailURL':
-        if (!value) return 'thumbnailURL is required';
+        if (!value) return 'Thumbnail is required';
         return undefined;
 
       default:
@@ -102,7 +123,7 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
 
   const handleBlur = (name: string) => {
     setTouched((prev) => ({ ...prev, [name]: true }));
-    const error = validateField(name, formData[name as keyof CourseFormData]);
+    const error = validateField(name, formData[name as keyof CourseInfoFormData]);
     setErrors((prev) => ({ ...prev, [name]: error }));
   };
 
@@ -115,7 +136,6 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
   };
 
   const handleThumbnailUrlChange = (url: string) => {
-    // Validate URL format
     if (!url.trim()) {
       setFormData((prev) => ({ ...prev, thumbnailURL: undefined }));
       setThumbnailPreview(null);
@@ -124,7 +144,7 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
     }
 
     try {
-      new URL(url); // Validate URL syntax
+      new URL(url);
       setFormData((prev) => ({ ...prev, thumbnailURL: url }));
       setThumbnailPreview(url);
       setErrors((prev) => ({ ...prev, thumbnailURL: undefined }));
@@ -147,24 +167,26 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
     const allTouched: Record<string, boolean> = {};
     const allErrors: ValidationErrors = {};
 
-    // Validate all required fields
-    ['title', 'description', 'categoryID', 'language', 'duration', 'price'].forEach((key) => {
-      allTouched[key] = true;
-      const error = validateField(key, formData[key as keyof CourseFormData]);
-      if (error) allErrors[key as keyof ValidationErrors] = error;
-    });
+    ['title', 'description', 'categoryID', 'language', 'duration', 'price', 'thumbnailURL'].forEach(
+      (key) => {
+        allTouched[key] = true;
+        const error = validateField(key, formData[key as keyof CourseInfoFormData]);
+        if (error) allErrors[key as keyof ValidationErrors] = error;
+      }
+    );
 
     setTouched(allTouched);
     setErrors(allErrors);
 
     if (Object.keys(allErrors).length === 0) {
-      onNext(formData as CourseFormData);
+      onNext(formData as CourseInfoFormData);
     }
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-4">
+        {/* Course Title */}
         <div>
           <Label htmlFor="title" className="text-sm font-medium">
             Course Title <span className="text-red-500">*</span>
@@ -175,6 +197,7 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
             onChange={(e) => handleChange('title', e.target.value)}
             onBlur={() => handleBlur('title')}
             placeholder="e.g., Complete English for Beginners"
+            disabled={isLoading}
             className={errors.title && touched.title ? 'border-red-500' : ''}
           />
           {errors.title && touched.title && (
@@ -182,6 +205,7 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
           )}
         </div>
 
+        {/* Description */}
         <div>
           <Label htmlFor="description" className="text-sm font-medium">
             Description <span className="text-red-500">*</span>
@@ -193,10 +217,9 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
             onBlur={() => handleBlur('description')}
             placeholder="Describe your course..."
             rows={4}
+            disabled={isLoading}
             className={
-              errors.description && touched.description
-                ? 'border-red-500'
-                : ''
+              errors.description && touched.description ? 'border-red-500' : ''
             }
           />
           <div className="flex justify-between mt-1">
@@ -211,8 +234,9 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
           </div>
         </div>
 
+        {/* Category */}
         <div>
-          <Label htmlFor="category" className="text-sm font-medium">
+          <Label htmlFor="categoryID" className="text-sm font-medium">
             Category <span className="text-red-500">*</span>
           </Label>
           <Select
@@ -221,12 +245,11 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
               handleChange('categoryID', parseInt(value));
               setTouched((prev) => ({ ...prev, categoryID: true }));
             }}
+            disabled={isLoading}
           >
             <SelectTrigger
               className={
-                errors.categoryID && touched.categoryID
-                  ? 'border-red-500'
-                  : ''
+                errors.categoryID && touched.categoryID ? 'border-red-500' : ''
               }
             >
               <SelectValue placeholder="Select a category" />
@@ -244,22 +267,22 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
           )}
         </div>
 
+        {/* Language */}
         <div>
           <Label className="text-sm font-medium">
             Instruction Language <span className="text-red-500">*</span>
           </Label>
           <Select
-            value={formData.language || 'English'}
+            value={formData.language || ''}
             onValueChange={(value) => {
               handleChange('language', value);
               setTouched((prev) => ({ ...prev, language: true }));
             }}
+            disabled={isLoading}
           >
             <SelectTrigger
               className={
-                errors.language && touched.language
-                  ? 'border-red-500'
-                  : ''
+                errors.language && touched.language ? 'border-red-500' : ''
               }
             >
               <SelectValue placeholder="Select a language" />
@@ -277,6 +300,7 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
           )}
         </div>
 
+        {/* Duration & Price */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <Label htmlFor="duration" className="text-sm font-medium">
@@ -288,21 +312,16 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
               min="1"
               max="999"
               value={formData.duration || ''}
-              onChange={(e) =>
-                handleChange('duration', Number(e.target.value))
-              }
+              onChange={(e) => handleChange('duration', Number(e.target.value))}
               onBlur={() => handleBlur('duration')}
               placeholder="e.g., 40"
+              disabled={isLoading}
               className={
-                errors.duration && touched.duration
-                  ? 'border-red-500'
-                  : ''
+                errors.duration && touched.duration ? 'border-red-500' : ''
               }
             />
             {errors.duration && touched.duration && (
-              <p className="text-sm text-red-500 mt-1">
-                {errors.duration}
-              </p>
+              <p className="text-sm text-red-500 mt-1">{errors.duration}</p>
             )}
           </div>
 
@@ -317,14 +336,11 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
               max="999999999"
               step="1"
               value={formData.price || ''}
-              onChange={(e) =>
-                handleChange('price', Number(e.target.value))
-              }
+              onChange={(e) => handleChange('price', Number(e.target.value))}
               onBlur={() => handleBlur('price')}
               placeholder="e.g., 1500000"
-              className={
-                errors.price && touched.price ? 'border-red-500' : ''
-              }
+              disabled={isLoading}
+              className={errors.price && touched.price ? 'border-red-500' : ''}
             />
             {errors.price && touched.price && (
               <p className="text-sm text-red-500 mt-1">{errors.price}</p>
@@ -332,17 +348,19 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
           </div>
         </div>
 
+        {/* Thumbnail */}
         <div>
-          <Label htmlFor="thumbnailURL-url" className="text-sm font-medium">
+          <Label htmlFor="thumbnailURL" className="text-sm font-medium">
             Thumbnail <span className="text-red-500">*</span>
           </Label>
           <Input
-            id="thumbnailURL-url"
+            id="thumbnailURL"
             type="url"
             placeholder="https://example.com/image.jpg"
             value={typeof formData.thumbnailURL === 'string' ? formData.thumbnailURL : ''}
             onChange={(e) => handleThumbnailUrlChange(e.target.value)}
             onBlur={() => handleBlur('thumbnailURL')}
+            disabled={isLoading}
             className={
               errors.thumbnailURL && touched.thumbnailURL ? 'border-red-500' : ''
             }
@@ -351,11 +369,11 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
             Enter a valid image URL (JPG, PNG, or other web-supported formats)
           </p>
 
-          {thumbnailURLPreview && (
+          {thumbnailPreview && (
             <div className="relative mt-3 rounded-lg overflow-hidden border border-gray-200">
               <img
-                src={thumbnailURLPreview}
-                alt="thumbnailURL preview"
+                src={thumbnailPreview}
+                alt="Thumbnail preview"
                 className="w-full h-48 object-cover"
                 onError={() => {
                   setErrors((prev) => ({
@@ -367,7 +385,8 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
               <button
                 type="button"
                 onClick={removeThumbnail}
-                className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                disabled={isLoading}
+                className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors disabled:opacity-50"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -380,8 +399,29 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
         </div>
       </div>
 
-      <div className="flex justify-end pt-6">
-        <Button type="submit">Next: Course Content</Button>
+      {/* Buttons */}
+      <div className="flex gap-3 justify-between pt-6">
+        {showBackButton && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onBack}
+            disabled={isLoading}
+            className="gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </Button>
+        )}
+        <div className={showBackButton ? '' : 'ml-auto'}>
+          <Button
+            type="submit"
+            disabled={isLoading}
+            className="gap-2"
+          >
+            {submitButtonText}
+          </Button>
+        </div>
       </div>
     </form>
   );

@@ -20,16 +20,20 @@ import { useToast } from '@/components/ui/use-toast';
 import {
   getCourseDetail,
   updateCourse,
+  submitCourseForApproval,
   updateSection,
   updateLesson,
   updateResource,
   deleteSection,
   deleteLesson,
   deleteResource,
-  submitCourseForApproval,
+  createSection,
+  createLesson,
+  createResource,
 } from './edit-course-api';
-import { CourseDetail, Section, Lesson, Resource } from './types';
-import { EditCourseInfo, EditCourseStructure } from './components';
+import { CourseDetail, Section } from './types';
+import { CourseInfoForm, CourseStructureForm, StepIndicator, SectionData } from '@/pages/Shared/CourseForm';
+import { CATEGORIES, LANGUAGES } from '@/constants/categories';
 
 const EditCourse = () => {
   const { courseId } = useParams<{ courseId: string }>();
@@ -64,6 +68,33 @@ const EditCourse = () => {
     };
   };
 
+  // ========== HELPER: Convert Section to SectionData ==========
+  const convertToSectionData = (section: Section): SectionData => ({
+    sectionID: section.sectionID.toString(),
+    courseID: section.courseID,
+    title: section.title,
+    description: section.description,
+    orderIndex: section.orderIndex,
+    lessons: (section.lessons || []).map(lesson => ({
+      lessonID: lesson.lessonID.toString(),
+      sectionID: section.sectionID.toString(),
+      title: lesson.title,
+      duration: lesson.duration,
+      lessonType: lesson.lessonType,
+      videoURL: lesson.videoURL,
+      content: lesson.content,
+      orderIndex: lesson.orderIndex,
+      resources: (lesson.resources || []).map(resource => ({
+        resourceID: resource.resourceID.toString(),
+        lessonID: lesson.lessonID.toString(),
+        resourceType: resource.resourceType,
+        resourceTitle: resource.resourceTitle,
+        resourceURL: resource.resourceURL,
+        uploadedAt: resource.uploadedAt,
+      })),
+    })),
+  });
+
   // ========== FETCH COURSE DATA ==========
   useEffect(() => {
     const fetchCourseData = async () => {
@@ -94,23 +125,26 @@ const EditCourse = () => {
 
   // ========== STEP 1: UPDATE COURSE INFO ==========
   const handleStep1Save = async (
-    courseData: Partial<CourseDetail>
+    formData: any
   ) => {
     if (!courseId || !course) return;
 
     setIsSaving(true);
     try {
       // Update course info
-      await updateCourse(parseInt(courseId), {
-        title: courseData.title || course.title,
-        description: courseData.description || course.description,
-        duration: courseData.duration || course.duration,
-        price: courseData.price || course.price,
-        language: courseData.language || course.language,
-        thumbnailURL:
-          courseData.thumbnailURL || course.thumbnailURL,
-        categoryID: 1, // TODO: Get from form
-      });
+      const updatePayload = {
+        title: formData.title || course.title,
+        description: formData.description || course.description,
+        duration: formData.duration || course.duration,
+        price: formData.price || course.price,
+        language: formData.language || course.language,
+        thumbnailURL: formData.thumbnailURL || course.thumbnailURL,
+        categoryID: formData.categoryID || 1,
+      };
+
+      console.log('=== UPDATE COURSE PAYLOAD ===', updatePayload);
+
+      await updateCourse(parseInt(courseId), updatePayload);
 
       // Re-fetch the complete course data with sections/lessons/resources
       const updated = await getCourseDetail(parseInt(courseId));
@@ -137,245 +171,271 @@ const EditCourse = () => {
     }
   };
 
-  // ========== STEP 2: UPDATE SECTIONS/LESSONS/RESOURCES ==========
-  const handleStep2UpdateSection = async (
-    sectionIndex: number,
-    sectionData: Section
-  ) => {
-    if (!course) return;
-
-    setIsSaving(true);
+  // ========== SECTION HANDLERS ==========
+  const handleUpdateSection = async (sectionID: string, sectionData: SectionData) => {
     try {
-      const updated = await updateSection(sectionData.sectionID, {
+      await updateSection(parseInt(sectionID), {
         title: sectionData.title,
-        description: sectionData.description,
+        description: sectionData.description || '',
         orderIndex: sectionData.orderIndex,
       });
-
-      const newSections = [...course.section];
-      newSections[sectionIndex] = updated;
-      setCourse({ ...course, section: newSections });
-
       toast({
         title: 'Success',
-        description: 'Chapter has been updated',
+        description: 'Section updated',
       });
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Failed to update chapter';
+      return sectionData;
+    } catch (err: any) {
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: message,
+        description: err.message || 'Failed to update section',
       });
-    } finally {
-      setIsSaving(false);
+      throw err;
     }
   };
 
-  const handleStep2UpdateLesson = async (
-    sectionIndex: number,
-    lessonIndex: number,
-    lessonData: Lesson
-  ) => {
-    if (!course) return;
-
-    setIsSaving(true);
+  const handleDeleteSection = async (sectionID: string) => {
     try {
-      const updated = await updateLesson(lessonData.lessonID, {
+      await deleteSection(parseInt(sectionID));
+      toast({
+        title: 'Success',
+        description: 'Section deleted',
+      });
+    } catch (err: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: err.message || 'Failed to delete section',
+      });
+      throw err;
+    }
+  };
+
+  // ========== LESSON HANDLERS ==========
+  const handleUpdateLesson = async (lessonID: string, lessonData: any) => {
+    try {
+      await updateLesson(parseInt(lessonID), {
         title: lessonData.title,
         duration: lessonData.duration,
         lessonType: lessonData.lessonType,
-        videoURL: lessonData.videoURL || '',
-        content: lessonData.content || '',
+        videoURL: lessonData.videoURL,
+        content: lessonData.content,
         orderIndex: lessonData.orderIndex,
       });
-
-      const newSections = [...course.section];
-      // Ensure resources array exists in the updated lesson
-      newSections[sectionIndex].lessons[lessonIndex] = {
-        ...updated,
-        resources: Array.isArray(updated.resources) ? updated.resources : [],
-      };
-      setCourse({ ...course, section: newSections });
-
       toast({
         title: 'Success',
-        description: 'Lesson has been updated',
+        description: 'Lesson updated',
       });
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Failed to update lesson';
+      return lessonData;
+    } catch (err: any) {
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: message,
+        description: err.message || 'Failed to update lesson',
       });
-    } finally {
-      setIsSaving(false);
+      throw err;
     }
   };
 
-  const handleStep2UpdateResource = async (
-    sectionIndex: number,
-    lessonIndex: number,
-    resourceIndex: number,
-    resourceData: Resource
-  ) => {
-    if (!course) return;
-
-    setIsSaving(true);
+  const handleDeleteLesson = async (lessonID: string) => {
     try {
-      const updated = await updateResource(resourceData.resourceID, {
+      await deleteLesson(parseInt(lessonID));
+      toast({
+        title: 'Success',
+        description: 'Lesson deleted',
+      });
+    } catch (err: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: err.message || 'Failed to delete lesson',
+      });
+      throw err;
+    }
+  };
+
+  // ========== RESOURCE HANDLERS ==========
+  const handleUpdateResource = async (resourceID: string, resourceData: any) => {
+    try {
+      await updateResource(parseInt(resourceID), {
         resourceType: resourceData.resourceType,
         resourceTitle: resourceData.resourceTitle,
         resourceURL: resourceData.resourceURL,
       });
+      toast({
+        title: 'Success',
+        description: 'Resource updated',
+      });
+      return resourceData;
+    } catch (err: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: err.message || 'Failed to update resource',
+      });
+      throw err;
+    }
+  };
 
-      const newSections = [...course.section];
-      newSections[sectionIndex].lessons[lessonIndex].resources[
-        resourceIndex
-      ] = updated;
-      setCourse({ ...course, section: newSections });
+  const handleDeleteResource = async (resourceID: string) => {
+    try {
+      await deleteResource(parseInt(resourceID));
+      toast({
+        title: 'Success',
+        description: 'Resource deleted',
+      });
+    } catch (err: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: err.message || 'Failed to delete resource',
+      });
+      throw err;
+    }
+  };
+
+  // ========== CREATE HANDLERS ==========
+  const handleAddSection = async (sectionData: any) => {
+    if (!courseId) return;
+    try {
+      const result = await createSection(parseInt(courseId), {
+        title: sectionData.title,
+        description: sectionData.description,
+        orderIndex: sectionData.orderIndex,
+      });
+      console.log('=== API RESULT ===', { result, sectionID: result?.sectionID, id: result?.id });
+      
+      toast({
+        title: 'Success',
+        description: 'Section created',
+      });
+      
+      // Return section data with new sectionID from API
+      const sectionWithID = {
+        ...sectionData,
+        sectionID: result?.sectionID?.toString() || result?.id?.toString(),
+      };
+      console.log('=== RETURNING SECTION ===', { sectionWithID });
+      return sectionWithID;
+    } catch (err: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: err.message || 'Failed to create section',
+      });
+      throw err;
+    }
+  };
+
+  const handleAddLesson = async (sectionId: string, lessonData: any) => {
+    try {
+      console.log('=== HANDLE ADD LESSON START ===', { 
+        sectionID: sectionId, 
+        lessonTitle: lessonData.title 
+      });
+      
+      if (!sectionId) {
+        throw new Error('Section ID is required');
+      }
+
+      const result = await createLesson(parseInt(sectionId), {
+        title: lessonData.title,
+        duration: lessonData.duration,
+        lessonType: lessonData.lessonType,
+        videoURL: lessonData.videoURL,
+        content: lessonData.content,
+        orderIndex: lessonData.orderIndex,
+      });
+      
+      toast({
+        title: 'Success',
+        description: 'Lesson created',
+      });
+      // Return lesson data with new lessonID from API
+      const lessonWithID = {
+        ...lessonData,
+        lessonID: result?.lessonID?.toString() || result?.id?.toString(),
+      };
+      console.log('=== RETURNING LESSON ===', { lessonWithID, resultData: result });
+      return lessonWithID;
+    } catch (err: any) {
+      console.error('=== ERROR IN HANDLE ADD LESSON ===', err);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: err.message || 'Failed to create lesson',
+      });
+      throw err;
+    }
+  };
+
+  const handleAddResource = async (lessonId: string, resourceData: any) => {
+    try {
+      console.log('=== HANDLE ADD RESOURCE START ===', { 
+        lessonID: lessonId, 
+        resourceTitle: resourceData.resourceTitle 
+      });
+      
+      if (!lessonId) {
+        throw new Error('Lesson ID is required');
+      }
+
+      const result = await createResource(parseInt(lessonId), {
+        resourceType: resourceData.resourceType,
+        resourceTitle: resourceData.resourceTitle,
+        resourceURL: resourceData.resourceURL,
+      });
+      
+      toast({
+        title: 'Success',
+        description: 'Resource created',
+      });
+      // Return resource data with new resourceID from API
+      const resourceWithID = {
+        ...resourceData,
+        resourceID: result.resourceID?.toString() || result.id?.toString(),
+      };
+      console.log('=== RETURNING RESOURCE ===', { resourceWithID });
+      return resourceWithID;
+    } catch (err: any) {
+      console.error('=== ERROR IN HANDLE ADD RESOURCE ===', err);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: err.message || 'Failed to create resource',
+      });
+      throw err;
+    }
+  };
+
+  // ========== STEP 2: SAVE COURSE STRUCTURE ==========
+  const handleStep2SaveStructure = async () => {
+    if (!courseId || !course) return;
+
+    setIsSaving(true);
+    try {
+      // In edit mode, we only save changes, not submit
+      // The CourseStructureForm handles all CRUD operations internally
+      // Just fetch updated data and show success message
+      
+      // Re-fetch the complete course data
+      const updated = await getCourseDetail(parseInt(courseId));
+      const normalizedCourse = normalizeCourseData(updated);
+      setCourse(normalizedCourse);
 
       toast({
         title: 'Success',
-        description: 'Resource has been updated',
+        description: 'Course structure has been updated',
       });
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Failed to update resource';
-      toast({
-        variant: 'destructive',
-        title: 'Lỗi',
-        description: message,
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
-  const handleStep2DeleteSection = async (sectionIndex: number) => {
-    if (!course) return;
-
-    const sectionId = course.section[sectionIndex].sectionID;
-    setIsSaving(true);
-
-    try {
-      await deleteSection(sectionId);
-
-      const newSections = course.section.filter(
-        (_, i) => i !== sectionIndex
-      );
-      setCourse({ ...course, section: newSections });
-
-      toast({
-        title: 'Thành công',
-        description: 'Chương đã được xóa',
-      });
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Lỗi xóa chương';
-      toast({
-        variant: 'destructive',
-        title: 'Lỗi',
-        description: message,
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleStep2DeleteLesson = async (
-    sectionIndex: number,
-    lessonIndex: number
-  ) => {
-    if (!course) return;
-
-    const lessonId =
-      course.section[sectionIndex].lessons[lessonIndex].lessonID;
-    setIsSaving(true);
-
-    try {
-      await deleteLesson(lessonId);
-
-      const newSections = [...course.section];
-      newSections[sectionIndex].lessons = newSections[
-        sectionIndex
-      ].lessons.filter((_, i) => i !== lessonIndex);
-      setCourse({ ...course, section: newSections });
-
-      toast({
-        title: 'Thành công',
-        description: 'Bài học đã được xóa',
-      });
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Lỗi xóa bài học';
-      toast({
-        variant: 'destructive',
-        title: 'Lỗi',
-        description: message,
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleStep2DeleteResource = async (
-    sectionIndex: number,
-    lessonIndex: number,
-    resourceIndex: number
-  ) => {
-    if (!course) return;
-
-    const resourceId =
-      course.section[sectionIndex].lessons[lessonIndex].resources[
-        resourceIndex
-      ].resourceID;
-    setIsSaving(true);
-
-    try {
-      await deleteResource(resourceId);
-
-      const newSections = [...course.section];
-      newSections[sectionIndex].lessons[lessonIndex].resources =
-        newSections[sectionIndex].lessons[lessonIndex].resources.filter(
-          (_, i) => i !== resourceIndex
-        );
-      setCourse({ ...course, section: newSections });
-
-      toast({
-        title: 'Thành công',
-        description: 'Tài liệu đã được xóa',
-      });
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Lỗi xóa tài liệu';
-      toast({
-        variant: 'destructive',
-        title: 'Lỗi',
-        description: message,
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  // ========== SUBMIT COURSE ==========
-  const handleSubmitCourse = async () => {
-    if (!courseId) return;
-
-    setIsSaving(true);
-    try {
-      await submitCourseForApproval(parseInt(courseId));
       setShowSuccessModal(true);
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : 'Lỗi gửi khóa học';
+        err instanceof Error ? err.message : 'Failed to save course structure';
+      setError(message);
       toast({
         variant: 'destructive',
-        title: 'Lỗi',
+        title: 'Error',
         description: message,
       });
     } finally {
@@ -466,49 +526,13 @@ const EditCourse = () => {
 
         {/* Step Indicator */}
         <div className="mb-8">
-          <div className="flex items-center justify-center">
-            <div className="flex items-center w-full max-w-md">
-              <div className="flex flex-col items-center flex-1">
-                <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
-                    currentStep === 1
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-green-500 text-white'
-                  }`}
-                >
-                  {currentStep > 1 ? (
-                    <CheckCircle2 className="w-6 h-6" />
-                  ) : (
-                    '1'
-                  )}
-                </div>
-                <span className="mt-2 text-sm font-medium">
-                  Course Information
-                </span>
-              </div>
-
-              <div
-                className={`h-1 flex-1 mx-4 ${
-                  currentStep > 1 ? 'bg-green-500' : 'bg-gray-300'
-                }`}
-              />
-
-              <div className="flex flex-col items-center flex-1">
-                <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
-                    currentStep === 2
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-gray-300 text-gray-600'
-                  }`}
-                >
-                  2
-                </div>
-                <span className="mt-2 text-sm font-medium">
-                  Course Content
-                </span>
-              </div>
-            </div>
-          </div>
+          <StepIndicator
+            currentStep={currentStep}
+            steps={[
+              { title: 'Course Information' },
+              { title: 'Course Content' },
+            ]}
+          />
         </div>
 
         {/* Error Banner */}
@@ -528,26 +552,43 @@ const EditCourse = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {currentStep === 1 && (
-              <EditCourseInfo
-                course={course}
-                onSave={handleStep1Save}
-                isSubmitting={isSaving}
+            {currentStep === 1 && course && (
+              <CourseInfoForm
+                data={{
+                  title: course.title,
+                  description: course.description,
+                  categoryID: CATEGORIES.find(c => c.name === course.categoryName)?.id || 1,
+                  language: course.language,
+                  duration: course.duration,
+                  price: course.price,
+                  thumbnailURL: course.thumbnailURL,
+                }}
+                onNext={handleStep1Save}
+                onBack={() => navigate('/tutor/courses')}
+                categories={CATEGORIES as unknown as { id: number; name: string }[]}
+                languages={LANGUAGES as unknown as { id: number; name: string }[]}
+                isLoading={isSaving}
+                showBackButton={true}
+                submitButtonText="Next: Course Content"
               />
             )}
 
             {currentStep === 2 && (
-              <EditCourseStructure
-                course={course}
-                onUpdateSection={handleStep2UpdateSection}
-                onUpdateLesson={handleStep2UpdateLesson}
-                onUpdateResource={handleStep2UpdateResource}
-                onDeleteSection={handleStep2DeleteSection}
-                onDeleteLesson={handleStep2DeleteLesson}
-                onDeleteResource={handleStep2DeleteResource}
+              <CourseStructureForm
+                sections={(course.section || []).map(convertToSectionData)}
+                onSave={handleStep2SaveStructure}
                 onBack={() => setCurrentStep(1)}
-                onSubmit={handleSubmitCourse}
-                isSubmitting={isSaving}
+                mode="edit"
+                isLoading={isSaving}
+                onAddSection={handleAddSection}
+                onUpdateSection={handleUpdateSection}
+                onDeleteSection={handleDeleteSection}
+                onAddLesson={handleAddLesson}
+                onUpdateLesson={handleUpdateLesson}
+                onDeleteLesson={handleDeleteLesson}
+                onAddResource={handleAddResource}
+                onUpdateResource={handleUpdateResource}
+                onDeleteResource={handleDeleteResource}
               />
             )}
           </CardContent>
