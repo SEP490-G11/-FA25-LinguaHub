@@ -52,4 +52,4 @@ payos:
   client-id: "9623941a-cb3b-4bf2-be83-b6d1d4e92b41"
   api-key: "3aa5b33a-0164-4185-b90c-8532b017e88d"
   secret-key: "b0dba29a46c36c7f1e3021da6939150f793322ed7f6323bfe98d1042a79cf8cc"
-  verify-signature: false
+  verify-signature: true
