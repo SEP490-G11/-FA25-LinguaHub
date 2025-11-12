@@ -66,4 +66,6 @@ public class PaymentResponse {
 
     @Schema(description = "Short readable description for frontend", example = "Payment for Course 'English for Beginners'")
     String description;
+
+    private LocalDateTime expiresAt;
 }

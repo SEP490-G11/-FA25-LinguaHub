@@ -28,7 +28,7 @@ public class PayOSService {
         try {
             long orderCode = System.currentTimeMillis() / 1000;
 
-            // 🔹 PayOS yêu cầu description <= 25 ký tự
+            //PayOS yêu cầu description <= 25 ký tự
             String safeDescription = description.length() > 25
                     ? description.substring(0, 25)
                     : description;
@@ -48,7 +48,7 @@ public class PayOSService {
                     .item(item)
                     .build();
 
-            // 🔹 Gọi SDK để tạo link thanh toán
+            //Gọi SDK để tạo link thanh toán
             CheckoutResponseData checkout = payOS.createPaymentLink(paymentData);
 
             log.info("[PAYOS LINK CREATED] orderCode={}, amount={}, desc={}",
