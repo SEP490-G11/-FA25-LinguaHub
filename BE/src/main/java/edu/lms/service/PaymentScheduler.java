@@ -20,7 +20,7 @@ public class PaymentScheduler {
     private final PaymentWebhookService paymentWebhookService; // nếu bạn muốn rollback slot booking
 
     /**
-     * 🕒 Kiểm tra mỗi 1 phút để tự động hết hạn payment PENDING quá 15 phút
+     *Kiểm tra mỗi 1 phút để tự động hết hạn payment PENDING quá 15 phút
      */
     @Scheduled(fixedRate = 60000) // 1 phút
     public void expireOldPayments() {

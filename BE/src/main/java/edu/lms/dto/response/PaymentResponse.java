@@ -1,5 +1,6 @@
 package edu.lms.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import edu.lms.enums.PaymentMethod;
 import edu.lms.enums.PaymentStatus;
 import edu.lms.enums.PaymentType;
@@ -67,5 +68,7 @@ public class PaymentResponse {
     @Schema(description = "Short readable description for frontend", example = "Payment for Course 'English for Beginners'")
     String description;
 
+    @Schema(hidden = true)  // ẩn khỏi Swagger UI (tùy chọn)
+    @JsonIgnore              // ẩn khỏi JSON response trả cho FE
     private LocalDateTime expiresAt;
 }

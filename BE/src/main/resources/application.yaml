@@ -5,9 +5,7 @@ server:
 
 spring:
   datasource:
-
     url: jdbc:mysql://localhost:3307/lingua_hub?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh
-
     username: root
     password: root
 
@@ -35,6 +33,8 @@ spring:
 
   jackson:
     time-zone: Asia/Ho_Chi_Minh
+    deserialization:
+      fail-on-unknown-properties: false
 
 google:
   client-id: "42781484149-pel6vfv7rb7ih298ru93t6vq1fg8q3sq.apps.googleusercontent.com"

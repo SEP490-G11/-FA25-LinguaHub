@@ -51,7 +51,7 @@ public class PaymentWebhookService {
                         paymentService.processPostPayment(payment);
                         break;
                     case "SUCCESS":
-                        // 🕒 Kiểm tra hết hạn trước khi xử lý
+                        // Kiểm tra hết hạn trước khi xử lý
                         if (payment.getExpiresAt() != null && LocalDateTime.now().isAfter(payment.getExpiresAt())) {
                             log.warn("Payment {} arrived AFTER expiration ({} > {}) → ignoring webhook",
                                     payment.getOrderCode(), LocalDateTime.now(), payment.getExpiresAt());
