@@ -19,6 +19,7 @@ import vn.payos.type.CheckoutResponseData;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -63,6 +64,7 @@ public class PaymentService {
                     .status(PaymentStatus.PENDING)
                     .amount(amount)
                     .isPaid(false)
+                    .expiresAt(LocalDateTime.now().plusMinutes(15))
                     .build();
             paymentRepository.save(payment);
         }
@@ -113,6 +115,7 @@ public class PaymentService {
                     .status(PaymentStatus.PENDING)
                     .amount(totalAmount)
                     .isPaid(false)
+                    .expiresAt(LocalDateTime.now().plusMinutes(15))
                     .build();
             paymentRepository.save(payment);
 
@@ -136,7 +139,9 @@ public class PaymentService {
 
         // ----------------- CẬP NHẬT PAYMENT -----------------
         updatePaymentWithPayOSData(payment, data);
-        return ResponseEntity.ok(data);
+        return ResponseEntity.ok(Map.of(
+                "checkoutUrl", data.getCheckoutUrl(),
+                "expiresAt", payment.getExpiresAt()));
     }
 
     // ======================================================
@@ -200,27 +205,6 @@ public class PaymentService {
         }
     }
 
-    // ======================================================
-    // ROLLBACK (FAILED / EXPIRED)
-    // ======================================================
-    @Transactional
-    public void rollbackBookingPayment(Payment payment) {
-        if (payment.getPaymentType() != PaymentType.Booking) return;
-
-        List<BookingPlanSlot> slots = bookingPlanSlotRepository.findAllByPaymentID(payment.getPaymentID());
-        for (BookingPlanSlot s : slots) {
-            if (s.getStatus() == SlotStatus.Locked) {
-                bookingPlanSlotRepository.delete(s);
-            }
-        }
-
-        payment.setStatus(PaymentStatus.CANCELLED);
-        payment.setIsPaid(false);
-        paymentRepository.save(payment);
-
-        log.warn("[ROLLBACK] Payment {} cancelled, deleted {} locked slots",
-                payment.getOrderCode(), slots.size());
-    }
 
     // ======================================================
     // LẤY PAYMENT (ADMIN / TUTOR / USER)

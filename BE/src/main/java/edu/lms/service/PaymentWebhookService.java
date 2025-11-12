@@ -5,7 +5,6 @@ import edu.lms.entity.Payment;
 import edu.lms.enums.PaymentStatus;
 import edu.lms.enums.PaymentType;
 import edu.lms.enums.SlotStatus;
-import edu.lms.repository.BookingPlanRepository;
 import edu.lms.repository.BookingPlanSlotRepository;
 import edu.lms.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +21,6 @@ import java.util.Map;
 public class PaymentWebhookService {
 
     private final PaymentRepository paymentRepository;
-    private final BookingPlanRepository bookingPlanRepository;
     private final BookingPlanSlotRepository bookingPlanSlotRepository;
     private final PaymentService paymentService;
 
@@ -30,7 +28,7 @@ public class PaymentWebhookService {
      * Handle webhook callback from PayOS
      */
     public void handleWebhook(String orderCode, String status, Map<String, Object> payload) {
-        log.info("🎯 Handling webhook | orderCode={} | status={} | payload={}", orderCode, status, payload);
+        log.info("Handling webhook | orderCode={} | status={} | payload={}", orderCode, status, payload);
 
         if (orderCode == null || status == null) {
             log.warn("Webhook received with null orderCode/status → skipping");
@@ -44,7 +42,27 @@ public class PaymentWebhookService {
 
                 switch (upperStatus) {
                     case "PAID":
+                        newStatus = PaymentStatus.PAID;
+                        payment.setStatus(newStatus);
+                        payment.setPaidAt(LocalDateTime.now());
+                        payment.setIsPaid(true);
+
+                        log.info("Payment {} marked as PAID at {}", orderCode, payment.getPaidAt());
+                        paymentService.processPostPayment(payment);
+                        break;
                     case "SUCCESS":
+                        // 🕒 Kiểm tra hết hạn trước khi xử lý
+                        if (payment.getExpiresAt() != null && LocalDateTime.now().isAfter(payment.getExpiresAt())) {
+                            log.warn("Payment {} arrived AFTER expiration ({} > {}) → ignoring webhook",
+                                    payment.getOrderCode(), LocalDateTime.now(), payment.getExpiresAt());
+
+                            payment.setStatus(PaymentStatus.EXPIRED);
+                            payment.setIsPaid(false);
+                            paymentRepository.save(payment);
+                            return;
+                        }
+
+                        //Nếu chưa hết hạn thì xử lý như bình thường
                         newStatus = PaymentStatus.PAID;
                         payment.setStatus(newStatus);
                         payment.setPaidAt(LocalDateTime.now());
@@ -55,7 +73,13 @@ public class PaymentWebhookService {
                         break;
 
                     case "FAILED":
+                        newStatus = PaymentStatus.valueOf(upperStatus);
+                        handlePaymentRollback(payment, upperStatus);
+                        break;
                     case "CANCELLED":
+                        newStatus = PaymentStatus.valueOf(upperStatus);
+                        handlePaymentRollback(payment, upperStatus);
+                        break;
                     case "EXPIRED":
                         newStatus = PaymentStatus.valueOf(upperStatus);
                         handlePaymentRollback(payment, upperStatus);
@@ -76,7 +100,7 @@ public class PaymentWebhookService {
                 log.info("💾 Webhook processed successfully | orderCode={} | newStatus={}", orderCode, newStatus);
 
             } catch (Exception e) {
-                log.error("🔥 Error while processing webhook for orderCode={}: {}", orderCode, e.getMessage(), e);
+                log.error("Error while processing webhook for orderCode={}: {}", orderCode, e.getMessage(), e);
             }
         }, () -> {
             log.warn("Payment not found in database for orderCode={}", orderCode);
@@ -86,7 +110,7 @@ public class PaymentWebhookService {
     /**
      * Rollback payment-related data when payment failed or cancelled.
      */
-    private void handlePaymentRollback(Payment payment, String reason) {
+    public void handlePaymentRollback(Payment payment, String reason) {
         if (payment == null) return;
 
         if (payment.getPaymentType() != PaymentType.Booking) {

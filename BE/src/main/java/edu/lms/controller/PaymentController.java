@@ -26,9 +26,8 @@ public class PaymentController {
     private final PaymentService paymentService;
     private final PayOSService payOSService;
 
-    // ======================================================
     //API TẠO THANH TOÁN (ĐANG CHẠY ỔN)
-    // ======================================================
+
     @Operation(summary = "Create a payment (PayOS)", description = "Create a pending payment link via PayOS")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Payment link created successfully",
@@ -40,9 +39,8 @@ public class PaymentController {
         return paymentService.createPayment(request);
     }
 
-    // ======================================================
     //ADMIN - XEM TẤT CẢ PAYMENT
-    // ======================================================
+
     @Operation(summary = "Get all payments (Admin)", description = "Admin can view all payments in the system")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Successfully retrieved all payments",
@@ -56,9 +54,9 @@ public class PaymentController {
         return ResponseEntity.ok(payments);
     }
 
-    // ======================================================
+
     //TUTOR - XEM PAYMENT LIÊN QUAN TỚI MÌNH
-    // ======================================================
+
     @Operation(summary = "Get payments by tutor", description = "Tutor can view all course and booking payments associated with them")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Successfully retrieved tutor payments",
@@ -72,9 +70,9 @@ public class PaymentController {
         return ResponseEntity.ok(payments);
     }
 
-    // ======================================================
+
     //LEARNER - XEM LỊCH SỬ GIAO DỊCH
-    // ======================================================
+
     @Operation(summary = "Get payments by user", description = "Learner can view their payment history")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Successfully retrieved user payments",
@@ -88,9 +86,8 @@ public class PaymentController {
         return ResponseEntity.ok(payments);
     }
 
-    // ======================================================
-    // 5️⃣ HEALTH CHECK / TEST
-    // ======================================================
+    //HEALTH CHECK / TEST
+
     @Operation(summary = "Ping payment service", description = "Check if the payment service is running")
     @ApiResponse(responseCode = "200", description = "Service is alive")
     @GetMapping("/ping")
