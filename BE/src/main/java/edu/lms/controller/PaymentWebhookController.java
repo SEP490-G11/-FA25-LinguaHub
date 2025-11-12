@@ -16,7 +16,7 @@ import java.util.Map;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/payments/webhook")
+@RequestMapping("/api/payments/webhook-test")
 @RequiredArgsConstructor
 @Tag(name = "PayOS Webhook", description = "Receive PayOS payment status notifications")
 public class PaymentWebhookController {

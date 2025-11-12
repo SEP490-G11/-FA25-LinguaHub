@@ -1,62 +1,62 @@
 package edu.lms.service;
 
+import edu.lms.dto.response.PayOSResponseDTO;
 import edu.lms.enums.PaymentType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 import vn.payos.PayOS;
-import vn.payos.type.CheckoutResponseData;
-import vn.payos.type.ItemData;
-import vn.payos.type.PaymentData;
+
 
 import java.math.BigDecimal;
 
-@Slf4j
+import java.util.Map;
+
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class PayOSService {
+    private final PayOS payOS; // vẫn giữ để verify webhook sau
+    private final RestTemplate restTemplate = new RestTemplate();
+    private static final String PAYOS_URL = "https://api.payos.vn/v2/payment-requests";
 
-    private final PayOS payOS;
+    public PayOSResponseDTO.DataDTO createPaymentLink(
+            Long userId, PaymentType type, Long targetId, BigDecimal amount, String description) {
 
-    public CheckoutResponseData createPaymentLink(
-            Long userId,
-            PaymentType type,
-            Long targetId,
-            BigDecimal amount,
-            String description
-    ) {
         try {
             long orderCode = System.currentTimeMillis() / 1000;
 
-            //PayOS yêu cầu description <= 25 ký tự
-            String safeDescription = description.length() > 25
-                    ? description.substring(0, 25)
-                    : description;
+            Map<String, Object> item = Map.of(
+                    "name", description,
+                    "quantity", 1,
+                    "price", amount.intValue()
+            );
 
-            ItemData item = ItemData.builder()
-                    .name(safeDescription)
-                    .quantity(1)
-                    .price(amount.intValue())
-                    .build();
+            Map<String, Object> body = Map.of(
+                    "orderCode", orderCode,
+                    "amount", amount.intValue(),
+                    "description", description,
+                    "returnUrl", "https://linguahub.vercel.app/payment-success",
+                    "cancelUrl", "https://linguahub.vercel.app/payment-cancel",
+                    "items", new Object[]{item}
+            );
 
-            PaymentData paymentData = PaymentData.builder()
-                    .orderCode(orderCode)
-                    .amount(amount.intValue())
-                    .description(safeDescription)
-                    .returnUrl("https://linguahub.vercel.app/payment-success")
-                    .cancelUrl("https://linguahub.vercel.app/payment-cancel")
-                    .item(item)
-                    .build();
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("x-client-id", payOS.getClientId());
+            headers.set("x-api-key", payOS.getApiKey());
 
-            //Gọi SDK để tạo link thanh toán
-            CheckoutResponseData checkout = payOS.createPaymentLink(paymentData);
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
+            ResponseEntity<PayOSResponseDTO> response = restTemplate.exchange(
+                    PAYOS_URL, HttpMethod.POST, entity, PayOSResponseDTO.class
+            );
 
-            log.info("[PAYOS LINK CREATED] orderCode={}, amount={}, desc={}",
-                    orderCode, amount, safeDescription);
+            return response.getBody().getData();
 
-            return checkout;
         } catch (Exception e) {
-            log.error("[PAYOS ERROR] Failed to create link: {}", e.getMessage());
+            log.error("[PAYOS ERROR] {}", e.getMessage(), e);
             throw new RuntimeException("PayOS error: " + e.getMessage());
         }
     }
