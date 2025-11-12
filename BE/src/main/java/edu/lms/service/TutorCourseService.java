@@ -56,16 +56,23 @@ public class TutorCourseService {
         CourseCategory category = courseCategoryRepository.findById(request.getCategoryID())
                 .orElseThrow(() -> new AppException(ErrorCode.COURSE_CATEGORY_NOT_FOUND));
 
+        // Tạo entity Course từ mapper
         Course course = tutorCourseMapper.toCourse(request);
         course.setTutor(tutor);
         course.setCategory(category);
         course.setStatus(CourseStatus.Draft);
+
+        // Bổ sung các trường mới (nếu mapper chưa tự map)
+        course.setShortDescription(request.getShortDescription());
+        course.setRequirement(request.getRequirement());
+        course.setLevel(request.getLevel());
 
         courseRepository.save(course);
 
         log.info("Tutor [{}] created new course [{}]", tutor.getTutorID(), course.getTitle());
         return tutorCourseMapper.toTutorCourseResponse(course);
     }
+
 
     // View (me)
     public List<TutorCourseResponse> getMyCourses(String email) {
@@ -90,30 +97,33 @@ public class TutorCourseService {
 
         ensureCourseOwner(course, tutor.getTutorID());
 
+        // Nếu có learner rồi thì không được sửa
         if (enrollmentRepository.existsByCourse(course)) {
             throw new AppException(ErrorCode.COURSE_HAS_ENROLLMENT);
         }
-//        if (course.getStatus() != CourseStatus.Rejected && course.getStatus() != CourseStatus.Draft ) {
-//            throw new AppException(ErrorCode.COURSE_UPDATE_ONLY_DRAFT_OR_REJECTED);
-//        }
 
         CourseCategory category = courseCategoryRepository.findById(request.getCategoryID())
                 .orElseThrow(() -> new AppException(ErrorCode.COURSE_CATEGORY_NOT_FOUND));
 
+        // Gán các trường
         course.setTitle(request.getTitle());
+        course.setShortDescription(request.getShortDescription());
         course.setDescription(request.getDescription());
+        course.setRequirement(request.getRequirement());
+        course.setLevel(request.getLevel());
         course.setDuration(request.getDuration());
         course.setPrice(request.getPrice());
         course.setLanguage(request.getLanguage());
         course.setThumbnailURL(request.getThumbnailURL());
         course.setCategory(category);
-        course.setUpdatedAt(java.time.LocalDateTime.now());
+        course.setUpdatedAt(LocalDateTime.now());
 
         courseRepository.save(course);
-        log.info("Tutor [{}] updated course [{}]", tutor.getTutorID(), courseID);
 
+        log.info("Tutor [{}] updated course [{}]", tutor.getTutorID(), courseID);
         return tutorCourseMapper.toTutorCourseResponse(course);
     }
+
 
     // Delete: chỉ khi Pending hoacj laf Draft, xoá Resource -> Lesson -> Section -> Course
     @Transactional
@@ -255,7 +265,10 @@ public class TutorCourseService {
         return TutorCourseDetailResponse.builder()
                 .id(c.getCourseID())
                 .title(c.getTitle())
+                .shortDescription(c.getShortDescription())
                 .description(c.getDescription())
+                .requirement(c.getRequirement())
+                .level(c.getLevel())
                 .duration(c.getDuration())
                 .price(c.getPrice())
                 .language(c.getLanguage())
@@ -266,8 +279,16 @@ public class TutorCourseService {
                         c.getSections() == null ? null :
                                 c.getSections().stream().map(this::toCourseSectionResponse).toList()
                 )
+                .objectives(
+                        c.getObjectives() == null ? List.of() :
+                                c.getObjectives().stream()
+                                        .sorted(java.util.Comparator.comparing(CourseObjective::getOrderIndex))
+                                        .map(CourseObjective::getObjectiveText)
+                                        .toList()
+                )
                 .build();
     }
+
 
 
 

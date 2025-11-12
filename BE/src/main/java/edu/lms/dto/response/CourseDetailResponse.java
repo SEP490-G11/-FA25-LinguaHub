@@ -1,5 +1,6 @@
 package edu.lms.dto.response;
 
+import edu.lms.enums.CourseLevel;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -15,7 +16,11 @@ import java.util.List;
 public class CourseDetailResponse {
     Long id;
     String title;
+    String shortDescription;
     String description;
+    String requirement;
+    CourseLevel level;
+
     Integer duration;
     BigDecimal price;
     String language;
@@ -25,8 +30,11 @@ public class CourseDetailResponse {
     String status;
 
     List<CourseSectionResponse> section;
-    Boolean isWishListed;
+    List<String> objectives;
 
+    CourseContentSummaryResponse contentSummary;
+
+    Boolean isWishListed;
     Boolean isPurchased;
 
     Long learnerCount;

@@ -31,14 +31,14 @@ public class AdminCourseController {
         return ApiRespond.<List<AdminCourseResponse>>builder()
                 .result(adminCourseService.getAllCoursesForAdmin(status))
                 .message(status != null
-                        ? "Fetched all courses (admin view) with status " + status
-                        : "Fetched all courses (admin view)")
+                        ? "Fetched all courses with status " + status
+                        : "Fetched all courses (all statuses)")
                 .build();
     }
 
     @PreAuthorize("principal.claims['role'] == 'Admin'")
-    @Operation(summary = "Admin: Get All courses")
-    @GetMapping()
+    @Operation(summary = "Admin: Get all courses (full info including level, shortDescription, requirement)")
+    @GetMapping
     public ApiRespond<List<AdminCourseResponse>> getAll() {
         return ApiRespond.<List<AdminCourseResponse>>builder()
                 .result(adminCourseService.getAllCoursesForAdmin())

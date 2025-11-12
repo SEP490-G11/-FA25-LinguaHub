@@ -1,5 +1,6 @@
 package edu.lms.dto.request;
 
+import edu.lms.enums.CourseLevel;
 import jakarta.validation.constraints.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -15,15 +16,21 @@ public class TutorCourseRequest {
 
     @NotBlank(message = "Title is required")
     @Size(min = 3, max = 255, message = "Title must be 3-255 characters")
-    @Pattern(
-            regexp = "^(?=.*\\S).*$",
-            message = "Title must not be whitespace only"
-    )
     String title;
+
+    @NotBlank(message = "Short description is required")
+    @Size(max = 500, message = "Short description must be <= 500 characters")
+    String shortDescription;
 
     @NotBlank(message = "Description is required")
     @Size(max = 5000, message = "Description must be <= 5000 characters")
     String description;
+
+    @Size(max = 1000, message = "Requirement must be <= 1000 characters")
+    String requirement;
+
+    @NotNull(message = "Level is required")
+    CourseLevel level;
 
     @NotNull(message = "Duration is required")
     @Min(value = 1, message = "Duration must be at least 1")
@@ -37,18 +44,12 @@ public class TutorCourseRequest {
 
     @NotBlank(message = "Language is required")
     @Size(max = 50, message = "Language must be <= 50 characters")
-    @Pattern(
-            regexp = "^[A-Za-z ]{2,50}$",
-            message = "Language must contain only letters/spaces (e.g., English, Korean)"
-    )
+    @Pattern(regexp = "^[A-Za-z ]{2,50}$", message = "Language must contain only letters/spaces")
     String language;
 
     @NotBlank(message = "Thumbnail URL is required")
     @Size(max = 500, message = "Thumbnail URL must be <= 500 characters")
-    @Pattern(
-            regexp = "^(http|https)://.+$",
-            message = "Thumbnail URL must start with http:// or https://"
-    )
+    @Pattern(regexp = "^(http|https)://.+$", message = "Thumbnail URL must start with http:// or https://")
     String thumbnailURL;
 
     @NotNull(message = "Category ID is required")

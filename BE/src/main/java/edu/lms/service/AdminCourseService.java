@@ -19,7 +19,10 @@ public class AdminCourseService {
         return AdminCourseResponse.builder()
                 .id(c.getCourseID())
                 .title(c.getTitle())
+                .shortDescription(c.getShortDescription())
                 .description(c.getDescription())
+                .requirement(c.getRequirement())
+                .level(c.getLevel())
                 .duration(c.getDuration())
                 .price(c.getPrice())
                 .language(c.getLanguage())
@@ -41,7 +44,8 @@ public class AdminCourseService {
     }
 
     public List<AdminCourseResponse> getAllCoursesForAdmin() {
-        List<Course> courses = courseRepository.findAll();
-        return courses.stream().map(this::toAdmin).toList();
+        return courseRepository.findAll().stream()
+                .map(this::toAdmin)
+                .toList();
     }
 }

@@ -8,11 +8,13 @@ import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface TutorCourseMapper {
+
     @Mapping(target = "status", constant = "Draft")
     @Mapping(target = "courseID", ignore = true)
     @Mapping(target = "tutor", ignore = true)
     @Mapping(target = "category", ignore = true)
     @Mapping(target = "sections", ignore = true)
+    @Mapping(target = "objectives", ignore = true)
     @Mapping(target = "createdAt", expression = "java(java.time.LocalDateTime.now())")
     @Mapping(target = "updatedAt", expression = "java(java.time.LocalDateTime.now())")
     Course toCourse(TutorCourseRequest request);

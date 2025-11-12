@@ -1,8 +1,8 @@
 package edu.lms.dto.response;
 
+import edu.lms.enums.CourseLevel;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -14,7 +14,10 @@ import java.util.List;
 public class TutorCourseDetailResponse {
     Long id;
     String title;
+    String shortDescription;
     String description;
+    String requirement;
+    CourseLevel level;
     Integer duration;
     BigDecimal price;
     String language;
@@ -22,6 +25,6 @@ public class TutorCourseDetailResponse {
     String categoryName;
     String status;
 
-    // Thêm phần detail
     List<CourseSectionResponse> section;
+    List<String> objectives; // "What you'll learn"
 }
