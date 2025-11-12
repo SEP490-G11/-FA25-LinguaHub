@@ -102,5 +102,9 @@ public class Payment {
     @PrePersist
     void prePersist() {
         if (createdAt == null) createdAt = LocalDateTime.now();
+        if (expiresAt == null) expiresAt = createdAt.plusMinutes(15);
     }
+
+    @Column(nullable = false)
+    private LocalDateTime expiresAt;
 }

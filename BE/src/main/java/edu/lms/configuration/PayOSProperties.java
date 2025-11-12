@@ -12,5 +12,5 @@ import org.springframework.context.annotation.Configuration;
 public class PayOSProperties {
     private String clientId;
     private String apiKey;
-    private String secretKey; // đổi tên lại cho trùng YAML
+    private String secretKey;
 }
