@@ -3,7 +3,6 @@ package edu.lms.controller;
 import edu.lms.dto.request.PaymentRequest;
 import edu.lms.dto.response.PaymentResponse;
 import edu.lms.service.PaymentService;
-import edu.lms.service.PayOSService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -24,23 +23,40 @@ import java.util.List;
 public class PaymentController {
 
     private final PaymentService paymentService;
-    private final PayOSService payOSService;
 
-    //API TẠO THANH TOÁN (ĐANG CHẠY ỔN)
-
-    @Operation(summary = "Create a payment (PayOS)", description = "Create a pending payment link via PayOS")
+    // ======================================================
+    // 🔹 TẠO THANH TOÁN VIETQR
+    // ======================================================
+    @Operation(summary = "Create a VietQR payment",
+            description = "Generate a VietQR code for MB Bank transfer (no merchant required)")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Payment link created successfully",
+            @ApiResponse(responseCode = "200", description = "VietQR generated successfully",
                     content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "400", description = "Invalid payment request", content = @Content)
+            @ApiResponse(responseCode = "400", description = "Invalid request or VietQR error", content = @Content)
     })
-    @PostMapping("/create")
-    public ResponseEntity<?> createPayment(@RequestBody PaymentRequest request) {
-        return paymentService.createPayment(request);
+    @PostMapping("/vietqr/create")
+    public ResponseEntity<?> createVietQRPayment(@RequestBody PaymentRequest request) {
+        try {
+            return paymentService.createPayment(request);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Failed to generate VietQR: " + e.getMessage());
+        }
     }
 
-    //ADMIN - XEM TẤT CẢ PAYMENT
+    // ======================================================
+    // 🔹 XÁC NHẬN THANH TOÁN TỪ MB BANK (REAL)
+    // ======================================================
+    @Operation(summary = "Check & confirm payment from MB Bank",
+            description = "Admin or system verifies if the payment transaction is found in MB Bank account")
+    @PostMapping("/check/{paymentId}")
+    public ResponseEntity<?> checkAndConfirmPayment(@PathVariable Long paymentId) {
+        return paymentService.checkAndConfirmPayment(paymentId);
+    }
 
+    // ======================================================
+    // 🔹 ADMIN: XEM TẤT CẢ PAYMENT
+    // ======================================================
     @Operation(summary = "Get all payments (Admin)", description = "Admin can view all payments in the system")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Successfully retrieved all payments",
@@ -50,46 +66,30 @@ public class PaymentController {
     })
     @GetMapping("/admin")
     public ResponseEntity<List<PaymentResponse>> getAllPayments() {
-        List<PaymentResponse> payments = paymentService.getAllPayments();
-        return ResponseEntity.ok(payments);
+        return ResponseEntity.ok(paymentService.getAllPayments());
     }
 
-
-    //TUTOR - XEM PAYMENT LIÊN QUAN TỚI MÌNH
-
+    // ======================================================
+    // 🔹 TUTOR: XEM PAYMENT LIÊN QUAN
+    // ======================================================
     @Operation(summary = "Get payments by tutor", description = "Tutor can view all course and booking payments associated with them")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Successfully retrieved tutor payments",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = PaymentResponse.class))),
-            @ApiResponse(responseCode = "404", description = "Tutor not found", content = @Content)
-    })
     @GetMapping("/tutor/{tutorId}")
     public ResponseEntity<List<PaymentResponse>> getPaymentsByTutor(@PathVariable Long tutorId) {
-        List<PaymentResponse> payments = paymentService.getPaymentsByTutor(tutorId);
-        return ResponseEntity.ok(payments);
+        return ResponseEntity.ok(paymentService.getPaymentsByTutor(tutorId));
     }
 
-
-    //LEARNER - XEM LỊCH SỬ GIAO DỊCH
-
+    // ======================================================
+    // 🔹 LEARNER: XEM LỊCH SỬ GIAO DỊCH
+    // ======================================================
     @Operation(summary = "Get payments by user", description = "Learner can view their payment history")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Successfully retrieved user payments",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = PaymentResponse.class))),
-            @ApiResponse(responseCode = "404", description = "User not found", content = @Content)
-    })
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<PaymentResponse>> getPaymentsByUser(@PathVariable Long userId) {
-        List<PaymentResponse> payments = paymentService.getPaymentsByUser(userId);
-        return ResponseEntity.ok(payments);
+        return ResponseEntity.ok(paymentService.getPaymentsByUser(userId));
     }
 
-    //HEALTH CHECK / TEST
-
-    @Operation(summary = "Ping payment service", description = "Check if the payment service is running")
-    @ApiResponse(responseCode = "200", description = "Service is alive")
+    // ======================================================
+    // 🔹 HEALTH CHECK
+    // ======================================================
     @GetMapping("/ping")
     public ResponseEntity<String> ping() {
         return new ResponseEntity<>("Payment service is running ✅", HttpStatus.OK);

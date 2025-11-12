@@ -23,79 +23,83 @@ public class Payment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long paymentID;
 
-    //Số tiền thanh toán
+    // 💰 Số tiền thanh toán
     @Column(precision = 12, scale = 2, nullable = false)
     BigDecimal amount;
 
-    //Loại thanh toán: COURSE / BOOKING
+    // 📘 Loại thanh toán: COURSE / BOOKING
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     PaymentType paymentType;
 
-    //Phương thức thanh toán: PAYOS / VNPAY / BANK
+    // 💳 Phương thức thanh toán: PAYOS / VNPAY / BANK
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     PaymentMethod paymentMethod;
 
-    //Mã đơn hàng (unique từ PayOS)
+    // 🔢 Mã đơn hàng (unique từ PayOS hoặc hệ thống)
     @Column(unique = true, length = 150)
     String orderCode;
 
-    //ID của payment link PayOS
+    // 🔗 ID của payment link PayOS (nếu có)
     @Column(length = 150)
     String paymentLinkId;
 
-    //URL checkout của PayOS/VNPAY
+    // 🔗 URL checkout của PayOS/VNPAY
     @Column(length = 500)
     String checkoutUrl;
 
-    //QR code link
+    // 🧾 QR code link
     @Column(length = 500)
     String qrCodeUrl;
 
-    //Trạng thái thanh toán: PENDING / PAID / EXPIRED / CANCELLED
+    // 📄 Mô tả nội dung thanh toán (AddInfo của VietQR / MB)
+    @Column(length = 255)
+    String description;
+
+    // ⚙️ Trạng thái thanh toán: PENDING / PAID / EXPIRED / CANCELLED
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
     PaymentStatus status;
 
-    //Thời gian thanh toán thành công
+    // 🕒 Thời gian thanh toán thành công
     LocalDateTime paidAt;
 
-    //Phản hồi trả về từ cổng thanh toán
+    // 🧩 Phản hồi trả về từ cổng thanh toán (PayOS / MB / VNPay)
     @Lob
     String transactionResponse;
 
-    //Khóa ngoại liên kết mục tiêu (CourseID hoặc BookingPlanID)
+    // 🎯 Liên kết mục tiêu (CourseID hoặc BookingPlanID)
     @Column(name = "target_id")
     Long targetId;
 
-    //Người mua (Learner)
+    // 👨‍🎓 Người mua (Learner)
     @Column(name = "user_id")
     Long userId;
 
-    //Tutor nhận tiền (Course owner / Booking owner)
+    // 👨‍🏫 Tutor nhận tiền (Course owner / Booking owner)
     @Column(name = "tutor_id")
     Long tutorId;
 
-    //Liên kết enrollment (nếu thanh toán cho khóa học)
+    // 📚 Liên kết enrollment (nếu thanh toán cho khóa học)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "enrollment_id")
     Enrollment enrollment;
 
-    // 👤 Người nhận tiền (dự phòng cho tính năng payout hoặc refund)
+    // 👤 Người nhận tiền (dự phòng cho payout/refund)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "received_id")
     User received;
 
-    //Đánh dấu đã thanh toán chưa
+    // ✅ Đánh dấu đã thanh toán chưa
     @Builder.Default
     Boolean isPaid = false;
 
-    // Đánh dấu có hoàn tiền không
+    // 🔁 Đánh dấu có hoàn tiền không
     @Builder.Default
     Boolean isRefund = false;
 
-    // 🕒 Tự động sinh thời gian tạo bản ghi (Spring sẽ set qua @PrePersist)
+    // 🕒 Tự động sinh thời gian tạo bản ghi
     @Column(updatable = false)
     LocalDateTime createdAt;
 
@@ -105,6 +109,7 @@ public class Payment {
         if (expiresAt == null) expiresAt = createdAt.plusMinutes(15);
     }
 
+    // ⏳ Thời gian hết hạn (QR hoặc booking)
     @Column(nullable = false)
     private LocalDateTime expiresAt;
 }

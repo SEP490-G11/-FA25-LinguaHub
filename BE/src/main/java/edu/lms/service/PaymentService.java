@@ -1,5 +1,6 @@
 package edu.lms.service;
 
+import edu.lms.configuration.VietQRConfig;
 import edu.lms.dto.request.PaymentRequest;
 import edu.lms.dto.request.SlotRequest;
 import edu.lms.dto.response.PaymentResponse;
@@ -11,10 +12,10 @@ import edu.lms.mapper.PaymentMapper;
 import edu.lms.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import vn.payos.type.CheckoutResponseData;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -26,18 +27,20 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class PaymentService {
 
+    private final VietQRConfig vietQRConfig;
     private final CourseRepository courseRepository;
     private final BookingPlanRepository bookingPlanRepository;
     private final BookingPlanSlotRepository bookingPlanSlotRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final PaymentRepository paymentRepository;
     private final UserRepository userRepository;
-    private final PayOSService payOSService;
     private final ChatService chatService;
     private final PaymentMapper paymentMapper;
+    private final VietQRService vietQRService;
+    private final MBBankService mbBankService;
 
     // ======================================================
-    // TẠO THANH TOÁN (PENDING)
+    // 🔹 TẠO THANH TOÁN (COURSE / BOOKING)
     // ======================================================
     @Transactional
     public ResponseEntity<?> createPayment(PaymentRequest request) {
@@ -53,19 +56,21 @@ public class PaymentService {
 
             amount = course.getPrice();
             tutorId = course.getTutor().getTutorID();
-            description = "Course: " + course.getTitle();
+            description = "COURSE-" + course.getCourseID() + "-" + System.currentTimeMillis() / 1000;
 
             payment = Payment.builder()
                     .userId(request.getUserId())
                     .targetId(course.getCourseID())
                     .tutorId(tutorId)
                     .paymentType(PaymentType.Course)
-                    .paymentMethod(PaymentMethod.PAYOS)
+                    .paymentMethod(PaymentMethod.BANK)
                     .status(PaymentStatus.PENDING)
+                    .description(description)
                     .amount(amount)
                     .isPaid(false)
-                    .expiresAt(LocalDateTime.now().plusMinutes(15))
+                    .expiresAt(LocalDateTime.now().plusHours(1))
                     .build();
+
             paymentRepository.save(payment);
         }
 
@@ -83,11 +88,10 @@ public class PaymentService {
                 throw new AppException(ErrorCode.BOOKING_SLOT_NOT_AVAILABLE);
             }
 
-            // 💰 Tính tổng tiền
             BigDecimal totalAmount = BigDecimal.valueOf(plan.getPricePerHours() * slots.size());
-            description = "Slot 1:1 " + plan.getTitle();
+            description = "BOOK-" + plan.getBookingPlanID() + "-" + System.currentTimeMillis() / 1000;
 
-            // 🕒 Khóa slot tạm
+            // 🕒 Khóa slot tạm thời
             for (SlotRequest s : slots) {
                 boolean taken = bookingPlanSlotRepository.existsByTutorIDAndStartTimeAndEndTime(
                         plan.getTutorID(), s.getStartTime(), s.getEndTime());
@@ -101,7 +105,7 @@ public class PaymentService {
                         .endTime(s.getEndTime())
                         .status(SlotStatus.Locked)
                         .lockedAt(LocalDateTime.now())
-                        .expiresAt(LocalDateTime.now().plusMinutes(15))
+                        .expiresAt(LocalDateTime.now().plusHours(1))
                         .build();
                 bookingPlanSlotRepository.save(slot);
             }
@@ -111,12 +115,14 @@ public class PaymentService {
                     .tutorId(tutorId)
                     .targetId(plan.getBookingPlanID())
                     .paymentType(PaymentType.Booking)
-                    .paymentMethod(PaymentMethod.PAYOS)
+                    .paymentMethod(PaymentMethod.BANK)
                     .status(PaymentStatus.PENDING)
+                    .description(description)
                     .amount(totalAmount)
                     .isPaid(false)
-                    .expiresAt(LocalDateTime.now().plusMinutes(15))
+                    .expiresAt(LocalDateTime.now().plusHours(1))
                     .build();
+
             paymentRepository.save(payment);
 
             bookingPlanSlotRepository.updatePaymentForUserLockedSlots(
@@ -128,37 +134,69 @@ public class PaymentService {
             throw new AppException(ErrorCode.INVALID_PAYMENT_TYPE);
         }
 
-        // ----------------- GỌI PAYOS -----------------
-        CheckoutResponseData data = payOSService.createPaymentLink(
-                request.getUserId(),
-                request.getPaymentType(),
-                request.getTargetId(),
-                amount,
-                description
+        // ----------------- TẠO QR THANH TOÁN -----------------
+        String qrImageUrl = vietQRService.generateQR(
+                vietQRConfig.getBankCode(),
+                vietQRConfig.getAccountNo(),
+                vietQRConfig.getAccountName(),
+                amount.intValue(),
+                payment.getDescription()
         );
 
-        // ----------------- CẬP NHẬT PAYMENT -----------------
-        updatePaymentWithPayOSData(payment, data);
         return ResponseEntity.ok(Map.of(
-                "checkoutUrl", data.getCheckoutUrl(),
-                "expiresAt", payment.getExpiresAt()));
+                "paymentId", payment.getPaymentID(),
+                "qrImage", qrImageUrl,
+                "description", payment.getDescription(),
+                "amount", amount,
+                "accountNo", vietQRConfig.getAccountNo(),
+                "accountName", vietQRConfig.getAccountName(),
+                "bankCode", vietQRConfig.getBankCode(),
+                "expiresAt", payment.getExpiresAt()
+        ));
     }
 
     // ======================================================
-    // HẬU THANH TOÁN (PAYMENT SUCCESS)
+    // 🔹 KIỂM TRA & XÁC NHẬN THANH TOÁN MB BANK
+    // ======================================================
+    @Transactional
+    public ResponseEntity<?> checkAndConfirmPayment(Long paymentId) {
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_NOT_FOUND));
+
+        boolean verified = mbBankService.verifyPayment(
+                payment.getDescription(), payment.getAmount().intValue()
+        );
+
+        if (!verified) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("status", "FAILED", "message", "Chưa thấy giao dịch trong MB Bank."));
+        }
+
+        payment.setStatus(PaymentStatus.PAID);
+        payment.setIsPaid(true);
+        payment.setPaidAt(LocalDateTime.now());
+        paymentRepository.save(payment);
+
+        processPostPayment(payment);
+
+        return ResponseEntity.ok(Map.of(
+                "status", "PAID",
+                "message", "✅ Thanh toán xác nhận thành công!",
+                "paymentId", paymentId
+        ));
+    }
+
+    // ======================================================
+    // 🔹 SAU KHI THANH TOÁN (COURSE / BOOKING)
     // ======================================================
     @Transactional
     public void processPostPayment(Payment payment) {
         if (payment.getStatus() != PaymentStatus.PAID) return;
 
-        payment.setIsPaid(true);
-        payment.setPaidAt(LocalDateTime.now());
-        paymentRepository.save(payment);
-
         Long userId = payment.getUserId();
         Long targetId = payment.getTargetId();
 
-        // COURSE PAYMENT
+        // ----------------- COURSE -----------------
         if (payment.getPaymentType() == PaymentType.Course) {
             Course course = courseRepository.findById(targetId)
                     .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
@@ -180,7 +218,7 @@ public class PaymentService {
             log.info("[COURSE PAYMENT] User {} enrolled in course '{}'", userId, course.getTitle());
         }
 
-        // BOOKING PAYMENT
+        // ----------------- BOOKING -----------------
         else if (payment.getPaymentType() == PaymentType.Booking) {
             List<BookingPlanSlot> slots = bookingPlanSlotRepository.findAllByPaymentID(payment.getPaymentID());
             for (BookingPlanSlot s : slots) {
@@ -201,13 +239,12 @@ public class PaymentService {
                 }
             }
 
-            log.info("[BOOKING PLAN PAID] User {} confirmed {} slots as PAID", userId, slots.size());
+            log.info("[BOOKING PAID] User {} confirmed {} slots as PAID", userId, slots.size());
         }
     }
 
-
     // ======================================================
-    // LẤY PAYMENT (ADMIN / TUTOR / USER)
+    // 🔹 LẤY PAYMENT (ADMIN / TUTOR / USER)
     // ======================================================
     @Transactional(readOnly = true)
     public List<PaymentResponse> getPaymentsByTutor(Long tutorId) {
@@ -225,24 +262,5 @@ public class PaymentService {
     public List<PaymentResponse> getAllPayments() {
         return paymentRepository.findAll()
                 .stream().map(paymentMapper::toPaymentResponse).toList();
-    }
-
-    // ======================================================
-    // CẬP NHẬT PAYMENT SAU KHI NHẬN LINK PAYOS
-    // ======================================================
-    private void updatePaymentWithPayOSData(Payment payment, CheckoutResponseData data) {
-        try {
-            if (data == null) return;
-
-            payment.setOrderCode(String.valueOf(data.getOrderCode()));
-            payment.setCheckoutUrl(data.getCheckoutUrl());
-            payment.setQrCodeUrl(data.getQrCode());
-            payment.setPaymentLinkId(data.getPaymentLinkId());
-            paymentRepository.save(payment);
-
-            log.info("[PAYMENT UPDATED] Payment {} updated with PayOS link data", payment.getPaymentID());
-        } catch (Exception e) {
-            log.error("Failed to update payment info from PayOS: {}", e.getMessage());
-        }
     }
 }
