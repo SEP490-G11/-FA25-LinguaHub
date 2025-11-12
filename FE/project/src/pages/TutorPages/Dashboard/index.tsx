@@ -1,5 +1,4 @@
 import React from 'react';
-import { useSelector } from 'react-redux';
 import {
   BookOpen,
   Users,
@@ -10,7 +9,6 @@ import {
   Award,
   Star,
 } from 'lucide-react';
-import { RootState } from '@/redux/store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface StatCardProps {
@@ -42,7 +40,11 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, trend, tr
 };
 
 const TutorDashboard: React.FC = () => {
-  const { user } = useSelector((state: RootState) => state.auth);
+  // Mock user data
+  const user = {
+    fullName: 'Tutor Name',
+    username: 'tutor_username',
+  };
 
   // Mock data
   const stats = {
