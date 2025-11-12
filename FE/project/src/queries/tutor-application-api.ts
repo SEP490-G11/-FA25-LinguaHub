@@ -79,6 +79,4 @@ export const tutorApplicationAPI = USE_MOCK_API ? mockAPI : realAPI;
  * Switch to real API when backend is ready
  * Simply change USE_MOCK_API to false above
  */
-console.log(
-  `🔧 Tutor Application API Mode: ${USE_MOCK_API ? 'MOCK' : 'REAL'}`
-);
+

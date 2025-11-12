@@ -22,7 +22,7 @@ export const submitApplication = async (
   userId: string,
   data: TutorApplicationFormData
 ): Promise<SubmitApplicationResponse> => {
-  console.log('🚀 [MOCK API] Submitting tutor application...', { userId, data });
+ 
   
   await delay();
 
@@ -48,7 +48,7 @@ export const submitApplication = async (
   // Store in mock database
   mockApplicationsStore[userId] = newApplication;
 
-  console.log('✅ [MOCK API] Application submitted successfully:', newApplication);
+ 
 
   return {
     success: true,
@@ -61,18 +61,18 @@ export const submitApplication = async (
  * Get application status for a user
  */
 export const getApplicationStatus = async (userId: string): Promise<ApplicationStatus> => {
-  console.log('🔍 [MOCK API] Fetching application status for user:', userId);
+  
   
   await delay();
 
   const application = mockApplicationsStore[userId];
 
   if (!application) {
-    console.log('❌ [MOCK API] No application found for user:', userId);
+    
     throw new Error('No application found');
   }
 
-  console.log('✅ [MOCK API] Application found:', application);
+  
   return application;
 };
 
@@ -101,14 +101,14 @@ if (typeof window !== 'undefined') {
   window.__mockApplyTutorAPI = {
     // Get all applications
     getApplications: () => {
-      console.log('📋 All mock applications:', mockApplicationsStore);
+      
       return mockApplicationsStore;
     },
 
     // Get specific application
     getApplicationByUser: (userId: string) => {
       const app = mockApplicationsStore[userId];
-      console.log(`🔍 Application for user ${userId}:`, app || 'Not found');
+      
       return app;
     },
 
@@ -126,7 +126,7 @@ if (typeof window !== 'undefined') {
         certificateName: 'TESOL Certificate',
         certificateUrl: 'https://example.com/certificate.pdf',
       };
-      console.log('✅ Sample application added for user:', userId);
+      
       return mockApplicationsStore[userId];
     },
 
@@ -134,7 +134,7 @@ if (typeof window !== 'undefined') {
     approveApplication: (userId: string, comment?: string) => {
       const app = mockApplicationsStore[userId];
       if (!app) {
-        console.error('❌ No application found for user:', userId);
+        
         return;
       }
       app.status = 'Approved';
@@ -142,7 +142,7 @@ if (typeof window !== 'undefined') {
       if (comment) {
         app.reasonForReject = comment; // Can be used for approval comments too
       }
-      console.log('✅ Application approved for user:', userId);
+      
       return app;
     },
 
@@ -150,26 +150,26 @@ if (typeof window !== 'undefined') {
     rejectApplication: (userId: string, reason: string) => {
       const app = mockApplicationsStore[userId];
       if (!app) {
-        console.error('❌ No application found for user:', userId);
+        
         return;
       }
       app.status = 'Rejected';
       app.reviewedAt = new Date().toISOString();
       app.reasonForReject = reason;
-      console.log('❌ Application rejected for user:', userId);
+      
       return app;
     },
 
     // Clear specific application
     clearApplication: (userId: string) => {
       delete mockApplicationsStore[userId];
-      console.log('🗑️  Application cleared for user:', userId);
+      
     },
 
     // Clear all applications
     clearAll: () => {
       mockApplicationsStore = {};
-      console.log('🗑️  All applications cleared');
+      
     },
 
     // Load sample data
@@ -215,43 +215,9 @@ if (typeof window !== 'undefined') {
           certificateUrl: 'https://example.com/spanish-cert.pdf',
         },
       };
-      console.log('📦 Sample applications loaded:', mockApplicationsStore);
+      
     },
   };
-
-  console.log(`
-╔══════════════════════════════════════════════════════════════╗
-║  🧪 Apply Tutor Mock API - Debug Tools Available            ║
-╚══════════════════════════════════════════════════════════════╝
-
-Open browser console and use these commands:
-
-📋 View all applications:
-   window.__mockApplyTutorAPI.getApplications()
-
-🔍 Get specific application:
-   window.__mockApplyTutorAPI.getApplicationByUser('1')
-
-➕ Add sample application:
-   window.__mockApplyTutorAPI.addSampleApplication('1')
-
-✅ Approve application:
-   window.__mockApplyTutorAPI.approveApplication('1', 'Great credentials!')
-
-❌ Reject application:
-   window.__mockApplyTutorAPI.rejectApplication('1', 'Insufficient experience')
-
-🗑️  Clear application:
-   window.__mockApplyTutorAPI.clearApplication('1')
-
-🗑️  Clear all:
-   window.__mockApplyTutorAPI.clearAll()
-
-📦 Load sample data:
-   window.__mockApplyTutorAPI.loadSamples()
-
-──────────────────────────────────────────────────────────────
-`);
 }
 
 export default {
