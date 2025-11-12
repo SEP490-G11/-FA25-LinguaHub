@@ -93,6 +93,9 @@ public class TutorCourseService {
         if (enrollmentRepository.existsByCourse(course)) {
             throw new AppException(ErrorCode.COURSE_HAS_ENROLLMENT);
         }
+//        if (course.getStatus() != CourseStatus.Rejected && course.getStatus() != CourseStatus.Draft ) {
+//            throw new AppException(ErrorCode.COURSE_UPDATE_ONLY_DRAFT_OR_REJECTED);
+//        }
 
         CourseCategory category = courseCategoryRepository.findById(request.getCategoryID())
                 .orElseThrow(() -> new AppException(ErrorCode.COURSE_CATEGORY_NOT_FOUND));
@@ -122,8 +125,8 @@ public class TutorCourseService {
 
         ensureCourseOwner(course, tutor.getTutorID());
 
-        if (course.getStatus() != CourseStatus.Pending && course.getStatus() != CourseStatus.Draft) {
-            throw new AppException(ErrorCode.COURSE_DELETE_ONLY_DRAFT_OR_PENDING);
+        if (course.getStatus() != CourseStatus.Rejected && course.getStatus() != CourseStatus.Draft ) {
+            throw new AppException(ErrorCode.COURSE_DELETE_ONLY_DRAFT_OR_REJECTED);
         }
 
         var sections = courseSectionRepository.findByCourse_CourseID(course.getCourseID());

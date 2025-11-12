@@ -15,7 +15,7 @@ import {
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/constants/routes";
 import api from "@/config/axiosConfig";
-
+import { useToast } from "@/components/ui/use-toast";
 //  Chuẩn hoá kiểu dữ liệu người dùng
 interface User {
     fullName: string;
@@ -27,7 +27,7 @@ interface User {
 const Header = () => {
     const location = useLocation();
     const navigate = useNavigate();
-
+    const { toast } = useToast();
     const [notificationsOpen, setNotificationsOpen] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -59,13 +59,9 @@ const Header = () => {
         navigate(ROUTES.SIGN_IN, { replace: true });
     };
 
-    const getUserInitials = () => {
-        if (!user?.fullName) return "U";
-        return user.fullName
-            .split(" ")
-            .map((n) => n[0])
-            .join("")
-            .toUpperCase();
+    const getUserInitial = (fullName: string) => {
+        if (!fullName) return "U";
+        return fullName.trim()[0].toUpperCase();
     };
 
     const isTutorPage = /^\/tutor(\/|$)/.test(location.pathname);
@@ -163,7 +159,11 @@ const Header = () => {
                             size="icon"
                             onClick={() => {
                                 if (!isAuthenticated) {
-                                    alert("Please login to use this feature.");
+                                    toast({
+                                        variant: "destructive",
+                                        title: "You are not logged in",
+                                        description: "Please login to view your wishlist.",
+                                    });
                                     return;
                                 }
                                 navigate(ROUTES.WISHLIST);
@@ -177,7 +177,11 @@ const Header = () => {
                             open={isAuthenticated ? notificationsOpen : false}
                             onOpenChange={(open) => {
                                 if (!isAuthenticated) {
-                                    alert("Please login to use this feature.");
+                                    toast({
+                                        variant: "destructive",
+                                        title: "You are not logged in",
+                                        description: "Please login to view notifications.",
+                                    });
                                     return;
                                 }
                                 setNotificationsOpen(open);
@@ -189,7 +193,11 @@ const Header = () => {
                                     size="icon"
                                     onClick={() => {
                                         if (!isAuthenticated) {
-                                            alert("Vui lòng đăng nhập để sử dụng tính năng này.");
+                                            toast({
+                                                variant: "destructive",
+                                                title: "You are not logged in",
+                                                description: "Please login to view notifications.",
+                                            });
                                         }
                                     }}
                                 >
@@ -227,20 +235,22 @@ const Header = () => {
                                     >
                                         <Avatar>
                                             <AvatarImage src={user?.avatarURL} />
-                                            <AvatarFallback>{getUserInitials()}</AvatarFallback>
+                                            <AvatarFallback className="bg-blue-600 text-white font-semibold">
+                                                {getUserInitial(user?.fullName || "")}
+                                            </AvatarFallback>
                                         </Avatar>
+
                                     </Button>
                                 </DropdownMenuTrigger>
-
                                 <DropdownMenuContent align="end" className="w-56">
                                     <DropdownMenuLabel>
                                         <div className="flex flex-col">
-                      <span className="text-sm font-medium">
-                        {user?.fullName}
-                      </span>
+                                            <span className="text-sm font-medium">
+                                                {user?.fullName}
+                                            </span>
                                             <span className="text-xs text-muted-foreground">
-                        {user?.email}
-                      </span>
+                                                 {user?.email}
+                                             </span>
                                         </div>
                                     </DropdownMenuLabel>
 

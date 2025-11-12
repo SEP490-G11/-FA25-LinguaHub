@@ -1,28 +1,26 @@
-import  { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Lock, Eye, EyeOff, Languages, CheckCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
-import { ErrorMessage } from '@/components/shared/ErrorMessage';
-import { useDispatch } from 'react-redux';
-import { AppDispatch } from '@/redux/store';
-import { resetPassword } from '@/redux/slices/authSlice';
-import { z } from 'zod';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { ROUTES } from '@/constants/routes';
+import  { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { Lock, Eye, EyeOff, Languages, CheckCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
+import { ErrorMessage } from "@/components/shared/ErrorMessage";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import api from "@/config/axiosConfig";
+import { ROUTES } from "@/constants/routes";
 
-// ✅ Validate form theo BE
+//  Validate theo BE
 const resetPasswordSchema = z
     .object({
-      newPassword: z.string().min(8, 'Password must be at least 8 characters'),
-      confirmPassword: z.string().min(8, 'Please confirm your password'),
+      newPassword: z.string().min(8, "Password must be at least 8 characters"),
+      confirmPassword: z.string().min(8, "Please confirm your password"),
     })
     .refine((data) => data.newPassword === data.confirmPassword, {
-      message: 'Passwords do not match',
-      path: ['confirmPassword'],
+      message: "Passwords do not match",
+      path: ["confirmPassword"],
     });
 
 type ResetPasswordForm = z.infer<typeof resetPasswordSchema>;
@@ -32,8 +30,8 @@ const ResetPassword = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
 
-  const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
 
   const {
@@ -42,27 +40,37 @@ const ResetPassword = () => {
     formState: { errors, isValid },
   } = useForm<ResetPasswordForm>({
     resolver: zodResolver(resetPasswordSchema),
-    mode: 'onChange',
-    defaultValues: {
-      newPassword: '',
-      confirmPassword: '',
-    },
+    mode: "onChange",
   });
 
-  //  Gửi đúng body theo BE
   const onSubmitResetPassword = async (data: ResetPasswordForm) => {
     setIsLoading(true);
+    setApiError(null);
+
     try {
-      const result = await dispatch(resetPassword(data)).unwrap();
-      console.log('Reset success:', result);
+      const response = await api.post("/auth/set-new-password", data);
+
+      if (response.data.code !== 0) {
+        setApiError(response.data.message ?? "Reset password failed");
+        return;
+      }
+
       setSuccess(true);
       setTimeout(() => navigate(ROUTES.SIGN_IN), 2000);
-    } catch (err) {
-      console.error('Error resetting password:', err);
-    } finally {
-      setIsLoading(false);
+    }  catch (err: unknown) {
+    if (err && typeof err === "object" && "response" in err) {
+      const axiosErr = err as {
+        response?: { data?: { message?: string } };
+      };
+
+      setApiError(axiosErr.response?.data?.message ?? null);
+    } else if (err instanceof Error) {
+      setApiError(err.message);
+    } else {
+      setApiError("Something went wrong");
     }
-  };
+  }
+};
 
   const fadeInUp = {
     initial: { opacity: 0, y: 60 },
@@ -70,16 +78,11 @@ const ResetPassword = () => {
     transition: { duration: 0.6 },
   };
 
-  //  Trang báo thành công
+  //  UI báo thành công — giữ nguyên
   if (success) {
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-          <motion.div
-              className="max-w-md w-full space-y-8"
-              initial="initial"
-              animate="animate"
-              variants={fadeInUp}
-          >
+          <motion.div className="max-w-md w-full space-y-8" initial="initial" animate="animate" variants={fadeInUp}>
             <div className="text-center">
               <Link to="/" className="inline-flex items-center space-x-2 mb-6">
                 <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-3 rounded-lg">
@@ -91,11 +94,7 @@ const ResetPassword = () => {
               </Link>
             </div>
 
-            <motion.div
-                className="bg-white rounded-2xl shadow-xl p-8 text-center"
-                variants={fadeInUp}
-                transition={{ delay: 0.1 }}
-            >
+            <motion.div className="bg-white rounded-2xl shadow-xl p-8 text-center" variants={fadeInUp}>
               <div className="mb-6">
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
                   <CheckCircle className="w-8 h-8 text-green-500" />
@@ -111,15 +110,10 @@ const ResetPassword = () => {
     );
   }
 
-  // ✅ Form chính
+  //  Form chính — UI giữ nguyên
   return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <motion.div
-            className="max-w-md w-full space-y-8"
-            initial="initial"
-            animate="animate"
-            variants={fadeInUp}
-        >
+        <motion.div className="max-w-md w-full space-y-8" initial="initial" animate="animate" variants={fadeInUp}>
           <div className="text-center">
             <Link to="/" className="inline-flex items-center space-x-2 mb-6">
               <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-3 rounded-lg">
@@ -133,85 +127,66 @@ const ResetPassword = () => {
             <p className="text-gray-600">Enter and confirm your new password below.</p>
           </div>
 
-          <motion.div
-              className="bg-white rounded-2xl shadow-xl p-8"
-              variants={fadeInUp}
-              transition={{ delay: 0.1 }}
-          >
+          <motion.div className="bg-white rounded-2xl shadow-xl p-8" variants={fadeInUp}>
             <form className="space-y-6" onSubmit={handleSubmit(onSubmitResetPassword)}>
+
               {/* New Password */}
               <div>
-                <label
-                    htmlFor="newPassword"
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                >
+                <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-2">
                   New Password
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Lock className="h-5 w-5 text-gray-400" />
-                  </div>
+                  <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+
                   <Input
                       id="newPassword"
-                      type={showPassword ? 'text' : 'password'}
-                      {...register('newPassword')}
+                      type={showPassword ? "text" : "password"}
+                      {...register("newPassword")}
                       placeholder="Enter new password"
                       className="pl-10 pr-10"
                   />
-                  <button
-                      type="button"
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                      onClick={() => setShowPassword(!showPassword)}
+                  <button type="button" className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                          onClick={() => setShowPassword(!showPassword)}
                   >
-                    {showPassword ? (
-                        <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                    ) : (
-                        <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                    )}
+                    {showPassword ? <EyeOff /> : <Eye />}
                   </button>
                 </div>
-                {errors.newPassword && <ErrorMessage  message={errors.newPassword.message} />}
+                {errors.newPassword?.message && (
+                    <ErrorMessage message={errors.newPassword.message} />
+                )}
               </div>
 
               {/* Confirm Password */}
               <div>
-                <label
-                    htmlFor="confirmPassword"
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                >
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
                   Confirm Password
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Lock className="h-5 w-5 text-gray-400" />
-                  </div>
+                  <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
                   <Input
                       id="confirmPassword"
-                      type={showConfirmPassword ? 'text' : 'password'}
-                      {...register('confirmPassword')}
+                      type={showConfirmPassword ? "text" : "password"}
+                      {...register("confirmPassword")}
                       placeholder="Confirm new password"
                       className="pl-10 pr-10"
                   />
-                  <button
-                      type="button"
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  <button type="button" className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   >
-                    {showConfirmPassword ? (
-                        <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                    ) : (
-                        <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                    )}
+                    {showConfirmPassword ? <EyeOff /> : <Eye />}
                   </button>
                 </div>
-                {errors.confirmPassword && (
+                {errors.confirmPassword?.message && (
                     <ErrorMessage message={errors.confirmPassword.message} />
                 )}
               </div>
 
+              {/* Show API error */}
+              {apiError && <ErrorMessage message={apiError} />}
+
               {/* Submit */}
               <Button type="submit" className="w-full" disabled={isLoading || !isValid}>
-                {isLoading ? <LoadingSpinner size="sm" /> : 'Update Password'}
+                {isLoading ? <LoadingSpinner size="sm" /> : "Update Password"}
               </Button>
             </form>
           </motion.div>

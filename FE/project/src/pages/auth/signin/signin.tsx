@@ -12,7 +12,7 @@ import { ErrorMessage } from '@/components/shared/ErrorMessage.tsx';
 import api from "@/config/axiosConfig.ts";
 import { ROUTES } from '@/constants/routes.ts';
 
-// ✅ Schema validate
+//  Schema validate
 const signInSchema = z.object({
   username: z.string().min(3, 'Login name must be at least 3 characters'),
   password: z
@@ -50,7 +50,7 @@ const SignIn = () => {
 
       const token = response.data.result.accessToken;
 
-      // ✅ Remember me FE logic
+      //  Remember me FE logic
       if (data.rememberMe) {
         localStorage.setItem("access_token", token);
       } else {
@@ -126,7 +126,7 @@ const SignIn = () => {
                 {errors.password && <ErrorMessage message={errors.password.message!} />}
               </div>
 
-              {/* ✅ Remember Me + Forgot Password on SAME ROW */}
+              {/*  Remember Me + Forgot Password on SAME ROW */}
               <div className="flex items-center justify-between">
                 <label className="flex items-center space-x-2 text-sm text-gray-700">
                   <Checkbox

@@ -30,11 +30,12 @@ public class CourseDetailResponse {
     Boolean isPurchased;
 
     Long learnerCount;
+    Long tutorID;
     String tutorAvatarURL;
     String tutorAddress;
     Double avgRating;
     Integer totalRatings;
     LocalDateTime createdAt;
 
-    List<FeedbackResponse> feedbacks;
+    List<CourseReviewResponse> review;
 }

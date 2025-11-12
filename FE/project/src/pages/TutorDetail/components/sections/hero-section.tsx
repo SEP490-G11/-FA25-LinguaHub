@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useNavigate } from "react-router-dom";
 
 interface TutorHeroSectionProps {
   tutor: {
@@ -42,7 +43,7 @@ const TutorHeroSection = ({ tutor }: TutorHeroSectionProps) => {
     animate: { opacity: 1, y: 0 },
     transition: { duration: 0.6 },
   };
-
+  const navigate = useNavigate();
   return (
       <section className="relative">
         {/* Background / Cover */}
@@ -160,11 +161,15 @@ const TutorHeroSection = ({ tutor }: TutorHeroSectionProps) => {
                   </div>
 
                   <div className="space-y-3 mb-6">
-                    <Button className="w-full bg-orange-500 text-white py-3 rounded-lg font-semibold hover:bg-orange-600 transition-colors flex items-center justify-center space-x-2">
+                    <Button
+                        onClick={() => navigate(`/book-tutor/${tutor.id}`)}
+                        className="w-full bg-orange-500 text-white py-3 rounded-lg font-semibold hover:bg-orange-600 transition-colors flex items-center justify-center space-x-2"
+                    >
                       <Video className="w-5 h-5" />
                       <span>Booking</span>
                     </Button>
                     <Button
+                        onClick={() => navigate(`/messages/${tutor.id}`)}
                         variant="outline"
                         className="w-full border border-blue-500 text-blue-500 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors flex items-center justify-center space-x-2"
                     >

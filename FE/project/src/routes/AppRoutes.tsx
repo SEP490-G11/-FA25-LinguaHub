@@ -9,11 +9,11 @@ import Languages from '@/pages/Languages/Languages.tsx';
 import Tutors from '@/pages/Tutors/listTutor.tsx';
 import TutorDetail from '@/pages/TutorDetail/tutorDetail.tsx';
 import CourseDetail from '@/pages/CourseDetail/CourseDetail.tsx';
-import LessonDetail from '@/pages/LessonDetail/index';
+import LessonDetail from '@/pages/LessonDetail/lesson.tsx';
 import PracticeTest from '@/pages/PracticeTest/index';
 import BecomeTutor from '@/pages/BecomeTutor/index';
 import Wishlist from '@/pages/Wishlist/wishList.tsx';
-import Payment from '@/pages/Payment/index';
+import Payment from '@/pages/Payment/payment.tsx';
 import NotFound from '@/pages/not-found';
 import PolicyPage from '@/pages/PolicyPage/index';
 import CompleteForgotPassword from '@/pages/auth/complete-forgot-password/complete-forgot-password.tsx';
@@ -24,8 +24,8 @@ import ResetPassword from '@/pages/auth/reset-password/reset-password.tsx';
 import VerifyEmail from '@/pages/auth/verify-email/veryfy-email.tsx';
 import PaymentHistory from "@/pages/PaymentHistory";
 import MyEnrollments from "@/pages/MyEnrollments";
-import Profile from '@/pages/Profile/Profile.tsx';
-import ChangePassword from '@/pages/ChangePassword/index';
+import Profile from '@/pages/Profile/profile.tsx';
+import ChangePassword from '@/pages/ChangePassword/changePassword.tsx';
 import VerifyEmailForgotPassword from '@/pages/auth/verify-email-forgot-password/verify-email-forgot-password.tsx';
 import CreateCourse from '@/pages/CreateCourse/index';
 import CourseApprovalPage from '@/pages/Admin/CourseApproval/index';
@@ -41,7 +41,8 @@ import TutorAnalytics from '@/pages/TutorPages/Analytics';
 import TutorMessages from '@/pages/TutorPages/Messages';
 import TutorResources from '@/pages/TutorPages/Resources';
 import TutorSettings from '@/pages/TutorPages/Settings';
-
+import Messages from '@/pages/MessagesPage/index.tsx';
+import BookTutor from '@/pages/BookTutor/index.tsx';
 
 export function AppRoutes() {
     return (
@@ -69,7 +70,9 @@ export function AppRoutes() {
             <Route path={ROUTES.WISHLIST} element={<Wishlist />} />
             <Route path={ROUTES.PAYMENT} element={<Payment />} />
             <Route path={ROUTES.POLICY} element={<PolicyPage />} />
-
+            <Route path="/messages" element={<Messages />} />
+            <Route path="/messages/:conversationId" element={<Messages />} />
+            <Route path="/book-tutor/:tutorId" element={<BookTutor />} />
 
             {/* User */}
             <Route path={ROUTES.PROFILE} element={<Profile />} />

@@ -16,4 +16,5 @@ export interface Course {
     createdAt: string;
     isWishListed?: boolean | null;
     isPurchased?: boolean | null;
+    tutorID: number;
 }

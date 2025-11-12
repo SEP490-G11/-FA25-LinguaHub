@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { BookOpen } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { ROUTES } from "@/constants/routes.ts";
+import { useToast } from "@/components/ui/use-toast";
 
 interface CourseContentProps {
     course: {
@@ -30,12 +30,12 @@ interface CourseContentProps {
             }[];
         }[];
     };
-    isPurchased: boolean | null;   // ✅ thêm props này
+    isPurchased: boolean | null;
 }
 
 const CourseContent = ({ course, isPurchased }: CourseContentProps) => {
     const navigate = useNavigate();
-
+    const { toast } = useToast();
     const fadeInUp = {
         initial: { opacity: 0, y: 60 },
         animate: { opacity: 1, y: 0 },
@@ -48,11 +48,21 @@ const CourseContent = ({ course, isPurchased }: CourseContentProps) => {
             sessionStorage.getItem("access_token");
 
         if (!token) {
-            return navigate(`${ROUTES.SIGN_IN}?redirect=${window.location.pathname}`);
+            toast({
+                variant: "destructive",
+                title: "Login required",
+                description: "Please log in to access lessons.",
+            });
+            return;
         }
 
         if (!isPurchased) {
-            return navigate(`/payment/${course.id}`);
+            toast({
+                variant: "destructive",
+                title: "Purchase required",
+                description: "You must purchase the course before accessing lessons.",
+            });
+            return;
         }
 
         navigate(`/lesson/${lessonId}`);

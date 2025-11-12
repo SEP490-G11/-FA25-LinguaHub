@@ -29,9 +29,12 @@ public enum ErrorCode {
     COURSE_HAS_ENROLLMENT(3002, "Cannot modify or delete a course that already has enrolled learners", HttpStatus.CONFLICT),
     COURSE_CATEGORY_NOT_FOUND(3003, "Course category not found", HttpStatus.NOT_FOUND),
     COURSE_ALREADY_EXISTS(3004, "Course with the same title already exists", HttpStatus.BAD_REQUEST),
-    COURSE_DELETE_ONLY_DRAFT_OR_PENDING(3005, "Only Draft - Pending course can be deleted", HttpStatus.FORBIDDEN),
+    COURSE_DELETE_ONLY_DRAFT_OR_REJECTED(3005, "Only Draft or Rejected course can be deleted", HttpStatus.FORBIDDEN),
     SECTION_NOT_FOUND(3006,"Section not found", HttpStatus.NOT_FOUND),
     CAN_NOT_CHANGE_STATUS(3007, "Can't change status", HttpStatus.BAD_REQUEST),
+    COURSE_UPDATE_ONLY_DRAFT_OR_REJECTED(3008, "Only Draft or Rejected course can be updated", HttpStatus.BAD_REQUEST),
+    COURSE_NOT_STARTED(3008, "You haven't started this course yet", HttpStatus.BAD_REQUEST),
+    COURSE_NOT_COMPLETED_HALF(3009, "You must complete at least 50% of the course before reviewing", HttpStatus.BAD_REQUEST),
 
     //  TUTOR MODULE
     TUTOR_NOT_FOUND(4001, "Tutor not found", HttpStatus.NOT_FOUND),
@@ -42,6 +45,7 @@ public enum ErrorCode {
     //  ENROLLMENT & LEARNER MODULE
     ENROLLMENT_NOT_FOUND(5001, "Enrollment not found", HttpStatus.NOT_FOUND),
     ENROLLMENT_ALREADY_EXISTS(5002, "User already enrolled in this course", HttpStatus.CONFLICT),
+    NOT_ENROLLED(5003, "User is not enrolled", HttpStatus.NOT_FOUND),
 
     //  PAYMENT & TRANSACTION
     PAYMENT_NOT_FOUND(6001, "Payment not found", HttpStatus.NOT_FOUND),
@@ -63,8 +67,10 @@ public enum ErrorCode {
     BOOKING_SLOT_NOT_AVAILABLE(8004, "Booking Slot Amount of this Tutor is 0, Please Choose other Tutor ", HttpStatus.NOT_FOUND),
 
     //WISH LIST
-    ALREADY_IN_WISHLIST(8004, "The course already in wishlist", HttpStatus.CONFLICT),;
-
+    ALREADY_IN_WISHLIST(8004, "The course already in wishlist", HttpStatus.CONFLICT),
+    //REVIEW OR FEEDBACK
+    ALREADY_REVIEWED(400, "You have already reviewed this course", HttpStatus.CONFLICT),
+    REVIEW_NOT_FOUND(404, "Review not found", HttpStatus.NOT_FOUND),;
     ErrorCode(int code, String message,HttpStatusCode httpStatusCode) {
         this.code = code;
         this.message = message;

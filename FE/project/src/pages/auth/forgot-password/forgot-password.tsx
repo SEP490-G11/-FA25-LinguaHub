@@ -10,7 +10,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ErrorMessage } from '@/components/shared/ErrorMessage.tsx';
-import api from "@/config/axiosConfig"; // ✅ axios instance
+import api from "@/config/axiosConfig";
 
 // ✅ Schema validate email
 const emailVerificationSchema = z.object({

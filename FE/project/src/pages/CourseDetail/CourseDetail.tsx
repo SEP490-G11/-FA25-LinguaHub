@@ -6,7 +6,6 @@ import CourseContent from "./components/sections/course-content";
 import CourseSidebar from "./components/sections/course-sidebar";
 import CourseFeedback from "./components/sections/course-feedback";
 
-
 interface LessonResource {
   resourceID: number;
   resourceType: string;
@@ -63,9 +62,12 @@ interface CourseDetailResponse {
   avgRating: number;
   totalRatings: number;
   createdAt: string;
-
+  tutorID: number;
   section: Section[];
-  feedbacks: Feedback[];
+  tutorId: number;
+
+  /** ✅ Sửa lại theo backend */
+  review: Feedback[];
 
   isWishListed: boolean | null;
 }
@@ -74,24 +76,22 @@ const CourseDetail = () => {
   const { id } = useParams();
 
   const [course, setCourse] = useState<CourseDetailResponse | null>(null);
-  const [wishlisted, setWishlisted] = useState<boolean>(false);
+  const [wishlisted, setWishlisted] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchCourseDetail = async () => {
       setLoading(true);
-
       try {
         const res = await api.get<{ code: number; result: CourseDetailResponse }>(
             `/courses/detail/${id}`
         );
 
         const data = res.data.result;
-
         setCourse(data);
         setWishlisted(Boolean(data.isWishListed));
       } catch (error) {
-        console.error(" Failed to fetch course detail:", error);
+        console.error("Failed to fetch course detail:", error);
       } finally {
         setLoading(false);
       }
@@ -102,28 +102,33 @@ const CourseDetail = () => {
 
   if (loading) return <p className="text-center py-10 text-lg">Loading course...</p>;
   if (!course) return <p className="text-center py-10 text-red-500">Course not found</p>;
+
   return (
       <div className="min-h-screen bg-gray-50">
 
         {/* wishlisted & setWishlisted xuống Hero */}
         <CourseHeroSection
-            course={course}
+            course={{ ...course, isPurchased: Boolean(course.isPurchased) }}
             wishlisted={wishlisted}
             setWishlisted={setWishlisted}
         />
+
         <section className="py-16">
           <div className="max-w-7xl mx-auto px-8 lg:px-16">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
               <div className="lg:col-span-2 space-y-10">
                 <CourseContent course={course} isPurchased={course.isPurchased} />
+
+                {/* ✅ TRUYỀN review ĐÚNG API */}
                 <CourseFeedback
-                    feedbacks={course.feedbacks}
+                    feedbacks={course.review || []}
                     courseId={course.id}
                     isPurchased={Boolean(course.isPurchased)}
                 />
               </div>
+
               <CourseSidebar
-                  course={course}
+                  course={{ ...course, isPurchased: Boolean(course.isPurchased) }}
                   wishlisted={wishlisted}
                   setWishlisted={setWishlisted}
               />

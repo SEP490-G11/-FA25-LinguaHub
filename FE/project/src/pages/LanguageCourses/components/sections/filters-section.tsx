@@ -60,7 +60,6 @@ const FiltersSection = ({
                     {/* PRICE RANGE SLIDER */}
                     <div className="flex flex-col">
                         <label className="text-sm font-medium text-gray-600">Price Range (₫)</label>
-
                         <div className="flex items-center gap-4 w-[250px]">
                             {/* Min slider */}
                             <input

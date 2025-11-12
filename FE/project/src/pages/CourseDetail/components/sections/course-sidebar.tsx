@@ -1,8 +1,10 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Star, Clock, BookOpen,  Globe, Heart } from "lucide-react";
+import { Star, Clock, BookOpen, Globe, Heart } from "lucide-react";
 import api from "@/config/axiosConfig";
-import { ROUTES } from "@/constants/routes"; // ✅ thêm dòng này
+import { ROUTES } from "@/constants/routes";
+import { useEffect, useState } from "react";
+import { useToast } from "@/components/ui/use-toast";
 
 interface CourseSidebarProps {
   course: {
@@ -20,6 +22,8 @@ interface CourseSidebarProps {
     avgRating: number;
     totalRatings: number;
     tutorAddress: string;
+    tutorID: number;
+    isPurchased: boolean;
     section: {
       sectionID: number;
       orderIndex: number;
@@ -35,71 +39,121 @@ interface CourseSidebarProps {
   wishlisted: boolean;
   setWishlisted: (value: boolean) => void;
 }
+interface TutorCourse {
+  id: number;
+}
 
 const CourseSidebar = ({ course, wishlisted, setWishlisted }: CourseSidebarProps) => {
   const navigate = useNavigate();
+  const [isOwner, setIsOwner] = useState(false);
+  const { toast } = useToast();
+  /**  Kiểm tra user có phải tutor của khóa học */
+  useEffect(() => {
+    const checkTutorCourse = async () => {
+      try {
+        const res = await api.get("/tutor/courses/me");
 
-  const formatPrice = (price: number) =>
-      new Intl.NumberFormat("vi-VN", {
-        style: "currency",
-        currency: "VND",
-      }).format(price);
+        const myCourses: TutorCourse[] = res.data.result || [];
 
-  /** Toggle wishlist với check đăng nhập */
+        const found = myCourses.some((c) => c.id === course.id);
+        if (found) setIsOwner(true);
+      } catch {
+        // avoid unused error
+      }
+    };
+
+    checkTutorCourse();
+  }, [course.id]);
+
+
   const toggleWishlist = async () => {
-    try {
-      const token =
-          localStorage.getItem("access_token") ||
-          sessionStorage.getItem("access_token");
-
-      if (!token) {
-        alert("Please login to use favorite feature.");
-        return;
-      }
-
-      if (wishlisted) {
-        await api.delete(`/wishlist/${course.id}`);
-        setWishlisted(false);
-      } else {
-        await api.post(`/wishlist/${course.id}`);
-        setWishlisted(true);
-      }
-    } catch (err: unknown) {
-      const error = err as { response?: { status?: number } };
-      if (error?.response?.status === 401) {
-        alert("Please login to use favorite feature.");
-        return;
-      }
-      console.error("Wishlist update error:", err);
-    }
-  };
-
-  /**  Mua khóa học */
-  const handleBuyNow = () => {
     const token =
         localStorage.getItem("access_token") ||
         sessionStorage.getItem("access_token");
 
     if (!token) {
-      alert("Please login to purchase the course.");
+      toast({
+        variant: "destructive",
+        title: "You are not logged in",
+        description: "Please login to use wishlist.",
+      });
       return;
     }
 
-    navigate(`/payment/${course.id}`);
+    try {
+      if (wishlisted) {
+        await api.delete(`/wishlist/${course.id}`);
+        setWishlisted(false);
+        toast({
+          variant: "success",
+          title: "Removed from wishlist",
+        });
+      } else {
+        await api.post(`/wishlist/${course.id}`);
+        setWishlisted(true);
+        toast({
+          variant: "success",
+          title: "Added to wishlist",
+        });
+      }
+    } catch {
+      toast({
+        variant: "destructive",
+        title: "Something went wrong",
+      });
+    }
   };
-  const handleViewProfile = () => {
-    const tutorId = course.tutorName?.toLowerCase().replace(/\s+/g, "-");
-    navigate(ROUTES.TUTOR_DETAIL.replace(":id", tutorId));
+  const handleBuyNow = async () => {
+    const token =
+        localStorage.getItem("access_token") ||
+        sessionStorage.getItem("access_token");
+
+    if (!token) {
+      toast({
+        variant: "destructive",
+        title: "You must log in",
+        description: "Login to purchase the course.",
+      });
+      return;
+    }
+
+    try {
+      const response = await api.post("/api/payments/create", {
+        targetId: course.id,
+        paymentType: "Course",
+      });
+
+      navigate(ROUTES.PAYMENT.replace(":id", String(course.id)), {
+        state: {
+          ...course,
+          ...response.data,
+        },
+      });
+    } catch {
+      toast({
+        variant: "destructive",
+        title: "Payment failed",
+        description: "Unable to initialize payment.",
+      });
+    }
   };
+
+  const handleGoToCourse = () => navigate(`/learning/${course.id}`);
+  const handleViewProfile = () =>
+      navigate(ROUTES.TUTOR_DETAIL.replace(":id", `${course.tutorID}`));
 
   const totalLessons = course.section?.reduce(
       (total, sec) => total + sec.lessons.length,
       0
   );
 
+  const formatPrice = (price: number) =>
+      new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(price);
+
   return (
       <div className="lg:col-span-1">
-        {/* Instructor */}
+
+        {/* Instructor Card */}
         <motion.div
             className="bg-white rounded-xl p-6 shadow-md mb-8"
             initial={{ opacity: 0, y: 60 }}
@@ -111,34 +165,26 @@ const CourseSidebar = ({ course, wishlisted, setWishlisted }: CourseSidebarProps
 
           <div className="flex items-center space-x-4 mb-4">
             <img
-                src={
-                    course.tutorAvatarURL ||
-                    "https://placehold.co/150x150/png?text=Tutor"
-                }
+                src={course.tutorAvatarURL || "https://placehold.co/150x150/png?text=Tutor"}
                 alt={course.tutorName}
                 className="w-16 h-16 rounded-full object-cover"
             />
 
             <div>
               <h4 className="font-semibold text-gray-900">{course.tutorName}</h4>
-
-              {/* Địa chỉ tutor */}
               {course.tutorAddress && (
                   <p className="text-sm text-gray-500 mt-0.5">{course.tutorAddress}</p>
               )}
-
               <div className="flex items-center space-x-1 mt-1">
-                <Star className="w-4 h-4 fill-yellow-400 text-yellow-400"/>
+                <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
                 <span className="text-sm">{course.avgRating.toFixed(1)}</span>
                 <span className="text-sm text-gray-500">
-                 ({course.totalRatings} reviews)
-                </span>
+                ({course.totalRatings} reviews)
+              </span>
               </div>
             </div>
-
           </div>
 
-          {/*  Nút xem hồ sơ */}
           <button
               onClick={handleViewProfile}
               className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
@@ -150,9 +196,9 @@ const CourseSidebar = ({ course, wishlisted, setWishlisted }: CourseSidebarProps
         {/* Course Info */}
         <motion.div
             className="bg-white rounded-xl p-6 shadow-md mb-8"
-            initial={{opacity: 0, y: 60}}
-            whileInView={{opacity: 1, y: 0}}
-            viewport={{once: true }}
+            initial={{ opacity: 0, y: 60 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
             transition={{ duration: 0.6 }}
         >
           <h3 className="text-xl font-bold text-gray-900 mb-4">
@@ -176,14 +222,6 @@ const CourseSidebar = ({ course, wishlisted, setWishlisted }: CourseSidebarProps
               <span className="font-medium">{totalLessons}</span>
             </div>
 
-            {/*<div className="flex items-center justify-between">*/}
-            {/*  <div className="flex items-center space-x-2">*/}
-            {/*    <Calendar className="w-5 h-5 text-gray-500" />*/}
-            {/*    <span className="text-gray-600">Schedule</span>*/}
-            {/*  </div>*/}
-            {/*  <span className="font-medium">Flexible</span>*/}
-            {/*</div>*/}
-
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <Globe className="w-5 h-5 text-gray-500" />
@@ -194,7 +232,7 @@ const CourseSidebar = ({ course, wishlisted, setWishlisted }: CourseSidebarProps
           </div>
         </motion.div>
 
-        {/* Payment & Wishlist */}
+        {/*  Payment / Wishlist / Go To Course */}
         <motion.div
             className="bg-white rounded-xl p-6 shadow-md"
             initial={{ opacity: 0, y: 60 }}
@@ -208,24 +246,31 @@ const CourseSidebar = ({ course, wishlisted, setWishlisted }: CourseSidebarProps
           </span>
           </div>
 
-          <button
-              onClick={handleBuyNow}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition mb-3"
-          >
-            Buy Now
-          </button>
+          {isOwner || course.isPurchased ? (
+              <button
+                  onClick={handleGoToCourse}
+                  className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition mb-3"
+              >
+                Go to Course
+              </button>
+          ) : (
+              <>
+                <button
+                    onClick={handleBuyNow}
+                    className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition mb-3"
+                >
+                  Buy Now
+                </button>
 
-          <button
-              onClick={toggleWishlist}
-              className="w-full flex justify-center items-center gap-2 border border-blue-600 text-blue-600 py-3 rounded-lg font-semibold hover:bg-blue-50 transition"
-          >
-            <Heart
-                className={`w-5 h-5 ${
-                    wishlisted ? "fill-blue-600 text-blue-600" : ""
-                }`}
-            />
-            {wishlisted ? "Remove from Wishlist" : "Add to Wishlist"}
-          </button>
+                <button
+                    onClick={toggleWishlist}
+                    className="w-full flex justify-center items-center gap-2 border border-blue-600 text-blue-600 py-3 rounded-lg font-semibold hover:bg-blue-50 transition"
+                >
+                  <Heart className={`w-5 h-5 ${wishlisted ? "fill-blue-600 text-blue-600" : ""}`} />
+                  {wishlisted ? "Remove from Wishlist" : "Add to Wishlist"}
+                </button>
+              </>
+          )}
         </motion.div>
       </div>
   );

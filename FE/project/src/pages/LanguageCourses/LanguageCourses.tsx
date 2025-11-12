@@ -64,7 +64,7 @@ const LanguageCourses = () => {
         }
     }, [courses]);
 
-    /** ✅ Filter theo Language + Search + Category + Price */
+    /**  Filter theo Language + Search + Category + Price */
     const filteredCourses = courses.filter((course) => {
         const matchesLanguage = language
             ? course.language?.trim().toLowerCase().includes(language.toLowerCase())
@@ -83,14 +83,14 @@ const LanguageCourses = () => {
         return matchesLanguage && matchesSearch && matchesCategory && matchesPrice;
     });
 
-    /** ✅ Pagination */
+    /**  Pagination */
     const totalPages = Math.ceil(filteredCourses.length / coursesPerPage);
     const paginatedCourses = filteredCourses.slice(
         (currentPage - 1) * coursesPerPage,
         currentPage * coursesPerPage
     );
 
-    /** ✅ Không tìm thấy language */
+    /**  Không tìm thấy language */
     if (!currentLang) {
         return (
             <div className="min-h-screen flex items-center justify-center">
@@ -106,7 +106,7 @@ const LanguageCourses = () => {
                 onSearch={(val) => {
                     setSearchTerm(val);
                     setCurrentPage(1);
-                    window.scrollTo({ top: 0, behavior: "smooth" }); // ✅ scroll on search
+                    window.scrollTo({ top: 0, behavior: "smooth" });
                 }}
             />
 
@@ -114,7 +114,7 @@ const LanguageCourses = () => {
                 selectedCategory={selectedCategory}
                 categories={categories}
                 courseCount={filteredCourses.length}
-                maxPrice={Math.max(...courses.map((c) => c.price), 0)} // ✅ LUÔN LÀ MAX PRICE
+                maxPrice={Math.max(...courses.map((c) => c.price), 0)}
                 priceRange={priceRange}
                 onPriceRangeChange={(range: [number, number]) => {
                     setPriceRange(range);
@@ -134,7 +134,7 @@ const LanguageCourses = () => {
                 totalPages={totalPages}
                 onPageChange={(page) => {
                     setCurrentPage(page);
-                    window.scrollTo({ top: 0, behavior: "smooth" }); // ✅ scroll on page change
+                    window.scrollTo({ top: 0, behavior: "smooth" });
                 }}
             />
         </div>
