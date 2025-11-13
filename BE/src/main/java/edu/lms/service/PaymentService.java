@@ -65,7 +65,7 @@ public class PaymentService {
                     .status(PaymentStatus.PENDING)
                     .amount(amount)
                     .isPaid(false)
-                    .expiresAt(LocalDateTime.now().plusMinutes(15))
+                    .expiresAt(LocalDateTime.now().plusMinutes(3))
                     .build();
 
             paymentRepository.save(payment);
@@ -101,7 +101,7 @@ public class PaymentService {
                         .endTime(s.getEndTime())
                         .status(SlotStatus.Locked)
                         .lockedAt(LocalDateTime.now())
-                        .expiresAt(LocalDateTime.now().plusMinutes(15))
+                        .expiresAt(LocalDateTime.now().plusMinutes(3))
                         .build();
                 bookingPlanSlotRepository.save(slot);
             }
@@ -115,7 +115,7 @@ public class PaymentService {
                     .status(PaymentStatus.PENDING)
                     .amount(totalAmount)
                     .isPaid(false)
-                    .expiresAt(LocalDateTime.now().plusMinutes(15))
+                    .expiresAt(LocalDateTime.now().plusMinutes(3))
                     .build();
 
             paymentRepository.save(payment);
@@ -131,9 +131,8 @@ public class PaymentService {
             throw new AppException(ErrorCode.INVALID_PAYMENT_TYPE);
         }
 
-        // ======================================================
         // GỌI PAYOS - SDK + expiredAt API
-        // ======================================================
+
         var wrapper = payOSService.createPaymentLink(
                 request.getUserId(),
                 request.getPaymentType(),
@@ -144,7 +143,7 @@ public class PaymentService {
 
         CheckoutResponseData data = wrapper.data();
         LocalDateTime expiredAt = (wrapper.expiredAt() != null)
-                ? LocalDateTime.ofInstant(wrapper.expiredAt(), ZoneOffset.UTC)
+                ? wrapper.expiredAt()
                 : payment.getExpiresAt();
 
         // ======================================================

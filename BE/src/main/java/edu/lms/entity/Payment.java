@@ -108,7 +108,7 @@ public class Payment {
     @Column(updatable = false)
     LocalDateTime createdAt;
 
-    // ⏳ Thời gian hết hạn (mặc định sau 15 phút)
+
     @Column(nullable = false)
     LocalDateTime expiresAt;
 
