@@ -1,4 +1,5 @@
-{
+   //dùng để cho trình biên dịch (tsc) hoặc bundler
+    {
   "files": [],
   "references": [
     { "path": "./tsconfig.app.json" },

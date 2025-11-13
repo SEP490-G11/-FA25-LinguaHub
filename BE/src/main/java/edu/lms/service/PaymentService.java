@@ -134,6 +134,7 @@ public class PaymentService {
         // GỌI PAYOS - SDK + expiredAt API
 
         var wrapper = payOSService.createPaymentLink(
+                payment.getPaymentID(),
                 request.getUserId(),
                 request.getPaymentType(),
                 request.getTargetId(),

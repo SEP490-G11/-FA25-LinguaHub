@@ -2,6 +2,10 @@ package edu.lms.controller;
 
 import edu.lms.dto.request.PaymentRequest;
 import edu.lms.dto.response.PaymentResponse;
+import edu.lms.entity.Payment;
+import edu.lms.exception.AppException;
+import edu.lms.exception.ErrorCode;
+import edu.lms.repository.PaymentRepository;
 import edu.lms.service.PaymentService;
 import edu.lms.service.PayOSService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -10,11 +14,13 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.List;
 
 @Tag(name = "Payment Management", description = "Endpoints for creating and managing payments (Admin / Tutor / Learner)")
@@ -22,7 +28,7 @@ import java.util.List;
 @RequestMapping("/api/payments")
 @RequiredArgsConstructor
 public class PaymentController {
-
+    private final PaymentRepository paymentRepository;
     private final PaymentService paymentService;
     private final PayOSService payOSService;
 
@@ -93,5 +99,40 @@ public class PaymentController {
     @GetMapping("/ping")
     public ResponseEntity<String> ping() {
         return new ResponseEntity<>("Payment service is running ✅", HttpStatus.OK);
+    }
+    // ======================================================
+    // CALLBACK: CANCEL (PayOS → Backend → FE)
+    // ======================================================
+    @GetMapping("/cancel")
+    public void cancelPayment(
+            @RequestParam("paymentId") Long paymentId,
+            HttpServletResponse response
+    ) throws IOException {
+
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_NOT_FOUND));
+
+        Long targetId = payment.getTargetId();
+
+        //  FE redirect: course page
+        response.sendRedirect("http://localhost:3000/course/" + targetId);
+    }
+
+    // ======================================================
+    // CALLBACK: SUCCESS (PayOS → Backend → FE)
+    // ======================================================
+    @GetMapping("/success")
+    public void successPayment(
+            @RequestParam("paymentId") Long paymentId,
+            HttpServletResponse response
+    ) throws IOException {
+
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_NOT_FOUND));
+
+        Long targetId = payment.getTargetId();
+
+        // FE redirect with ?paid=true
+        response.sendRedirect("http://localhost:3000/course/" + targetId + "?paid=true");
     }
 }

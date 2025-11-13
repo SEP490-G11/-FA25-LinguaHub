@@ -1,92 +1,233 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { Star, Clock, Users, Award, Play, BookOpen, CheckCircle, Globe, Calendar } from 'lucide-react';
+import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { Clock, Star, Heart } from "lucide-react";
+import api from "@/config/axiosConfig";
+import { useEffect, useState } from "react";
+// import { ROUTES } from "@/constants/routes";
+import { useToast } from "@/components/ui/use-toast";
 
-interface CourseHeroSectionProps {
-  course: any;
+interface TutorCourse {
+  id: number;
 }
 
-const CourseHeroSection = ({ course }: CourseHeroSectionProps) => {
-  const fadeInUp = {
-    initial: { opacity: 0, y: 60 },
-    animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.6 }
+interface CourseHeroSectionProps {
+  course: {
+    id: number;
+    title: string;
+    description: string;
+    duration: number;
+    price: number;
+    language: string;
+    thumbnailURL: string;
+    tutorId: number;
+    tutorName: string;
+    avgRating: number;
+    totalRatings: number;
+    learnerCount: number;
+    categoryName: string;
+    createdAt: string;
+    isPurchased: boolean;
+  };
+  wishlisted: boolean;
+  setWishlisted: (value: boolean) => void;
+}
+
+const CourseHeroSection = ({ course, wishlisted, setWishlisted }: CourseHeroSectionProps) => {
+  const navigate = useNavigate();
+  const [isOwner, setIsOwner] = useState(false);
+
+  const { toast } = useToast(); // ✅ toast shadcn
+
+  /** Check khóa học có phải của tutor hay không */
+  useEffect(() => {
+    const checkTutorCourse = async () => {
+      try {
+        const res = await api.get("/tutor/courses/me");
+        const myCourses = res.data.result || [];
+
+        const found = myCourses.some((c: TutorCourse) => c.id === course.id);
+        if (found) setIsOwner(true);
+      } catch {
+        // ignore error
+      }
+    };
+
+    checkTutorCourse();
+  }, [course.id]);
+
+  /** Toggle Wishlist */
+  const toggleWishlist = async () => {
+    const token = localStorage.getItem("access_token") || sessionStorage.getItem("access_token");
+
+    if (!token) {
+      toast({
+        title: "Login Required",
+        description: "Please sign in to use wishlist.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      if (wishlisted) {
+        await api.delete(`/wishlist/${course.id}`);
+        setWishlisted(false);
+      } else {
+        await api.post(`/wishlist/${course.id}`);
+        setWishlisted(true);
+      }
+    } catch {
+      toast({
+        title: "Error",
+        description: "Failed to update wishlist.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
-    }).format(price * 1000);
+  /** Buy now → chuyển sang PayOS checkout page */
+  const handleBuyNow = async () => {
+    const token = localStorage.getItem("access_token") || sessionStorage.getItem("access_token");
+
+    if (!token) {
+      toast({
+        title: "Login Required",
+        description: "Please sign in before buying the course.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const response = await api.post("/api/payments/create", {
+        targetId: course.id,
+        paymentType: "Course",
+      });
+
+      //  Redirect trực tiếp sang link thanh toán PayOS
+      window.location.href = response.data.checkoutUrl;
+
+    } catch {
+      toast({
+        title: "Payment Error",
+        description: "Failed to initialize payment.",
+        variant: "destructive",
+      });
+    }
   };
+
+
+  const formatPrice = (price: number) =>
+      new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(price);
+
+  const formatDate = (dateString: string) =>
+      new Date(dateString).toLocaleDateString("vi-VN", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
 
   return (
-    <section className="bg-gradient-to-r from-blue-600 to-purple-700 py-16">
-      <div className="max-w-7xl mx-auto px-8 lg:px-16">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          <motion.div 
-            className="text-white"
-            initial="initial"
-            animate="animate"
-            variants={fadeInUp}
-          >
-            <div className="flex items-center space-x-2 mb-4">
-              <span className="bg-white text-blue-600 px-3 py-1 rounded-full text-sm font-medium">
-                {course.language} {course.instructor.flag}
+      <section className="bg-gradient-to-r from-blue-600 to-purple-700 py-16">
+        <div className="max-w-7xl mx-auto px-8 lg:px-16">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+
+            {/* LEFT SIDE */}
+            <motion.div
+                className="text-white"
+                initial={{ opacity: 0, y: 60 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+            >
+            <span className="bg-white text-blue-600 px-3 py-1 rounded-full text-sm font-medium">
+              {course.language}
+            </span>
+
+              <h1 className="text-4xl font-bold mt-4 mb-2">{course.title}</h1>
+
+              <div className="flex items-center gap-4 text-blue-100 mb-4">
+              <span className="bg-white/20 px-3 py-1 rounded-full text-sm">
+                {course.categoryName}
               </span>
-              <span className="bg-green-500 text-white px-3 py-1 rounded-full text-sm">
-                {course.level}
-              </span>
-            </div>
-            
-            <h1 className="text-4xl font-bold mb-4">{course.title}</h1>
-            <p className="text-xl text-blue-100 mb-6">{course.description}</p>
-            
-            <div className="flex items-center space-x-6 mb-6">
-              <div className="flex items-center space-x-2">
-                <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                <span className="font-medium">{course.rating}</span>
-                <span className="text-blue-200">({course.reviews} reviews)</span>
+                <span className="text-sm opacity-90">Created on: {formatDate(course.createdAt)}</span>
               </div>
-              <div className="flex items-center space-x-2">
-                <Users className="w-5 h-5 text-blue-200" />
-                <span>{course.students.toLocaleString()} students</span>
+
+              <p className="text-xl text-blue-100 mb-6">{course.description}</p>
+
+              <div className="flex items-center gap-4 text-blue-100 mb-4">
+                <div className="flex items-center gap-1">
+                  <Star className="w-5 h-5 text-yellow-300 fill-yellow-300" />
+                  <span className="font-semibold">{course.avgRating.toFixed(1)}</span>
+                  <span className="opacity-80 text-sm">({course.totalRatings} reviews)</span>
+                </div>
+
+                <span>•</span>
+                <span>{course.learnerCount} learners</span>
               </div>
-              <div className="flex items-center space-x-2">
+
+              <div className="flex items-center space-x-2 mb-6">
                 <Clock className="w-5 h-5 text-blue-200" />
-                <span>{course.duration}</span>
+                <span>{course.duration} hours</span>
               </div>
-            </div>
 
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <span className="text-3xl font-bold">{formatPrice(course.price * 25000)}</span>
-                <span className="text-blue-200">/hour</span>
-                <span className="text-blue-300 line-through">{formatPrice(course.originalPrice * 25000)}</span>
+              <span className="text-3xl font-bold mb-6 block">{formatPrice(course.price)}</span>
+
+              {/* BUTTON LOGIC */}
+              <div className="flex gap-4 mt-4">
+
+                {!isOwner && !course.isPurchased && (
+                    <button
+                        onClick={toggleWishlist}
+                        className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all border border-white ${
+                            wishlisted
+                                ? "bg-white text-blue-600 hover:bg-gray-100"
+                                : "bg-transparent text-white hover:bg-white hover:text-blue-600"
+                        }`}
+                    >
+                      <Heart
+                          className={`w-5 h-5 ${
+                              wishlisted ? "fill-blue-600 text-blue-600" : "text-white"
+                          }`}
+                      />
+                      {wishlisted ? "Remove from Wishlist" : "Add to Wishlist"}
+                    </button>
+                )}
+
+                {isOwner || course.isPurchased ? (
+                    <button
+                        onClick={() => navigate(`/learning/${course.id}`)}
+                        className="px-6 py-3 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 transition"
+                    >
+                      Go to Course
+                    </button>
+                ) : (
+                    <button
+                        onClick={handleBuyNow}
+                        className="px-6 py-3 bg-white text-blue-600 font-semibold rounded-lg hover:bg-gray-100 transition"
+                    >
+                      Buy Now
+                    </button>
+                )}
               </div>
-            </div>
-          </motion.div>
+            </motion.div>
 
-          <motion.div 
-            className="relative"
-            initial={{ opacity: 0, x: 60 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8 }}
-          >
-            <img
-              src={course.image}
-              alt={course.title}
-              className="rounded-2xl shadow-2xl"
-            />
-            <div className="absolute inset-0 bg-black bg-opacity-40 rounded-2xl flex items-center justify-center">
-              <button className="bg-white bg-opacity-20 backdrop-blur-sm p-4 rounded-full hover:bg-opacity-30 transition-all">
-                <Play className="w-8 h-8 text-white ml-1" />
-              </button>
-            </div>
-          </motion.div>
+            {/* RIGHT SIDE IMAGE */}
+            <motion.div
+                className="relative"
+                initial={{ opacity: 0, x: 60 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.8 }}
+            >
+              <img
+                  src={course.thumbnailURL}
+                  alt={course.title}
+                  className="rounded-2xl shadow-2xl"
+              />
+            </motion.div>
+
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
   );
 };
 

@@ -30,55 +30,59 @@ public class SecurityConfig {
 
     @Autowired
     private CustomJwtDecoder customJwtDecoder;
-    
-    // UserDetailsService bean is automatically detected by Spring Security
-    // No need to inject it manually in Spring Boot 3.x
 
+    // TẤT CẢ ENDPOINT CÔNG KHAI (fixed full)
     private static final String[] PUBLIC_ENDPOINTS = {
-            //  Swagger UI + OpenAPI
-            "/swagger-ui.html",
-            "/swagger-ui/**",
+            "/swagger-ui.html", "/swagger-ui/**",
             "/swagger-resources/**",
-            "/v3/api-docs",
-            "/v3/api-docs/**",
-            "/v3/api-docs.yaml",
+            "/v3/api-docs", "/v3/api-docs/**", "/v3/api-docs.yaml",
             "/webjars/**",
             "/configuration/ui",
             "/configuration/security",
+
             "/auth/**",
             "/api/test/**",
+
+            //  PAYMENT PUBLIC ENDPOINTS
+            "/api/payments/create",
             "/api/payments/webhook",
-            "api/payments/create",
-            "tutor/courses/all"
+            "/api/payments/success",
+            "/api/payments/cancel",
+
+            "/tutor/courses/all"
     };
 
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
+                        // Public GET endpoints
+                        .requestMatchers(HttpMethod.GET, "/courses/public/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/courses/detail/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/categories/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/tutors/approved").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/tutors/*").permitAll()
 
-@Bean
-public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-    http
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .csrf(AbstractHttpConfigurer::disable)
-            .authorizeHttpRequests(auth -> auth
-                    .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                    .requestMatchers(HttpMethod.GET, "/courses/public/**").permitAll()
-                    .requestMatchers(HttpMethod.GET, "/courses/detail/**").permitAll()
-                    .requestMatchers(HttpMethod.GET, "/categories/**").permitAll()
-                    .requestMatchers(HttpMethod.GET, "/tutors/approved").permitAll()
-                    .requestMatchers(HttpMethod.GET, "/tutors/*").permitAll()
-                    .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
-                    .anyRequest().authenticated()
-            )
-            .oauth2ResourceServer(oauth2 -> oauth2
-                    .jwt(jwt -> jwt
-                            .decoder(customJwtDecoder)
-                            .jwtAuthenticationConverter(jwtAuthenticationConverter()))
-                    .authenticationEntryPoint(new JwtAuthenticationEntryPoint())
-            );
+                        // ⭐ CHO PHÉP TẤT CẢ /api/payments/**
+                        .requestMatchers("/api/payments/**").permitAll()
 
-    return http.build();
-}
+                        .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
 
+                        .anyRequest().authenticated()
+                )
+                .oauth2ResourceServer(oauth2 -> oauth2
+                        .jwt(jwt -> jwt
+                                .decoder(customJwtDecoder)
+                                .jwtAuthenticationConverter(jwtAuthenticationConverter()))
+                        .authenticationEntryPoint(new JwtAuthenticationEntryPoint())
+                );
+
+        return http.build();
+    }
 
     @Bean
     public JwtAuthenticationConverter jwtAuthenticationConverter() {
@@ -86,11 +90,9 @@ public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         converter.setJwtGrantedAuthoritiesConverter(jwt -> {
             List<String> authorities = new ArrayList<>();
 
-            // Lấy danh sách quyền từ claim "permissions"
             List<String> permissions = jwt.getClaimAsStringList("permissions");
             if (permissions != null) authorities.addAll(permissions);
 
-            // Thêm ROLE_ chính
             String role = jwt.getClaimAsString("role");
             if (role != null) authorities.add("ROLE_" + role.toUpperCase());
 
@@ -101,27 +103,23 @@ public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return converter;
     }
 
-    //AuthenticationManager
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig)
             throws Exception {
         return authConfig.getAuthenticationManager();
     }
 
-    // AuthenticationProvider is automatically configured by Spring Boot
-    // when UserDetailsService and PasswordEncoder beans are available
-    // No need to manually create DaoAuthenticationProvider bean in Spring Boot 3.x
-
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder(10);
     }
 
-    //CORS
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of("http://localhost:*", "http://127.0.0.1:*"));
+        configuration.setAllowedOriginPatterns(
+                List.of("http://localhost:*", "http://127.0.0.1:*", "https://*.ngrok-free.dev")
+        );
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
