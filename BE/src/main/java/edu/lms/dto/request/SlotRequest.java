@@ -1,6 +1,5 @@
 package edu.lms.dto.request;
 
-import edu.lms.enums.PaymentType;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
