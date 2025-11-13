@@ -1,4 +1,3 @@
-import React from 'react';
 import HeroSection from './components/sections/hero-section';
 import BenefitsSection from './components/sections/benefits-section';
 import RequirementsSection from './components/sections/requirements-section';

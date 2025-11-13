@@ -33,6 +33,7 @@ public class PayOSService {
             new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     public CheckoutWrapper createPaymentLink(
+            Long paymentId,
             Long userId,
             PaymentType type,
             Long targetId,
@@ -54,13 +55,17 @@ public class PayOSService {
                     .price(amount.intValue())
                     .build();
 
+            //  callback URL lấy từ application.yml
+            String returnUrl = props.getReturnUrl() + "?paymentId=" + paymentId;
+            String cancelUrl = props.getCancelUrl() + "?paymentId=" + paymentId;
+
             // Build PaymentData gửi lên PayOS
             PaymentData paymentData = PaymentData.builder()
                     .orderCode(orderCode)
                     .amount(amount.intValue())
                     .description(safeDesc)
-                    .returnUrl(props.getReturnUrl())
-                    .cancelUrl(props.getCancelUrl())
+                    .returnUrl(returnUrl)
+                    .cancelUrl(cancelUrl)
                     .item(item)
                     .build();
 

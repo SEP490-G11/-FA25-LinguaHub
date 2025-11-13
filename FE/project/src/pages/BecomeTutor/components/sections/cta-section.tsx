@@ -1,5 +1,6 @@
-import React from 'react';
+
 import { motion } from 'framer-motion';
+import {Link} from "react-router-dom";
 
 const CTASection = () => {
   const fadeInUp = {
@@ -20,29 +21,34 @@ const CTASection = () => {
     <section className="py-16 bg-gradient-to-r from-blue-500 to-purple-600">
       <div className="max-w-7xl mx-auto px-8 lg:px-16 text-center">
         <motion.div
-          initial="initial"
-          whileInView="animate"
-          viewport={{ once: true }}
-          variants={staggerContainer}
+            initial="initial"
+            whileInView="animate"
+            viewport={{once: true}}
+            variants={staggerContainer}
         >
-          <motion.h2 
-            className="text-4xl font-bold text-white mb-6"
-            variants={fadeInUp}
+          <motion.h2
+              className="text-4xl font-bold text-white mb-6"
+              variants={fadeInUp}
           >
             Ready to Start Teaching?
           </motion.h2>
-          <motion.p 
-            className="text-xl text-blue-100 mb-8"
-            variants={fadeInUp}
+          <motion.p
+              className="text-xl text-blue-100 mb-8"
+              variants={fadeInUp}
           >
             Join our community of native speakers and start earning today
           </motion.p>
-          <motion.button 
-            className="bg-white text-blue-600 px-8 py-4 rounded-full font-semibold text-lg hover:bg-gray-100 transition-colors"
-            variants={fadeInUp}
-          >
-            Apply to Become a Tutor
-          </motion.button>
+          <motion.div variants={fadeInUp}>
+            <Link to="/learner/apply-tutor">
+              <motion.button
+                  className="bg-white text-blue-600 px-8 py-4 rounded-full font-semibold text-lg hover:bg-gray-100 transition-colors"
+                  whileHover={{scale: 1.05}}
+                  whileTap={{scale: 0.95}}
+              >
+                Apply to Become a Tutor
+              </motion.button>
+            </Link>
+          </motion.div>
         </motion.div>
       </div>
     </section>

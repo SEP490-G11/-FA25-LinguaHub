@@ -1,11 +1,24 @@
-import api from "./config/axiosConfig";  //import đúng tên export
+import { AppRoutes } from '@/routes/AppRoutes';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
+import { SidebarProvider } from '@/contexts/SidebarContext';
+import { ScrollToTop } from "@/hooks/ScrollToTop";
+import { Toaster } from "@/components/ui/toaster.tsx";
 
 function App() {
-    api.get("/test")
-        .then((res) => console.log("Backend connected:", res.data))
-        .catch((err) => console.error("❌ Connection failed:", err));
-
-    return <div>LinguaHub Connection Test</div>;
+    return (
+        <SidebarProvider>
+            <ScrollToTop />
+            <div className="min-h-screen bg-background">
+                <Header />
+                <main>
+                    <AppRoutes />
+                    <Toaster />
+                </main>
+                <Footer />
+            </div>
+        </SidebarProvider>
+    );
 }
 
 export default App;
