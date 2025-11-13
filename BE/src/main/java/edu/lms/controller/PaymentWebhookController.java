@@ -23,24 +23,22 @@ public class PaymentWebhookController {
 
     private final PaymentWebhookService paymentWebhookService;
     private final PayOS payOS;
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper; // ✅ inject từ Spring
 
     @PostMapping
     @Operation(summary = "Receive PayOS webhook", description = "Callback from PayOS after payment success/failure")
-    public ResponseEntity<?> handleWebhook(@RequestBody String rawBody) {
+    public ResponseEntity<Map<String, Object>> handleWebhook(@RequestBody String rawBody) {
         try {
-            log.info("📦 [PAYOS RAW WEBHOOK] body={}", rawBody);
+            log.info("[PAYOS WEBHOOK] Received payload ({} bytes)", rawBody.length());
 
-            // Parse + verify signature bằng SDK (chuẩn theo docs mới)
+            // Parse + verify chữ ký
             Webhook webhook = mapper.readValue(rawBody, Webhook.class);
             WebhookData data = payOS.verifyPaymentWebhookData(webhook);
 
-            // Nếu tới đây không throw => signature hợp lệ
-            log.info("Verified PayOS webhook: orderCode={} | code={} | desc={}",
+            log.info("[PAYOS VERIFIED] orderCode={} | code={} | desc={}",
                     data.getOrderCode(), data.getCode(), data.getDesc());
 
-            // Tùy hệ thống: nếu muốn map trạng thái chi tiết thì đọc data.getCode()/getDesc()
-            String status = "PAID";
+            String status = "00".equals(data.getCode()) ? "PAID" : "FAILED";
 
             paymentWebhookService.handleWebhook(
                     String.valueOf(data.getOrderCode()),
@@ -54,9 +52,11 @@ public class PaymentWebhookController {
                     "status", status
             ));
         } catch (Exception e) {
-            // SDK ném lỗi nếu chữ ký sai / payload không hợp lệ
-            log.error("Error verifying/handling PayOS webhook: {}", e.getMessage(), e);
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            log.error("[PAYOS WEBHOOK] Verification failed: {}", e.getMessage(), e);
+            return ResponseEntity.ok(Map.of(
+                    "message", "Webhook received but verification failed",
+                    "error", e.getMessage()
+            ));
         }
     }
 }

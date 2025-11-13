@@ -2,7 +2,6 @@ package edu.lms.repository;
 
 import edu.lms.entity.Payment;
 import edu.lms.enums.PaymentStatus;
-import edu.lms.enums.PaymentType;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDateTime;
