@@ -23,36 +23,46 @@ public class PaymentWebhookController {
 
     private final PaymentWebhookService paymentWebhookService;
     private final PayOS payOS;
-    private final ObjectMapper mapper; // ✅ inject từ Spring
+    private final ObjectMapper mapper;
 
     @PostMapping
-    @Operation(summary = "Receive PayOS webhook", description = "Callback from PayOS after payment success/failure")
+    @Operation(summary = "Receive PayOS webhook", description = "Callback from PayOS after payment result")
     public ResponseEntity<Map<String, Object>> handleWebhook(@RequestBody String rawBody) {
         try {
-            log.info("[PAYOS WEBHOOK] Received payload ({} bytes)", rawBody.length());
+            log.info("[PAYOS WEBHOOK] RAW BODY = {}", rawBody);
 
-            // Parse + verify chữ ký
+            // Parse JSON
             Webhook webhook = mapper.readValue(rawBody, Webhook.class);
+
+            // Verify signature
             WebhookData data = payOS.verifyPaymentWebhookData(webhook);
 
+            Long orderCode = data.getOrderCode();
+            String code = data.getCode();   // "00" = SUCCESS
+            String desc = data.getDesc();   // description text
+
             log.info("[PAYOS VERIFIED] orderCode={} | code={} | desc={}",
-                    data.getOrderCode(), data.getCode(), data.getDesc());
+                    orderCode, code, desc);
 
-            String status = "00".equals(data.getCode()) ? "PAID" : "FAILED";
-
+            // Forward to service
             paymentWebhookService.handleWebhook(
-                    String.valueOf(data.getOrderCode()),
-                    status,
-                    Map.of("code", data.getCode(), "desc", data.getDesc())
+                    String.valueOf(orderCode),
+                    code,     // <-- code quyết định PAID hay FAILED
+                    Map.of(
+                            "code", code,
+                            "desc", desc
+                    )
             );
 
             return ResponseEntity.ok(Map.of(
                     "message", "Webhook processed successfully",
-                    "orderCode", data.getOrderCode(),
-                    "status", status
+                    "orderCode", orderCode,
+                    "status", code
             ));
+
         } catch (Exception e) {
-            log.error("[PAYOS WEBHOOK] Verification failed: {}", e.getMessage(), e);
+            log.error("[PAYOS WEBHOOK ERROR] {}", e.getMessage(), e);
+
             return ResponseEntity.ok(Map.of(
                     "message", "Webhook received but verification failed",
                     "error", e.getMessage()
