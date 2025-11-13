@@ -35,6 +35,7 @@ public enum ErrorCode {
     COURSE_UPDATE_ONLY_DRAFT_OR_REJECTED(3008, "Only Draft or Rejected course can be updated", HttpStatus.BAD_REQUEST),
     COURSE_NOT_STARTED(3008, "You haven't started this course yet", HttpStatus.BAD_REQUEST),
     COURSE_NOT_COMPLETED_HALF(3009, "You must complete at least 50% of the course before reviewing", HttpStatus.BAD_REQUEST),
+    COURSE_NOT_APPROVED(4005, "This course is not yet approved for public view", HttpStatus.FORBIDDEN),
 
     //  TUTOR MODULE
     TUTOR_NOT_FOUND(4001, "Tutor not found", HttpStatus.NOT_FOUND),
@@ -69,8 +70,11 @@ public enum ErrorCode {
     //WISH LIST
     ALREADY_IN_WISHLIST(8004, "The course already in wishlist", HttpStatus.CONFLICT),
     //REVIEW OR FEEDBACK
-    ALREADY_REVIEWED(400, "You have already reviewed this course", HttpStatus.CONFLICT),
-    REVIEW_NOT_FOUND(404, "Review not found", HttpStatus.NOT_FOUND),;
+    ALREADY_REVIEWED(9000, "You have already reviewed this course", HttpStatus.CONFLICT),
+    REVIEW_NOT_FOUND(9001, "Review not found", HttpStatus.NOT_FOUND),
+   //OBJECTIVE COURSE
+   OBJECTIVE_NOT_FOUND(9002, "Objective not found", HttpStatus.NOT_FOUND),;
+
     ErrorCode(int code, String message,HttpStatusCode httpStatusCode) {
         this.code = code;
         this.message = message;

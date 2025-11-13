@@ -42,9 +42,9 @@ public class TutorBookingPlanService {
     TutorBookingPlanMapper mapper;
 
     /**
-     * Tạo booking plan mới và tự động generate slots
+     * Tạo booking plan mới
      * @param request Request tạo booking plan
-     * @return Response với thông tin booking plan và số lượng slots đã generate
+     * @return Response với thông tin booking plan
      */
     public TutorBookingPlanResponse createBookingPlan(TutorBookingPlanRequest request) {
         // Validate và lấy tutor
@@ -78,8 +78,9 @@ public class TutorBookingPlanService {
         bookingPlan.setUpdatedAt(LocalDateTime.now());
         bookingPlan = bookingPlanRepository.save(bookingPlan);
 
-        // Generate slots tự động
-        int numberOfSlots = generateBookingPlanSlots(bookingPlan, request);
+        // Tự động tìm thứ đó của tuần hiện tại/tuần tới và generate slots
+        LocalDate targetDate = findTargetDateFromTitle(request.getTitle());
+        int numberOfSlots = generateSlotsForDate(bookingPlan, request, targetDate);
 
         // Tạo response
         TutorBookingPlanResponse response = mapper.toResponse(bookingPlan);
@@ -102,78 +103,25 @@ public class TutorBookingPlanService {
     }
 
     /**
-     * Generate BookingPlanSlot từ BookingPlan
-     * @param bookingPlan Booking plan đã được tạo
-     * @param request Request chứa thông tin để generate
-     * @return Số lượng slots đã được generate
+     * Tìm ngày của thứ trong tuần hiện tại hoặc tuần tới
+     * @param title Title của booking plan (T2, T3, T4, T5, T6, T7, CN)
+     * @return LocalDate của thứ đó trong tuần hiện tại hoặc tuần tới
      */
-    private int generateBookingPlanSlots(BookingPlan bookingPlan, TutorBookingPlanRequest request) {
-        List<BookingPlanSlot> slots = new ArrayList<>();
-        LocalDate today = LocalDate.now();
-        LocalDateTime now = LocalDateTime.now();
-        int weeksToGenerate = request.getWeekToGenerate();
-
+    private LocalDate findTargetDateFromTitle(String title) {
         // Convert title (T2, T3, ...) sang DayOfWeek
-        DayOfWeek targetDayOfWeek = parseTitleToDayOfWeek(request.getTitle());
-
-        // Tìm thứ đó của tuần hiện tại hoặc tuần tới (nếu đã qua)
-        LocalDate firstTargetDate = today.with(targetDayOfWeek);
-        if (firstTargetDate.isBefore(today)) {
-            // Nếu thứ đó của tuần này đã qua, lấy thứ đó của tuần tới
-            firstTargetDate = firstTargetDate.plusWeeks(1);
+        DayOfWeek targetDayOfWeek = parseTitleToDayOfWeek(title);
+        
+        LocalDate today = LocalDate.now();
+        
+        // Tìm thứ đó của tuần hiện tại
+        LocalDate targetDate = today.with(targetDayOfWeek);
+        
+        // Nếu thứ đó của tuần này đã qua, lấy thứ đó của tuần tới
+        if (targetDate.isBefore(today)) {
+            targetDate = targetDate.plusWeeks(1);
         }
-
-        // Generate slots cho mỗi tuần
-        for (int week = 0; week < weeksToGenerate; week++) {
-            LocalDate targetDate = firstTargetDate.plusWeeks(week);
-
-            // Generate slots cho ngày đó
-            LocalTime startTimeOfDay = LocalTime.of(request.getStartHours(), 0);
-            LocalTime endTimeOfDay = LocalTime.of(request.getEndHours(), 0);
-
-            LocalTime currentSlotStart = startTimeOfDay;
-
-            while (currentSlotStart.plusMinutes(request.getSlotDuration()).isBefore(endTimeOfDay) ||
-                   currentSlotStart.plusMinutes(request.getSlotDuration()).equals(endTimeOfDay)) {
-
-                LocalTime currentSlotEnd = currentSlotStart.plusMinutes(request.getSlotDuration());
-
-                LocalDateTime slotStart = LocalDateTime.of(targetDate, currentSlotStart);
-                LocalDateTime slotEnd = LocalDateTime.of(targetDate, currentSlotEnd);
-
-                // Skip nếu slot đã qua (check cả date và time)
-                if (slotStart.isBefore(now)) {
-                    currentSlotStart = currentSlotStart.plusMinutes(request.getSlotDuration());
-                    continue;
-                }
-
-                // Check overlap với slots đã có
-                boolean exists = bookingPlanSlotRepository.existsByTutorIDAndStartTimeAndEndTime(
-                        bookingPlan.getTutorID(), slotStart, slotEnd);
-
-                // Chỉ tạo slot nếu không overlap
-                if (!exists) {
-                    BookingPlanSlot slot = BookingPlanSlot.builder()
-                            .bookingPlanID(bookingPlan.getBookingPlanID())
-                            .tutorID(bookingPlan.getTutorID())
-                            .userID(null) // Chưa có learner book
-                            .startTime(slotStart)
-                            .endTime(slotEnd)
-                            .paymentID(null) // Chưa có payment
-                            .status(SlotStatus.Locked) // Mặc định là Locked
-                            .lockedAt(LocalDateTime.now())
-                            .expiresAt(null) // Có thể set sau
-                            .build();
-                    slots.add(slot);
-                }
-
-                currentSlotStart = currentSlotStart.plusMinutes(request.getSlotDuration());
-            }
-        }
-
-        // Lưu tất cả slots
-        bookingPlanSlotRepository.saveAll(slots);
-        return slots.size();
+        
+        return targetDate;
     }
 
     /**
@@ -193,6 +141,66 @@ public class TutorBookingPlanService {
             default -> throw new AppException(ErrorCode.INVALID_KEY);
         };
     }
+
+    /**
+     * Generate slots cho một ngày cụ thể
+     * @param bookingPlan Booking plan đã được tạo
+     * @param request Request chứa thông tin để generate
+     * @param targetDate Ngày cụ thể để generate slots
+     * @return Số lượng slots đã được generate
+     */
+    private int generateSlotsForDate(BookingPlan bookingPlan, TutorBookingPlanRequest request, LocalDate targetDate) {
+        List<BookingPlanSlot> slots = new ArrayList<>();
+        LocalDateTime now = LocalDateTime.now();
+
+        // Generate slots cho ngày đó
+        LocalTime startTimeOfDay = LocalTime.of(request.getStartHours(), 0);
+        LocalTime endTimeOfDay = LocalTime.of(request.getEndHours(), 0);
+
+        LocalTime currentSlotStart = startTimeOfDay;
+
+        while (currentSlotStart.plusMinutes(request.getSlotDuration()).isBefore(endTimeOfDay) ||
+               currentSlotStart.plusMinutes(request.getSlotDuration()).equals(endTimeOfDay)) {
+
+            LocalTime currentSlotEnd = currentSlotStart.plusMinutes(request.getSlotDuration());
+
+            LocalDateTime slotStart = LocalDateTime.of(targetDate, currentSlotStart);
+            LocalDateTime slotEnd = LocalDateTime.of(targetDate, currentSlotEnd);
+
+            // Skip nếu slot đã qua (check cả date và time)
+            if (slotStart.isBefore(now)) {
+                currentSlotStart = currentSlotStart.plusMinutes(request.getSlotDuration());
+                continue;
+            }
+
+            // Check overlap với slots đã có
+            boolean exists = bookingPlanSlotRepository.existsByTutorIDAndStartTimeAndEndTime(
+                    bookingPlan.getTutorID(), slotStart, slotEnd);
+
+            // Chỉ tạo slot nếu không overlap
+            if (!exists) {
+                BookingPlanSlot slot = BookingPlanSlot.builder()
+                        .bookingPlanID(bookingPlan.getBookingPlanID())
+                        .tutorID(bookingPlan.getTutorID())
+                        .userID(null) // Chưa có learner book
+                        .startTime(slotStart)
+                        .endTime(slotEnd)
+                        .paymentID(null) // Chưa có payment
+                        .status(SlotStatus.Locked) // Mặc định là Locked
+                        .lockedAt(LocalDateTime.now())
+                        .expiresAt(null) // Có thể set sau
+                        .build();
+                slots.add(slot);
+            }
+
+            currentSlotStart = currentSlotStart.plusMinutes(request.getSlotDuration());
+        }
+
+        // Lưu tất cả slots
+        bookingPlanSlotRepository.saveAll(slots);
+        return slots.size();
+    }
+
 
     /**
      * Lấy danh sách booking plan của 1 tutor

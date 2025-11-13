@@ -1,6 +1,7 @@
 package edu.lms.entity;
 
 import edu.lms.enums.CourseStatus;
+import edu.lms.enums.CourseLevel;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -25,12 +26,22 @@ public class Course {
     @Column(nullable = false, length = 255)
     String title;
 
+    @Column(length = 500)
+    String shortDescription; // 🔹 Mô tả ngắn hiển thị ở card
+
     @Column(columnDefinition = "TEXT")
-    String description;
+    String description; // 🔹 Mô tả chi tiết khóa học
+
+    @Column(columnDefinition = "TEXT")
+    String requirement; // 🔹 Yêu cầu đầu vào
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20, nullable = false)
+    @Builder.Default
+    CourseLevel level = CourseLevel.BEGINNER; // 🔹 BEGINNER / INTERMEDIATE / ADVANCED
 
     Integer duration;
 
-    //Cập nhật chuẩn cho kiểu tiền tệ
     @Column(precision = 10, scale = 2, nullable = false)
     @Builder.Default
     BigDecimal price = BigDecimal.ZERO;
@@ -38,12 +49,10 @@ public class Course {
     String language;
     String thumbnailURL;
 
-    //Dùng @Enumerated + default
     @Enumerated(EnumType.STRING)
     @Builder.Default
     CourseStatus status = CourseStatus.Draft;
 
-    //Dùng @Builder.Default để không null khi khởi tạo
     @Builder.Default
     LocalDateTime createdAt = LocalDateTime.now();
 
@@ -60,4 +69,12 @@ public class Course {
 
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
     List<CourseSection> sections;
+
+    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
+    List<CourseObjective> objectives; // 🔹 Mục tiêu học tập (what you'll learn)
+
+    @PreUpdate
+    public void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 }

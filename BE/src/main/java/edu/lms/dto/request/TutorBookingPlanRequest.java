@@ -33,8 +33,4 @@ public class TutorBookingPlanRequest {
     @NotNull(message = "Price per hours is required")
     @Min(value = 0, message = "Price per hours must be greater than or equal to 0")
     Double pricePerHours; // Giá mỗi giờ
-
-    @NotNull(message = "Week to generate is required")
-    @Min(1)
-    Integer weekToGenerate; // Số tuần cần generate slots
 }

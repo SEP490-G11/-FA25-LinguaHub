@@ -8,7 +8,7 @@ Trang Edit Khóa Học (`/tutor/courses/:courseId/edit`) cho phép giáo viên c
 
 ```
 src/pages/TutorPages/EditCourse/
-├── index.tsx                          # Main page component
+├── boxchat.tsx                          # Main page component
 ├── types.ts                           # TypeScript interfaces
 ├── edit-course-api.ts                 # API functions
 └── components/

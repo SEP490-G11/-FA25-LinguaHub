@@ -18,7 +18,9 @@ import vn.payos.type.CheckoutResponseData;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -31,7 +33,7 @@ public class PaymentService {
     private final EnrollmentRepository enrollmentRepository;
     private final PaymentRepository paymentRepository;
     private final UserRepository userRepository;
-    private final PayOSService payOSService;
+    private final PayOSService payOSService; // Updated service with wrapper
     private final ChatService chatService;
     private final PaymentMapper paymentMapper;
 
@@ -63,7 +65,9 @@ public class PaymentService {
                     .status(PaymentStatus.PENDING)
                     .amount(amount)
                     .isPaid(false)
+                    .expiresAt(LocalDateTime.now().plusMinutes(3))
                     .build();
+
             paymentRepository.save(payment);
         }
 
@@ -81,11 +85,9 @@ public class PaymentService {
                 throw new AppException(ErrorCode.BOOKING_SLOT_NOT_AVAILABLE);
             }
 
-            // 💰 Tính tổng tiền
             BigDecimal totalAmount = BigDecimal.valueOf(plan.getPricePerHours() * slots.size());
             description = "Slot 1:1 " + plan.getTitle();
 
-            // 🕒 Khóa slot tạm
             for (SlotRequest s : slots) {
                 boolean taken = bookingPlanSlotRepository.existsByTutorIDAndStartTimeAndEndTime(
                         plan.getTutorID(), s.getStartTime(), s.getEndTime());
@@ -99,7 +101,7 @@ public class PaymentService {
                         .endTime(s.getEndTime())
                         .status(SlotStatus.Locked)
                         .lockedAt(LocalDateTime.now())
-                        .expiresAt(LocalDateTime.now().plusMinutes(15))
+                        .expiresAt(LocalDateTime.now().plusMinutes(3))
                         .build();
                 bookingPlanSlotRepository.save(slot);
             }
@@ -113,7 +115,9 @@ public class PaymentService {
                     .status(PaymentStatus.PENDING)
                     .amount(totalAmount)
                     .isPaid(false)
+                    .expiresAt(LocalDateTime.now().plusMinutes(3))
                     .build();
+
             paymentRepository.save(payment);
 
             bookingPlanSlotRepository.updatePaymentForUserLockedSlots(
@@ -121,12 +125,16 @@ public class PaymentService {
             );
 
             amount = totalAmount;
-        } else {
+        }
+
+        else {
             throw new AppException(ErrorCode.INVALID_PAYMENT_TYPE);
         }
 
-        // ----------------- GỌI PAYOS -----------------
-        CheckoutResponseData data = payOSService.createPaymentLink(
+        // GỌI PAYOS - SDK + expiredAt API
+
+        var wrapper = payOSService.createPaymentLink(
+                payment.getPaymentID(),
                 request.getUserId(),
                 request.getPaymentType(),
                 request.getTargetId(),
@@ -134,9 +142,47 @@ public class PaymentService {
                 description
         );
 
-        // ----------------- CẬP NHẬT PAYMENT -----------------
-        updatePaymentWithPayOSData(payment, data);
-        return ResponseEntity.ok(data);
+        CheckoutResponseData data = wrapper.data();
+        LocalDateTime expiredAt = (wrapper.expiredAt() != null)
+                ? wrapper.expiredAt()
+                : payment.getExpiresAt();
+
+        // ======================================================
+        // CẬP NHẬT PAYMENT TRONG DB
+        // ======================================================
+        updatePaymentWithPayOSData(payment, data, expiredAt);
+
+        return ResponseEntity.ok(Map.of(
+                "checkoutUrl", data.getCheckoutUrl(),
+                "expiresAt", expiredAt
+        ));
+    }
+
+    // ======================================================
+    // CẬP NHẬT PAYMENT SAU KHI TẠO LINK PAYOS
+    // ======================================================
+    private void updatePaymentWithPayOSData(
+            Payment payment,
+            CheckoutResponseData data,
+            LocalDateTime expiredAt
+    ) {
+        try {
+            if (data == null) return;
+
+            payment.setOrderCode(String.valueOf(data.getOrderCode()));
+            payment.setCheckoutUrl(data.getCheckoutUrl());
+            payment.setQrCodeUrl(data.getQrCode());
+            payment.setPaymentLinkId(data.getPaymentLinkId());
+            payment.setExpiresAt(expiredAt);
+
+            paymentRepository.save(payment);
+
+            log.info("[PAYMENT UPDATED] Payment {} updated with PayOS link + expiredAt",
+                    payment.getPaymentID());
+
+        } catch (Exception e) {
+            log.error("Failed to update payment info from PayOS: {}", e.getMessage());
+        }
     }
 
     // ======================================================
@@ -153,10 +199,11 @@ public class PaymentService {
         Long userId = payment.getUserId();
         Long targetId = payment.getTargetId();
 
-        // COURSE PAYMENT
         if (payment.getPaymentType() == PaymentType.Course) {
+
             Course course = courseRepository.findById(targetId)
                     .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
+
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXIST));
 
@@ -170,14 +217,17 @@ public class PaymentService {
             enrollmentRepository.save(enrollment);
             payment.setEnrollment(enrollment);
             payment.setTutorId(course.getTutor().getTutorID());
+
             paymentRepository.save(payment);
 
-            log.info("[COURSE PAYMENT] User {} enrolled in course '{}'", userId, course.getTitle());
+            log.info("[COURSE PAYMENT] User {} enrolled in course '{}'",
+                    userId, course.getTitle());
         }
 
-        // BOOKING PAYMENT
         else if (payment.getPaymentType() == PaymentType.Booking) {
+
             List<BookingPlanSlot> slots = bookingPlanSlotRepository.findAllByPaymentID(payment.getPaymentID());
+
             for (BookingPlanSlot s : slots) {
                 s.setStatus(SlotStatus.Paid);
                 bookingPlanSlotRepository.save(s);
@@ -192,34 +242,13 @@ public class PaymentService {
                     chatService.ensureTrainingRoomExists(userId, tutorID);
                     log.info("[CHAT ROOM] Created for User {} & Tutor {}", userId, tutorID);
                 } catch (Exception e) {
-                    log.warn("[CHAT ROOM] Failed to ensure room: {}", e.getMessage());
+                    log.warn("[CHAT ROOM] Failed: {}", e.getMessage());
                 }
             }
 
-            log.info("[BOOKING PLAN PAID] User {} confirmed {} slots as PAID", userId, slots.size());
+            log.info("[BOOKING PAYMENT] User {} confirmed {} slots",
+                    userId, slots.size());
         }
-    }
-
-    // ======================================================
-    // ROLLBACK (FAILED / EXPIRED)
-    // ======================================================
-    @Transactional
-    public void rollbackBookingPayment(Payment payment) {
-        if (payment.getPaymentType() != PaymentType.Booking) return;
-
-        List<BookingPlanSlot> slots = bookingPlanSlotRepository.findAllByPaymentID(payment.getPaymentID());
-        for (BookingPlanSlot s : slots) {
-            if (s.getStatus() == SlotStatus.Locked) {
-                bookingPlanSlotRepository.delete(s);
-            }
-        }
-
-        payment.setStatus(PaymentStatus.CANCELLED);
-        payment.setIsPaid(false);
-        paymentRepository.save(payment);
-
-        log.warn("[ROLLBACK] Payment {} cancelled, deleted {} locked slots",
-                payment.getOrderCode(), slots.size());
     }
 
     // ======================================================
@@ -241,24 +270,5 @@ public class PaymentService {
     public List<PaymentResponse> getAllPayments() {
         return paymentRepository.findAll()
                 .stream().map(paymentMapper::toPaymentResponse).toList();
-    }
-
-    // ======================================================
-    // CẬP NHẬT PAYMENT SAU KHI NHẬN LINK PAYOS
-    // ======================================================
-    private void updatePaymentWithPayOSData(Payment payment, CheckoutResponseData data) {
-        try {
-            if (data == null) return;
-
-            payment.setOrderCode(String.valueOf(data.getOrderCode()));
-            payment.setCheckoutUrl(data.getCheckoutUrl());
-            payment.setQrCodeUrl(data.getQrCode());
-            payment.setPaymentLinkId(data.getPaymentLinkId());
-            paymentRepository.save(payment);
-
-            log.info("[PAYMENT UPDATED] Payment {} updated with PayOS link data", payment.getPaymentID());
-        } catch (Exception e) {
-            log.error("Failed to update payment info from PayOS: {}", e.getMessage());
-        }
     }
 }

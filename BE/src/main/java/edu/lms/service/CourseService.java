@@ -4,27 +4,33 @@ import edu.lms.dto.response.*;
 import edu.lms.entity.*;
 import edu.lms.enums.CourseStatus;
 import edu.lms.enums.EnrollmentStatus;
+import edu.lms.enums.LessonType;
 import edu.lms.exception.AppException;
 import edu.lms.exception.ErrorCode;
 import edu.lms.repository.*;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 
+import java.util.Comparator;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class CourseService {
 
-    private final CourseRepository courseRepository;
-    private final TutorRepository tutorRepository;
-    private final WishlistRepository wishlistRepository;
-    private final UserRepository userRepository;
-    private final EnrollmentRepository enrollmentRepository;
-    private final CourseReviewRepository courseReviewRepository;
+    CourseRepository courseRepository;
+    TutorRepository tutorRepository;
+    WishlistRepository wishlistRepository;
+    UserRepository userRepository;
+    EnrollmentRepository enrollmentRepository;
+    CourseReviewRepository courseReviewRepository;
 
-
-    //Public
+    // ================================================================
+    // Public: Get All Approved Courses
+    // ================================================================
     public List<CourseResponse> getAllApproved(String email) {
         User user = (email != null) ? userRepository.findByEmail(email).orElse(null) : null;
 
@@ -34,7 +40,9 @@ public class CourseService {
                 .toList();
     }
 
-
+    // ================================================================
+    // Public: Get Approved Courses By Tutor
+    // ================================================================
     public List<CourseResponse> getApprovedByTutor(Long tutorId, String email) {
         Tutor tutor = tutorRepository.findById(tutorId)
                 .orElseThrow(() -> new AppException(ErrorCode.TUTOR_NOT_FOUND));
@@ -47,15 +55,26 @@ public class CourseService {
                 .toList();
     }
 
+    // ================================================================
+    // Public: Get Course Detail (Only Approved)
+    // ================================================================
     public CourseDetailResponse getCourseById(Long courseID, String email) {
         Course c = courseRepository.findById(courseID)
                 .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
+
+        // Chỉ cho phép xem khi course đã được Admin phê duyệt
+        if (c.getStatus() != CourseStatus.Approved) {
+            throw new AppException(ErrorCode.COURSE_NOT_APPROVED);
+        }
 
         User user = (email != null) ? userRepository.findByEmail(email).orElse(null) : null;
 
         return toCourseResponse(c, user);
     }
 
+    // ================================================================
+    // Optional: For Admin Internal Use
+    // ================================================================
     public List<CourseDetailResponse> getAllByStatus(CourseStatus status) {
         List<Course> courses = (status == null)
                 ? courseRepository.findAll()
@@ -63,7 +82,9 @@ public class CourseService {
         return courses.stream().map(c -> toCourseResponse(c, null)).toList();
     }
 
+    // ================================================================
     // MAPPERS
+    // ================================================================
 
     private LessonResourceResponse toLessonResourceResponse(LessonResource lr) {
         return LessonResourceResponse.builder()
@@ -108,9 +129,9 @@ public class CourseService {
                 .build();
     }
 
-    //(LEARNER, RATING, FEEDBACK)
-
-    // (COURSE REVIEW)
+    // ================================================================
+    // Course Review (Rating + Feedback)
+    // ================================================================
     private record RatingAgg(double avg, int total) {}
 
     private RatingAgg aggregateRating(Long courseId) {
@@ -131,7 +152,7 @@ public class CourseService {
         return reviews.stream().map(r -> {
             var u = r.getUser();
             return CourseReviewResponse.builder()
-                    .feedbackID(r.getReviewID()) // reuse DTO
+                    .feedbackID(r.getReviewID())
                     .userFullName(u != null ? u.getFullName() : null)
                     .userAvatarURL(u != null ? u.getAvatarURL() : null)
                     .rating(r.getRating())
@@ -141,9 +162,56 @@ public class CourseService {
         }).toList();
     }
 
+    // ================================================================
+    // Course Content Summary (Video, Tests, Articles, Resources)
+    // ================================================================
+    private CourseContentSummaryResponse summarizeCourseContent(Course c) {
+        double totalVideoHours = 0.0;
+        int totalPracticeTests = 0;
+        int totalArticles = 0;
+        int totalResources = 0;
 
-    // COURSE -> DETAIL DTO
+        if (c.getSections() != null) {
+            for (CourseSection section : c.getSections()) {
+                if (section.getLessons() == null) continue;
+                for (Lesson l : section.getLessons()) {
 
+                    // Tổng thời lượng video (giả sử duration tính bằng phút)
+                    if (l.getLessonType() == LessonType.Video && l.getDuration() != null) {
+                        totalVideoHours += l.getDuration() / 60.0;
+                    }
+
+                    // Đếm bài test
+                    if (l.getLessonType() == LessonType.Test) {
+                        totalPracticeTests++;
+                    }
+
+                    // Đếm bài article
+                    if (l.getLessonType() == LessonType.Reading) {
+                        totalArticles++;
+                    }
+
+                    // Đếm tài nguyên tải xuống
+                    if (l.getResources() != null) {
+                        totalResources += l.getResources().size();
+                    }
+                }
+            }
+        }
+
+        totalVideoHours = Math.round(totalVideoHours * 10.0) / 10.0; // làm tròn 1 chữ số
+
+        return CourseContentSummaryResponse.builder()
+                .totalVideoHours(totalVideoHours)
+                .totalPracticeTests(totalPracticeTests)
+                .totalArticles(totalArticles)
+                .totalDownloadableResources(totalResources)
+                .build();
+    }
+
+    // ================================================================
+    // 🎓 COURSE -> DETAIL DTO
+    // ================================================================
     private CourseDetailResponse toCourseResponse(Course c, User user) {
         boolean isWishListed = (user != null) && wishlistRepository.existsByUserAndCourse(user, c);
 
@@ -157,16 +225,19 @@ public class CourseService {
             }
         }
 
-
         Long courseId = c.getCourseID();
         long learnerCount = enrollmentRepository.countByCourse_CourseID(courseId);
         var rating = aggregateRating(courseId);
         var tutorUser = (c.getTutor() != null) ? c.getTutor().getUser() : null;
-        var tutor = c.getTutor() != null ? c.getTutor() : null;
+        var tutor = c.getTutor();
+
         return CourseDetailResponse.builder()
                 .id(courseId)
                 .title(c.getTitle())
+                .shortDescription(c.getShortDescription())
                 .description(c.getDescription())
+                .requirement(c.getRequirement())
+                .level(c.getLevel())
                 .duration(c.getDuration())
                 .price(c.getPrice())
                 .language(c.getLanguage())
@@ -174,15 +245,29 @@ public class CourseService {
                 .categoryName(c.getCategory() != null ? c.getCategory().getName() : null)
                 .tutorName(tutorUser != null ? tutorUser.getFullName() : null)
                 .status(c.getStatus() != null ? c.getStatus().name() : null)
+
+                // Objectives
+                .objectives(
+                        c.getObjectives() == null ? List.of() :
+                                c.getObjectives().stream()
+                                        .sorted(Comparator.comparing(CourseObjective::getOrderIndex))
+                                        .map(CourseObjective::getObjectiveText)
+                                        .toList()
+                )
+
+                // Sections
                 .section(
                         c.getSections() != null
                                 ? c.getSections().stream().map(this::toCourseSectionResponse).toList()
                                 : null
                 )
+
+                // Content Summary
+                .contentSummary(summarizeCourseContent(c))
+
+                // Info
                 .isWishListed(user != null ? isWishListed : null)
                 .isPurchased(user != null ? isPurchased : null)
-
-                // thống kê + tutor info
                 .learnerCount(learnerCount)
                 .tutorID(tutor != null ? tutor.getTutorID() : null)
                 .tutorAvatarURL(tutorUser != null ? tutorUser.getAvatarURL() : null)
@@ -198,8 +283,9 @@ public class CourseService {
                 .build();
     }
 
+    // ================================================================
     // COURSE -> LIST DTO
-
+    // ================================================================
     private CourseResponse toOnlyCourseResponse(Course c, User user) {
         boolean isWishListed = (user != null) && wishlistRepository.existsByUserAndCourse(user, c);
 
@@ -221,7 +307,10 @@ public class CourseService {
         return CourseResponse.builder()
                 .id(courseId)
                 .title(c.getTitle())
+                .shortDescription(c.getShortDescription())
                 .description(c.getDescription())
+                .requirement(c.getRequirement())
+                .level(c.getLevel())
                 .duration(c.getDuration())
                 .price(c.getPrice())
                 .language(c.getLanguage())

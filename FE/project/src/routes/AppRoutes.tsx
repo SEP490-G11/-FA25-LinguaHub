@@ -41,7 +41,7 @@ import TutorAnalytics from '@/pages/TutorPages/Analytics';
 import TutorMessages from '@/pages/TutorPages/Messages';
 import TutorResources from '@/pages/TutorPages/Resources';
 import TutorSettings from '@/pages/TutorPages/Settings';
-import Messages from '@/pages/MessagesPage/index.tsx';
+import Messages from '@/pages/MessagesPage/boxchat.tsx';
 import BookTutor from '@/pages/BookTutor/index.tsx';
 
 export function AppRoutes() {

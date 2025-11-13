@@ -66,7 +66,7 @@ interface CourseDetailResponse {
   section: Section[];
   tutorId: number;
 
-  /** ✅ Sửa lại theo backend */
+  /**  Sửa lại theo backend */
   review: Feedback[];
 
   isWishListed: boolean | null;
@@ -119,7 +119,7 @@ const CourseDetail = () => {
               <div className="lg:col-span-2 space-y-10">
                 <CourseContent course={course} isPurchased={course.isPurchased} />
 
-                {/* ✅ TRUYỀN review ĐÚNG API */}
+                {/*  TRUYỀN review ĐÚNG API */}
                 <CourseFeedback
                     feedbacks={course.review || []}
                     courseId={course.id}

@@ -1,7 +1,9 @@
 package edu.lms.dto.response;
 
+import edu.lms.enums.CourseLevel;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -13,7 +15,11 @@ import java.time.LocalDateTime;
 public class CourseResponse {
     Long id;
     String title;
+    String shortDescription;
     String description;
+    String requirement;
+    CourseLevel level;
+
     Integer duration;
     BigDecimal price;
     String language;
@@ -21,8 +27,8 @@ public class CourseResponse {
     String categoryName;
     String tutorName;
     String status;
-    Boolean isWishListed;
 
+    Boolean isWishListed;
     Boolean isPurchased;
 
     Long learnerCount;

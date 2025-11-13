@@ -1,12 +1,10 @@
 package edu.lms.service;
 
-import edu.lms.entity.BookingPlan;
 import edu.lms.entity.BookingPlanSlot;
 import edu.lms.entity.Payment;
 import edu.lms.enums.PaymentStatus;
 import edu.lms.enums.PaymentType;
 import edu.lms.enums.SlotStatus;
-import edu.lms.repository.BookingPlanRepository;
 import edu.lms.repository.BookingPlanSlotRepository;
 import edu.lms.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,65 +21,89 @@ import java.util.Map;
 public class PaymentWebhookService {
 
     private final PaymentRepository paymentRepository;
-    private final BookingPlanRepository bookingPlanRepository;
     private final BookingPlanSlotRepository bookingPlanSlotRepository;
     private final PaymentService paymentService;
 
-    public void handleWebhook(String orderCode, String status, Map<String, Object> payload) {
-        paymentRepository.findByOrderCode(orderCode).ifPresent(payment -> {
-            PaymentStatus newStatus;
+    /**
+     * Handle webhook callback from PayOS using the old SDK:
+     * code = "00" -> PAID
+     * code != "00" -> FAILED
+     */
+    public void handleWebhook(String orderCode, String code, Map<String, Object> payload) {
+        log.info("Handling webhook | orderCode={} | code={} | payload={}", orderCode, code, payload);
 
-            switch (status.toUpperCase()) {
-                case "PAID":
-                case "SUCCESS":
-                    newStatus = PaymentStatus.PAID;
-                    payment.setStatus(newStatus);
-                    payment.setPaidAt(LocalDateTime.now());
+        paymentRepository.findByOrderCode(orderCode).ifPresentOrElse(payment -> {
+            try {
+
+                boolean isPaid = "00".equals(code);  // PayOS SUCCESS !
+
+                if (isPaid) {
+                    // -----------------------------
+                    // 🔥 PAYMENT SUCCESS
+                    // -----------------------------
+                    payment.setStatus(PaymentStatus.PAID);
                     payment.setIsPaid(true);
+                    payment.setPaidAt(LocalDateTime.now());
+
+                    paymentRepository.save(payment);
+
+                    log.info("[PAYOS] Payment {} marked as PAID", orderCode);
+
+                    // Update slot after paid
                     paymentService.processPostPayment(payment);
-                    break;
+                } else {
+                    // -----------------------------
+                    // ❌ PAYMENT FAILED / CANCELLED
+                    // -----------------------------
+                    payment.setStatus(PaymentStatus.FAILED);
+                    payment.setIsPaid(false);
 
-                case "FAILED":
-                case "CANCELLED":
-                case "EXPIRED":
-                    newStatus = PaymentStatus.valueOf(status.toUpperCase());
-                    handlePaymentRollback(payment, status.toUpperCase());
-                    break;
+                    paymentRepository.save(payment);
 
-                default:
-                    newStatus = PaymentStatus.PENDING;
+                    log.warn("[PAYOS] Payment {} FAILED, rolling back slots...", orderCode);
+
+                    handlePaymentRollback(payment, "FAILED");
+                }
+
+                // Save webhook response
+                if (payload != null) {
+                    payment.setTransactionResponse(payload.toString());
+                }
+
+                paymentRepository.save(payment);
+
+            } catch (Exception e) {
+                log.error("Webhook error for {}: {}", orderCode, e.getMessage(), e);
             }
 
-            payment.setTransactionResponse(payload.toString());
-            paymentRepository.save(payment);
-
-            log.info("Webhook processed for orderCode={}, status={}", orderCode, newStatus);
-        });
+        }, () -> log.warn("Payment not found for orderCode={}", orderCode));
     }
 
-    private void handlePaymentRollback(Payment payment, String reason) {
-        if (payment.getPaymentType() != PaymentType.Booking) return;
+    /**
+     * Rollback booking slot if payment failed/cancelled
+     */
+    public void handlePaymentRollback(Payment payment, String reason) {
+        if (payment == null) return;
 
-        // Lấy danh sách slot liên quan tới PaymentID
+        if (payment.getPaymentType() != PaymentType.Booking) {
+            paymentRepository.save(payment);
+            return;
+        }
+
         List<BookingPlanSlot> slots = bookingPlanSlotRepository.findAllByPaymentID(payment.getPaymentID());
-        if (slots.isEmpty()) return;
+        long deletedCount = 0;
 
-        // Xử lý rollback: chỉ xóa các slot Locked chưa thanh toán
         for (BookingPlanSlot slot : slots) {
             if (slot.getStatus() == SlotStatus.Locked) {
                 bookingPlanSlotRepository.delete(slot);
-                log.warn("[ROLLBACK] Xóa slot {} ({} - {}) do thanh toán {}",
+                deletedCount++;
+
+                log.warn("[ROLLBACK] Deleted slot {} ({} - {}) due to {}",
                         slot.getSlotID(), slot.getStartTime(), slot.getEndTime(), reason);
             }
         }
 
-        // Cập nhật trạng thái payment
-        payment.setStatus(PaymentStatus.valueOf(reason));
-        payment.setIsPaid(false);
-        paymentRepository.save(payment);
-
-        log.warn("[ROLLBACK] Payment {} marked as {}. {} slot(s) removed.",
-                payment.getOrderCode(), reason, slots.size());
+        log.warn("[ROLLBACK] Payment {} marked FAILED. Slots removed={}",
+                payment.getOrderCode(), deletedCount);
     }
-
 }

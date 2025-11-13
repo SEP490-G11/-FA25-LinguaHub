@@ -1,14 +1,18 @@
 package edu.lms.controller;
 
-import edu.lms.dto.request.PayOSWebhookRequest;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.lms.service.PaymentWebhookService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import vn.payos.PayOS;
+import vn.payos.type.Webhook;
+import vn.payos.type.WebhookData;
+
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -18,36 +22,51 @@ import org.springframework.web.bind.annotation.*;
 public class PaymentWebhookController {
 
     private final PaymentWebhookService paymentWebhookService;
-
-    @Value("${payos.secret-key}")
-    private String secretKey;
-
-    @Value("${payos.verify-signature:true}")
-    private boolean verifySignature;
+    private final PayOS payOS;
+    private final ObjectMapper mapper;
 
     @PostMapping
-    @Operation(summary = "Receive PayOS webhook", description = "Callback from PayOS after payment success/failure")
-    public ResponseEntity<?> handleWebhook(
-            @RequestBody PayOSWebhookRequest request,
-            @RequestHeader(value = "x-signature", required = false) String signature,
-            @RequestHeader(value = "x-timestamp", required = false) String timestamp
-    ) {
-        log.info("🔔 [PAYOS WEBHOOK RECEIVED] orderCode={} | status={} | signature={} | timestamp={}",
-                request.getOrderCode(), request.getStatus(), signature, timestamp);
+    @Operation(summary = "Receive PayOS webhook", description = "Callback from PayOS after payment result")
+    public ResponseEntity<Map<String, Object>> handleWebhook(@RequestBody String rawBody) {
+        try {
+            log.info("[PAYOS WEBHOOK] RAW BODY = {}", rawBody);
 
-        // Gọi service xử lý nghiệp vụ
-        paymentWebhookService.handleWebhook(
-                String.valueOf(request.getOrderCode()),
-                request.getStatus(),
-                null
-        );
+            // Parse JSON
+            Webhook webhook = mapper.readValue(rawBody, Webhook.class);
 
-        return ResponseEntity.ok(
-                java.util.Map.of(
-                        "message", "Webhook processed successfully",
-                        "orderCode", request.getOrderCode(),
-                        "status", request.getStatus()
-                )
-        );
+            // Verify signature
+            WebhookData data = payOS.verifyPaymentWebhookData(webhook);
+
+            Long orderCode = data.getOrderCode();
+            String code = data.getCode();   // "00" = SUCCESS
+            String desc = data.getDesc();   // description text
+
+            log.info("[PAYOS VERIFIED] orderCode={} | code={} | desc={}",
+                    orderCode, code, desc);
+
+            // Forward to service
+            paymentWebhookService.handleWebhook(
+                    String.valueOf(orderCode),
+                    code,     // <-- code quyết định PAID hay FAILED
+                    Map.of(
+                            "code", code,
+                            "desc", desc
+                    )
+            );
+
+            return ResponseEntity.ok(Map.of(
+                    "message", "Webhook processed successfully",
+                    "orderCode", orderCode,
+                    "status", code
+            ));
+
+        } catch (Exception e) {
+            log.error("[PAYOS WEBHOOK ERROR] {}", e.getMessage(), e);
+
+            return ResponseEntity.ok(Map.of(
+                    "message", "Webhook received but verification failed",
+                    "error", e.getMessage()
+            ));
+        }
     }
 }

@@ -1,125 +1,166 @@
-import React from 'react';
-import { Search } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Input } from '@/components/ui/input';
+import React, { useEffect, useState } from "react";
+import { Search } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
+import api from "@/config/axiosConfig";
 
 interface ConversationsListProps {
   selectedConversation: string | null;
   onSelectConversation: (id: string) => void;
 }
 
-const ConversationsList = ({ selectedConversation, onSelectConversation }: ConversationsListProps) => {
-  const [searchTerm, setSearchTerm] = React.useState('');
+interface ChatRoom {
+  chatRoomID: number;
+  tutorName: string;
+  tutorAvatarURL: string | null;
+  userName: string;
+  userAvatarURL: string | null;
+  chatRoomType: "Advice" | "Training";
+  messages: {
+    messageID: number;
+    content: string;
+    createdAt: string;
+  }[];
+}
 
-  const conversations = [
-    {
-      id: '1',
-      tutorName: 'Sarah Johnson',
-      tutorAvatar: 'https://images.pexels.com/photos/1181686/pexels-photo-1181686.jpeg?auto=compress&cs=tinysrgb&w=100',
-      lastMessage: 'Great! Looking forward to our session.',
-      lastMessageTime: '2 min ago',
-      unreadCount: 2,
-      hasBooking: true,
-      isOnline: true
-    },
-    {
-      id: '2',
-      tutorName: 'Carlos Rodriguez',
-      tutorAvatar: 'https://images.pexels.com/photos/1212984/pexels-photo-1212984.jpeg?auto=compress&cs=tinysrgb&w=100',
-      lastMessage: 'Would you like to schedule a trial lesson?',
-      lastMessageTime: '1 hour ago',
-      unreadCount: 0,
-      hasBooking: false,
-      isOnline: false
-    },
-    {
-      id: '3',
-      tutorName: 'Marie Dubois',
-      tutorAvatar: 'https://images.pexels.com/photos/1181424/pexels-photo-1181424.jpeg?auto=compress&cs=tinysrgb&w=100',
-      lastMessage: 'Thank you for booking!',
-      lastMessageTime: '3 hours ago',
-      unreadCount: 1,
-      hasBooking: true,
-      isOnline: true
-    },
-    {
-      id: '4',
-      tutorName: 'Hans Mueller',
-      tutorAvatar: 'https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=100',
-      lastMessage: 'I can help you with German grammar',
-      lastMessageTime: 'Yesterday',
-      unreadCount: 0,
-      hasBooking: false,
-      isOnline: false
-    }
-  ];
+const ConversationsList = ({
+                             selectedConversation,
+                             onSelectConversation,
+                           }: ConversationsListProps) => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [rooms, setRooms] = useState<ChatRoom[]>([]);
+  const [myInfo, setMyInfo] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  const filteredConversations = conversations.filter(conv =>
-    conv.tutorName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Load current user info
+  useEffect(() => {
+    api
+        .get("/users/myInfo")
+        .then((res) => setMyInfo(res.data.result))
+        .catch(() => {});
+  }, []);
+
+  // Load chat rooms
+  useEffect(() => {
+    const fetchRooms = async () => {
+      try {
+        const res = await api.get("/chat/rooms");
+        setRooms(res.data?.result || []);
+      } catch (err) {
+        console.error("❌ Error loading chat rooms:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchRooms();
+  }, []);
+
+  if (!myInfo) {
+    return (
+        <div className="p-4 text-center text-gray-500 border-r h-full">
+          Loading...
+        </div>
+    );
+  }
+
+  const isTutor = myInfo.role === "Tutor";
+
+  const filteredRooms = rooms.filter((room) => {
+    const displayName = isTutor ? room.userName : room.tutorName;
+    return displayName?.toLowerCase().includes(searchTerm.toLowerCase());
+  });
 
   return (
-    <div className="border-r border-gray-200 flex flex-col h-full">
-      <div className="p-4 border-b border-gray-200">
-        <h2 className="text-xl font-bold mb-4">Messages</h2>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <Input
-            type="text"
-            placeholder="Search conversations..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
+      <div className="border-r border-gray-200 flex flex-col h-full bg-[#F0F9FF]">
+        {/* HEADER */}
+        <div className="p-4 border-b border-blue-100 bg-white/80 backdrop-blur-sm">
+          <h2 className="text-xl font-bold mb-4 text-blue-900">Messages</h2>
+
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-400 w-4 h-4" />
+            <Input
+                placeholder="Search conversations..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 bg-white border-blue-200 focus:ring-blue-300"
+            />
+          </div>
+        </div>
+
+        {/* LIST */}
+        <div className="flex-1 overflow-y-auto">
+          {loading && (
+              <div className="p-4 text-center text-blue-500">Loading conversations...</div>
+          )}
+
+          {!loading && filteredRooms.length === 0 && (
+              <div className="p-4 text-center text-gray-500">No conversations found.</div>
+          )}
+
+          {!loading &&
+              filteredRooms.map((room) => {
+                const displayName = isTutor ? room.userName : room.tutorName;
+                const displayAvatar = isTutor
+                    ? room.userAvatarURL
+                    : room.tutorAvatarURL;
+
+                const lastMessage = room.messages?.[room.messages.length - 1];
+                const lastMsgText = lastMessage?.content || "No messages yet";
+
+                const lastMsgTime = lastMessage
+                    ? new Date(lastMessage.createdAt).toLocaleString()
+                    : "—";
+
+                const hasBooking = room.chatRoomType === "Training";
+
+                const isSelected =
+                    selectedConversation === String(room.chatRoomID);
+
+                return (
+                    <div
+                        key={room.chatRoomID}
+                        onClick={() => onSelectConversation(String(room.chatRoomID))}
+                        className={`p-4 border-b border-blue-100 cursor-pointer transition-all ${
+                            isSelected
+                                ? "bg-blue-100 shadow-inner"
+                                : "hover:bg-blue-50 hover:shadow-sm"
+                        }`}
+                    >
+                      <div className="flex items-start space-x-3">
+                        <Avatar className="border border-blue-300 shadow-sm">
+                          <AvatarImage src={displayAvatar || ""} alt={displayName} />
+                          <AvatarFallback className="bg-blue-200 text-blue-700 font-bold">
+                            {displayName
+                                ?.split(" ")
+                                .map((n) => n[0])
+                                .join("")}
+                          </AvatarFallback>
+                        </Avatar>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <h3 className="font-semibold text-sm text-blue-900 truncate">
+                              {displayName}
+                            </h3>
+                            <span className="text-xs text-blue-500">{lastMsgTime}</span>
+                          </div>
+
+                          <p className="text-sm text-gray-600 truncate">{lastMsgText}</p>
+
+                          {hasBooking && (
+                              <div className="mt-1">
+                        <span className="text-xs bg-blue-200 text-blue-700 px-2 py-1 rounded-full">
+                          Booked
+                        </span>
+                              </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                );
+              })}
         </div>
       </div>
-
-      <div className="flex-1 overflow-y-auto">
-        {filteredConversations.map((conversation) => (
-          <div
-            key={conversation.id}
-            onClick={() => onSelectConversation(conversation.id)}
-            className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${
-              selectedConversation === conversation.id ? 'bg-blue-50' : ''
-            }`}
-          >
-            <div className="flex items-start space-x-3">
-              <div className="relative">
-                <Avatar>
-                  <AvatarImage src={conversation.tutorAvatar} alt={conversation.tutorName} />
-                  <AvatarFallback>{conversation.tutorName.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                </Avatar>
-                {conversation.isOnline && (
-                  <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
-                )}
-              </div>
-
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between mb-1">
-                  <h3 className="font-semibold text-sm truncate">{conversation.tutorName}</h3>
-                  <span className="text-xs text-gray-500">{conversation.lastMessageTime}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <p className="text-sm text-gray-600 truncate">{conversation.lastMessage}</p>
-                  {conversation.unreadCount > 0 && (
-                    <span className="ml-2 bg-blue-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                      {conversation.unreadCount}
-                    </span>
-                  )}
-                </div>
-                {conversation.hasBooking && (
-                  <div className="mt-1">
-                    <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
-                      Booked
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
   );
 };
 
