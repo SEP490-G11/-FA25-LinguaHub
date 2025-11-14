@@ -104,7 +104,10 @@ const EditCourse = () => {
       // Update course info
       await updateCourse(parseInt(courseId), {
         title: courseData.title || course.title,
+        shortDescription: courseData.shortDescription || course.shortDescription,
         description: courseData.description || course.description,
+        requirement: courseData.requirement || course.requirement,
+        level: courseData.level || course.level,
         duration: courseData.duration || course.duration,
         price: courseData.price || course.price,
         language: courseData.language || course.language,

@@ -5,7 +5,10 @@ export type { Category, Language };
 
 export interface CourseFormData {
   title: string;
+  shortDescription: string;
   description: string;
+  requirement: string;
+  level: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
   categoryID: number;
   language: string;
   duration: number;
@@ -76,7 +79,10 @@ export const courseApi = {
   createCourse: async (courseData: CourseFormData): Promise<{ courseId: string }> => {
     const payload = {
       title: courseData.title,
+      shortDescription: courseData.shortDescription,
       description: courseData.description,
+      requirement: courseData.requirement,
+      level: courseData.level,
       categoryID: courseData.categoryID,
       language: courseData.language,
       duration: courseData.duration,

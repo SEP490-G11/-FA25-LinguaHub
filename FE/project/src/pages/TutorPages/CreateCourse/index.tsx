@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Step1CourseInfo } from './components/course-info';
 import { Step2CourseContent } from './components/course-content';
-import { CourseFormData, SectionData, courseApi } from '@/pages/CreateCourse/course-api';
+import { CourseFormData, SectionData, courseApi } from '@/pages/TutorPages/CreateCourse/course-api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -40,6 +40,7 @@ export default function CreateCourse() {
   const handleStep1Next = async (data: CourseFormData) => {
     setIsSubmitting(true);
     setError(null);
+    console.log('handleStep1Next received data:', data);
     // If courseId exists, we are editing an existing course
     try {
       if (courseId) {
