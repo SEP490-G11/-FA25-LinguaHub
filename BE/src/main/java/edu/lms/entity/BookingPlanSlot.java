@@ -47,4 +47,10 @@ public class BookingPlanSlot {
 
     @Column(nullable = true)
     LocalDateTime expiresAt; // slot hết hạn nếu chưa thanh toán
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_package_id")
+    UserPackage userPackage;
+
+
 }
