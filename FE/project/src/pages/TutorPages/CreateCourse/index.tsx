@@ -60,18 +60,28 @@ export default function CreateCourse() {
   const handleStep1aNext = async (objectivesList: ObjectiveItem[]) => {
     setError(null);
     try {
-      // Save objectives to backend
+      // Save objectives to backend and collect response IDs
+      const updatedObjectives: ObjectiveItem[] = [];
+      
       for (const objective of objectivesList) {
         if (!objective.id) {
           // Only add new objectives (those without id)
-          await courseApi.addObjective(courseId, {
+          const response = await courseApi.addObjective(courseId, {
             objectiveText: objective.objectiveText,
             orderIndex: objective.orderIndex,
           });
+          // Store the returned objectiveId from API
+          updatedObjectives.push({
+            ...objective,
+            id: response.objectiveId,
+          });
+        } else {
+          // Keep existing objectives with their IDs
+          updatedObjectives.push(objective);
         }
       }
       
-      setObjectives(objectivesList);
+      setObjectives(updatedObjectives);
       setCurrentStep(3); // Move to Course Content
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save objectives');

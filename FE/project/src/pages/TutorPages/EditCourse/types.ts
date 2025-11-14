@@ -7,6 +7,13 @@ export interface Resource {
   uploadedAt: string;
 }
 
+// Objective types
+export interface Objective {
+  id: number;
+  objectiveText: string;
+  orderIndex: number;
+}
+
 // Lesson types
 export interface Lesson {
   lessonID: number;
