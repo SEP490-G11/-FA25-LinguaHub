@@ -45,7 +45,3 @@ export function debounce<T extends (...args: unknown[]) => unknown>(
   };
 }
 
-// Cuộn trang về đầu
-export function scrollToTop() {
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}

@@ -48,7 +48,6 @@ public class SecurityConfig {
             "/api/payments/webhook",
             "/api/payments/success",
             "/api/payments/cancel",
-
             "/tutor/courses/all"
     };
 
@@ -66,10 +65,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/tutors/approved").permitAll()
                         .requestMatchers(HttpMethod.GET, "/tutors/*").permitAll()
-
                         // ⭐ CHO PHÉP TẤT CẢ /api/payments/**
                         .requestMatchers("/api/payments/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/auth/refresh").permitAll()
+
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
 
                         .anyRequest().authenticated()
@@ -79,7 +77,6 @@ public class SecurityConfig {
                                 .decoder(customJwtDecoder)
                                 .jwtAuthenticationConverter(jwtAuthenticationConverter()))
                         .authenticationEntryPoint(new JwtAuthenticationEntryPoint())
-
                 );
 
         return http.build();
@@ -121,7 +118,7 @@ public class SecurityConfig {
         configuration.setAllowedOriginPatterns(
                 List.of("http://localhost:*", "http://127.0.0.1:*", "https://*.ngrok-free.dev")
         );
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
 

@@ -3,9 +3,9 @@ import { motion } from "framer-motion";
 import { Clock, Star, Heart } from "lucide-react";
 import api from "@/config/axiosConfig";
 import { useEffect, useState } from "react";
-// import { ROUTES } from "@/constants/routes";
 import { useToast } from "@/components/ui/use-toast";
-import {ROUTES} from "@/constants/routes.ts";
+import { ROUTES } from "@/constants/routes.ts";
+import { getUserId } from "@/lib/getUserId.ts";
 
 interface TutorCourse {
   id: number;
@@ -15,10 +15,12 @@ interface CourseHeroSectionProps {
   course: {
     id: number;
     title: string;
-    description: string;
+    shortDescription: string;   // ⭐ USED INSTEAD OF description
+    description: string;        // vẫn giữ để Overview tab dùng
     duration: number;
     price: number;
     language: string;
+    level: string;
     thumbnailURL: string;
     tutorId: number;
     tutorName: string;
@@ -36,10 +38,9 @@ interface CourseHeroSectionProps {
 const CourseHeroSection = ({ course, wishlisted, setWishlisted }: CourseHeroSectionProps) => {
   const navigate = useNavigate();
   const [isOwner, setIsOwner] = useState(false);
-
   const { toast } = useToast();
 
-  /** Check khóa học có phải của tutor hay không */
+  /** Check nếu khóa học thuộc về tutor */
   useEffect(() => {
     const token =
         localStorage.getItem("access_token") ||
@@ -50,7 +51,6 @@ const CourseHeroSection = ({ course, wishlisted, setWishlisted }: CourseHeroSect
     const checkTutorCourse = async () => {
       try {
         const res = await api.get("/tutor/courses/me");
-
         const myCourses: TutorCourse[] = res.data.result || [];
         const found = myCourses.some((c) => c.id === course.id);
         if (found) setIsOwner(true);
@@ -62,11 +62,11 @@ const CourseHeroSection = ({ course, wishlisted, setWishlisted }: CourseHeroSect
     checkTutorCourse();
   }, [course.id]);
 
-
-
   /** Toggle Wishlist */
   const toggleWishlist = async () => {
-    const token = localStorage.getItem("access_token") || sessionStorage.getItem("access_token");
+    const token =
+        localStorage.getItem("access_token") ||
+        sessionStorage.getItem("access_token");
 
     if (!token) {
       const redirectURL = encodeURIComponent(window.location.pathname);
@@ -78,7 +78,6 @@ const CourseHeroSection = ({ course, wishlisted, setWishlisted }: CourseHeroSect
       });
       return;
     }
-
 
     try {
       if (wishlisted) {
@@ -97,9 +96,11 @@ const CourseHeroSection = ({ course, wishlisted, setWishlisted }: CourseHeroSect
     }
   };
 
-  /** Buy now → chuyển sang PayOS checkout page */
+  /** Buy Now */
   const handleBuyNow = async () => {
-    const token = localStorage.getItem("access_token") || sessionStorage.getItem("access_token");
+    const token =
+        localStorage.getItem("access_token") ||
+        sessionStorage.getItem("access_token");
 
     if (!token) {
       const redirectURL = encodeURIComponent(window.location.pathname);
@@ -114,16 +115,25 @@ const CourseHeroSection = ({ course, wishlisted, setWishlisted }: CourseHeroSect
       return;
     }
 
+    const userId = await getUserId();
+
+    if (!userId) {
+      toast({
+        title: "Error",
+        description: "Cannot detect user ID.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
       const response = await api.post("/api/payments/create", {
+        userId,
         targetId: course.id,
         paymentType: "Course",
       });
 
-      //  Redirect trực tiếp sang link thanh toán PayOS
       window.location.href = response.data.checkoutUrl;
-
     } catch {
       toast({
         title: "Payment Error",
@@ -133,9 +143,11 @@ const CourseHeroSection = ({ course, wishlisted, setWishlisted }: CourseHeroSect
     }
   };
 
-
   const formatPrice = (price: number) =>
-      new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(price);
+      new Intl.NumberFormat("vi-VN", {
+        style: "currency",
+        currency: "VND",
+      }).format(price);
 
   const formatDate = (dateString: string) =>
       new Date(dateString).toLocaleDateString("vi-VN", {
@@ -156,9 +168,17 @@ const CourseHeroSection = ({ course, wishlisted, setWishlisted }: CourseHeroSect
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
             >
-            <span className="bg-white text-blue-600 px-3 py-1 rounded-full text-sm font-medium">
-              {course.language}
-            </span>
+
+              {/* LANGUAGE + LEVEL BADGES */}
+              <div className="flex items-center gap-3">
+              <span className="bg-white text-blue-600 px-3 py-1 rounded-full text-sm font-medium">
+                {course.language}
+              </span>
+
+                <span className="bg-white/20 px-3 py-1 rounded-full text-sm font-medium">
+                {course.level} Level
+              </span>
+              </div>
 
               <h1 className="text-4xl font-bold mt-4 mb-2">{course.title}</h1>
 
@@ -166,16 +186,21 @@ const CourseHeroSection = ({ course, wishlisted, setWishlisted }: CourseHeroSect
               <span className="bg-white/20 px-3 py-1 rounded-full text-sm">
                 {course.categoryName}
               </span>
-                <span className="text-sm opacity-90">Created on: {formatDate(course.createdAt)}</span>
+                <span className="text-sm opacity-90">
+                Created on: {formatDate(course.createdAt)}
+              </span>
               </div>
 
-              <p className="text-xl text-blue-100 mb-6">{course.description}</p>
+              {/* ⭐ shortDescription – used instead of description */}
+              <p className="text-xl text-blue-100 mb-6">{course.shortDescription}</p>
 
               <div className="flex items-center gap-4 text-blue-100 mb-4">
                 <div className="flex items-center gap-1">
                   <Star className="w-5 h-5 text-yellow-300 fill-yellow-300" />
                   <span className="font-semibold">{course.avgRating.toFixed(1)}</span>
-                  <span className="opacity-80 text-sm">({course.totalRatings} reviews)</span>
+                  <span className="opacity-80 text-sm">
+                  ({course.totalRatings} reviews)
+                </span>
                 </div>
 
                 <span>•</span>
@@ -187,7 +212,9 @@ const CourseHeroSection = ({ course, wishlisted, setWishlisted }: CourseHeroSect
                 <span>{course.duration} hours</span>
               </div>
 
-              <span className="text-3xl font-bold mb-6 block">{formatPrice(course.price)}</span>
+              <span className="text-3xl font-bold mb-6 block">
+              {formatPrice(course.price)}
+            </span>
 
               {/* BUTTON LOGIC */}
               <div className="flex gap-4 mt-4">

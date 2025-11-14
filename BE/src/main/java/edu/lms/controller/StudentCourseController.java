@@ -1,6 +1,8 @@
+// src/main/java/edu/lms/controller/StudentCourseController.java
 package edu.lms.controller;
 
 import edu.lms.dto.request.ApiRespond;
+import edu.lms.dto.response.StudentCourseListItemResponse;
 import edu.lms.dto.response.StudentCourseResponse;
 import edu.lms.entity.User;
 import edu.lms.exception.AppException;
@@ -25,16 +27,32 @@ public class StudentCourseController {
     StudentCourseService studentCourseService;
     UserRepository userRepository;
 
+
     @GetMapping
-    public ApiRespond<List<StudentCourseResponse>> getCoursesByStudent(
+    public ApiRespond<List<StudentCourseListItemResponse>> getMyCourses(
             @AuthenticationPrincipal(expression = "claims['sub']") String email
     ) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXIST));
 
-        return ApiRespond.<List<StudentCourseResponse>>builder()
-                .result(studentCourseService.getCoursesByStudent(user.getUserID()))
+        return ApiRespond.<List<StudentCourseListItemResponse>>builder()
+                .result(studentCourseService.getCoursesSummary(user.getUserID()))
                 .message("Fetched enrolled courses successfully")
+                .build();
+    }
+
+
+    @GetMapping("/{courseId}")
+    public ApiRespond<StudentCourseResponse> getMyCourseDetail(
+            @PathVariable Long courseId,
+            @AuthenticationPrincipal(expression = "claims['sub']") String email
+    ) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXIST));
+
+        return ApiRespond.<StudentCourseResponse>builder()
+                .result(studentCourseService.getCourseDetail(user.getUserID(), courseId))
+                .message("Fetched course detail successfully")
                 .build();
     }
 }

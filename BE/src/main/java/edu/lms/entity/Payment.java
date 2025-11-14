@@ -23,91 +23,81 @@ public class Payment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long paymentID;
 
-    // 💰 Số tiền thanh toán
+    //Số tiền thanh toán
     @Column(precision = 12, scale = 2, nullable = false)
     BigDecimal amount;
 
-    // 🔹 Loại thanh toán: COURSE / BOOKING
+    //Loại thanh toán: COURSE / BOOKING
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     PaymentType paymentType;
 
-    // 🔹 Phương thức thanh toán: PAYOS / VNPAY / BANK
+    //Phương thức thanh toán: PAYOS / VNPAY / BANK
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     PaymentMethod paymentMethod;
 
-    // 🔹 Mã đơn hàng (unique từ PayOS)
+    //Mã đơn hàng (unique từ PayOS)
     @Column(unique = true, length = 150)
     String orderCode;
 
-    // 🔹 ID của payment link PayOS
+    //ID của payment link PayOS
     @Column(length = 150)
     String paymentLinkId;
 
-    // 🔹 URL checkout của PayOS/VNPAY
+    //URL checkout của PayOS/VNPAY
     @Column(length = 500)
     String checkoutUrl;
 
-    // 🔹 QR code link (PayOS trả về)
+    //QR code link (PayOS trả về)
     @Column(length = 500)
     String qrCodeUrl;
 
-    // 🔹 Trạng thái thanh toán: PENDING / SUCCESS / FAILED / EXPIRED / CANCELLED
+    //Trạng thái thanh toán: PENDING / SUCCESS / FAILED / EXPIRED / CANCELLED
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
     PaymentStatus status;
 
-    // 🕒 Thời gian thanh toán thành công
+    //Thời gian thanh toán thành công
     LocalDateTime paidAt;
 
-    // 💬 Phản hồi trả về từ cổng thanh toán (raw JSON)
+    //Phản hồi trả về từ cổng thanh toán (raw JSON)
     @Lob
     String transactionResponse;
 
-    // 🎯 Liên kết mục tiêu (CourseID hoặc BookingPlanID)
+    //Liên kết mục tiêu (CourseID hoặc BookingPlanID)
     @Column(name = "target_id")
     Long targetId;
 
-    // 👤 Người mua (Learner)
+    // Người mua (Learner)
     @Column(name = "user_id")
     Long userId;
 
-    // 👨‍🏫 Tutor nhận tiền (Course owner / Booking owner)
+    // Tutor nhận tiền (Course owner / Booking owner)
     @Column(name = "tutor_id")
     Long tutorId;
 
-    // 📚 Liên kết enrollment (nếu thanh toán cho khóa học)
+    // Liên kết enrollment (nếu thanh toán cho khóa học)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "enrollment_id")
     Enrollment enrollment;
 
-    // 👤 Người nhận tiền trong hệ thống (dự phòng payout/refund nội bộ)
+    //Người nhận tiền trong hệ thống (dự phòng payout/refund nội bộ)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "received_id")
     User received;
 
-    // 💳 Thông tin tài khoản nhận tiền (từ PayOS)
-    @Column(name = "account_number", length = 30)
-    String accountNumber;
 
-    @Column(name = "account_name", length = 100)
-    String accountName;
-
-    @Column(name = "bank_bin", length = 10)
-    String bin;
-
-    // ✅ Cờ trạng thái
+    //Cờ trạng thái
     @Builder.Default
     Boolean isPaid = false;
 
     @Builder.Default
     Boolean isRefund = false;
 
-    // 🕒 Thời gian tạo bản ghi
+    //Thời gian tạo bản ghi
     @Column(updatable = false)
     LocalDateTime createdAt;
-
 
     @Column(nullable = false)
     LocalDateTime expiresAt;

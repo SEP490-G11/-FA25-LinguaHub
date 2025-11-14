@@ -15,7 +15,13 @@ import java.util.List;
 import static lombok.AccessLevel.PRIVATE;
 
 @RestController
-@RequestMapping("/tutor/courses/sections")
+@RequestMapping("/tutor/courses/" +
+        "" +
+        "" +
+        "" +
+        "" +
+        "" +
+        "")
 @RequiredArgsConstructor
 @FieldDefaults(level = PRIVATE, makeFinal = true)
 public class LessonController {
