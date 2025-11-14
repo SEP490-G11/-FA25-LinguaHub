@@ -34,12 +34,14 @@ const NotFound = () => {
               Go Home
             </Link>
           </Button>
-          
-          <Button variant="outline" asChild className="w-full">
-            <Link to="javascript:history.back()">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Go Back
-            </Link>
+
+          <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => window.history.back()}
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Go Back
           </Button>
         </div>
       </motion.div>

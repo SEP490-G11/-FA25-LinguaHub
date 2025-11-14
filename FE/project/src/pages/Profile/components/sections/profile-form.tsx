@@ -10,19 +10,21 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
+// ================== VALIDATION ==================
 const profileSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
   email: z.string().email("Invalid email format"),
   phone: z.string().min(9, "Invalid phone number"),
   dob: z.string().optional(),
-  gender: z.enum(["Male", "Female", "Other"]),
+  gender: z.string().optional(),
   country: z.string().optional(),
   address: z.string().optional(),
   bio: z.string().optional(),
 });
-
 type ProfileFormData = z.infer<typeof profileSchema>;
+
+// ==================================================
 
 export const ProfileForm = () => {
   const [userId, setUserId] = useState<number | null>(null);
@@ -39,7 +41,7 @@ export const ProfileForm = () => {
     resolver: zodResolver(profileSchema),
   });
 
-  /** ✅ Load user info on mount */
+  // =============== Fetch user info ==================
   useEffect(() => {
     const fetchUserInfo = async () => {
       try {
@@ -68,30 +70,60 @@ export const ProfileForm = () => {
     fetchUserInfo();
   }, [reset]);
 
-  /** ✅ Save updated profile */
+  // ================== Update profile ==================
   const onSubmit = async (data: ProfileFormData) => {
     if (!userId) return;
-
     setLoading(true);
 
     try {
-      const res = await api.patch(`/users/${userId}`, data);
+      // CHỉ gửi các field được backend cho phép update
+      const allowedFields: (keyof ProfileFormData)[] = [
+        "fullName",
+        "country",
+        "address",
+        "phone",
+        "bio",
+        "dob",
+      ];
 
-      reset(res.data);
+      const payload: Partial<ProfileFormData> = {};
+
+      allowedFields.forEach((key) => {
+        if (data[key] !== undefined) {
+          payload[key] = data[key];
+        }
+      });
+
+
+      const res = await api.patch(`/users/${userId}`, payload);
+      const updatedUser = res.data;
+
+      reset({
+        username: updatedUser.username,
+        fullName: updatedUser.fullName,
+        email: updatedUser.email,
+        phone: updatedUser.phone,
+        dob: updatedUser.dob,
+        gender: updatedUser.gender,
+        country: updatedUser.country,
+        address: updatedUser.address,
+        bio: updatedUser.bio,
+      });
+
       setIsEditing(false);
-      alert("✅ Profile updated successfully!");
+      alert(" Profile updated successfully!");
     } catch (error) {
       console.error(" Failed to update profile:", error);
-      alert(" Update failed!");
+      alert("Update failed!");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCancel = () => {
-    setIsEditing(false);
-  };
+  // ================== Cancel ==================
+  const handleCancel = () => setIsEditing(false);
 
+  // ================== Avatar preview ==================
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -101,6 +133,7 @@ export const ProfileForm = () => {
     }
   };
 
+  // ================== UI ==================
   return (
       <Card className="p-6">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -120,84 +153,102 @@ export const ProfileForm = () => {
                       className="absolute bottom-0 right-0 bg-blue-600 p-2 rounded-full cursor-pointer hover:bg-blue-700 transition-colors"
                   >
                     <Camera className="w-4 h-4 text-white" />
-                    <input id="avatar-upload" type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+                    <input
+                        id="avatar-upload"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleAvatarChange}
+                    />
                   </label>
               )}
             </div>
 
-            <div className="text-center">
-              <h2 className="text-xl font-semibold text-gray-900">User Profile</h2>
-            </div>
+            <h2 className="text-xl font-semibold text-gray-900">User Profile</h2>
           </div>
 
           {/* Form Fields */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-            <div className="space-y-2">
+            <div>
               <label className="text-sm font-medium text-gray-700">Username</label>
-              <Input {...register("username")} disabled={!isEditing} />
-              {errors.username && <p className="text-sm text-red-600">{errors.username.message}</p>}
+              <Input {...register("username")} disabled />
             </div>
 
-            <div className="space-y-2">
+            <div>
               <label className="text-sm font-medium text-gray-700">Full Name</label>
               <Input {...register("fullName")} disabled={!isEditing} />
-              {errors.fullName && <p className="text-sm text-red-600">{errors.fullName.message}</p>}
+              {errors.fullName && (
+                  <p className="text-sm text-red-600">{errors.fullName.message}</p>
+              )}
             </div>
 
-            <div className="space-y-2">
+            <div>
               <label className="text-sm font-medium text-gray-700">Email</label>
               <Input type="email" {...register("email")} disabled />
             </div>
 
-            <div className="space-y-2">
+            <div>
               <label className="text-sm font-medium text-gray-700">Phone</label>
               <Input {...register("phone")} disabled={!isEditing} />
-              {errors.phone && <p className="text-sm text-red-600">{errors.phone.message}</p>}
+              {errors.phone && (
+                  <p className="text-sm text-red-600">{errors.phone.message}</p>
+              )}
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">Date of Birth</label>
+            <div>
+              <label className="text-sm font-medium text-gray-700">
+                Date of Birth
+              </label>
               <Input type="date" {...register("dob")} disabled={!isEditing} />
             </div>
 
-            <div className="space-y-2">
+            <div>
               <label className="text-sm font-medium text-gray-700">Gender</label>
-              <select {...register("gender")} disabled={!isEditing} className="h-10 rounded border px-3">
+              <select
+                  {...register("gender")}
+                  disabled
+                  className="h-10 rounded border px-3"
+              >
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
                 <option value="Other">Other</option>
               </select>
-              {errors.gender && <p className="text-sm text-red-600">{errors.gender.message}</p>}
             </div>
 
-            <div className="space-y-2">
+            <div>
               <label className="text-sm font-medium text-gray-700">Country</label>
               <Input {...register("country")} disabled={!isEditing} />
             </div>
 
-            <div className="space-y-2 md:col-span-2">
+            <div className="md:col-span-2">
               <label className="text-sm font-medium text-gray-700">Address</label>
               <Input {...register("address")} disabled={!isEditing} />
             </div>
 
-            <div className="space-y-2 md:col-span-2">
+            <div className="md:col-span-2">
               <label className="text-sm font-medium text-gray-700">About me</label>
               <Textarea {...register("bio")} disabled={!isEditing} rows={4} />
             </div>
           </div>
 
-          {/* Action Buttons */}
+          {/* Buttons */}
           <div className="flex justify-end space-x-4 pt-4 border-t">
             {!isEditing ? (
-                <Button type="button" onClick={() => setIsEditing(true)}>Edit</Button>
+                <Button type="button" onClick={() => setIsEditing(true)}>
+                  Edit
+                </Button>
             ) : (
                 <>
                   <Button type="button" variant="outline" onClick={handleCancel}>
                     Cancel
                   </Button>
+
                   <Button type="submit" disabled={!isDirty || loading}>
-                    {loading ? <Save className="animate-spin w-4 h-4 mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                    {loading ? (
+                        <Save className="animate-spin w-4 h-4 mr-2" />
+                    ) : (
+                        <Save className="w-4 h-4 mr-2" />
+                    )}
                     Save Changes
                   </Button>
                 </>

@@ -25,13 +25,13 @@ import java.util.Map;
 public class PayOSService {
 
     private final PayOSProperties props;
-
     private final RestTemplate rest = new RestTemplate();
 
-    // Bỏ qua field không tồn tại trong SDK (expiredAt, reference,…)
     private static final ObjectMapper mapper =
             new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
+
+    // ⭐ TẠO LINK THANH TOÁN — FULL CHUẨN ⭐
     public CheckoutWrapper createPaymentLink(
             Long paymentId,
             Long userId,
@@ -43,12 +43,11 @@ public class PayOSService {
         try {
             long orderCode = System.currentTimeMillis() / 1000;
 
-            // PayOS chỉ cho phép tối đa 25 ký tự
+            // mô tả tối đa 25 ký tự cho PayOS
             String safeDesc = (description != null && description.length() > 25)
                     ? description.substring(0, 25)
                     : description;
 
-            // Build Item
             ItemData item = ItemData.builder()
                     .name(safeDesc)
                     .quantity(1)
@@ -59,7 +58,7 @@ public class PayOSService {
             String returnUrl = props.getReturnUrl() + "?paymentId=" + paymentId;
             String cancelUrl = props.getCancelUrl() + "?paymentId=" + paymentId;
 
-            // Build PaymentData gửi lên PayOS
+            // build dữ liệu gửi PayOS
             PaymentData paymentData = PaymentData.builder()
                     .orderCode(orderCode)
                     .amount(amount.intValue())
@@ -69,14 +68,13 @@ public class PayOSService {
                     .item(item)
                     .build();
 
-            // Tạo signature (bắt buộc)
+            // SIGNATURE bắt buộc
             String signature = SignatureUtils.createSignatureOfPaymentRequest(
                     paymentData,
                     props.getSecretKey()
             );
             paymentData.setSignature(signature);
 
-            // Convert sang JSON body
             Map<String, Object> body = mapper.convertValue(paymentData, Map.class);
 
             HttpHeaders headers = new HttpHeaders();
@@ -86,7 +84,6 @@ public class PayOSService {
 
             String url = props.getEndpoint() + "/payment-requests";
 
-            // Gửi request sang PayOS
             ResponseEntity<String> response =
                     rest.postForEntity(url, new HttpEntity<>(body, headers), String.class);
 
@@ -97,15 +94,15 @@ public class PayOSService {
             JsonNode root = mapper.readTree(response.getBody());
             JsonNode data = root.path("data");
 
-            // Parse response vào CheckoutResponseData (SDK không có trường expiredAt)
             CheckoutResponseData checkout =
                     mapper.treeToValue(data, CheckoutResponseData.class);
 
-            //EXPIRED TIME DO BACKEND TỰ QUY ĐỊNH — KHÔNG LẤY TỪ PAYOS
-            LocalDateTime expiredAt = LocalDateTime.now().plusMinutes(15); // 3 phút
+            LocalDateTime expiredAt = LocalDateTime.now().plusMinutes(3);
 
-            log.info("[PAYOS] Created payment link | orderCode={} | expiredAt_BE={}",
-                    orderCode, expiredAt);
+            log.info(
+                    "[PAYOS] Created payment | paymentId={} | orderCode={} | return={} | cancel={}",
+                    paymentId, orderCode, returnUrl, cancelUrl
+            );
 
             return new CheckoutWrapper(checkout, expiredAt);
 
@@ -114,6 +111,7 @@ public class PayOSService {
             throw new RuntimeException("Failed to create PayOS link", e);
         }
     }
+
 
     public record CheckoutWrapper(
             CheckoutResponseData data,

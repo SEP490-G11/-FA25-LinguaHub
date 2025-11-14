@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import api from "@/config/axiosConfig";
 import { ROUTES } from "@/constants/routes";
+import axios from "axios";
 
 interface TutorHeroSectionProps {
   tutor: {
@@ -46,41 +47,47 @@ const TutorHeroSection = ({ tutor }: TutorHeroSectionProps) => {
     animate: { opacity: 1, y: 0 },
     transition: { duration: 0.6 },
   };
+  const checkAuthAndRedirect = () => {
+    const token =
+        localStorage.getItem("access_token") ||
+        sessionStorage.getItem("access_token");
+
+    if (!token) {
+      const redirectURL = encodeURIComponent(window.location.pathname);
+      navigate(`${ROUTES.SIGN_IN}?redirect=${redirectURL}`);
+      return false;
+    }
+
+    return true;
+  };
 
   const handleSendMessage = async () => {
+    // 1. FE login check
+    if (!checkAuthAndRedirect()) return;
+
     try {
-      // 1️⃣ Lấy thông tin user
-      const userRes = await api.get("/users/myInfo");
-      const myInfo = userRes.data.result;
-
-      // 2️⃣ Check xem user có đang xem chính profile của mình không
-      if (myInfo.userID === tutor.id) {
-        return alert("You cannot create a chat room with yourself.");
-      }
-
-      // 3️⃣ Gọi BE (BE sẽ tự xác định Advice/Training)
+      // 2. Call BE, BE sẽ check JWT
       const res = await api.post(`/chat/advice/${tutor.id}`);
       const room = res.data?.result;
 
       if (!room?.chatRoomID) {
-        console.error("❌ Backend missing chatRoomID:", res.data);
         return alert("Unable to create chat room.");
       }
 
-      // 4️⃣ Điều hướng FE
+      // 3. Navigate to chat room
       navigate(`/messages/${room.chatRoomID}`);
-    } catch (err: any) {
-      // Nếu BE trả 401 → chưa login
-      if (err?.response?.status === 401) {
-        return navigate(ROUTES.SIGN_IN);
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        if (err.response?.status === 401) {
+          const redirectURL = encodeURIComponent(window.location.pathname);
+          navigate(`${ROUTES.SIGN_IN}?redirect=${redirectURL}`);
+          return;
+        }
       }
-
-      console.error("❌ Error opening chat:", err);
+      console.error(err);
       alert("Something went wrong.");
     }
   };
-
-
 
 
   // ========= Render =========
@@ -205,10 +212,13 @@ const TutorHeroSection = ({ tutor }: TutorHeroSectionProps) => {
 
                   <div className="space-y-3 mb-6">
                     <Button
-                        onClick={() => navigate(`/book-tutor/${tutor.id}`)}
-                        className="w-full bg-orange-500 text-white py-3 rounded-lg font-semibold hover:bg-orange-600 transition-colors flex items-center justify-center space-x-2"
+                        onClick={() => {
+                          if (!checkAuthAndRedirect()) return;
+                          navigate(`/book-tutor/${tutor.id}`);
+                        }}
+                        className="w-full bg-orange-500 text-white py-3 rounded-lg"
                     >
-                      <Video className="w-5 h-5" />
+                    <Video className="w-5 h-5" />
                       <span>Booking</span>
                     </Button>
 
