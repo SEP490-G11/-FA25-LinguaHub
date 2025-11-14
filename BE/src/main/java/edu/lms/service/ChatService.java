@@ -38,6 +38,7 @@ public class ChatService {
      * Get or create Advice chat room between Learner and Tutor
      * Business Rule: Each Learner-Tutor pair has only 1 Advice room
      */
+
     public ChatRoomResponse getOrCreateAdviceRoom(Long learnerID, Long tutorID) {
         log.info("Getting or creating Advice room for Learner {} and Tutor {}", learnerID, tutorID);
 
@@ -46,6 +47,14 @@ public class ChatService {
 
         Tutor tutor = tutorRepository.findById(tutorID)
                 .orElseThrow(() -> new AppException(ErrorCode.TUTOR_NOT_FOUND));
+
+        // Prevent creating a chat room where learner is the same user as the tutor's
+        // account
+        if (tutor.getUser() != null && tutor.getUser().getUserID().equals(learnerID)) {
+            log.warn("Prevent creating advice room: learnerID {} is same as tutor's userID {}", learnerID,
+                    tutor.getUser().getUserID());
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
 
         // Check if Advice room already exists
         ChatRoom adviceRoom = chatRoomRepository
@@ -58,11 +67,7 @@ public class ChatService {
         return mapToChatRoomResponse(adviceRoom);
     }
 
-    /**
-     * Get or create Training chat room between Learner and Tutor
-     * Business Rule: Each Learner-Tutor pair has only 1 Training room
-     * Training room chỉ được tạo khi learner đã book và thanh toán ít nhất 1 slot
-     */
+    // ...existing code...
     public ChatRoomResponse getOrCreateTrainingRoom(Long learnerID, Long tutorID) {
         log.info("Getting or creating Training room for Learner {} and Tutor {}", learnerID, tutorID);
 
@@ -72,10 +77,18 @@ public class ChatService {
         Tutor tutor = tutorRepository.findById(tutorID)
                 .orElseThrow(() -> new AppException(ErrorCode.TUTOR_NOT_FOUND));
 
+        // Prevent creating a chat room where learner is the same user as the tutor's
+        // account
+        if (tutor.getUser() != null && tutor.getUser().getUserID().equals(learnerID)) {
+            log.warn("Prevent creating training room: learnerID {} is same as tutor's userID {}", learnerID,
+                    tutor.getUser().getUserID());
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
         // Kiểm tra xem learner đã có slot đã thanh toán (Paid) với tutor này chưa
         List<BookingPlanSlot> paidSlots = bookingPlanSlotRepository
                 .findPaidSlotsByUserAndTutor(learnerID, tutorID);
-        
+
         if (paidSlots.isEmpty()) {
             throw new AppException(ErrorCode.UNAUTHORIZED); // Chưa book và thanh toán slot nào
         }
@@ -189,7 +202,8 @@ public class ChatService {
             return true;
         }
 
-        // Rule: For Training room - check if learner còn slot đã thanh toán (Paid) với tutor này
+        // Rule: For Training room - check if learner còn slot đã thanh toán (Paid) với
+        // tutor này
         if (chatRoom.getChatRoomType() == ChatRoomType.Training) {
             // Kiểm tra xem còn slot nào đã thanh toán (Paid) và chưa hết hạn không
             List<BookingPlanSlot> paidSlots = bookingPlanSlotRepository
@@ -379,12 +393,20 @@ public class ChatService {
         Tutor tutor = tutorRepository.findById(tutorID)
                 .orElseThrow(() -> new AppException(ErrorCode.TUTOR_NOT_FOUND));
 
+        // Prevent creating a chat room where learner is the same user as the tutor's
+        // account
+        if (tutor.getUser() != null && tutor.getUser().getUserID().equals(learnerID)) {
+            log.warn("Prevent creating training room: learnerID {} is same as tutor's userID {}", learnerID,
+                    tutor.getUser().getUserID());
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
         // Kiểm tra xem learner đã có slot đã thanh toán (Paid) với tutor này chưa
         List<BookingPlanSlot> paidSlots = bookingPlanSlotRepository
                 .findPaidSlotsByUserAndTutor(learnerID, tutorID);
 
         if (paidSlots.isEmpty()) {
-            log.info("No paid slots found, skipping Training room creation for Learner {} and Tutor {}", 
+            log.info("No paid slots found, skipping Training room creation for Learner {} and Tutor {}",
                     learnerID, tutorID);
             return;
         }
@@ -397,5 +419,3 @@ public class ChatService {
         }
     }
 }
-
-

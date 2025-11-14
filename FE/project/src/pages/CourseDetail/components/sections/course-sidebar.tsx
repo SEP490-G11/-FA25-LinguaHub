@@ -1,133 +1,278 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Star, Clock, BookOpen, Users, Calendar, Globe } from 'lucide-react';
+import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { Star, Clock, BookOpen, Globe, Heart } from "lucide-react";
+import api from "@/config/axiosConfig";
+import { ROUTES } from "@/constants/routes";
+import { useEffect, useState } from "react";
+import { useToast } from "@/components/ui/use-toast";
 
 interface CourseSidebarProps {
-  course: any;
+  course: {
+    id: number;
+    title: string;
+    description: string;
+    duration: number;
+    price: number;
+    language: string;
+    thumbnailURL: string;
+    categoryName: string;
+    tutorName: string;
+    tutorAvatarURL: string | null;
+    learnerCount: number;
+    avgRating: number;
+    totalRatings: number;
+    tutorAddress: string;
+    tutorID: number;
+    isPurchased: boolean;
+    section: {
+      sectionID: number;
+      orderIndex: number;
+      title: string;
+      lessons: {
+        lessonID: number;
+        title: string;
+        duration: number;
+      }[];
+    }[];
+  };
+
+  wishlisted: boolean;
+  setWishlisted: (value: boolean) => void;
+}
+interface TutorCourse {
+  id: number;
 }
 
-const CourseSidebar = ({ course }: CourseSidebarProps) => {
-  const fadeInUp = {
-    initial: { opacity: 0, y: 60 },
-    animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.6 }
+const CourseSidebar = ({ course, wishlisted, setWishlisted }: CourseSidebarProps) => {
+  const navigate = useNavigate();
+  const [isOwner, setIsOwner] = useState(false);
+  const { toast } = useToast();
+  /**  Kiểm tra user có phải tutor của khóa học */
+  useEffect(() => {
+    const checkTutorCourse = async () => {
+      try {
+        const res = await api.get("/tutor/courses/me");
+
+        const myCourses: TutorCourse[] = res.data.result || [];
+
+        const found = myCourses.some((c) => c.id === course.id);
+        if (found) setIsOwner(true);
+      } catch {
+        // avoid unused error
+      }
+    };
+
+    checkTutorCourse();
+  }, [course.id]);
+
+
+  const toggleWishlist = async () => {
+    const token =
+        localStorage.getItem("access_token") ||
+        sessionStorage.getItem("access_token");
+
+    if (!token) {
+      toast({
+        variant: "destructive",
+        title: "You are not logged in",
+        description: "Please login to use wishlist.",
+      });
+      return;
+    }
+
+    try {
+      if (wishlisted) {
+        await api.delete(`/wishlist/${course.id}`);
+        setWishlisted(false);
+        toast({
+          variant: "success",
+          title: "Removed from wishlist",
+        });
+      } else {
+        await api.post(`/wishlist/${course.id}`);
+        setWishlisted(true);
+        toast({
+          variant: "success",
+          title: "Added to wishlist",
+        });
+      }
+    } catch {
+      toast({
+        variant: "destructive",
+        title: "Something went wrong",
+      });
+    }
+  };
+  const handleBuyNow = async () => {
+    const token =
+        localStorage.getItem("access_token") ||
+        sessionStorage.getItem("access_token");
+
+    if (!token) {
+      toast({
+        variant: "destructive",
+        title: "You must log in",
+        description: "Login to purchase the course.",
+      });
+      return;
+    }
+
+    try {
+      const response = await api.post("/api/payments/create", {
+        targetId: course.id,
+        paymentType: "Course",
+      });
+
+      navigate(ROUTES.PAYMENT.replace(":id", String(course.id)), {
+        state: {
+          ...course,
+          ...response.data,
+        },
+      });
+    } catch {
+      toast({
+        variant: "destructive",
+        title: "Payment failed",
+        description: "Unable to initialize payment.",
+      });
+    }
   };
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
-    }).format(price);
-  };
+  const handleGoToCourse = () => navigate(`/learning/${course.id}`);
+  const handleViewProfile = () =>
+      navigate(ROUTES.TUTOR_DETAIL.replace(":id", `${course.tutorID}`));
+
+  const totalLessons = course.section?.reduce(
+      (total, sec) => total + sec.lessons.length,
+      0
+  );
+
+  const formatPrice = (price: number) =>
+      new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(price);
 
   return (
-    <div className="lg:col-span-1">
-      {/* Instructor Card */}
-      <motion.div 
-        className="bg-white rounded-xl p-6 shadow-md mb-8"
-        initial="initial"
-        whileInView="animate"
-        viewport={{ once: true }}
-        variants={fadeInUp}
-      >
-        <h3 className="text-xl font-bold text-gray-900 mb-4">Your Instructor</h3>
-        <div className="flex items-center space-x-4 mb-4">
-          <img
-            src={course.instructor.image}
-            alt={course.instructor.name}
-            className="w-16 h-16 rounded-full object-cover"
-          />
-          <div>
-            <h4 className="font-semibold text-gray-900">{course.instructor.name}</h4>
-            <p className="text-sm text-gray-600">{course.instructor.flag} {course.instructor.country}</p>
-            <div className="flex items-center space-x-1 mt-1">
-              <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-              <span className="text-sm">{course.instructor.rating}</span>
-              <span className="text-sm text-gray-500">({course.instructor.students} students)</span>
-            </div>
-          </div>
-        </div>
-        <p className="text-gray-600 text-sm mb-4">{course.instructor.experience} of teaching experience</p>
-        <button className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition-colors">
-          View Profile
-        </button>
-      </motion.div>
+      <div className="lg:col-span-1">
 
-      {/* Course Info */}
-      <motion.div 
-        className="bg-white rounded-xl p-6 shadow-md mb-8"
-        initial="initial"
-        whileInView="animate"
-        viewport={{ once: true }}
-        variants={fadeInUp}
-      >
-        <h3 className="text-xl font-bold text-gray-900 mb-4">Course Information</h3>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Clock className="w-5 h-5 text-gray-500" />
-              <span className="text-gray-600">Duration</span>
-            </div>
-            <span className="font-medium">{course.duration}</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <BookOpen className="w-5 h-5 text-gray-500" />
-              <span className="text-gray-600">Lessons</span>
-            </div>
-            <span className="font-medium">{course.lessons}</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Users className="w-5 h-5 text-gray-500" />
-              <span className="text-gray-600">Class Size</span>
-            </div>
-            <span className="font-medium">{course.groupSize}</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Calendar className="w-5 h-5 text-gray-500" />
-              <span className="text-gray-600">Schedule</span>
-            </div>
-            <span className="font-medium">Flexible</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Globe className="w-5 h-5 text-gray-500" />
-              <span className="text-gray-600">Language</span>
-            </div>
-            <span className="font-medium">{course.language}</span>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Enroll Button */}
-      <motion.div 
-        className="bg-white rounded-xl p-6 shadow-md"
-        initial="initial"
-        whileInView="animate"
-        viewport={{ once: true }}
-        variants={fadeInUp}
-      >
-        <div className="text-center mb-4">
-          <div className="flex items-center justify-center space-x-2 mb-2">
-            <span className="text-3xl font-bold text-blue-600">{formatPrice(course.price)}</span>
-            <span className="text-gray-500">/giờ</span>
-          </div>
-          <span className="text-gray-400 line-through">{formatPrice(course.originalPrice)}/giờ</span>
-        </div>
-        <Link 
-          to={`/payment/${course.id}`}
-          className="w-full bg-blue-500 text-white py-3 rounded-lg font-semibold hover:bg-blue-600 transition-colors mb-3 block text-center"
+        {/* Instructor Card */}
+        <motion.div
+            className="bg-white rounded-xl p-6 shadow-md mb-8"
+            initial={{ opacity: 0, y: 60 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
         >
-          Thanh toán ngay
-        </Link>
-        <button className="w-full border border-blue-500 text-blue-500 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors">
-          Thêm vào yêu thích
-        </button>
-      </motion.div>
-    </div>
+          <h3 className="text-xl font-bold text-gray-900 mb-4">Instructor</h3>
+
+          <div className="flex items-center space-x-4 mb-4">
+            <img
+                src={course.tutorAvatarURL || "https://placehold.co/150x150/png?text=Tutor"}
+                alt={course.tutorName}
+                className="w-16 h-16 rounded-full object-cover"
+            />
+
+            <div>
+              <h4 className="font-semibold text-gray-900">{course.tutorName}</h4>
+              {course.tutorAddress && (
+                  <p className="text-sm text-gray-500 mt-0.5">{course.tutorAddress}</p>
+              )}
+              <div className="flex items-center space-x-1 mt-1">
+                <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                <span className="text-sm">{course.avgRating.toFixed(1)}</span>
+                <span className="text-sm text-gray-500">
+                ({course.totalRatings} reviews)
+              </span>
+              </div>
+            </div>
+          </div>
+
+          <button
+              onClick={handleViewProfile}
+              className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
+          >
+            View Profile
+          </button>
+        </motion.div>
+
+        {/* Course Info */}
+        <motion.div
+            className="bg-white rounded-xl p-6 shadow-md mb-8"
+            initial={{ opacity: 0, y: 60 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+        >
+          <h3 className="text-xl font-bold text-gray-900 mb-4">
+            Course Information
+          </h3>
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Clock className="w-5 h-5 text-gray-500" />
+                <span className="text-gray-600">Duration</span>
+              </div>
+              <span className="font-medium">{course.duration} hours</span>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <BookOpen className="w-5 h-5 text-gray-500" />
+                <span className="text-gray-600">Lessons</span>
+              </div>
+              <span className="font-medium">{totalLessons}</span>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Globe className="w-5 h-5 text-gray-500" />
+                <span className="text-gray-600">Language</span>
+              </div>
+              <span className="font-medium">{course.language}</span>
+            </div>
+          </div>
+        </motion.div>
+
+        {/*  Payment / Wishlist / Go To Course */}
+        <motion.div
+            className="bg-white rounded-xl p-6 shadow-md"
+            initial={{ opacity: 0, y: 60 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+        >
+          <div className="text-center mb-4">
+          <span className="text-3xl font-bold text-blue-600">
+            {formatPrice(course.price)}
+          </span>
+          </div>
+
+          {isOwner || course.isPurchased ? (
+              <button
+                  onClick={handleGoToCourse}
+                  className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition mb-3"
+              >
+                Go to Course
+              </button>
+          ) : (
+              <>
+                <button
+                    onClick={handleBuyNow}
+                    className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition mb-3"
+                >
+                  Buy Now
+                </button>
+
+                <button
+                    onClick={toggleWishlist}
+                    className="w-full flex justify-center items-center gap-2 border border-blue-600 text-blue-600 py-3 rounded-lg font-semibold hover:bg-blue-50 transition"
+                >
+                  <Heart className={`w-5 h-5 ${wishlisted ? "fill-blue-600 text-blue-600" : ""}`} />
+                  {wishlisted ? "Remove from Wishlist" : "Add to Wishlist"}
+                </button>
+              </>
+          )}
+        </motion.div>
+      </div>
   );
 };
 

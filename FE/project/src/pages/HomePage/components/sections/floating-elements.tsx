@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { motion } from 'framer-motion';
 import { Users, BookOpen, Award, Clock } from 'lucide-react';
 

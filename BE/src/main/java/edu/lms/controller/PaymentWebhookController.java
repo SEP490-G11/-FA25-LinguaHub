@@ -23,40 +23,50 @@ public class PaymentWebhookController {
 
     private final PaymentWebhookService paymentWebhookService;
     private final PayOS payOS;
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper;
 
     @PostMapping
-    @Operation(summary = "Receive PayOS webhook", description = "Callback from PayOS after payment success/failure")
-    public ResponseEntity<?> handleWebhook(@RequestBody String rawBody) {
+    @Operation(summary = "Receive PayOS webhook", description = "Callback from PayOS after payment result")
+    public ResponseEntity<Map<String, Object>> handleWebhook(@RequestBody String rawBody) {
         try {
-            log.info("📦 [PAYOS RAW WEBHOOK] body={}", rawBody);
+            log.info("[PAYOS WEBHOOK] RAW BODY = {}", rawBody);
 
-            // Parse + verify signature bằng SDK (chuẩn theo docs mới)
+            // Parse JSON
             Webhook webhook = mapper.readValue(rawBody, Webhook.class);
+
+            // Verify signature
             WebhookData data = payOS.verifyPaymentWebhookData(webhook);
 
-            // Nếu tới đây không throw => signature hợp lệ
-            log.info("Verified PayOS webhook: orderCode={} | code={} | desc={}",
-                    data.getOrderCode(), data.getCode(), data.getDesc());
+            Long orderCode = data.getOrderCode();
+            String code = data.getCode();   // "00" = SUCCESS
+            String desc = data.getDesc();   // description text
 
-            // Tùy hệ thống: nếu muốn map trạng thái chi tiết thì đọc data.getCode()/getDesc()
-            String status = "PAID";
+            log.info("[PAYOS VERIFIED] orderCode={} | code={} | desc={}",
+                    orderCode, code, desc);
 
+            // Forward to service
             paymentWebhookService.handleWebhook(
-                    String.valueOf(data.getOrderCode()),
-                    status,
-                    Map.of("code", data.getCode(), "desc", data.getDesc())
+                    String.valueOf(orderCode),
+                    code,     // <-- code quyết định PAID hay FAILED
+                    Map.of(
+                            "code", code,
+                            "desc", desc
+                    )
             );
 
             return ResponseEntity.ok(Map.of(
                     "message", "Webhook processed successfully",
-                    "orderCode", data.getOrderCode(),
-                    "status", status
+                    "orderCode", orderCode,
+                    "status", code
             ));
+
         } catch (Exception e) {
-            // SDK ném lỗi nếu chữ ký sai / payload không hợp lệ
-            log.error("Error verifying/handling PayOS webhook: {}", e.getMessage(), e);
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            log.error("[PAYOS WEBHOOK ERROR] {}", e.getMessage(), e);
+
+            return ResponseEntity.ok(Map.of(
+                    "message", "Webhook received but verification failed",
+                    "error", e.getMessage()
+            ));
         }
     }
 }

@@ -1,149 +1,103 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Search, Star, Filter } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Link } from "react-router-dom";
+import { ROUTES } from '@/constants/routes.ts';
 
 const HeroBanner = () => {
-  const [searchType, setSearchType] = useState('courses');
-  const [searchTerm, setSearchTerm] = useState('');
+  const images = [
+    "https://images.pexels.com/photos/3184287/pexels-photo-3184287.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "https://images.pexels.com/photos/4143790/pexels-photo-4143790.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "https://images.pexels.com/photos/1181342/pexels-photo-1181342.jpeg?auto=compress&cs=tinysrgb&w=1600",
+    "https://images.pexels.com/photos/545068/pexels-photo-545068.jpeg?auto=compress&cs=tinysrgb&w=1600",
+  ];
 
-  const fadeInUp = {
-    initial: { opacity: 0, y: 60 },
-    animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.6 }
-  };
+  const [currentImage, setCurrentImage] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentImage((prev) => (prev + 1) % images.length);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [images.length]);
 
-  const staggerContainer = {
-    animate: {
-      transition: {
-        staggerChildren: 0.2
-      }
-    }
-  };
-
-  const handleSearch = () => {
-    if (searchType === 'tutors') {
-      window.location.href = `/tutors?search=${encodeURIComponent(searchTerm)}`;
-    } else {
-      window.location.href = `/languages?search=${encodeURIComponent(searchTerm)}`;
-    }
+  const fadeVariants = {
+    initial: { opacity: 0, scale: 1.05 },
+    animate: { opacity: 1, scale: 1 },
+    exit: { opacity: 0, scale: 0.95 },
   };
 
   return (
-    <section className="bg-gradient-to-r from-blue-50 to-purple-50 py-24">
-      <div className="w-full px-8 lg:px-16">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          {/* Left Content */}
-          <div className="text-left">
+      <section className="relative overflow-hidden h-[500px] md:h-[600px] bg-gradient-to-r from-blue-600 to-purple-700 flex items-center justify-center">
+        {/* Ảnh nền chạy tự động */}
+        <div className="absolute inset-0 w-full h-full overflow-hidden">
+          <AnimatePresence mode="wait">
+            <motion.img
+                key={currentImage}
+                src={images[currentImage]}
+                alt="Language learning banner"
+                variants={fadeVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                transition={{ duration: 1 }}
+                className="absolute w-full h-full object-cover opacity-70"
+            />
+          </AnimatePresence>
+        </div>
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-900/70 to-purple-900/50" />
+        <div className="relative z-10 text-center text-white px-6">
+          <motion.h1
+              className="text-4xl md:text-6xl font-bold mb-6 drop-shadow-lg"
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+          >
+            Learn Languages, <br /> Connect the World 🌍
+          </motion.h1>
+
+          <motion.p
+              className="text-lg md:text-2xl text-blue-100 max-w-2xl mx-auto mb-10"
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, delay: 0.3 }}
+          >
+            Empower your future with global communication — start learning with
+            native speakers today!
+          </motion.p>
+
           <motion.div
-            initial="initial"
-            animate="animate"
-            variants={staggerContainer}
+              className="flex justify-center gap-6 flex-wrap"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.6 }}
           >
-            <motion.h1 
-                className="text-4xl md:text-5xl font-bold text-foreground leading-tight mb-6 text-left"
-              variants={fadeInUp}
+            <Link
+                to={ROUTES.LANGUAGES}
+                className="bg-yellow-400 text-blue-900 font-semibold px-6 py-3 rounded-full shadow-md hover:bg-yellow-500 hover:scale-105 transform transition-all duration-300"
             >
-              Learn Languages with 
-              <span className="text-primary"> Native Speakers</span> Worldwide
-            </motion.h1>
-            <motion.p 
-                className="text-lg text-muted-foreground mb-8 text-left"
-              variants={fadeInUp}
+              Start Learning with Courses
+            </Link>
+
+            <Link
+                to={ROUTES.TUTORS}
+                className="bg-white/90 text-blue-700 font-semibold px-6 py-3 rounded-full shadow-md hover:bg-white hover:scale-105 transform transition-all duration-300"
             >
-              Kết nối với giáo viên bản ngữ được chứng nhận và thành thạo bất kỳ ngôn ngữ nào thông qua các bài học 1-1 được cá nhân hóa.
-            </motion.p>
-
-            {/* Search bar with filters */}
-            <motion.div 
-                className="relative mb-8"
-              variants={fadeInUp}
-            >
-                <div className="flex gap-0">
-                {/* Filter Dropdown */}
-                  <div className="relative flex-shrink-0">
-                  <select
-                    value={searchType}
-                    onChange={(e) => setSearchType(e.target.value)}
-                      className="appearance-none bg-white border border-gray-300 rounded-l-lg px-4 py-3 pr-8 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent min-w-[140px] h-12 border-r-0"
-                  >
-                    <option value="courses">Khóa học</option>
-                    <option value="tutors">Giảng viên</option>
-                  </select>
-                  <Filter className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                </div>
-
-                {/* Search Input */}
-                  <div className="flex flex-1">
-                  <Input
-                    type="text"
-                    placeholder={searchType === 'tutors' ? 'Tìm giảng viên...' : 'Tìm khóa học...'}
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                      className="flex-1 rounded-none border-r-0 h-12"
-                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                  />
-                  <Button 
-                    onClick={handleSearch}
-                      className="rounded-l-none rounded-r-lg h-12 px-6"
-                  >
-                    <Search className="w-5 h-5" />
-                  </Button>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Stats */}
-            <motion.div 
-                className="flex flex-wrap justify-start gap-8"
-              variants={fadeInUp}
-            >
-              <div className="flex items-center space-x-2">
-                <div className="flex">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                  ))}
-                </div>
-                <span className="text-sm text-muted-foreground">4.9 (2.5k đánh giá)</span>
-              </div>
-              <div className="text-sm text-muted-foreground">
-                <span className="font-semibold">50k+</span> Học viên
-              </div>
-              <div className="text-sm text-muted-foreground">
-                <span className="font-semibold">5k+</span> Giảng viên
-              </div>
-            </motion.div>
-          </motion.div>
-          </div>
-
-          {/* Right Image */}
-          <motion.div 
-            className="relative"
-            initial={{ opacity: 0, x: 60 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8 }}
-          >
-            <div className="relative max-w-lg mx-auto">
-              <img
-                src="https://images.pexels.com/photos/3184287/pexels-photo-3184287.jpeg?auto=compress&cs=tinysrgb&w=800"
-                alt="Online language learning"
-                className="w-full h-auto max-h-80 object-cover rounded-2xl shadow-2xl"
-              />
-              {/* Floating stats */}
-              <div className="absolute -bottom-2 -left-2 bg-white p-2 rounded-lg shadow-md border">
-                <div className="text-xl font-bold text-blue-600">5000+</div>
-                <div className="text-xs text-gray-600">Giáo viên</div>
-              </div>
-              <div className="absolute -top-2 -right-2 bg-white p-2 rounded-lg shadow-md border">
-                <div className="text-xl font-bold text-blue-600">100K+</div>
-                <div className="text-xs text-gray-600">Học viên</div>
-              </div>
-            </div>
+              Find Your Tutor
+            </Link>
           </motion.div>
         </div>
-      </div>
-    </section>
+        <div className="absolute bottom-6 left-0 right-0 flex justify-center space-x-2 z-20">
+          {images.map((_, index) => (
+              <div
+                  key={index}
+                  className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                      index === currentImage
+                          ? "bg-yellow-400 scale-110"
+                          : "bg-white/50 hover:bg-white/80"
+                  }`}
+              />
+          ))}
+        </div>
+      </section>
   );
 };
 
