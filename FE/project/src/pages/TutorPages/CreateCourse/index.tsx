@@ -232,7 +232,7 @@ export default function CreateCourse() {
                 >
                   {currentStep > 1 ? <CheckCircle2 className="w-6 h-6" /> : '1'}
                 </div>
-                <span className="mt-2 text-sm font-medium text-center">Course Info</span>
+                <span className="mt-2 text-sm font-medium text-center">Information</span>
               </div>
 
               <div
