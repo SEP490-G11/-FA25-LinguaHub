@@ -115,7 +115,11 @@ const CourseFeedback = ({ feedbacks = [], courseId, isPurchased }: CourseFeedbac
             return;
         }
 
-        if (selectedReviewId === null) return;
+        if (!selectedReviewId) {
+            setDeleteDialogOpen(false);
+            return;
+        }
+
 
         try {
             await api.delete(`/review/${selectedReviewId}`);
@@ -125,14 +129,15 @@ const CourseFeedback = ({ feedbacks = [], courseId, isPurchased }: CourseFeedbac
             );
 
             setDeleteDialogOpen(false);
-        } catch (err: any) {
-            toast({
-                variant: "destructive",
-                title: "Delete failed",
-                description: err.response?.data?.message || "Something went wrong.",
-            });
-        }
-    };
+        }  catch (err: unknown) {
+        const error = err as { response?: { data?: { message?: string } } };
+        toast({
+            variant: "destructive",
+            title: "Delete failed",
+            description: error.response?.data?.message || "Something went wrong.",
+        });
+    }
+};
 
     return (
         <div className="bg-white rounded-xl p-8 shadow-md">
@@ -200,13 +205,15 @@ const CourseFeedback = ({ feedbacks = [], courseId, isPurchased }: CourseFeedbac
                                 </div>
                             </div>
 
-                            <Trash2
-                                onClick={() => {
-                                    setSelectedReviewId(fb.feedbackID);
-                                    setDeleteDialogOpen(true);
-                                }}
-                                className="w-5 h-5 text-red-500 ml-auto cursor-pointer hover:text-red-700"
-                            />
+                            {(localStorage.getItem("access_token") || sessionStorage.getItem("access_token")) && (
+                                <Trash2
+                                    onClick={() => {
+                                        setSelectedReviewId(fb.feedbackID);
+                                        setDeleteDialogOpen(true);
+                                    }}
+                                    className="w-5 h-5 text-red-500 ml-auto cursor-pointer hover:text-red-700"
+                                />
+                            )}
                         </div>
 
                         <p className="text-gray-700">{fb.comment}</p>

@@ -11,6 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox.tsx';
 import { ErrorMessage } from '@/components/shared/ErrorMessage.tsx';
 import api from "@/config/axiosConfig.ts";
 import { ROUTES } from '@/constants/routes.ts';
+import { useLocation } from "react-router-dom";
 
 //  Schema validate
 const signInSchema = z.object({
@@ -28,6 +29,11 @@ const SignIn = () => {
   const [showPassword, setShowPassword] = React.useState(false);
   const [apiError, setApiError] = React.useState<string | null>(null);
   const navigate = useNavigate();
+
+
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const redirect = params.get("redirect") || ROUTES.HOME;
 
   const { register, handleSubmit, watch, setValue, formState: { errors, isValid } } =
       useForm<SignInForm>({
@@ -57,7 +63,7 @@ const SignIn = () => {
         sessionStorage.setItem("access_token", token);
       }
 
-      navigate(ROUTES.HOME, { replace: true });
+      navigate(redirect, { replace: true });
 
     } catch (err) {
       console.error(" Login error:", err);

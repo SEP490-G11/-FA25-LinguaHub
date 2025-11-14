@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { InternalAxiosRequestConfig } from "axios";
 
 const api = axios.create({
     baseURL: "http://localhost:8080",
@@ -8,50 +8,57 @@ const api = axios.create({
     },
 });
 
-// ===== Add Access Token to Request =====
-api.interceptors.request.use((config) => {
-    const token =
-        localStorage.getItem("access_token") ||
-        sessionStorage.getItem("access_token");
+/* ----------------------------- REQUEST TOKEN ----------------------------- */
+api.interceptors.request.use(
+    (config: InternalAxiosRequestConfig & { skipAuth?: boolean }) => {
+        if (config.skipAuth) return config;
 
-    if (token && token.trim() !== "") {
-        config.headers.Authorization = `Bearer ${token}`;
-    } else {
-        console.warn('⚠️ No token found in localStorage or sessionStorage');
+        const token =
+            localStorage.getItem("access_token") ||
+            sessionStorage.getItem("access_token");
+
+        if (token) {
+            config.headers = config.headers ?? {};
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+
+        return config;
     }
-    return config;
-});
+);
 
-// ===== Refresh Logic =====
+/* ------------------------ REFRESH TOKEN MANAGER ------------------------- */
 let isRefreshing = false;
+
 let failedQueue: {
     resolve: (token: string) => void;
     reject: (err: unknown) => void;
 }[] = [];
 
 const processQueue = (error: unknown, token: string | null = null) => {
-    failedQueue.forEach((prom) => {
-        if (error) {
-            prom.reject(error);
-        } else {
-            prom.resolve(token!);
-        }
+    failedQueue.forEach((p) => {
+        if (error) p.reject(error);
+        else p.resolve(token!);
     });
+
     failedQueue = [];
 };
 
-// ===== Response Interceptor =====
+/* ----------------------------- RESPONSE LOGIC ---------------------------- */
 api.interceptors.response.use(
-    (response) => response,
+    (res) => res,
+
     async (error) => {
         const originalRequest = error.config;
 
-        //  Nếu token hết hạn (401 hoặc 403), thử refresh
-        if (error.response?.status === 403 && !originalRequest._retry) {
+        // Chỉ xử lý refresh nếu request chưa retry và lỗi là 401 hoặc 403
+        if (
+            (error.response?.status === 401 || error.response?.status === 403) &&
+            !originalRequest._retry
+        ) {
             originalRequest._retry = true;
 
             if (isRefreshing) {
-                // Chờ refresh xong rồi gửi lại request cũ
+                // Nếu đang refresh thì cho request vào hàng đợi
                 return new Promise((resolve, reject) => {
                     failedQueue.push({
                         resolve: (token: string) => {
@@ -67,31 +74,30 @@ api.interceptors.response.use(
 
             try {
                 const refreshToken = localStorage.getItem("refresh_token");
-                if (!refreshToken) throw new Error("Missing refresh token");
+                if (!refreshToken) throw new Error("No refresh token");
 
-                const res = await axios.post("http://localhost:8080/auth/refresh", {
-                    refreshToken,
-                });
+                const res = await api.post(
+                    "/auth/refresh",
+                    { refreshToken },
+                    { skipAuth: true }
+                );
 
-                const newAccessToken = res.data?.result?.accessToken;
-                const newRefreshToken = res.data?.result?.refreshToken;
+                const newAccess = res.data?.result?.accessToken;
+                const newRefresh = res.data?.result?.refreshToken;
 
-                // Lưu token mới
-                localStorage.setItem("access_token", newAccessToken);
-                localStorage.setItem("refresh_token", newRefreshToken);
+                localStorage.setItem("access_token", newAccess);
+                localStorage.setItem("refresh_token", newRefresh);
 
-                processQueue(null, newAccessToken);
+                processQueue(null, newAccess);
 
-                // Gắn lại token mới vào request cũ
-                originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+                originalRequest.headers.Authorization = `Bearer ${newAccess}`;
                 return api(originalRequest);
-            } catch (refreshError) {
-                processQueue(refreshError, null);
-                console.error("Refresh token failed, redirect login");
+            } catch (err) {
+                processQueue(err, null);
                 localStorage.removeItem("access_token");
                 localStorage.removeItem("refresh_token");
                 window.location.href = "/sign-in";
-                return Promise.reject(refreshError);
+                return Promise.reject(err);
             } finally {
                 isRefreshing = false;
             }

@@ -69,7 +69,7 @@ public class SecurityConfig {
 
                         // ⭐ CHO PHÉP TẤT CẢ /api/payments/**
                         .requestMatchers("/api/payments/**").permitAll()
-
+                        .requestMatchers(HttpMethod.POST, "/auth/refresh").permitAll()
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
 
                         .anyRequest().authenticated()
@@ -79,6 +79,7 @@ public class SecurityConfig {
                                 .decoder(customJwtDecoder)
                                 .jwtAuthenticationConverter(jwtAuthenticationConverter()))
                         .authenticationEntryPoint(new JwtAuthenticationEntryPoint())
+
                 );
 
         return http.build();
@@ -120,7 +121,7 @@ public class SecurityConfig {
         configuration.setAllowedOriginPatterns(
                 List.of("http://localhost:*", "http://127.0.0.1:*", "https://*.ngrok-free.dev")
         );
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
 

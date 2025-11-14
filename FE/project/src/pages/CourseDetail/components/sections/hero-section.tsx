@@ -5,6 +5,7 @@ import api from "@/config/axiosConfig";
 import { useEffect, useState } from "react";
 // import { ROUTES } from "@/constants/routes";
 import { useToast } from "@/components/ui/use-toast";
+import {ROUTES} from "@/constants/routes.ts";
 
 interface TutorCourse {
   id: number;
@@ -36,37 +37,48 @@ const CourseHeroSection = ({ course, wishlisted, setWishlisted }: CourseHeroSect
   const navigate = useNavigate();
   const [isOwner, setIsOwner] = useState(false);
 
-  const { toast } = useToast(); // ✅ toast shadcn
+  const { toast } = useToast();
 
   /** Check khóa học có phải của tutor hay không */
   useEffect(() => {
+    const token =
+        localStorage.getItem("access_token") ||
+        sessionStorage.getItem("access_token");
+
+    if (!token) return;
+
     const checkTutorCourse = async () => {
       try {
         const res = await api.get("/tutor/courses/me");
-        const myCourses = res.data.result || [];
 
-        const found = myCourses.some((c: TutorCourse) => c.id === course.id);
+        const myCourses: TutorCourse[] = res.data.result || [];
+        const found = myCourses.some((c) => c.id === course.id);
         if (found) setIsOwner(true);
       } catch {
-        // ignore error
+        // ignore
       }
     };
 
     checkTutorCourse();
   }, [course.id]);
 
+
+
   /** Toggle Wishlist */
   const toggleWishlist = async () => {
     const token = localStorage.getItem("access_token") || sessionStorage.getItem("access_token");
 
     if (!token) {
+      const redirectURL = encodeURIComponent(window.location.pathname);
+      navigate(`${ROUTES.SIGN_IN}?redirect=${redirectURL}`);
       toast({
         title: "Login Required",
-        description: "Please sign in to use wishlist.",
+        description: "Please sign in.",
         variant: "destructive",
       });
       return;
     }
+
 
     try {
       if (wishlisted) {
@@ -90,13 +102,18 @@ const CourseHeroSection = ({ course, wishlisted, setWishlisted }: CourseHeroSect
     const token = localStorage.getItem("access_token") || sessionStorage.getItem("access_token");
 
     if (!token) {
+      const redirectURL = encodeURIComponent(window.location.pathname);
+      navigate(`${ROUTES.SIGN_IN}?redirect=${redirectURL}`);
+
       toast({
         title: "Login Required",
         description: "Please sign in before buying the course.",
         variant: "destructive",
       });
+
       return;
     }
+
 
     try {
       const response = await api.post("/api/payments/create", {
