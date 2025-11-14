@@ -17,7 +17,7 @@ import {
   Link2,
   BookOpen,
 } from 'lucide-react';
-import { SectionData, LessonData } from '@/pages/CreateCourse/course-api';
+import { SectionData, LessonData } from '@/pages/TutorPages/CreateCourse/course-api';
 import {
   Select,
   SelectContent,
