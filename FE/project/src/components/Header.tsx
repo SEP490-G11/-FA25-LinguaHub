@@ -159,6 +159,9 @@ const Header = () => {
                             size="icon"
                             onClick={() => {
                                 if (!isAuthenticated) {
+                                    const redirectURL = encodeURIComponent(location.pathname);
+                                    navigate(`${ROUTES.SIGN_IN}?redirect=${redirectURL}`);
+
                                     toast({
                                         variant: "destructive",
                                         title: "You are not logged in",
@@ -167,6 +170,7 @@ const Header = () => {
                                     return;
                                 }
                                 navigate(ROUTES.WISHLIST);
+
                             }}
                         >
                             <Heart className="w-5 h-5" />
@@ -177,6 +181,9 @@ const Header = () => {
                             open={isAuthenticated ? notificationsOpen : false}
                             onOpenChange={(open) => {
                                 if (!isAuthenticated) {
+                                    const redirectURL = encodeURIComponent(location.pathname);
+                                    navigate(`${ROUTES.SIGN_IN}?redirect=${redirectURL}`);
+
                                     toast({
                                         variant: "destructive",
                                         title: "You are not logged in",

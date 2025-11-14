@@ -8,14 +8,17 @@ import edu.lms.exception.ErrorCode;
 import edu.lms.repository.PaymentRepository;
 import edu.lms.service.PaymentService;
 import edu.lms.service.PayOSService;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,12 +31,14 @@ import java.util.List;
 @RequestMapping("/api/payments")
 @RequiredArgsConstructor
 public class PaymentController {
-    private final PaymentRepository paymentRepository;
+
     private final PaymentService paymentService;
     private final PayOSService payOSService;
+    private final PaymentRepository paymentRepository;
 
-    //API TẠO THANH TOÁN (ĐANG CHẠY ỔN)
-
+    // ======================================================
+    // CREATE PAYMENT
+    // ======================================================
     @Operation(summary = "Create a payment (PayOS)", description = "Create a pending payment link via PayOS")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Payment link created successfully",
@@ -45,61 +50,41 @@ public class PaymentController {
         return paymentService.createPayment(request);
     }
 
-    //ADMIN - XEM TẤT CẢ PAYMENT
-
-    @Operation(summary = "Get all payments (Admin)", description = "Admin can view all payments in the system")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Successfully retrieved all payments",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = PaymentResponse.class))),
-            @ApiResponse(responseCode = "500", description = "Internal server error", content = @Content)
-    })
+    // ======================================================
+    // ADMIN - GET ALL PAYMENTS
+    // ======================================================
     @GetMapping("/admin")
     public ResponseEntity<List<PaymentResponse>> getAllPayments() {
         List<PaymentResponse> payments = paymentService.getAllPayments();
         return ResponseEntity.ok(payments);
     }
 
-
-    //TUTOR - XEM PAYMENT LIÊN QUAN TỚI MÌNH
-
-    @Operation(summary = "Get payments by tutor", description = "Tutor can view all course and booking payments associated with them")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Successfully retrieved tutor payments",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = PaymentResponse.class))),
-            @ApiResponse(responseCode = "404", description = "Tutor not found", content = @Content)
-    })
+    // ======================================================
+    // TUTOR - GET PAYMENTS
+    // ======================================================
     @GetMapping("/tutor/{tutorId}")
     public ResponseEntity<List<PaymentResponse>> getPaymentsByTutor(@PathVariable Long tutorId) {
         List<PaymentResponse> payments = paymentService.getPaymentsByTutor(tutorId);
         return ResponseEntity.ok(payments);
     }
 
-
-    //LEARNER - XEM LỊCH SỬ GIAO DỊCH
-
-    @Operation(summary = "Get payments by user", description = "Learner can view their payment history")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Successfully retrieved user payments",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = PaymentResponse.class))),
-            @ApiResponse(responseCode = "404", description = "User not found", content = @Content)
-    })
+    // ======================================================
+    // USER - GET PAYMENTS
+    // ======================================================
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<PaymentResponse>> getPaymentsByUser(@PathVariable Long userId) {
         List<PaymentResponse> payments = paymentService.getPaymentsByUser(userId);
         return ResponseEntity.ok(payments);
     }
 
-    //HEALTH CHECK / TEST
-
-    @Operation(summary = "Ping payment service", description = "Check if the payment service is running")
-    @ApiResponse(responseCode = "200", description = "Service is alive")
+    // ======================================================
+    // HEALTH CHECK
+    // ======================================================
     @GetMapping("/ping")
     public ResponseEntity<String> ping() {
         return new ResponseEntity<>("Payment service is running ✅", HttpStatus.OK);
     }
+
     // ======================================================
     // CALLBACK: CANCEL (PayOS → Backend → FE)
     // ======================================================

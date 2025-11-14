@@ -5,6 +5,7 @@ import api from "@/config/axiosConfig";
 import { ROUTES } from "@/constants/routes";
 import { useEffect, useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
+import {getUserId} from "@/lib/getUserId.ts";
 
 interface CourseSidebarProps {
   course: {
@@ -49,6 +50,12 @@ const CourseSidebar = ({ course, wishlisted, setWishlisted }: CourseSidebarProps
   const { toast } = useToast();
   /**  Kiểm tra user có phải tutor của khóa học */
   useEffect(() => {
+    const token =
+        localStorage.getItem("access_token") ||
+        sessionStorage.getItem("access_token");
+
+    if (!token) return;
+
     const checkTutorCourse = async () => {
       try {
         const res = await api.get("/tutor/courses/me");
@@ -58,12 +65,13 @@ const CourseSidebar = ({ course, wishlisted, setWishlisted }: CourseSidebarProps
         const found = myCourses.some((c) => c.id === course.id);
         if (found) setIsOwner(true);
       } catch {
-        // avoid unused error
+        // tránh lỗi không cần thiết
       }
     };
 
     checkTutorCourse();
   }, [course.id]);
+
 
 
   const toggleWishlist = async () => {
@@ -72,6 +80,8 @@ const CourseSidebar = ({ course, wishlisted, setWishlisted }: CourseSidebarProps
         sessionStorage.getItem("access_token");
 
     if (!token) {
+      const redirectURL = encodeURIComponent(window.location.pathname);
+      navigate(`${ROUTES.SIGN_IN}?redirect=${redirectURL}`);
       toast({
         variant: "destructive",
         title: "You are not logged in",
@@ -79,7 +89,6 @@ const CourseSidebar = ({ course, wishlisted, setWishlisted }: CourseSidebarProps
       });
       return;
     }
-
     try {
       if (wishlisted) {
         await api.delete(`/wishlist/${course.id}`);
@@ -103,32 +112,51 @@ const CourseSidebar = ({ course, wishlisted, setWishlisted }: CourseSidebarProps
       });
     }
   };
+
+
   const handleBuyNow = async () => {
     const token =
         localStorage.getItem("access_token") ||
         sessionStorage.getItem("access_token");
 
     if (!token) {
+      const redirectURL = encodeURIComponent(window.location.pathname);
+      navigate(`${ROUTES.SIGN_IN}?redirect=${redirectURL}`);
       toast({
+        title: "Login Required",
+        description: "Please sign in before buying the course.",
         variant: "destructive",
-        title: "You must log in",
-        description: "Login to purchase the course.",
+      });
+      return;
+    }
+
+    // LẤY USER ID
+    const userId = await getUserId();
+
+    if (!userId) {
+      toast({
+        title: "User Error",
+        description: "Cannot detect user information.",
+        variant: "destructive",
       });
       return;
     }
 
     try {
       const response = await api.post("/api/payments/create", {
-        targetId: course.id,
-        paymentType: "Course",
+        userId,               // ✔ userID dạng number
+        targetId: course.id,  // ✔ ID khóa học
+        paymentType: "Course"
       });
 
+      // Điều hướng đến trang thanh toán nội bộ
       navigate(ROUTES.PAYMENT.replace(":id", String(course.id)), {
         state: {
           ...course,
           ...response.data,
         },
       });
+
     } catch {
       toast({
         variant: "destructive",
@@ -137,6 +165,7 @@ const CourseSidebar = ({ course, wishlisted, setWishlisted }: CourseSidebarProps
       });
     }
   };
+
 
   const handleGoToCourse = () => navigate(`/learning/${course.id}`);
   const handleViewProfile = () =>

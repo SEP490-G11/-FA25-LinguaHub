@@ -4,7 +4,7 @@ import { Heart, Search } from "lucide-react";
 
 interface HeroSectionProps {
   itemCount: number;
-  onSearch?: (keyword: string) => void; // ✅ thêm prop để gửi kết quả tìm kiếm ra ngoài
+  onSearch?: (keyword: string) => void;
 }
 
 const HeroSection = ({ itemCount, onSearch }: HeroSectionProps) => {
@@ -16,7 +16,7 @@ const HeroSection = ({ itemCount, onSearch }: HeroSectionProps) => {
     transition: { duration: 0.6 },
   };
 
-  // ✅ Khi nhấn nút hoặc Enter
+
   const handleSearchClick = () => {
     if (onSearch) onSearch(searchTerm.trim());
   };
@@ -39,7 +39,7 @@ const HeroSection = ({ itemCount, onSearch }: HeroSectionProps) => {
               All your favorite courses in one place
             </p>
 
-            {/* ❤️ Tổng số khóa học */}
+            {/*  Tổng số khóa học */}
             <div className="flex items-center justify-center space-x-2 mb-10">
               <Heart className="w-6 h-6 fill-red-400 text-red-400" />
               <span className="text-lg">
