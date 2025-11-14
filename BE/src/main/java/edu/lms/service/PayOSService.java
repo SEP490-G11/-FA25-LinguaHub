@@ -102,7 +102,7 @@ public class PayOSService {
                     mapper.treeToValue(data, CheckoutResponseData.class);
 
             //EXPIRED TIME DO BACKEND TỰ QUY ĐỊNH — KHÔNG LẤY TỪ PAYOS
-            LocalDateTime expiredAt = LocalDateTime.now().plusMinutes(3); // 3 phút
+            LocalDateTime expiredAt = LocalDateTime.now().plusMinutes(15); // 3 phút
 
             log.info("[PAYOS] Created payment link | orderCode={} | expiredAt_BE={}",
                     orderCode, expiredAt);
