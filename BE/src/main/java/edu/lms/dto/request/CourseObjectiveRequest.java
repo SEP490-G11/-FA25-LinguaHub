@@ -17,3 +17,8 @@ public class CourseObjectiveRequest {
     @Builder.Default
     Integer orderIndex = 1;
 }
+
+
+
+
+

@@ -13,6 +13,7 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
@@ -109,6 +110,7 @@ public class LessonServiceImpl implements LessonService {
                         .duration(request.getDuration())
                         .lessonType(request.getLessonType())
                         .videoURL(request.getVideoURL())
+                        .createdAt(LocalDateTime.now())
                         .build();
 
                 return toResponse(lessonRepository.save(lesson));

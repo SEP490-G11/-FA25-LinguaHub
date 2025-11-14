@@ -28,11 +28,17 @@ public class CourseService {
     EnrollmentRepository enrollmentRepository;
     CourseReviewRepository courseReviewRepository;
 
+    /** Tránh lookup với anonymous/null */
+    private User findUserOrNull(String email) {
+        if (email == null || "anonymousUser".equalsIgnoreCase(email)) return null;
+        return userRepository.findByEmail(email).orElse(null);
+    }
+
     // ================================================================
     // Public: Get All Approved Courses
     // ================================================================
     public List<CourseResponse> getAllApproved(String email) {
-        User user = (email != null) ? userRepository.findByEmail(email).orElse(null) : null;
+        User user = findUserOrNull(email);
 
         return courseRepository.findByStatus(CourseStatus.Approved)
                 .stream()
@@ -47,7 +53,7 @@ public class CourseService {
         Tutor tutor = tutorRepository.findById(tutorId)
                 .orElseThrow(() -> new AppException(ErrorCode.TUTOR_NOT_FOUND));
 
-        User user = (email != null) ? userRepository.findByEmail(email).orElse(null) : null;
+        User user = findUserOrNull(email);
 
         return courseRepository.findByTutorAndStatus(tutor, CourseStatus.Approved)
                 .stream()
@@ -62,13 +68,11 @@ public class CourseService {
         Course c = courseRepository.findById(courseID)
                 .orElseThrow(() -> new AppException(ErrorCode.COURSE_NOT_FOUND));
 
-        // Chỉ cho phép xem khi course đã được Admin phê duyệt
         if (c.getStatus() != CourseStatus.Approved) {
             throw new AppException(ErrorCode.COURSE_NOT_APPROVED);
         }
 
-        User user = (email != null) ? userRepository.findByEmail(email).orElse(null) : null;
-
+        User user = findUserOrNull(email);
         return toCourseResponse(c, user);
     }
 
@@ -82,9 +86,7 @@ public class CourseService {
         return courses.stream().map(c -> toCourseResponse(c, null)).toList();
     }
 
-    // ================================================================
-    // MAPPERS
-    // ================================================================
+    // ============================ MAPPERS ============================
 
     private LessonResourceResponse toLessonResourceResponse(LessonResource lr) {
         return LessonResourceResponse.builder()
@@ -106,11 +108,9 @@ public class CourseService {
                 .content(l.getContent())
                 .orderIndex(l.getOrderIndex())
                 .createdAt(l.getCreatedAt())
-                .resources(
-                        l.getResources() != null
-                                ? l.getResources().stream().map(this::toLessonResourceResponse).toList()
-                                : null
-                )
+                .resources(l.getResources() != null
+                        ? l.getResources().stream().map(this::toLessonResourceResponse).toList()
+                        : null)
                 .build();
     }
 
@@ -121,17 +121,14 @@ public class CourseService {
                 .title(s.getTitle())
                 .description(s.getDescription())
                 .orderIndex(s.getOrderIndex())
-                .lessons(
-                        s.getLessons() != null
-                                ? s.getLessons().stream().map(this::toLessonResponse).toList()
-                                : null
-                )
+                .lessons(s.getLessons() != null
+                        ? s.getLessons().stream().map(this::toLessonResponse).toList()
+                        : null)
                 .build();
     }
 
-    // ================================================================
-    // Course Review (Rating + Feedback)
-    // ================================================================
+    // ====================== Review (rating + list) ===================
+
     private record RatingAgg(double avg, int total) {}
 
     private RatingAgg aggregateRating(Long courseId) {
@@ -140,8 +137,8 @@ public class CourseService {
 
         int total = reviews.size();
         double sum = reviews.stream().mapToDouble(r -> r.getRating() == null ? 0 : r.getRating()).sum();
-        double avg = total == 0 ? 0.0 : (double) sum / total;
-        avg = Math.round(avg * 10.0) / 10.0; // làm tròn 1 chữ số thập phân
+        double avg = total == 0 ? 0.0 : sum / total;
+        avg = Math.round(avg * 10.0) / 10.0; // 1 chữ số
         return new RatingAgg(avg, total);
     }
 
@@ -162,9 +159,8 @@ public class CourseService {
         }).toList();
     }
 
-    // ================================================================
-    // Course Content Summary (Video, Tests, Articles, Resources)
-    // ================================================================
+    // =================== Content Summary (Video/Test/Res) ============
+
     private CourseContentSummaryResponse summarizeCourseContent(Course c) {
         double totalVideoHours = 0.0;
         int totalPracticeTests = 0;
@@ -175,31 +171,16 @@ public class CourseService {
             for (CourseSection section : c.getSections()) {
                 if (section.getLessons() == null) continue;
                 for (Lesson l : section.getLessons()) {
-
-                    // Tổng thời lượng video (giả sử duration tính bằng phút)
                     if (l.getLessonType() == LessonType.Video && l.getDuration() != null) {
-                        totalVideoHours += l.getDuration() / 60.0;
+                        totalVideoHours += l.getDuration() / 60.0; // phút → giờ
                     }
-
-                    // Đếm bài test
-                    if (l.getLessonType() == LessonType.Test) {
-                        totalPracticeTests++;
-                    }
-
-                    // Đếm bài article
-                    if (l.getLessonType() == LessonType.Reading) {
-                        totalArticles++;
-                    }
-
-                    // Đếm tài nguyên tải xuống
-                    if (l.getResources() != null) {
-                        totalResources += l.getResources().size();
-                    }
+                    if (l.getLessonType() == LessonType.Test) totalPracticeTests++;
+                    if (l.getLessonType() == LessonType.Reading) totalArticles++;
+                    if (l.getResources() != null) totalResources += l.getResources().size();
                 }
             }
         }
-
-        totalVideoHours = Math.round(totalVideoHours * 10.0) / 10.0; // làm tròn 1 chữ số
+        totalVideoHours = Math.round(totalVideoHours * 10.0) / 10.0;
 
         return CourseContentSummaryResponse.builder()
                 .totalVideoHours(totalVideoHours)
@@ -209,9 +190,8 @@ public class CourseService {
                 .build();
     }
 
-    // ================================================================
-    // 🎓 COURSE -> DETAIL DTO
-    // ================================================================
+    // ========================= COURSE DETAIL DTO =====================
+
     private CourseDetailResponse toCourseResponse(Course c, User user) {
         boolean isWishListed = (user != null) && wishlistRepository.existsByUserAndCourse(user, c);
 
@@ -245,29 +225,17 @@ public class CourseService {
                 .categoryName(c.getCategory() != null ? c.getCategory().getName() : null)
                 .tutorName(tutorUser != null ? tutorUser.getFullName() : null)
                 .status(c.getStatus() != null ? c.getStatus().name() : null)
-
-                // Objectives
-                .objectives(
-                        c.getObjectives() == null ? List.of() :
-                                c.getObjectives().stream()
-                                        .sorted(Comparator.comparing(CourseObjective::getOrderIndex))
-                                        .map(CourseObjective::getObjectiveText)
-                                        .toList()
-                )
-
-                // Sections
-                .section(
-                        c.getSections() != null
-                                ? c.getSections().stream().map(this::toCourseSectionResponse).toList()
-                                : null
-                )
-
-                // Content Summary
+                .objectives(c.getObjectives() == null ? List.of() :
+                        c.getObjectives().stream()
+                                .sorted(Comparator.comparing(CourseObjective::getOrderIndex))
+                                .map(CourseObjective::getObjectiveText)
+                                .toList())
+                .section(c.getSections() != null
+                        ? c.getSections().stream().map(this::toCourseSectionResponse).toList()
+                        : null)
                 .contentSummary(summarizeCourseContent(c))
-
-                // Info
-                .isWishListed(user != null ? isWishListed : null)
-                .isPurchased(user != null ? isPurchased : null)
+                .isWishListed(user != null ? isWishListed : null) // guest -> null
+                .isPurchased(isPurchased)                        // luôn boolean
                 .learnerCount(learnerCount)
                 .tutorID(tutor != null ? tutor.getTutorID() : null)
                 .tutorAvatarURL(tutorUser != null ? tutorUser.getAvatarURL() : null)
@@ -283,9 +251,8 @@ public class CourseService {
                 .build();
     }
 
-    // ================================================================
-    // COURSE -> LIST DTO
-    // ================================================================
+    // ========================= COURSE LIST DTO =======================
+
     private CourseResponse toOnlyCourseResponse(Course c, User user) {
         boolean isWishListed = (user != null) && wishlistRepository.existsByUserAndCourse(user, c);
 
@@ -318,8 +285,8 @@ public class CourseService {
                 .categoryName(c.getCategory() != null ? c.getCategory().getName() : null)
                 .tutorName(tutorUser != null ? tutorUser.getFullName() : null)
                 .status(c.getStatus() != null ? c.getStatus().name() : null)
-                .isWishListed(user != null ? isWishListed : null)
-                .isPurchased(user != null ? isPurchased : null)
+                .isWishListed(user != null ? isWishListed : null) // guest -> null
+                .isPurchased(isPurchased)                        // luôn boolean
                 .learnerCount(learnerCount)
                 .tutorAvatarURL(tutorUser != null ? tutorUser.getAvatarURL() : null)
                 .tutorAddress(tutorUser != null
