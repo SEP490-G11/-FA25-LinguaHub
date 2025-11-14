@@ -38,6 +38,11 @@ export interface ResourceFormData {
   resourceURL: string;
 }
 
+export interface ObjectiveFormData {
+  objectiveText: string;
+  orderIndex: number;
+}
+
 export interface SectionData {
   id?: string;
   title: string;
@@ -177,6 +182,22 @@ export const courseApi = {
 
   deleteResource: async (resourceId: string): Promise<void> => {
     await axios.delete<any>(`/tutor/resources/${resourceId}`);
+  },
+
+  addObjective: async (courseId: string, objectiveData: ObjectiveFormData): Promise<{ objectiveId: string }> => {
+    const payload = {
+      objectiveText: objectiveData.objectiveText,
+      orderIndex: objectiveData.orderIndex,
+    };
+
+    const res = await axios.post<any>(`/courses/${courseId}/objectives`, payload);
+    const objectiveId = res?.data?.result?.id || res?.data?.result?.objectiveID || res?.data?.id || res?.data?.objectiveID;
+    if (!objectiveId) throw new Error('Invalid response from server');
+    return { objectiveId: objectiveId.toString() };
+  },
+
+  deleteObjective: async (objectiveId: string): Promise<void> => {
+    await axios.delete<any>(`/courses/objectives/${objectiveId}`);
   },
 };
 
