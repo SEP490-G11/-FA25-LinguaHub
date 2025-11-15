@@ -1,6 +1,6 @@
 package edu.lms.entity;
 
-import edu.lms.enums.CourseStatus;
+import edu.lms.enums.CourseDraftStatus;
 import edu.lms.enums.CourseLevel;
 import jakarta.persistence.*;
 import lombok.*;
@@ -16,29 +16,48 @@ import java.util.List;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-@Table(name = "Courses")
-public class Course {
+@Table(name = "CourseDrafts")
+public class CourseDraft {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Long courseID;
+    Long draftID;
 
+    // Khóa này luôn trỏ về course "gốc" đang live
+    @ManyToOne
+    @JoinColumn(name = "courseID", nullable = false)
+    Course course;
+
+    @ManyToOne
+    @JoinColumn(name = "tutorID", nullable = false)
+    Tutor tutor;
+
+    @ManyToOne
+    @JoinColumn(name = "categoryID", nullable = false)
+    CourseCategory category;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    CourseDraftStatus status = CourseDraftStatus.EDITING;
+
+    // --------- copy các field quan trọng từ Course ----------
     @Column(nullable = false, length = 255)
     String title;
 
     @Column(length = 500)
-    String shortDescription; // Mô tả ngắn hiển thị ở card
+    String shortDescription;
 
     @Column(columnDefinition = "TEXT")
-    String description; // Mô tả chi tiết khóa học
+    String description;
 
     @Column(columnDefinition = "TEXT")
-    String requirement; //  Yêu cầu đầu vào
+    String requirement;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20, nullable = false)
     @Builder.Default
-    CourseLevel level = CourseLevel.BEGINNER; //  BEGINNER / INTERMEDIATE / ADVANCED
+    CourseLevel level = CourseLevel.BEGINNER;
 
     Integer duration;
 
@@ -49,12 +68,8 @@ public class Course {
     String language;
     String thumbnailURL;
 
-    @Enumerated(EnumType.STRING)
-    @Builder.Default
-    CourseStatus status = CourseStatus.Draft;
-
     @Column(columnDefinition = "TEXT")
-    String adminReviewNote;   // Lý do reject / ghi chú của admin
+    String adminReviewNote;   // Lý do reject / ghi chú admin cho bản draft
 
     @Builder.Default
     LocalDateTime createdAt = LocalDateTime.now();
@@ -62,19 +77,11 @@ public class Course {
     @Builder.Default
     LocalDateTime updatedAt = LocalDateTime.now();
 
-    @ManyToOne
-    @JoinColumn(name = "tutorID", nullable = false)
-    Tutor tutor;
+    @OneToMany(mappedBy = "draft", cascade = CascadeType.ALL, orphanRemoval = true)
+    List<CourseSectionDraft> sections;
 
-    @ManyToOne
-    @JoinColumn(name = "categoryID", nullable = false)
-    CourseCategory category;
-
-    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
-    List<CourseSection> sections;
-
-    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
-    List<CourseObjective> objectives; //  Mục tiêu học tập (what you'll learn)
+    @OneToMany(mappedBy = "draft", cascade = CascadeType.ALL, orphanRemoval = true)
+    List<CourseObjectiveDraft> objectives;
 
     @PreUpdate
     public void onUpdate() {
