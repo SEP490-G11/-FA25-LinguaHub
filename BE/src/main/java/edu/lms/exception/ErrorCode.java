@@ -62,6 +62,7 @@ public enum ErrorCode {
     BOOKING_NOT_FOUND(7002, "Booking not found", HttpStatus.NOT_FOUND),
     BOOKING_ALREADY_CONFIRMED(7003, "Booking is already confirmed", HttpStatus.BAD_REQUEST),
     BOOKING_TIME_CONFLICT(7004, "Tutor schedule conflict at this time", HttpStatus.CONFLICT),
+    BOOKING_PLAN_HAS_BOOKED_SLOT(7005, "This booking plan already has booked slots", HttpStatus.CONFLICT),
 
     //  CHAT & POLICY
     CHAT_ROOM_NOT_FOUND(8001, "Chat room not found", HttpStatus.NOT_FOUND),
