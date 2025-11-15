@@ -3,11 +3,7 @@ package edu.lms.service;
 import edu.lms.dto.request.TutorApplyRequest;
 import edu.lms.dto.request.TutorUpdateRequest;
 import edu.lms.dto.response.*;
-import edu.lms.entity.Tutor;
-import edu.lms.entity.TutorVerification;
-import edu.lms.entity.User;
-import edu.lms.entity.Course;
-import edu.lms.entity.BookingPlan;
+import edu.lms.entity.*;
 import edu.lms.enums.TutorStatus;
 import edu.lms.enums.TutorVerificationStatus;
 import edu.lms.enums.CourseStatus;
@@ -98,12 +94,19 @@ public class TutorServiceImpl implements TutorService {
                 .experience(request.getExperience())
                 .specialization(request.getSpecialization())
                 .teachingLanguage(request.getTeachingLanguage())
-                .certificateName(request.getCertificateName())
                 .bio(request.getBio())
-                .documentURL(request.getDocumentURL())
                 .status(TutorVerificationStatus.PENDING)
                 .submittedAt(LocalDateTime.now())
                 .build();
+
+        List<TutorCertificate> certificates = request.getCertificates().stream()
+                .map(cert -> TutorCertificate.builder()
+                        .tutorVerification(verification)
+                        .certificateName(cert.getCertificateName())
+                        .documentURL(cert.getDocumentURL())
+                        .build())
+                .toList();
+        verification.getCertificates().addAll(certificates);
 
         tutorVerificationRepository.save(verification);
         log.info("Tutor application submitted successfully for user ID: {}", userID);
@@ -448,8 +451,13 @@ public class TutorServiceImpl implements TutorService {
                 .specialization(verification.getSpecialization())
                 .teachingLanguage(verification.getTeachingLanguage())
                 .bio(verification.getBio())
-                .certificateName(verification.getCertificateName())
-                .documentURL(verification.getDocumentURL())
+                .certificates(verification.getCertificates() == null ? List.of() : verification.getCertificates().stream()
+                        .map(cert -> TutorCertificateResponse.builder()
+                                .certificateId(cert.getCertificateId())
+                                .certificateName(cert.getCertificateName())
+                                .documentURL(cert.getDocumentURL())
+                                .build())
+                        .toList())
                 .status(verification.getStatus().name())
                 .submittedAt(verification.getSubmittedAt())
                 .reviewedBy(verification.getReviewedBy() != null ? 
