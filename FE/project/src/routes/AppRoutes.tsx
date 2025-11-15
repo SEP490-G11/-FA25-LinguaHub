@@ -33,7 +33,7 @@ import ApplyTutor from '@/pages/ApplyTutor';
 import TutorApproval from '@/pages/Admin/TutorApproval';
 import EditCourse from '@/pages/TutorPages/EditCourse';
 import CourseList from '@/pages/TutorPages/CourseList';
-import TutorDashboardLayout from '@/components/layout/TutorDashboardLayout';
+import TutorDashboardLayout from '@/components/layout/tutor/TutorDashboardLayout';
 import AdminLayout from '@/components/layout/admin/AdminLayout';
 import AdminDashboard from '@/pages/Admin/Dashboard';
 import AdminLearners from '@/pages/Admin/Learners';
