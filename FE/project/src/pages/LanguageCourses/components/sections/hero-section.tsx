@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {ROUTES} from "@/constants/routes.ts";
 
 interface HeroSectionProps {
   language: {
@@ -56,7 +57,7 @@ const HeroSection = ({ language, onSearch }: HeroSectionProps) => {
             {/* Back button */}
             <div className="mb-6">
               <Button variant="ghost" asChild className="text-white hover:bg-white/20">
-                <Link to="/languages">
+                <Link to={ROUTES.LANGUAGES}>
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Back to Languages
                 </Link>

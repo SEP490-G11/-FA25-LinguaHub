@@ -49,32 +49,34 @@ interface CourseDetailResponse {
   id: number;
   title: string;
   description: string;
+  requirement: string;
+  objectives: string[];
   duration: number;
   price: number;
   language: string;
   thumbnailURL: string;
   categoryName: string;
   tutorName: string;
-  status: string;
-  learnerCount: number;
-  tutorAvatarURL: string;
+  tutorAvatarURL: string | null;
   tutorAddress: string;
   avgRating: number;
   totalRatings: number;
   createdAt: string;
-  tutorID: number;
+  tutorID: number; // Thêm tutorID
+  learnerCount: number; // Thêm learnerCount
   section: Section[];
-  tutorId: number;
-
-  /**  Sửa lại theo backend */
-  review: Feedback[];
-
+  review: Feedback[]; // Các đánh giá từ người học
   isWishListed: boolean | null;
+  contentSummary: {
+    totalVideoHours: number;
+    totalPracticeTests: number;
+    totalArticles: number;
+    totalDownloadableResources: number;
+  }; // Cập nhật contentSummary
 }
 
 const CourseDetail = () => {
   const { id } = useParams();
-
   const [course, setCourse] = useState<CourseDetailResponse | null>(null);
   const [wishlisted, setWishlisted] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -83,13 +85,19 @@ const CourseDetail = () => {
     const fetchCourseDetail = async () => {
       setLoading(true);
       try {
-        const res = await api.get<{ code: number; result: CourseDetailResponse }>(
-            `/courses/detail/${id}`
-        );
+        const res = await api.get<{ code: number; result: CourseDetailResponse }>(`/courses/detail/${id}`);
 
         const data = res.data.result;
         setCourse(data);
-        setWishlisted(Boolean(data.isWishListed));
+
+        /** --- AUTO REMOVE WISHLIST WHEN PURCHASED --- */
+        if (data.isPurchased) {
+          // nếu backend có API xóa wishlist:
+          await api.delete(`/wishlist/${data.id}`).catch(() => {});
+          setWishlisted(false);
+        } else {
+          setWishlisted(Boolean(data.isWishListed));
+        }
       } catch (error) {
         console.error("Failed to fetch course detail:", error);
       } finally {
@@ -106,9 +114,9 @@ const CourseDetail = () => {
   return (
       <div className="min-h-screen bg-gray-50">
 
-        {/* wishlisted & setWishlisted xuống Hero */}
+        {/* Hero Section */}
         <CourseHeroSection
-            course={{ ...course, isPurchased: Boolean(course.isPurchased) }}
+            course={{ ...course, isPurchased: Boolean(course.isPurchased), tutorId: course.tutorID, learnerCount: course.learnerCount }}
             wishlisted={wishlisted}
             setWishlisted={setWishlisted}
         />
@@ -117,9 +125,10 @@ const CourseDetail = () => {
           <div className="max-w-7xl mx-auto px-8 lg:px-16">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
               <div className="lg:col-span-2 space-y-10">
+                {/* Course Content Section */}
                 <CourseContent course={course} isPurchased={course.isPurchased} />
 
-                {/*  TRUYỀN review ĐÚNG API */}
+                {/* Course Feedback Section */}
                 <CourseFeedback
                     feedbacks={course.review || []}
                     courseId={course.id}
@@ -127,8 +136,9 @@ const CourseDetail = () => {
                 />
               </div>
 
+              {/* Sidebar Section */}
               <CourseSidebar
-                  course={{ ...course, isPurchased: Boolean(course.isPurchased) }}
+                  course={{ ...course, isPurchased: Boolean(course.isPurchased), tutorID: course.tutorID, learnerCount: course.learnerCount }}
                   wishlisted={wishlisted}
                   setWishlisted={setWishlisted}
               />

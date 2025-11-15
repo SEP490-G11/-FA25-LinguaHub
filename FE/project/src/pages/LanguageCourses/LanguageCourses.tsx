@@ -121,16 +121,8 @@ const LanguageCourses = () => {
             matchesPrice
         );
     })
-        /** ⭐ DEFAULT SORT: learnerCount → rating → price thấp */
-        .sort((a, b) => {
-            if (b.learnerCount !== a.learnerCount)
-                return b.learnerCount - a.learnerCount;
 
-            if (b.avgRating !== a.avgRating)
-                return b.avgRating - a.avgRating;
 
-            return a.price - b.price;
-        });
 
     /** Pagination */
     const totalPages = Math.ceil(filteredCourses.length / coursesPerPage);

@@ -3,8 +3,8 @@ export interface Course {
     title: string;
     shortDescription: string;
     description: string;
-    requirement?: string | null; // optional theo API
-    level: string;              // ➕ thêm (BEGINNER, INTERMEDIATE...)
+    requirement?: string | null;
+    level: string;
     duration: number;
     price: number;
     language: string;
@@ -18,7 +18,7 @@ export interface Course {
     tutorAvatarURL?: string | null;
     tutorAddress?: string | null;
     createdAt: string;
-    isWishListed?: boolean | null;
+    isWishListed?: boolean;
     isPurchased?: boolean | null;
     tutorID: number;
 }

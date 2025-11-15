@@ -15,12 +15,12 @@ interface CourseHeroSectionProps {
   course: {
     id: number;
     title: string;
-    shortDescription: string;   // ⭐ USED INSTEAD OF description
-    description: string;        // vẫn giữ để Overview tab dùng
+    shortDescription?: string;
+    description: string;
     duration: number;
     price: number;
     language: string;
-    level: string;
+    level?: string;
     thumbnailURL: string;
     tutorId: number;
     tutorName: string;
@@ -30,17 +30,30 @@ interface CourseHeroSectionProps {
     categoryName: string;
     createdAt: string;
     isPurchased: boolean;
+    requirement?: string;
+    isWishListed: boolean | null;
   };
   wishlisted: boolean;
   setWishlisted: (value: boolean) => void;
 }
+
 
 const CourseHeroSection = ({ course, wishlisted, setWishlisted }: CourseHeroSectionProps) => {
   const navigate = useNavigate();
   const [isOwner, setIsOwner] = useState(false);
   const { toast } = useToast();
 
-  /** Check nếu khóa học thuộc về tutor */
+  // Normalize course data to match expected type
+  const normalizedCourse = {
+    ...course,
+    shortDescription: course.shortDescription || course.description.slice(0, 100),
+    level: course.level || "All Levels",
+    requirement: course.requirement || "No requirement specified",
+    isPurchased: Boolean(course.isPurchased),
+    isWishListed: Boolean(course.isWishListed),
+  };
+
+  /** Check if the course belongs to the tutor */
   useEffect(() => {
     const token =
         localStorage.getItem("access_token") ||
@@ -60,7 +73,12 @@ const CourseHeroSection = ({ course, wishlisted, setWishlisted }: CourseHeroSect
     };
 
     checkTutorCourse();
-  }, [course.id]);
+
+    // Auto remove from wishlist if purchased
+    if (course.isPurchased) {
+      setWishlisted(false);
+    }
+  }, [course.id, course.isPurchased]);
 
   /** Toggle Wishlist */
   const toggleWishlist = async () => {
@@ -84,6 +102,15 @@ const CourseHeroSection = ({ course, wishlisted, setWishlisted }: CourseHeroSect
         await api.delete(`/wishlist/${course.id}`);
         setWishlisted(false);
       } else {
+        // Ensure it's not in wishlist if already purchased
+        if (course.isPurchased) {
+          toast({
+            title: "Already Purchased",
+            description: "You can't add purchased courses to your wishlist.",
+            variant: "destructive",
+          });
+          return;
+        }
         await api.post(`/wishlist/${course.id}`);
         setWishlisted(true);
       }
@@ -171,55 +198,55 @@ const CourseHeroSection = ({ course, wishlisted, setWishlisted }: CourseHeroSect
 
               {/* LANGUAGE + LEVEL BADGES */}
               <div className="flex items-center gap-3">
-              <span className="bg-white text-blue-600 px-3 py-1 rounded-full text-sm font-medium">
-                {course.language}
-              </span>
+                <span className="bg-white text-blue-600 px-3 py-1 rounded-full text-sm font-medium">
+                  {normalizedCourse.language}
+                </span>
 
                 <span className="bg-white/20 px-3 py-1 rounded-full text-sm font-medium">
-                {course.level} Level
-              </span>
+                  {normalizedCourse.level} Level
+                </span>
               </div>
 
-              <h1 className="text-4xl font-bold mt-4 mb-2">{course.title}</h1>
+              <h1 className="text-4xl font-bold mt-4 mb-2">{normalizedCourse.title}</h1>
 
               <div className="flex items-center gap-4 text-blue-100 mb-4">
-              <span className="bg-white/20 px-3 py-1 rounded-full text-sm">
-                {course.categoryName}
-              </span>
+                <span className="bg-white/20 px-3 py-1 rounded-full text-sm">
+                  {normalizedCourse.categoryName}
+                </span>
                 <span className="text-sm opacity-90">
-                Created on: {formatDate(course.createdAt)}
-              </span>
+                  Created on: {formatDate(normalizedCourse.createdAt)}
+                </span>
               </div>
 
-              {/* ⭐ shortDescription – used instead of description */}
-              <p className="text-xl text-blue-100 mb-6">{course.shortDescription}</p>
+              {/*  shortDescription – used instead of description */}
+              <p className="text-xl text-blue-100 mb-6">{normalizedCourse.shortDescription}</p>
 
               <div className="flex items-center gap-4 text-blue-100 mb-4">
                 <div className="flex items-center gap-1">
                   <Star className="w-5 h-5 text-yellow-300 fill-yellow-300" />
-                  <span className="font-semibold">{course.avgRating.toFixed(1)}</span>
+                  <span className="font-semibold">{normalizedCourse.avgRating.toFixed(1)}</span>
                   <span className="opacity-80 text-sm">
-                  ({course.totalRatings} reviews)
-                </span>
+                    ({normalizedCourse.totalRatings} reviews)
+                  </span>
                 </div>
 
                 <span>•</span>
-                <span>{course.learnerCount} learners</span>
+                <span>{normalizedCourse.learnerCount} learners</span>
               </div>
 
               <div className="flex items-center space-x-2 mb-6">
                 <Clock className="w-5 h-5 text-blue-200" />
-                <span>{course.duration} hours</span>
+                <span>{normalizedCourse.duration} hours</span>
               </div>
 
               <span className="text-3xl font-bold mb-6 block">
-              {formatPrice(course.price)}
-            </span>
+                {formatPrice(normalizedCourse.price)}
+              </span>
 
               {/* BUTTON LOGIC */}
               <div className="flex gap-4 mt-4">
 
-                {!isOwner && !course.isPurchased && (
+                {!isOwner && !normalizedCourse.isPurchased && (
                     <button
                         onClick={toggleWishlist}
                         className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all border border-white ${
@@ -237,9 +264,9 @@ const CourseHeroSection = ({ course, wishlisted, setWishlisted }: CourseHeroSect
                     </button>
                 )}
 
-                {isOwner || course.isPurchased ? (
+                {isOwner || normalizedCourse.isPurchased ? (
                     <button
-                        onClick={() => navigate(`/learning/${course.id}`)}
+                        onClick={() => navigate(`/learning/${normalizedCourse.id}`)}
                         className="px-6 py-3 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 transition"
                     >
                       Go to Course
@@ -263,8 +290,8 @@ const CourseHeroSection = ({ course, wishlisted, setWishlisted }: CourseHeroSect
                 transition={{ duration: 0.8 }}
             >
               <img
-                  src={course.thumbnailURL}
-                  alt={course.title}
+                  src={normalizedCourse.thumbnailURL}
+                  alt={normalizedCourse.title}
                   className="rounded-2xl shadow-2xl"
               />
             </motion.div>
