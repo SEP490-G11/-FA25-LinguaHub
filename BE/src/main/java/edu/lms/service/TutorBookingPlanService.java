@@ -154,7 +154,7 @@ public class TutorBookingPlanService {
                 .startTime(slot.getStartTime())
                 .endTime(slot.getEndTime())
                 .status(slot.getUserID() == null ? "available" : "booked")
-                .build();
+                        .build();
     }
 
     private void validatePlanRequest(TutorBookingPlanRequest request) {
@@ -218,14 +218,15 @@ public class TutorBookingPlanService {
         while (!slotStart.plusMinutes(bookingPlan.getSlotDuration()).isAfter(planEnd)) {
             LocalDateTime slotEnd = slotStart.plusMinutes(bookingPlan.getSlotDuration());
 
-                BookingPlanSlot slot = BookingPlanSlot.builder()
-                        .bookingPlanID(bookingPlan.getBookingPlanID())
-                        .tutorID(bookingPlan.getTutorID())
-                        .startTime(slotStart)
-                        .endTime(slotEnd)
-                    .status(SlotStatus.Locked)
-                        .lockedAt(LocalDateTime.now())
-                        .build();
+            BookingPlanSlot slot = BookingPlanSlot.builder()
+                    .bookingPlanID(bookingPlan.getBookingPlanID())
+                    .tutorID(bookingPlan.getTutorID())
+                    .startTime(slotStart)
+                    .endTime(slotEnd)
+                    .status(SlotStatus.Available)
+                    .lockedAt(null)
+                    .expiresAt(null)
+                    .build();
 
                 slots.add(slot);
             slotStart = slotEnd;

@@ -80,6 +80,7 @@ public interface BookingPlanSlotRepository extends JpaRepository<BookingPlanSlot
         SELECT s FROM BookingPlanSlot s
         WHERE s.tutorID = :tutorID
           AND s.userID IS NOT NULL
+          AND s.status = 'Paid'
         ORDER BY s.startTime ASC
     """)
     List<BookingPlanSlot> findBookedSlotsByTutorID(@Param("tutorID") Long tutorID);
@@ -91,6 +92,7 @@ public interface BookingPlanSlotRepository extends JpaRepository<BookingPlanSlot
         SELECT s FROM BookingPlanSlot s
         WHERE s.tutorID = :tutorID
           AND s.userID IS NULL
+          AND s.status = 'Available'
         ORDER BY s.startTime ASC
     """)
     List<BookingPlanSlot> findAvailableSlotsByTutorID(@Param("tutorID") Long tutorID);
