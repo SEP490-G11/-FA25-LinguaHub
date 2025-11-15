@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
@@ -23,9 +22,6 @@ public class BookingPlan {
 
     @Column(nullable = false, length = 100)
     String title;
-
-    @Column(nullable = false)
-    LocalDate date;
 
     @Column(nullable = false)
     LocalTime startTime;
