@@ -14,6 +14,8 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
+import org.springframework.security.oauth2.server.resource.web.DefaultBearerTokenResolver;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -21,6 +23,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @Configuration
@@ -33,9 +36,12 @@ public class SecurityConfig {
 
     // TẤT CẢ ENDPOINT CÔNG KHAI (fixed full)
     private static final String[] PUBLIC_ENDPOINTS = {
-            "/swagger-ui.html", "/swagger-ui/**",
+            "/swagger-ui.html",
+            "/swagger-ui/**",
             "/swagger-resources/**",
-            "/v3/api-docs", "/v3/api-docs/**", "/v3/api-docs.yaml",
+            "/v3/api-docs",
+            "/v3/api-docs/**",
+            "/v3/api-docs.yaml",
             "/webjars/**",
             "/configuration/ui",
             "/configuration/security",
@@ -51,6 +57,37 @@ public class SecurityConfig {
             "/tutor/courses/all"
     };
 
+    // SecurityConfig.java
+    @Bean
+    public BearerTokenResolver bearerTokenResolver() {
+        DefaultBearerTokenResolver delegate = new DefaultBearerTokenResolver();
+        delegate.setAllowUriQueryParameter(true); // nếu đôi khi gửi access_token qua query
+
+        Predicate<String> isPublicPath = path ->
+                path.startsWith("/courses/public/") ||
+                        path.startsWith("/courses/detail/") ||
+                        path.startsWith("/v3/api-docs") ||
+                        path.startsWith("/swagger-ui");
+
+        return request -> {
+            // 1) Nếu có Authorization: Bearer ... => LUÔN trả token để xác thực
+            String token = delegate.resolve(request);
+            if (token != null && !token.isBlank()) {
+                return token;
+            }
+
+            // 2) Nếu không có token và là public path => cho qua như guest
+            String path = request.getRequestURI();
+            if (isPublicPath.test(path)) {
+                return null; // anonymous user
+            }
+
+            // 3) Các path khác vẫn yêu cầu token
+            return null;
+        };
+    }
+
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
@@ -58,29 +95,28 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-
-                        // Public GET endpoints
+                        // Public GET
                         .requestMatchers(HttpMethod.GET, "/courses/public/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/courses/detail/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/tutors/approved").permitAll()
                         .requestMatchers(HttpMethod.GET, "/tutors/*").permitAll()
-                        // ⭐ CHO PHÉP TẤT CẢ /api/payments/**
-                        .requestMatchers("/api/payments/**").permitAll()
-
+                        // Other public
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
-
+                        // Everything else
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt
                                 .decoder(customJwtDecoder)
                                 .jwtAuthenticationConverter(jwtAuthenticationConverter()))
+                        .bearerTokenResolver(bearerTokenResolver()) // ⬅️ NEW: gắn resolver
                         .authenticationEntryPoint(new JwtAuthenticationEntryPoint())
                 );
 
         return http.build();
     }
+
 
     @Bean
     public JwtAuthenticationConverter jwtAuthenticationConverter() {

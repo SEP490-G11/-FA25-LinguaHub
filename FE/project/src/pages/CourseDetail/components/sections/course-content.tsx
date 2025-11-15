@@ -3,7 +3,7 @@ import { BookOpen, ChevronDown, ChevronRight, CheckCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { useState } from "react";
-import lesson from "@/pages/LessonDetail/lesson.tsx";
+
 
 interface CourseContentProps {
     course: {
@@ -78,9 +78,10 @@ const CourseContent = ({ course, isPurchased }: CourseContentProps) => {
             return;
         }
 
-        navigate(`/lesson/${lesson.lessonID}`, {
+        navigate(`/lesson/${lessonId}`, {
             state: { courseId: course.id }
         });
+
 
     };
 

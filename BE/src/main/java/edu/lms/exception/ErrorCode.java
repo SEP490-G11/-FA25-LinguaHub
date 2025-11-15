@@ -42,6 +42,10 @@ public enum ErrorCode {
     TUTOR_NOT_APPROVED(4002, "Tutor is not approved yet", HttpStatus.FORBIDDEN),
     TUTOR_APPLICATION_PENDING(4003, "Tutor application is still pending", HttpStatus.BAD_REQUEST),
     TUTOR_APPLICATION_NOT_FOUND(4004, "Tutor application not found", HttpStatus.NOT_FOUND),
+    TUTOR_ACCOUNT_LOCKED(4010, "Tutor account is locked or inactive", HttpStatus.FORBIDDEN),
+    TUTOR_PACKAGE_NOT_FOUND(4011, "Tutor package not found", HttpStatus.NOT_FOUND),
+    TUTOR_PACKAGE_DUPLICATE_NAME(4012, "Package name already exists for this tutor", HttpStatus.BAD_REQUEST),
+    TUTOR_PACKAGE_ALREADY_PURCHASED(4013, "This package has been purchased. Cannot modify.", HttpStatus.CONFLICT),
 
     //  ENROLLMENT & LEARNER MODULE
     ENROLLMENT_NOT_FOUND(5001, "Enrollment not found", HttpStatus.NOT_FOUND),
@@ -58,6 +62,7 @@ public enum ErrorCode {
     BOOKING_NOT_FOUND(7002, "Booking not found", HttpStatus.NOT_FOUND),
     BOOKING_ALREADY_CONFIRMED(7003, "Booking is already confirmed", HttpStatus.BAD_REQUEST),
     BOOKING_TIME_CONFLICT(7004, "Tutor schedule conflict at this time", HttpStatus.CONFLICT),
+    BOOKING_PLAN_HAS_BOOKED_SLOT(7005, "This booking plan already has booked slots", HttpStatus.CONFLICT),
 
     //  CHAT & POLICY
     CHAT_ROOM_NOT_FOUND(8001, "Chat room not found", HttpStatus.NOT_FOUND),
