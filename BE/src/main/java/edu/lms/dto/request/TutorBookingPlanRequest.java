@@ -15,7 +15,6 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalTime;
 
 @Data
@@ -28,10 +27,6 @@ public class TutorBookingPlanRequest {
     @NotBlank(message = "Title is required")
     @Size(max = 100, message = "Title must be less than 100 characters")
     String title;
-
-    @NotNull(message = "Date is required")
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    LocalDate date;
 
     @NotNull(message = "Start time is required")
     @JsonProperty("start_hours")
