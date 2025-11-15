@@ -14,7 +14,6 @@ const TutorSchedule: React.FC = () => {
   const [defaultEndTime, setDefaultEndTime] = useState('22:00');
   const [slotDuration, setSlotDuration] = useState(60);
   const [defaultPrice, setDefaultPrice] = useState(50000);
-  // const [meetingUrl, setMeetingUrl] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [schedule, setSchedule] = useState<DaySchedule[]>([
@@ -132,26 +131,15 @@ const TutorSchedule: React.FC = () => {
 
       // Create booking plans for each enabled day
       const bookingPlanPromises = enabledDays.map(async (day) => {
-        const [startHour, startMinute] = day.startTime.split(':').map(Number);
-        const [endHour, endMinute] = day.endTime.split(':').map(Number);
+        const startHours = parseInt(day.startTime.split(':')[0]);
+        const endHours = parseInt(day.endTime.split(':')[0]);
 
         const bookingPlanData: BookingPlanRequest = {
           title: day.shortName,
-          start_hours: {
-            hour: startHour,
-            minute: startMinute,
-            second: 0,
-            nano: 0
-          },
-          end_hours: {
-            hour: endHour,
-            minute: endMinute,
-            second: 0,
-            nano: 0
-          },
-          slot_duration: slotDuration,
-          price_per_hours: defaultPrice,
-          // meeting_url: meetingUrl || 'https://meet.google.com/default'
+          startHours,
+          endHours,
+          slotDuration,
+          pricePerHours: defaultPrice,
         };
 
         return bookingPlanApi.createBookingPlan(bookingPlanData);
