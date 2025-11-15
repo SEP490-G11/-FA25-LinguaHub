@@ -110,4 +110,12 @@ public interface BookingPlanSlotRepository extends JpaRepository<BookingPlanSlot
             @Param("userID") Long userID,
             @Param("tutorID") Long tutorID
     );
+
+    boolean existsByBookingPlanIDAndUserIDIsNotNull(Long bookingPlanID);
+
+    long countByBookingPlanID(Long bookingPlanID);
+
+    List<BookingPlanSlot> findByBookingPlanIDOrderByStartTimeAsc(Long bookingPlanID);
+
+    void deleteByBookingPlanID(Long bookingPlanID);
 }
