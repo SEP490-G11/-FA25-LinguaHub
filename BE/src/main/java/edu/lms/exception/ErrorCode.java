@@ -1,12 +1,12 @@
 package edu.lms.exception;
 
-
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 
 @Getter
 public enum ErrorCode {
+
     UNCATEGORIZED_EXCEPTION(9999,"Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
     INVALID_KEY(1001,"Invalid key", HttpStatus.BAD_REQUEST),
     USER_EXISTED(1002, "Username is Existed", HttpStatus.BAD_REQUEST),
@@ -22,7 +22,7 @@ public enum ErrorCode {
     PASSWORD_NOT_MATCH(2003,"Password is not matched" , HttpStatus.BAD_REQUEST),
     PASSWORD_ENABLED(2004,"The password is false", HttpStatus.BAD_REQUEST),
     EMAIL_EXISTED(2005,"This Email has Signed in before", HttpStatus.BAD_REQUEST),
-    USER_NOT_FOUND(1006,"User not found", HttpStatus.NOT_FOUND),
+    USER_NOT_FOUND(2006,"User not found", HttpStatus.NOT_FOUND),
 
     // COURSE
     COURSE_NOT_FOUND(3001, "Course not found", HttpStatus.NOT_FOUND),
@@ -33,22 +33,39 @@ public enum ErrorCode {
     SECTION_NOT_FOUND(3006,"Section not found", HttpStatus.NOT_FOUND),
     CAN_NOT_CHANGE_STATUS(3007, "Can't change status", HttpStatus.BAD_REQUEST),
     COURSE_UPDATE_ONLY_DRAFT_OR_REJECTED(3008, "Only Draft or Rejected course can be updated", HttpStatus.BAD_REQUEST),
-    COURSE_NOT_STARTED(3008, "You haven't started this course yet", HttpStatus.BAD_REQUEST),
-    COURSE_NOT_COMPLETED_HALF(3009, "You must complete at least 50% of the course before reviewing", HttpStatus.BAD_REQUEST),
-    COURSE_NOT_APPROVED(4005, "This course is not yet approved for public view", HttpStatus.FORBIDDEN),
+    COURSE_NOT_STARTED(3009, "You haven't started this course yet", HttpStatus.BAD_REQUEST),
+    COURSE_NOT_COMPLETED_HALF(3010, "You must complete at least 50% of the course before reviewing", HttpStatus.BAD_REQUEST),
+    COURSE_NOT_APPROVED(3011, "This course is not yet approved for public view", HttpStatus.FORBIDDEN),
 
-    //  TUTOR MODULE
+    // COURSE DRAFT / VERSIONING (THÊM MỚI)
+    CAN_ONLY_EDIT_DRAFT_FOR_APPROVED_COURSE(
+            3012,
+            "Can only create or edit draft for an Approved course",
+            HttpStatus.BAD_REQUEST
+    ),
+    DRAFT_NOT_FOUND(
+            3013,
+            "Course draft not found",
+            HttpStatus.NOT_FOUND
+    ),
+    INVALID_STATE(
+            3014,
+            "Invalid state for this action",
+            HttpStatus.BAD_REQUEST
+    ),
+
+    // TUTOR MODULE
     TUTOR_NOT_FOUND(4001, "Tutor not found", HttpStatus.NOT_FOUND),
     TUTOR_NOT_APPROVED(4002, "Tutor is not approved yet", HttpStatus.FORBIDDEN),
     TUTOR_APPLICATION_PENDING(4003, "Tutor application is still pending", HttpStatus.BAD_REQUEST),
     TUTOR_APPLICATION_NOT_FOUND(4004, "Tutor application not found", HttpStatus.NOT_FOUND),
 
-    //  ENROLLMENT & LEARNER MODULE
+    // ENROLLMENT & LEARNER MODULE
     ENROLLMENT_NOT_FOUND(5001, "Enrollment not found", HttpStatus.NOT_FOUND),
     ENROLLMENT_ALREADY_EXISTS(5002, "User already enrolled in this course", HttpStatus.CONFLICT),
     NOT_ENROLLED(5003, "User is not enrolled", HttpStatus.NOT_FOUND),
 
-    //  PAYMENT & TRANSACTION
+    // PAYMENT & TRANSACTION
     PAYMENT_NOT_FOUND(6001, "Payment not found", HttpStatus.NOT_FOUND),
     PAYMENT_FAILED(6002, "Payment transaction failed", HttpStatus.BAD_REQUEST),
     REFUND_NOT_ALLOWED(6003, "Refund not allowed for this transaction", HttpStatus.FORBIDDEN),
@@ -59,30 +76,32 @@ public enum ErrorCode {
     BOOKING_ALREADY_CONFIRMED(7003, "Booking is already confirmed", HttpStatus.BAD_REQUEST),
     BOOKING_TIME_CONFLICT(7004, "Tutor schedule conflict at this time", HttpStatus.CONFLICT),
 
-    //  CHAT & POLICY
+    // CHAT & POLICY
     CHAT_ROOM_NOT_FOUND(8001, "Chat room not found", HttpStatus.NOT_FOUND),
     POLICY_NOT_FOUND(8002, "Policy not found", HttpStatus.NOT_FOUND),
 
-    //PAYMENT
+    // PAYMENT
     INVALID_PAYMENT_TYPE(8003, "Ivalid Payment Type", HttpStatus.NOT_FOUND),
     BOOKING_SLOT_NOT_AVAILABLE(8004, "Booking Slot Amount of this Tutor is 0, Please Choose other Tutor ", HttpStatus.NOT_FOUND),
 
-    //WISH LIST
-    ALREADY_IN_WISHLIST(8004, "The course already in wishlist", HttpStatus.CONFLICT),
-    //REVIEW OR FEEDBACK
+    // WISH LIST
+    ALREADY_IN_WISHLIST(8005, "The course already in wishlist", HttpStatus.CONFLICT),
+
+    // REVIEW OR FEEDBACK
     ALREADY_REVIEWED(9000, "You have already reviewed this course", HttpStatus.CONFLICT),
     REVIEW_NOT_FOUND(9001, "Review not found", HttpStatus.NOT_FOUND),
-   //OBJECTIVE COURSE
-   OBJECTIVE_NOT_FOUND(9002, "Objective not found", HttpStatus.NOT_FOUND),;
 
-    ErrorCode(int code, String message,HttpStatusCode httpStatusCode) {
+    // OBJECTIVE COURSE
+    OBJECTIVE_NOT_FOUND(9002, "Objective not found", HttpStatus.NOT_FOUND),
+    ;
+
+    ErrorCode(int code, String message, HttpStatusCode httpStatusCode) {
         this.code = code;
         this.message = message;
-        this.statusCode=httpStatusCode;
+        this.statusCode = httpStatusCode;
     }
 
-    private int code;
-    private String message;
-    private HttpStatusCode statusCode;
-
+    private final int code;
+    private final String message;
+    private final HttpStatusCode statusCode;
 }
