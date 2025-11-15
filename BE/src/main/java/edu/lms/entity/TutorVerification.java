@@ -6,6 +6,8 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -24,6 +26,7 @@ public class TutorVerification {
     @JoinColumn(name = "TutorID", nullable = false)
     Tutor tutor;
 
+    @Builder.Default
     @Column(nullable = false)
     Short experience = 0;
 
@@ -36,16 +39,12 @@ public class TutorVerification {
     @Column(columnDefinition = "TEXT")
     String bio;
 
-    @Column(length = 255)
-    String certificateName;
-
-    @Column(length = 255, nullable = false)
-    String documentURL;
-
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     TutorVerificationStatus status = TutorVerificationStatus.PENDING;
 
+    @Builder.Default
     LocalDateTime submittedAt = LocalDateTime.now();
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -56,4 +55,8 @@ public class TutorVerification {
 
     @Column(columnDefinition = "TEXT")
     String reasonForReject;
+
+    @Builder.Default
+    @OneToMany(mappedBy = "tutorVerification", cascade = CascadeType.ALL, orphanRemoval = true)
+    List<TutorCertificate> certificates = new ArrayList<>();
 }
