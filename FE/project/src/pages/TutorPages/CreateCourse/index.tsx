@@ -290,13 +290,13 @@ export default function CreateCourse() {
 
         <Card>
           <CardHeader>
-            <CardTitle>
+            {/* <CardTitle>
               {currentStep === 1
                 ? 'Step 1: Basic Information'
                 : currentStep === 2
                 ? 'Step 2: Learning Objectives'
                 : 'Step 3: Course Structure'}
-            </CardTitle>
+            </CardTitle> */}
           </CardHeader>
           <CardContent>
             {currentStep === 1 && (
