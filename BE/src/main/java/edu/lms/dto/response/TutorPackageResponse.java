@@ -7,7 +7,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -20,7 +19,6 @@ public class TutorPackageResponse {
     Long tutorId;
     String name;
     String description;
-    BigDecimal price;
     Integer maxSlot;
     Boolean active;
     LocalDateTime createdAt;
