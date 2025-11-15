@@ -43,6 +43,11 @@ const menuItems: MenuItem[] = [
     href: '/schedule',
     icon: Calendar,
   },
+   {
+    title: 'Bookings',
+    href: '/bookings',
+    icon: BookOpen,
+  },
   {
     title: 'Analytics',
     href: '/analytics',

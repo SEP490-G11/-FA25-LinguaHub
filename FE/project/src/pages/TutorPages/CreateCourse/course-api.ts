@@ -5,7 +5,10 @@ export type { Category, Language };
 
 export interface CourseFormData {
   title: string;
+  shortDescription: string;
   description: string;
+  requirement: string;
+  level: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
   categoryID: number;
   language: string;
   duration: number;
@@ -33,6 +36,11 @@ export interface ResourceFormData {
   resourceType: 'PDF' | 'ExternalLink';
   resourceTitle: string;
   resourceURL: string;
+}
+
+export interface ObjectiveFormData {
+  objectiveText: string;
+  orderIndex: number;
 }
 
 export interface SectionData {
@@ -76,7 +84,10 @@ export const courseApi = {
   createCourse: async (courseData: CourseFormData): Promise<{ courseId: string }> => {
     const payload = {
       title: courseData.title,
+      shortDescription: courseData.shortDescription,
       description: courseData.description,
+      requirement: courseData.requirement,
+      level: courseData.level,
       categoryID: courseData.categoryID,
       language: courseData.language,
       duration: courseData.duration,
@@ -171,6 +182,22 @@ export const courseApi = {
 
   deleteResource: async (resourceId: string): Promise<void> => {
     await axios.delete<any>(`/tutor/resources/${resourceId}`);
+  },
+
+  addObjective: async (courseId: string, objectiveData: ObjectiveFormData): Promise<{ objectiveId: string }> => {
+    const payload = {
+      objectiveText: objectiveData.objectiveText,
+      orderIndex: objectiveData.orderIndex,
+    };
+
+    const res = await axios.post<any>(`/courses/${courseId}/objectives`, payload);
+    const objectiveId = res?.data?.result?.id || res?.data?.result?.objectiveID || res?.data?.id || res?.data?.objectiveID;
+    if (!objectiveId) throw new Error('Invalid response from server');
+    return { objectiveId: objectiveId.toString() };
+  },
+
+  deleteObjective: async (objectiveId: string): Promise<void> => {
+    await axios.delete<any>(`/courses/objectives/${objectiveId}`);
   },
 };
 

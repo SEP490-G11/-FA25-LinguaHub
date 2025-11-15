@@ -20,6 +20,7 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -42,6 +43,7 @@ public class TutorPackageService {
 
         TutorPackage entity = tutorPackageMapper.toEntity(request);
         entity.setTutor(tutor);
+        entity.setPrice(BigDecimal.ZERO);
 
         TutorPackage saved = tutorPackageRepository.save(entity);
 

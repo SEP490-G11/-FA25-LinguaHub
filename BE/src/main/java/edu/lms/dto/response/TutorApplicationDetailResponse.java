@@ -1,9 +1,14 @@
 package edu.lms.dto.response;
 
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -17,14 +22,13 @@ public class TutorApplicationDetailResponse {
     String userEmail;
     String userName;
     String userPhone;
-    
+
     Short experience;
     String specialization;
     String teachingLanguage;
     String bio;
-    String certificateName;
-    String documentURL;
-    
+    List<TutorCertificateResponse> certificates;
+
     String status;
     LocalDateTime submittedAt;
     String reviewedBy;
