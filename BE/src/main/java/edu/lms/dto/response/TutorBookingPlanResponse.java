@@ -10,9 +10,8 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalTime;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Data
 @NoArgsConstructor
@@ -28,8 +27,6 @@ public class TutorBookingPlanResponse {
     Long tutorId;
 
     String title;
-
-    LocalDate date;
 
     @JsonProperty("start_hours")
     @JsonFormat(pattern = "HH:mm")
