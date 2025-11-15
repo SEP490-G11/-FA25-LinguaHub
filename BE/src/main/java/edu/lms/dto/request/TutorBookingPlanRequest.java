@@ -1,8 +1,22 @@
 package edu.lms.dto.request;
 
-import jakarta.validation.constraints.*;
-import lombok.*;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalTime;
 
 @Data
 @NoArgsConstructor
@@ -11,26 +25,31 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class TutorBookingPlanRequest {
 
-    @NotNull(message = "TutorID is required")
-    Long tutorID;
-
     @NotBlank(message = "Title is required")
-    @Pattern(regexp = "^(T2|T3|T4|T5|T6|T7|CN)$", message = "Title must be one of: T2, T3, T4, T5, T6, T7, CN")
-    String title; // Thứ trong tuần: T2, T3, T4, T5, T6, T7, CN
+    @Size(max = 100, message = "Title must be less than 100 characters")
+    String title;
 
-    @NotNull(message = "Start hours is required")
-    @Min(0) @Max(23)
-    Integer startHours; // Giờ bắt đầu (0-23)
+    @NotNull(message = "Date is required")
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    LocalDate date;
 
-    @NotNull(message = "End hours is required")
-    @Min(1) @Max(24)
-    Integer endHours; // Giờ kết thúc (1-24)
+    @NotNull(message = "Start time is required")
+    @JsonProperty("start_hours")
+    @JsonFormat(pattern = "HH:mm")
+    LocalTime startTime;
+
+    @NotNull(message = "End time is required")
+    @JsonProperty("end_hours")
+    @JsonFormat(pattern = "HH:mm")
+    LocalTime endTime;
 
     @NotNull(message = "Slot duration is required")
-    @Min(value = 15, message = "Slot duration must be at least 15 minutes")
-    Integer slotDuration; // Độ dài mỗi slot (phút)
+    @JsonProperty("slot_duration")
+    @Positive(message = "Slot duration must be greater than 0")
+    Integer slotDuration;
 
     @NotNull(message = "Price per hours is required")
-    @Min(value = 0, message = "Price per hours must be greater than or equal to 0")
-    Double pricePerHours; // Giá mỗi giờ
+    @JsonProperty("price_per_hours")
+    @DecimalMin(value = "0.0", inclusive = false, message = "Price per hour must be greater than 0")
+    BigDecimal pricePerHours;
 }

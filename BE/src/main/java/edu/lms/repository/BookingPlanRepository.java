@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 @Repository
@@ -28,14 +30,20 @@ public interface BookingPlanRepository extends JpaRepository<BookingPlan, Long> 
     @Query("""
         SELECT bp FROM BookingPlan bp
         WHERE bp.tutorID = :tutorID
-          AND bp.title = :title
+          AND bp.date = :date
           AND bp.isActive = true
-          AND NOT (bp.endHours <= :startHours OR bp.startHours >= :endHours)
+          AND (:excludeId IS NULL OR bp.bookingPlanID <> :excludeId)
+          AND NOT (bp.endTime <= :startTime OR bp.startTime >= :endTime)
         """)
     List<BookingPlan> findOverlappingPlans(
             @Param("tutorID") Long tutorID,
-            @Param("title") String title,
-            @Param("startHours") Integer startHours,
-            @Param("endHours") Integer endHours
+            @Param("date") LocalDate date,
+            @Param("startTime") LocalTime startTime,
+            @Param("endTime") LocalTime endTime,
+            @Param("excludeId") Long excludeId
     );
+
+    List<BookingPlan> findByTutorIDAndIsActiveTrueOrderByDateAscStartTimeAsc(Long tutorID);
+
+    List<BookingPlan> findByTutorIDAndIsActiveTrueAndDateOrderByStartTimeAsc(Long tutorID, LocalDate date);
 }
