@@ -11,6 +11,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -27,6 +30,10 @@ public class TutorPackageRequest {
     @NotNull(message = "maxSlot is required")
     @Min(value = 1, message = "maxSlot must be greater than 0")
     Integer maxSlot;
+
+    @NotNull(message = "Price can't null")
+    BigDecimal price;
+
 }
 
 
