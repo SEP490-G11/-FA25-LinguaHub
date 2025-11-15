@@ -47,8 +47,6 @@ public class TutorBookingPlanResponse {
 
     @JsonProperty("is_active")
     Boolean isActive;
-    @JsonProperty("meeting_url")
-    String meetingUrl;
 
     LocalDateTime createdAt;
     LocalDateTime updatedAt;
