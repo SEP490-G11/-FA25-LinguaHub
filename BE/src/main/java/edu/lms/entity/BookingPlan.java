@@ -55,9 +55,6 @@ public class BookingPlan {
     @Column(nullable = false)
     LocalDateTime updatedAt = LocalDateTime.now();
 
-    @Column(length = 500)
-    String meetingUrl;
-
     @PrePersist
     void onCreate() {
         LocalDateTime now = LocalDateTime.now();

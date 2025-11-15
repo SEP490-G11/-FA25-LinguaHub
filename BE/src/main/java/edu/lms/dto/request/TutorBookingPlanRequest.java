@@ -48,7 +48,4 @@ public class TutorBookingPlanRequest {
     @DecimalMin(value = "0.0", inclusive = false, message = "Price per hour must be greater than 0")
     BigDecimal pricePerHours;
 
-    @NotNull(message = "Meeting Url must not be null")
-    @JsonProperty("meeting_url")
-    String meetingUrl;
 }
