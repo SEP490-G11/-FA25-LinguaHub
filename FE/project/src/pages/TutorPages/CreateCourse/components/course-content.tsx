@@ -17,7 +17,7 @@ import {
   Link2,
   BookOpen,
 } from 'lucide-react';
-import { SectionData, LessonData } from '@/pages/CreateCourse/course-api';
+import { SectionData, LessonData } from '@/pages/TutorPages/CreateCourse/course-api';
 import {
   Select,
   SelectContent,
@@ -71,7 +71,7 @@ export function Step2CourseContent({
   sections: initialSections, 
   onSave, 
   onBack,
-  submitButtonText = 'Create Course' // Default text for CreateCourse
+  submitButtonText = 'Submit' 
 }: Step2Props) {
   const [sections, setSections] = useState<SectionData[]>(initialSections);
   const [expandedSections, setExpandedSections] = useState<Set<number>>(

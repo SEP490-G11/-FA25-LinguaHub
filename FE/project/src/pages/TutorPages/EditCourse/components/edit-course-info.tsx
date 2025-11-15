@@ -25,12 +25,15 @@ export default function EditCourseInfo({
 }: EditCourseInfoProps) {
   const [formData, setFormData] = useState({
     title: course.title,
+    shortDescription: course.shortDescription || '',
     description: course.description,
+    requirement: course.requirement || '',
+    level: course.level || 'BEGINNER',
     duration: course.duration,
     price: course.price,
     language: course.language,
     thumbnailURL: course.thumbnailURL,
-    categoryName: course.categoryName,
+    categoryID: course.categoryID,
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -66,14 +69,23 @@ export default function EditCourseInfo({
     if (!formData.title.trim()) {
       newErrors.title = 'Please enter course title';
     }
+    if (!formData.shortDescription.trim()) {
+      newErrors.shortDescription = 'Please enter short description';
+    }
     if (!formData.description.trim()) {
       newErrors.description = 'Please enter course description';
+    }
+    if (!formData.requirement.trim()) {
+      newErrors.requirement = 'Please enter course requirements';
     }
     if (formData.duration <= 0) {
       newErrors.duration = 'Duration must be greater than 0';
     }
     if (formData.price < 0) {
       newErrors.price = 'Price cannot be negative';
+    }
+    if (!formData.level) {
+      newErrors.level = 'Please select a level';
     }
     if (!formData.language.trim()) {
       newErrors.language = 'Please select a language';
@@ -114,6 +126,29 @@ export default function EditCourseInfo({
         )}
       </div>
 
+      {/* Short Description */}
+      <div>
+        <Label htmlFor="shortDescription" className="text-base font-semibold mb-2">
+          Short Description <span className="text-red-500">*</span>
+        </Label>
+        <Input
+          id="shortDescription"
+          name="shortDescription"
+          value={formData.shortDescription}
+          onChange={handleChange}
+          placeholder="Brief summary of your course (max 200 characters)"
+          disabled={isSubmitting}
+          maxLength={200}
+          className={errors.shortDescription ? 'border-red-500' : ''}
+        />
+        <p className="text-xs text-gray-500 mt-1">
+          {formData.shortDescription.length}/200
+        </p>
+        {errors.shortDescription && (
+          <p className="text-red-500 text-sm mt-1">{errors.shortDescription}</p>
+        )}
+      </div>
+
       {/* Course Description */}
       <div>
         <Label htmlFor="description" className="text-base font-semibold mb-2">
@@ -131,6 +166,26 @@ export default function EditCourseInfo({
         />
         {errors.description && (
           <p className="text-red-500 text-sm mt-1">{errors.description}</p>
+        )}
+      </div>
+
+      {/* Requirement */}
+      <div>
+        <Label htmlFor="requirement" className="text-base font-semibold mb-2">
+          Course Requirements <span className="text-red-500">*</span>
+        </Label>
+        <Textarea
+          id="requirement"
+          name="requirement"
+          value={formData.requirement}
+          onChange={handleChange}
+          placeholder="List the requirements to take this course..."
+          rows={4}
+          disabled={isSubmitting}
+          className={errors.requirement ? 'border-red-500' : ''}
+        />
+        {errors.requirement && (
+          <p className="text-red-500 text-sm mt-1">{errors.requirement}</p>
         )}
       </div>
 
@@ -177,8 +232,27 @@ export default function EditCourseInfo({
         </div>
       </div>
 
-      {/* Language and Category */}
+      {/* Level and Language */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <Label htmlFor="level" className="text-base font-semibold mb-2">
+            Level <span className="text-red-500">*</span>
+          </Label>
+          <Select value={formData.level} onValueChange={(value) => handleSelectChange('level', value as 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED')}>
+            <SelectTrigger disabled={isSubmitting} className={errors.level ? 'border-red-500' : ''}>
+              <SelectValue placeholder="Select level" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="BEGINNER">Beginner</SelectItem>
+              <SelectItem value="INTERMEDIATE">Intermediate</SelectItem>
+              <SelectItem value="ADVANCED">Advanced</SelectItem>
+            </SelectContent>
+          </Select>
+          {errors.level && (
+            <p className="text-red-500 text-sm mt-1">{errors.level}</p>
+          )}
+        </div>
+
         <div>
           <Label htmlFor="language" className="text-base font-semibold mb-2">
             Teaching Language <span className="text-red-500">*</span>
@@ -201,20 +275,6 @@ export default function EditCourseInfo({
           {errors.language && (
             <p className="text-red-500 text-sm mt-1">{errors.language}</p>
           )}
-        </div>
-
-        <div>
-          <Label htmlFor="category" className="text-base font-semibold mb-2">
-            Category
-          </Label>
-          <Input
-            id="category"
-            name="categoryName"
-            value={formData.categoryName}
-            disabled={true}
-            placeholder="Category (read-only)"
-            className="bg-gray-100"
-          />
         </div>
       </div>
 

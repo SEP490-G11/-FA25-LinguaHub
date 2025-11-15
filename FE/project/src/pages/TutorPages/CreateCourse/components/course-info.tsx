@@ -11,8 +11,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { X } from 'lucide-react';
-import { getCategories, getLanguages } from '@/pages/CreateCourse/course-api';
-import { CourseFormData, Language, Category } from '@/pages/CreateCourse/course-api';
+import { getCategories, getLanguages } from '@/pages/TutorPages/CreateCourse/course-api';
+import { CourseFormData, Language, Category } from '@/pages/TutorPages/CreateCourse/course-api';
 
 interface Step1Props {
   data: Partial<CourseFormData>;
@@ -21,7 +21,10 @@ interface Step1Props {
 
 interface ValidationErrors {
   title?: string;
+  shortDescription?: string;
   description?: string;
+  requirement?: string;
+  level?: string;
   categoryID?: string;
   language?: string;
   duration?: string;
@@ -30,13 +33,16 @@ interface ValidationErrors {
 }
 
 export function Step1CourseInfo({ data, onNext }: Step1Props) {
-  const [formData, setFormData] = useState<Partial<CourseFormData>>({
+  const [formData, setFormData] = useState<CourseFormData>({
     title: data.title || '',
+    shortDescription: data.shortDescription || '',
     description: data.description || '',
-    categoryID: data.categoryID || 1 , // Default to first category
-    language: data.language || 'English',  // Default to "English"
-    duration: data.duration || undefined,
-    price: data.price || undefined,
+    requirement: data.requirement || '',
+    level: data.level || 'BEGINNER',
+    categoryID: data.categoryID || 1,
+    language: data.language || 'English',
+    duration: data.duration || 0,
+    price: data.price || 0,
     thumbnailURL: data.thumbnailURL || '',
   });
 
@@ -56,13 +62,35 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
         if (value.length > 100) return 'Title must not exceed 100 characters';
         return undefined;
 
+      case 'shortDescription':
+        if (!value || typeof value !== 'string')
+          return 'Short description is required';
+        if (value.length < 5)
+          return 'Short description must be at least 5 characters';
+        if (value.length > 200)
+          return 'Short description must not exceed 200 characters';
+        return undefined;
+
       case 'description':
         if (!value || typeof value !== 'string')
           return 'Description is required';
-        if (value.length < 10)
-          return 'Description must be at least 10 characters';
+        if (value.length < 5)
+          return 'Description must be at least 5 characters';
         if (value.length > 1000)
           return 'Description must not exceed 1000 characters';
+        return undefined;
+
+      case 'requirement':
+        if (!value || typeof value !== 'string')
+          return 'Requirements are required';
+        if (value.length < 5)
+          return 'Requirements must be at least 5 characters';
+        if (value.length > 500)
+          return 'Requirements must not exceed 500 characters';
+        return undefined;
+
+      case 'level':
+        if (!value) return 'Level is required';
         return undefined;
 
       case 'categoryID':
@@ -107,7 +135,12 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
   };
 
   const handleChange = (name: string, value: unknown) => {
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ 
+      ...prev, 
+      [name]: name === 'duration' || name === 'price' 
+        ? Number(value) || 0 
+        : value 
+    }));
     if (touched[name]) {
       const error = validateField(name, value);
       setErrors((prev) => ({ ...prev, [name]: error }));
@@ -148,7 +181,7 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
     const allErrors: ValidationErrors = {};
 
     // Validate all required fields
-    ['title', 'description', 'categoryID', 'language', 'duration', 'price'].forEach((key) => {
+    ['title', 'shortDescription', 'description', 'requirement', 'categoryID', 'language', 'level', 'duration', 'price'].forEach((key) => {
       allTouched[key] = true;
       const error = validateField(key, formData[key as keyof CourseFormData]);
       if (error) allErrors[key as keyof ValidationErrors] = error;
@@ -158,6 +191,7 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
     setErrors(allErrors);
 
     if (Object.keys(allErrors).length === 0) {
+      console.log('Form data before submit:', formData);
       onNext(formData as CourseFormData);
     }
   };
@@ -180,6 +214,31 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
           {errors.title && touched.title && (
             <p className="text-sm text-red-500 mt-1">{errors.title}</p>
           )}
+        </div>
+
+        <div>
+          <Label htmlFor="shortDescription" className="text-sm font-medium">
+            Short Description <span className="text-red-500">*</span>
+          </Label>
+          <Input
+            id="shortDescription"
+            value={formData.shortDescription || ''}
+            onChange={(e) => handleChange('shortDescription', e.target.value)}
+            onBlur={() => handleBlur('shortDescription')}
+            placeholder="Brief summary of your course (max 200 characters)"
+            maxLength={200}
+            className={errors.shortDescription && touched.shortDescription ? 'border-red-500' : ''}
+          />
+          <div className="flex justify-between mt-1">
+            {errors.shortDescription && touched.shortDescription ? (
+              <p className="text-sm text-red-500">{errors.shortDescription}</p>
+            ) : (
+              <span />
+            )}
+            <p className="text-sm text-gray-500">
+              {formData.shortDescription?.length || 0}/200
+            </p>
+          </div>
         </div>
 
         <div>
@@ -207,6 +266,35 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
             )}
             <p className="text-sm text-gray-500">
               {formData.description?.length || 0}/1000
+            </p>
+          </div>
+        </div>
+
+        <div>
+          <Label htmlFor="requirement" className="text-sm font-medium">
+            Requirements <span className="text-red-500">*</span>
+          </Label>
+          <Textarea
+            id="requirement"
+            value={formData.requirement || ''}
+            onChange={(e) => handleChange('requirement', e.target.value)}
+            onBlur={() => handleBlur('requirement')}
+            placeholder="List the requirements to take this course..."
+            rows={4}
+            className={
+              errors.requirement && touched.requirement
+                ? 'border-red-500'
+                : ''
+            }
+          />
+          <div className="flex justify-between mt-1">
+            {errors.requirement && touched.requirement ? (
+              <p className="text-sm text-red-500">{errors.requirement}</p>
+            ) : (
+              <span />
+            )}
+            <p className="text-sm text-gray-500">
+              {formData.requirement?.length || 0}/500
             </p>
           </div>
         </div>
@@ -241,6 +329,37 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
           </Select>
           {errors.categoryID && touched.categoryID && (
             <p className="text-sm text-red-500 mt-1">{errors.categoryID}</p>
+          )}
+        </div>
+
+        <div>
+          <Label htmlFor="level" className="text-sm font-medium">
+            Level <span className="text-red-500">*</span>
+          </Label>
+          <Select
+            value={formData.level || 'BEGINNER'}
+            onValueChange={(value) => {
+              handleChange('level', value as 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED');
+              setTouched((prev) => ({ ...prev, level: true }));
+            }}
+          >
+            <SelectTrigger
+              className={
+                errors.level && touched.level
+                  ? 'border-red-500'
+                  : ''
+              }
+            >
+              <SelectValue placeholder="Select a level" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="BEGINNER">Beginner</SelectItem>
+              <SelectItem value="INTERMEDIATE">Intermediate</SelectItem>
+              <SelectItem value="ADVANCED">Advanced</SelectItem>
+            </SelectContent>
+          </Select>
+          {errors.level && touched.level && (
+            <p className="text-sm text-red-500 mt-1">{errors.level}</p>
           )}
         </div>
 

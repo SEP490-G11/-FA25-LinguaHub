@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Step1CourseInfo } from './components/course-info';
+import { CourseObjectives, type ObjectiveItem } from './components/course-objectives';
 import { Step2CourseContent } from './components/course-content';
-import { CourseFormData, SectionData, courseApi } from '@/pages/CreateCourse/course-api';
+import { CourseFormData, SectionData, courseApi } from '@/pages/TutorPages/CreateCourse/course-api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -22,8 +23,8 @@ export default function CreateCourse() {
   const [currentStep, setCurrentStep] = useState(1);
   const [courseId, setCourseId] = useState<string>('');
   const [courseData, setCourseData] = useState<Partial<CourseFormData>>({});
+  const [objectives, setObjectives] = useState<ObjectiveItem[]>([]);
   const [sections, setSections] = useState<SectionData[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
@@ -38,14 +39,12 @@ export default function CreateCourse() {
   };
 
   const handleStep1Next = async (data: CourseFormData) => {
-    setIsSubmitting(true);
     setError(null);
     // If courseId exists, we are editing an existing course
     try {
       if (courseId) {
         setCourseData(data);
         setCurrentStep(2);
-        setIsSubmitting(false);
         return;
       }
 
@@ -53,16 +52,48 @@ export default function CreateCourse() {
       setCourseId(newCourseId);
       setCourseData(data);
       setCurrentStep(2);
-      setIsSubmitting(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create course');
-      setIsSubmitting(false);
     }
+  };
+
+  const handleStep1aNext = async (objectivesList: ObjectiveItem[]) => {
+    setError(null);
+    try {
+      // Save objectives to backend and collect response IDs
+      const updatedObjectives: ObjectiveItem[] = [];
+      
+      for (const objective of objectivesList) {
+        if (!objective.id) {
+          // Only add new objectives (those without id)
+          const response = await courseApi.addObjective(courseId, {
+            objectiveText: objective.objectiveText,
+            orderIndex: objective.orderIndex,
+          });
+          // Store the returned objectiveId from API
+          updatedObjectives.push({
+            ...objective,
+            id: response.objectiveId,
+          });
+        } else {
+          // Keep existing objectives with their IDs
+          updatedObjectives.push(objective);
+        }
+      }
+      
+      setObjectives(updatedObjectives);
+      setCurrentStep(3); // Move to Course Content
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save objectives');
+    }
+  };
+
+  const handleStep1aBack = () => {
+    setCurrentStep(1);
   };
 
   const handleStep2Save = async (sectionsData: SectionData[]) => {
     setSections(sectionsData);
-    setIsSubmitting(true);
     setError(null);
 
     try {
@@ -153,14 +184,12 @@ export default function CreateCourse() {
       const submitResult = await courseApi.submitCourse(courseId);
 
       if (submitResult.success && (submitResult.status.toLowerCase() === 'pending' || submitResult.status.toLowerCase() === 'draft')) {
-        setIsSubmitting(false);
         setShowSuccessModal(true);
       } else {
         throw new Error(`Submit failed: Invalid status ${submitResult.status}`);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save course content');
-      setIsSubmitting(false);
 
       toast({
         variant: "destructive",
@@ -191,7 +220,8 @@ export default function CreateCourse() {
 
         <div className="mb-8">
           <div className="flex items-center justify-center">
-            <div className="flex items-center w-full max-w-md">
+            <div className="flex items-center w-full max-w-2xl">
+              {/* Step 1 */}
               <div className="flex flex-col items-center flex-1">
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
@@ -202,7 +232,7 @@ export default function CreateCourse() {
                 >
                   {currentStep > 1 ? <CheckCircle2 className="w-6 h-6" /> : '1'}
                 </div>
-                <span className="mt-2 text-sm font-medium">Course Info</span>
+                <span className="mt-2 text-sm font-medium text-center">Information</span>
               </div>
 
               <div
@@ -211,17 +241,42 @@ export default function CreateCourse() {
                 }`}
               />
 
+              {/* Step 2 */}
               <div className="flex flex-col items-center flex-1">
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
                     currentStep === 2
                       ? 'bg-blue-500 text-white'
+                      : currentStep > 2
+                      ? 'bg-green-500 text-white'
                       : 'bg-gray-300 text-gray-600'
                   }`}
                 >
-                  2
+                  {currentStep > 2 ? <CheckCircle2 className="w-6 h-6" /> : '2'}
                 </div>
-                <span className="mt-2 text-sm font-medium">Course Content</span>
+                <span className="mt-2 text-sm font-medium text-center">Objectives</span>
+              </div>
+
+              <div
+                className={`h-1 flex-1 mx-4 ${
+                  currentStep > 2 ? 'bg-green-500' : 'bg-gray-300'
+                }`}
+              />
+
+              {/* Step 3 */}
+              <div className="flex flex-col items-center flex-1">
+                <div
+                  className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
+                    currentStep === 3
+                      ? 'bg-blue-500 text-white'
+                      : currentStep > 3
+                      ? 'bg-green-500 text-white'
+                      : 'bg-gray-300 text-gray-600'
+                  }`}
+                >
+                  3
+                </div>
+                <span className="mt-2 text-sm font-medium text-center">Content</span>
               </div>
             </div>
           </div>
@@ -235,9 +290,13 @@ export default function CreateCourse() {
 
         <Card>
           <CardHeader>
-            <CardTitle>
-              {currentStep === 1 ? 'Step 1: Basic Information' : 'Step 2: Course Structure'}
-            </CardTitle>
+            {/* <CardTitle>
+              {currentStep === 1
+                ? 'Step 1: Basic Information'
+                : currentStep === 2
+                ? 'Step 2: Learning Objectives'
+                : 'Step 3: Course Structure'}
+            </CardTitle> */}
           </CardHeader>
           <CardContent>
             {currentStep === 1 && (
@@ -248,10 +307,18 @@ export default function CreateCourse() {
             )}
 
             {currentStep === 2 && (
+              <CourseObjectives
+                objectives={objectives}
+                onNext={handleStep1aNext}
+                onBack={handleStep1aBack}
+              />
+            )}
+
+            {currentStep === 3 && (
               <Step2CourseContent
                 sections={sections}
                 onSave={handleStep2Save}
-                onBack={() => setCurrentStep(1)}
+                onBack={() => setCurrentStep(2)}
               />
             )}
           </CardContent>
