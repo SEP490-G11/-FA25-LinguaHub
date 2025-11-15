@@ -1,6 +1,7 @@
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface ScheduleConfigProps {
   defaultStartTime: string;
@@ -48,18 +49,21 @@ export const ScheduleConfig: React.FC<ScheduleConfigProps> = ({
         <Label htmlFor="slotDuration" className="text-xs font-medium">
           Thời gian slot mặc định
         </Label>
-        <div className="flex items-center gap-1.5">
-          <Input
-            id="slotDuration"
-            type="number"
-            min="15"
-            step="15"
-            value={slotDuration}
-            onChange={(e) => onSlotDurationChange(Number(e.target.value))}
-            className="h-8 text-xs"
-          />
-          <span className="text-xs text-gray-500 min-w-[40px]">phút</span>
-        </div>
+        <Select
+          value={slotDuration.toString()}
+          onValueChange={(value) => onSlotDurationChange(Number(value))}
+        >
+          <SelectTrigger className="h-8 text-xs">
+            <SelectValue placeholder="Chọn thời gian slot" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="30">30 phút</SelectItem>
+            <SelectItem value="45">45 phút</SelectItem>
+            <SelectItem value="60">60 phút</SelectItem>
+            <SelectItem value="90">90 phút</SelectItem>
+            <SelectItem value="120">120 phút</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="space-y-1.5">
