@@ -86,19 +86,19 @@ export function AppRoutes() {
             <Route path="/admin/tutor-approval" element={<TutorApproval />} />
             
             {/* Tutor Dashboard with Layout */}
-            <Route  element={<TutorDashboardLayout />}>
-                <Route path="dashboard" element={<TutorDashboard />} />
-                <Route path="courses" element={<CourseList />} />
-                {/* <Route path="courses/:courseId/content" element={<ManageCourseContent />} /> */}
-                <Route path="courses/:courseId/content" element={<EditCourse />} />
-                <Route path="create-courses" element={<CreateCourse />} />
-                <Route path="students" element={<TutorStudents />} />
-                <Route path="schedule" element={<TutorSchedule />} />
-                <Route path="analytics" element={<TutorAnalytics />} />
-                <Route path="messages" element={<TutorMessages />} />
-                <Route path="resources" element={<TutorResources />} />
-                <Route path="settings" element={<TutorSettings />} />
-            </Route>
+            <Route element={<TutorDashboardLayout />}>
+            <Route path="/dashboard" element={<TutorDashboard />} />
+            <Route path="/courses" element={<CourseList />} />
+            <Route path="/courses/:courseId/content" element={<EditCourse />} />
+            <Route path="/create-courses" element={<CreateCourse />} />
+            <Route path="/students" element={<TutorStudents />} />
+            <Route path="/schedule" element={<TutorSchedule />} />
+            <Route path="/analytics" element={<TutorAnalytics />} />
+            <Route path="/messages" element={<TutorMessages />} />
+            <Route path="/resources" element={<TutorResources />} />
+            <Route path="/settings" element={<TutorSettings />} />
+        </Route>
+
 
             {/* Not found */}
             <Route path="*" element={<NotFound />} />

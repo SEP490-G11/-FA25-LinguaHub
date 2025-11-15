@@ -8,23 +8,27 @@ import api from "@/config/axiosConfig";
 import type { Course } from "@/types/Course";
 
 const LanguageCourses = () => {
-    const { language } = useParams(); // lấy param từ URL /languages/english
+    const { language } = useParams();
 
     const [courses, setCourses] = useState<Course[]>([]);
     const [loading, setLoading] = useState(true);
 
     const [searchTerm, setSearchTerm] = useState("");
-    const [selectedCategory, setSelectedCategory] = useState("All");
-    const [categories, setCategories] = useState<string[]>([]);
 
+    // Filters
+    const [categories, setCategories] = useState<string[]>([]);
+    const [selectedCategory, setSelectedCategory] = useState("All");
+    const [selectedLevel, setSelectedLevel] = useState("All");
+    const [selectedRating, setSelectedRating] = useState(0); // ⭐ NEW
+
+    // Price + pagination
     const [currentPage, setCurrentPage] = useState(1);
     const [priceRange, setPriceRange] = useState<[number, number]>([0, 0]);
+
     const coursesPerPage = 8;
 
-    const languageInfo: Record<
-        string,
-        { name: string; flag: string; image: string }
-    > = {
+    /** Language Info */
+    const languageInfo: Record<string, { name: string; flag: string; image: string }> = {
         english: { name: "English", flag: "🇺🇸", image: "https://images.pexels.com/photos/267669/pexels-photo-267669.jpeg" },
         chinese: { name: "Chinese", flag: "🇨🇳", image: "https://images.pexels.com/photos/2412603/pexels-photo-2412603.jpeg" },
         spanish: { name: "Spanish", flag: "🇪🇸", image: "https://images.pexels.com/photos/1166209/pexels-photo-1166209.jpeg" },
@@ -37,7 +41,7 @@ const LanguageCourses = () => {
 
     const currentLang = languageInfo[language?.toLowerCase() ?? ""];
 
-    /**  Fetch courses từ API */
+    /** 1) Fetch Courses */
     useEffect(() => {
         const fetchCourses = async () => {
             try {
@@ -45,7 +49,7 @@ const LanguageCourses = () => {
                 const res = await api.get<{ result: Course[] }>("/courses/public/approved");
                 setCourses(res.data.result ?? []);
             } catch (err) {
-                console.error(" Failed to fetch courses:", err);
+                console.error("Failed to fetch courses:", err);
             } finally {
                 setLoading(false);
             }
@@ -54,17 +58,39 @@ const LanguageCourses = () => {
         fetchCourses();
     }, []);
 
-    /**  Set category & price range */
+    /** 2) Fetch Categories */
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const res = await api.get("/categories");
+                setCategories(res.data.map((c: any) => c.categoryName));
+            } catch (err) {
+                console.error("Failed to fetch categories:", err);
+            }
+        };
+
+        fetchCategories();
+    }, []);
+
+    /** 3) Set Price Range */
     useEffect(() => {
         if (courses.length > 0) {
-            setCategories([...new Set(courses.map((c) => c.categoryName))]);
-
-            const max = Math.max(...courses.map((c) => c.price));
-            setPriceRange([0, max]); // ✅ để slider kéo lên lại được
+            const maxPrice = Math.max(...courses.map((c) => c.price));
+            setPriceRange([0, maxPrice]);
         }
     }, [courses]);
 
-    /**  Filter theo Language + Search + Category + Price */
+    /** ⭐ RESET FILTERS */
+    const handleResetFilters = () => {
+        setSelectedCategory("All");
+        setSelectedLevel("All");
+        setSelectedRating(0);
+        const maxPrice = Math.max(...courses.map((c) => c.price), 0);
+        setPriceRange([0, maxPrice]);
+        setCurrentPage(1);
+    };
+
+    /** ⭐ FILTER LOGIC */
     const filteredCourses = courses.filter((course) => {
         const matchesLanguage = language
             ? course.language?.trim().toLowerCase().includes(language.toLowerCase())
@@ -77,20 +103,43 @@ const LanguageCourses = () => {
         const matchesCategory =
             selectedCategory === "All" || course.categoryName === selectedCategory;
 
+        const matchesLevel =
+            selectedLevel === "All" || course.level === selectedLevel;
+
+        const matchesRating =
+            selectedRating === 0 || course.avgRating >= selectedRating;
+
         const matchesPrice =
             course.price >= priceRange[0] && course.price <= priceRange[1];
 
-        return matchesLanguage && matchesSearch && matchesCategory && matchesPrice;
-    });
+        return (
+            matchesLanguage &&
+            matchesSearch &&
+            matchesCategory &&
+            matchesLevel &&
+            matchesRating &&
+            matchesPrice
+        );
+    })
+        /** ⭐ DEFAULT SORT: learnerCount → rating → price thấp */
+        .sort((a, b) => {
+            if (b.learnerCount !== a.learnerCount)
+                return b.learnerCount - a.learnerCount;
 
-    /**  Pagination */
+            if (b.avgRating !== a.avgRating)
+                return b.avgRating - a.avgRating;
+
+            return a.price - b.price;
+        });
+
+    /** Pagination */
     const totalPages = Math.ceil(filteredCourses.length / coursesPerPage);
     const paginatedCourses = filteredCourses.slice(
         (currentPage - 1) * coursesPerPage,
         currentPage * coursesPerPage
     );
 
-    /**  Không tìm thấy language */
+    /** Language not found */
     if (!currentLang) {
         return (
             <div className="min-h-screen flex items-center justify-center">
@@ -113,19 +162,29 @@ const LanguageCourses = () => {
             <FiltersSection
                 selectedCategory={selectedCategory}
                 categories={categories}
+                selectedLevel={selectedLevel}
+                selectedRating={selectedRating}
                 courseCount={filteredCourses.length}
                 maxPrice={Math.max(...courses.map((c) => c.price), 0)}
                 priceRange={priceRange}
-                onPriceRangeChange={(range: [number, number]) => {
+                onPriceRangeChange={(range) => {
                     setPriceRange(range);
                     setCurrentPage(1);
                 }}
-                onCategoryChange={(v) => {
-                    setSelectedCategory(v);
+                onCategoryChange={(value) => {
+                    setSelectedCategory(value);
                     setCurrentPage(1);
                 }}
+                onLevelChange={(value) => {
+                    setSelectedLevel(value);
+                    setCurrentPage(1);
+                }}
+                onRatingChange={(value) => {
+                    setSelectedRating(value);
+                    setCurrentPage(1);
+                }}
+                onResetFilters={handleResetFilters}
             />
-
 
             <CoursesGrid courses={paginatedCourses} loading={loading} />
 

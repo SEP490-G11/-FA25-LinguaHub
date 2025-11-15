@@ -21,7 +21,6 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
@@ -35,8 +34,8 @@ public class SecurityConfig {
     @Autowired
     private CustomJwtDecoder customJwtDecoder;
 
+    // TẤT CẢ ENDPOINT CÔNG KHAI (fixed full)
     private static final String[] PUBLIC_ENDPOINTS = {
-            // Swagger
             "/swagger-ui.html",
             "/swagger-ui/**",
             "/swagger-resources/**",
@@ -46,12 +45,16 @@ public class SecurityConfig {
             "/webjars/**",
             "/configuration/ui",
             "/configuration/security",
-            // Auth & other public
+
             "/auth/**",
             "/api/test/**",
+
+            //  PAYMENT PUBLIC ENDPOINTS
+            "/api/payments/create",
             "/api/payments/webhook",
-            "api/payments/create",
-            "tutor/courses/all"
+            "/api/payments/success",
+            "/api/payments/cancel",
+            "/tutor/courses/all"
     };
 
     // SecurityConfig.java
@@ -114,6 +117,7 @@ public class SecurityConfig {
         return http.build();
     }
 
+
     @Bean
     public JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
@@ -147,7 +151,9 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of("http://localhost:*", "http://127.0.0.1:*"));
+        configuration.setAllowedOriginPatterns(
+                List.of("http://localhost:*", "http://127.0.0.1:*", "https://*.ngrok-free.dev")
+        );
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);

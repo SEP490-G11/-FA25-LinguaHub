@@ -1,37 +1,40 @@
-import React from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { ROUTES } from '@/constants/routes.ts';
+import React from "react";
+import { useParams, Link, useLocation } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { ROUTES } from "@/constants/routes.ts";
+import api from "@/config/axiosConfig";
 
-import LessonHeader from './components/sections/lesson-header';
-import LessonContent from './components/sections/lesson-content';
-import LessonSidebar from './components/sections/lesson-sidebar';
+import LessonHeader from "./components/sections/lesson-header";
+import LessonContent from "./components/sections/lesson-content";
+import LessonSidebar from "./components/sections/lesson-sidebar";
 
-// ✅ Tự khai báo type Lesson
+// Type Lesson FE sử dụng
 interface Lesson {
-  id: string;
+  id: number;
   title: string;
   week: number;
   duration: string;
   description: string;
   objectives: string[];
   materials: {
-    id: string;
+    id: number;
     title: string;
     type: string;
     size: string;
+    url: string;
   }[];
   transcript: string;
   nextLesson?: {
-    id: string;
+    id: number;
     title: string;
     week: number;
-  };
+  } | null;
 }
 
 const LessonDetail = () => {
-  //  chỉ lấy đúng param `id` từ route /lesson/:id
-  const { id } = useParams();
+  const { id } = useParams(); // lessonId
+  const location = useLocation();
+  const courseId = location.state?.courseId; // lấy courseId từ navigate()
 
   const [lesson, setLesson] = React.useState<Lesson | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -39,52 +42,73 @@ const LessonDetail = () => {
 
   React.useEffect(() => {
     const fetchLesson = async () => {
-
-      //  param id phải tồn tại mới load mock lesson
       if (!id) return;
+      if (!courseId) {
+        setError("Missing courseId. Please go back from course page.");
+        return;
+      }
 
       try {
         setIsLoading(true);
 
-        //  Mock data giữ nguyên như bạn muốn
-        const mockLesson: Lesson = {
-          id,
-          title: 'Introduction to English Conversation',
-          week: 1,
-          duration: '15 minutes',
-          description:
-              'Learn the basics of English conversation including greetings, introductions, and common phrases.',
-          objectives: [
-            'Master basic greetings and introductions',
-            'Learn common conversation starters',
-            'Practice pronunciation of key phrases',
-            'Understand cultural context in conversations',
-          ],
-          materials: [
-            { id: '1', title: 'Conversation Practice Sheet', type: 'PDF', size: '2.5 MB' },
-            { id: '2', title: 'Audio Pronunciation Guide', type: 'MP3', size: '5.2 MB' },
-          ],
-          transcript:
-              'Hello and welcome to our English conversation course. In this lesson, we will cover the fundamentals of starting and maintaining conversations in English...',
-          nextLesson: {
-            id: '2',
-            title: 'Small Talk Mastery',
-            week: 2,
-          },
-        };
+        // gọi API lấy toàn bộ course detail
+        const res = await api.get(`/courses/detail/${courseId}`);
+        const course = res.data.result;
 
-        setLesson(mockLesson);
+        let foundLesson: any = null;
+        let nextLesson: any = null;
+
+        // duyệt các section để tìm bài học
+        for (const sec of course.section) {
+          const index = sec.lessons.findIndex((l: any) => l.lessonID == id);
+          if (index !== -1) {
+            foundLesson = sec.lessons[index];
+            nextLesson = sec.lessons[index + 1] || null;
+            break;
+          }
+        }
+
+        if (!foundLesson) {
+          setError("Lesson not found in this course.");
+          return;
+        }
+
+        // chuẩn hóa dữ liệu để FE dễ dùng
+        setLesson({
+          id: foundLesson.lessonID,
+          title: foundLesson.title,
+          week: foundLesson.orderIndex,
+          duration: `${foundLesson.duration} minutes`,
+          description: foundLesson.content,
+          objectives: course.objectives || [], // course objectives
+          materials:
+              foundLesson.resources?.map((r: any) => ({
+                id: r.resourceID,
+                title: r.resourceTitle,
+                type: r.resourceType,
+                size: "Unknown",
+                url: r.resourceURL,
+              })) || [],
+          transcript: foundLesson.content,
+          nextLesson: nextLesson
+              ? {
+                id: nextLesson.lessonID,
+                title: nextLesson.title,
+                week: nextLesson.orderIndex,
+              }
+              : null,
+        });
       } catch (err) {
-        setError('Failed to load lesson');
+        setError("Failed to load lesson.");
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchLesson();
-  }, [id]);
+  }, [id, courseId]);
 
-  //  Loading UI
+  // Loading UI
   if (isLoading) {
     return (
         <div className="min-h-screen bg-background flex items-center justify-center">
@@ -96,12 +120,14 @@ const LessonDetail = () => {
     );
   }
 
-  //  Khi không tìm thấy bài học
+  // Khi lỗi hoặc không tìm thấy lesson
   if (error || !lesson) {
     return (
         <div className="min-h-screen bg-background flex items-center justify-center">
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-foreground mb-4">Không tìm thấy bài học</h2>
+            <h2 className="text-2xl font-bold text-foreground mb-4">
+              Không tìm thấy bài học
+            </h2>
             <Button asChild>
               <Link to={ROUTES.HOME}>Về trang chủ</Link>
             </Button>
@@ -112,8 +138,8 @@ const LessonDetail = () => {
 
   return (
       <div className="min-h-screen bg-background">
-        {/*  Không còn truyền courseId */}
-        <LessonHeader lesson={lesson} />
+        {/* truyền thêm courseId vào header */}
+        <LessonHeader lesson={lesson} courseId={courseId} />
 
         <section className="py-8">
           <div className="max-w-7xl mx-auto px-8 lg:px-16">

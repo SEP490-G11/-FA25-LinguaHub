@@ -1,10 +1,14 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Clock, Users, Star } from "lucide-react";
+import { Clock, Users, Star, Heart } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { Course } from "@/types/Course";
+import api from "@/config/axiosConfig";
+import { useToast } from "@/components/ui/use-toast";
+import { ROUTES } from "@/constants/routes";
+import { useState, useEffect } from "react";
 
 interface CoursesGridProps {
     courses: Course[];
@@ -12,31 +16,91 @@ interface CoursesGridProps {
 }
 
 const CoursesGrid = ({ courses, loading }: CoursesGridProps) => {
+    const navigate = useNavigate();
+    const { toast } = useToast();
+
+    /** ⭐ Lưu wishlist state CHỈ 1 lần – không nằm trong .map() */
+    const [wishlistMap, setWishlistMap] = useState<Record<number, boolean>>({});
+
+    useEffect(() => {
+        setWishlistMap(
+            Object.fromEntries(
+                courses.map((c) => [c.id, c.isWishListed ?? false])
+            )
+        );
+    }, [courses]);
+
+    /** ⭐ Toggle wishlist ở đây */
+    const handleToggleWishlist = async (courseId: number) => {
+        const token =
+            localStorage.getItem("access_token") ||
+            sessionStorage.getItem("access_token");
+
+        if (!token) {
+            const redirect = encodeURIComponent(window.location.pathname);
+            navigate(`${ROUTES.SIGN_IN}?redirect=${redirect}`);
+
+            toast({
+                title: "Login Required",
+                description: "Please sign in.",
+                variant: "destructive",
+            });
+
+            return;
+        }
+
+        const current = wishlistMap[courseId];
+
+        try {
+            if (current) {
+                await api.delete(`/wishlist/${courseId}`);
+            } else {
+                await api.post(`/wishlist/${courseId}`);
+            }
+
+            setWishlistMap((prev) => ({
+                ...prev,
+                [courseId]: !current,
+            }));
+        } catch {
+            toast({
+                title: "Error",
+                description: "Failed to update wishlist.",
+                variant: "destructive",
+            });
+        }
+    };
+
+    /** Animation */
     const fadeInUp = {
-        initial: { opacity: 0, y: 60 },
+        initial: { opacity: 0, y: 30 },
         animate: { opacity: 1, y: 0 },
-        transition: { duration: 0.6 },
+        transition: { duration: 0.45 },
     };
+
     const staggerContainer = {
-        animate: {
-            transition: { staggerChildren: 0.1 },
-        },
+        animate: { transition: { staggerChildren: 0.08 } },
     };
 
-    if (loading) {
-        return <p className="text-center py-10 text-lg font-medium">Loading courses...</p>;
-    }
+    if (loading)
+        return (
+            <div className="py-20 text-center text-lg font-medium">
+                Loading courses...
+            </div>
+        );
 
-    if (courses.length === 0) {
+    if (courses.length === 0)
         return (
             <section className="py-16 text-center">
                 <h2 className="text-xl font-semibold">No courses found</h2>
-                <p className="text-muted-foreground mt-2">Try adjusting search or filters.</p>
+                <p className="text-muted-foreground mt-2">
+                    Try adjusting search or filters.
+                </p>
             </section>
         );
-    }
 
-    const formatDate = (date: string) => new Date(date).toLocaleDateString("vi-VN");
+    const formatDate = (date: string) =>
+        new Date(date).toLocaleDateString("vi-VN");
 
     return (
         <section className="py-16">
@@ -46,78 +110,127 @@ const CoursesGrid = ({ courses, loading }: CoursesGridProps) => {
                 animate="animate"
                 variants={staggerContainer}
             >
-                {courses.map((course) => (
-                    <motion.div key={course.id} variants={fadeInUp}>
-                        <Card className="overflow-hidden hover:shadow-xl transition-all duration-300 group cursor-pointer flex flex-col h-full">
-                            <Link to={`/course/${course.id}`} className="flex flex-col h-full">
-                                <div className="relative overflow-hidden">
-                                    <img
-                                        src={course.thumbnailURL}
-                                        alt={course.title}
-                                        className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                                    />
-                                    <div className="absolute top-4 left-4">
-                                        <Badge className="bg-primary text-primary-foreground">
-                                            {course.categoryName}
-                                        </Badge>
-                                    </div>
-                                </div>
+                {courses.map((course) => {
+                    const isWishlisted = wishlistMap[course.id] ?? false;
 
-                                <CardContent className="p-6 flex flex-col flex-grow">
-                                    {/* 🔹 Title & Tutor */}
-                                    <div className="min-h-[70px] flex flex-col justify-between mb-3">
-                                        <h3 className="font-bold text-lg group-hover:text-primary transition-colors line-clamp-2">
-                                            {course.title}
-                                        </h3>
-                                        <p className="text-muted-foreground text-sm">By {course.tutorName}</p>
-                                    </div>
+                    return (
+                        <motion.div key={course.id} variants={fadeInUp}>
+                            {/* Toàn card là link */}
+                            <Link to={`/course/${course.id}`} className="block h-full">
+                                <Card className="overflow-hidden shadow-sm transition-all flex flex-col h-full rounded-xl border bg-white hover:shadow-lg">
 
-                                    {/* Rating + Learners */}
-                                    <div
-                                        className="flex items-center justify-between text-sm text-muted-foreground mb-2">
-                                        <div className="flex items-center gap-1">
-                                            <Users className="w-4 h-4"/>
-                                            <span>{course.learnerCount} learners</span>
-                                        </div>
-                                        <div className="flex items-center gap-1">
-                                            <Star className="w-4 h-4 text-yellow-500 fill-yellow-500"/>
-                                            <span className="font-medium">
-                                                {course.avgRating?.toFixed(1) || "0.0"}
-                                            </span>
-                                            <span className="text-xs text-muted-foreground ml-1">
-                                                ({course.totalRatings})
-                                            </span>
-                                        </div>
-                                    </div>
-                                    {/* 🔹 Duration */}
-                                    <div className="flex items-center gap-2 text-muted-foreground text-sm mb-4">
-                                        <Clock className="w-4 h-4"/>
-                                        <span>{course.duration} hours</span>
-                                    </div>
+                                    {/* Thumbnail */}
+                                    <div className="relative">
+                                        <img
+                                            src={course.thumbnailURL}
+                                            alt={course.title}
+                                            className="w-full h-48 object-cover"
+                                        />
 
-                                    {/* 🔹 Price + Created date + Join */}
-                                    <div className="flex items-center justify-between mt-auto pt-4 border-t">
-                                        <div className="flex flex-col">
-                                            <span className="text-xl font-bold text-primary">
-                                                {course.price.toLocaleString()}₫
-                                            </span>
-                                            <span className="text-xs text-muted-foreground">
-                                                  Created: {formatDate(course.createdAt)}
-                                             </span>
+                                        {/* Category + level */}
+                                        <div className="absolute top-3 left-3 flex gap-2">
+                                            <Badge className="bg-primary text-primary-foreground">
+                                                {course.categoryName}
+                                            </Badge>
+
+                                            <Badge className="bg-white/80 backdrop-blur text-black border">
+                                                {course.level}
+                                            </Badge>
                                         </div>
 
-                                        <Button
-                                            asChild
-                                            className="flex-shrink-0 whitespace-nowrap min-w-[90px]"
+                                        {/*  Wishlist button */}
+                                        <button
+                                            className="absolute top-3 right-3"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                handleToggleWishlist(course.id);
+                                            }}
                                         >
-                                            <Link to={`/course/${course.id}`}>Join</Link>
-                                        </Button>
+                                            <Heart
+                                                className={`w-6 h-6 transition ${
+                                                    isWishlisted
+                                                        ? "fill-red-500 text-red-500"
+                                                        : "text-white hover:text-red-500"
+                                                }`}
+                                            />
+                                        </button>
                                     </div>
-                                </CardContent>
+
+                                    {/* Content */}
+                                    <CardContent className="p-5 flex flex-col flex-grow">
+
+                                        {/* Title */}
+                                        <div className="min-h-[60px] mb-2">
+                                            <h3 className="font-semibold text-lg leading-tight line-clamp-2">
+                                                {course.title}
+                                            </h3>
+                                            <p className="text-sm text-muted-foreground">
+                                                By {course.tutorName}
+                                            </p>
+                                        </div>
+
+                                        {/* Short desc */}
+                                        <p className="text-sm text-muted-foreground line-clamp-2 min-h-[34px] mb-2">
+                                            {course.shortDescription || ""}
+                                        </p>
+
+                                        {/* Rating + Learners */}
+                                        <div className="flex items-center justify-between text-sm mb-2 text-muted-foreground">
+                                            <div className="flex items-center gap-1">
+                                                <Users className="w-4 h-4" />
+                                                <span>{course.learnerCount}</span>
+                                            </div>
+
+                                            <div className="flex items-center gap-1">
+                                                <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                                                <span>{course.avgRating?.toFixed(1)}</span>
+                                                <span className="text-xs opacity-70">
+                                                    ({course.totalRatings})
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        {/* Duration + language */}
+                                        <div className="flex items-center justify-between text-sm text-muted-foreground mb-3">
+                                            <div className="flex items-center gap-2">
+                                                <Clock className="w-4 h-4" />
+                                                <span>{course.duration} hours</span>
+                                            </div>
+                                            <span className="text-xs bg-gray-100 px-2 py-1 rounded">
+                                                {course.language}
+                                            </span>
+                                        </div>
+
+                                        {/* Price + Join */}
+                                        <div className="mt-auto pt-3 border-t flex items-center justify-between">
+                                            <div>
+                                                <div className="text-primary font-bold text-xl">
+                                                    {course.price.toLocaleString()}₫
+                                                </div>
+                                                <span className="text-xs text-muted-foreground">
+                                                    Created: {formatDate(course.createdAt)}
+                                                </span>
+                                            </div>
+
+                                            <Button
+                                                className="min-w-[100px]"
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    e.stopPropagation();
+                                                    navigate(`/course/${course.id}`);
+                                                }}
+                                            >
+                                                {course.isPurchased ? "Continue" : "Join"}
+                                            </Button>
+                                        </div>
+
+                                    </CardContent>
+                                </Card>
                             </Link>
-                        </Card>
-                    </motion.div>
-                ))}
+                        </motion.div>
+                    );
+                })}
             </motion.div>
         </section>
     );
