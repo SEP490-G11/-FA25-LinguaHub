@@ -26,8 +26,9 @@ public class TutorPackage {
     @Column(nullable = true, columnDefinition = "TEXT")
     String description;
 
+    @Builder.Default
     @Column(nullable = false)
-    BigDecimal price;
+    BigDecimal price = BigDecimal.ZERO;
 
     @Column(nullable = false)
     Integer maxSlots; // số slot mà gói này cung cấp
