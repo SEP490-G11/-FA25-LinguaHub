@@ -6,7 +6,6 @@ import edu.lms.security.UserPrincipal;
 import edu.lms.service.TutorBookingPlanService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -18,10 +17,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDate;
 
 @RestController
 @RequiredArgsConstructor
@@ -57,12 +54,8 @@ public class TutorBookingPlanController {
     }
 
     @GetMapping("/booking-plan/tutor/{tutorId}")
-    public ResponseEntity<BookingPlanListResponse> getBookingPlans(
-            @PathVariable Long tutorId,
-            @RequestParam(required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
-    ) {
-        BookingPlanListResponse response = tutorBookingPlanService.getBookingPlansByTutor(tutorId, date);
+    public ResponseEntity<BookingPlanListResponse> getBookingPlans(@PathVariable Long tutorId) {
+        BookingPlanListResponse response = tutorBookingPlanService.getBookingPlansByTutor(tutorId);
         return ResponseEntity.ok(response);
     }
 
