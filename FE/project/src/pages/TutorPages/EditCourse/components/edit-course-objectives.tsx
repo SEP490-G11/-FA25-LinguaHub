@@ -141,7 +141,7 @@ export default function EditCourseObjectives({
           Objectives ({objectivesList.length})
         </h3>
         {objectivesList.length === 0 ? (
-          <div className="p-6 text-center border-dashed border-gray-300 rounded-lg bg-gray-50">
+          <div className="p-6 text-center border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
             <p className="text-gray-500">No objectives added yet</p>
             <p className="text-sm text-gray-400">Add your first objective above</p>
           </div>
