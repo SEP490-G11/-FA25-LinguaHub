@@ -74,7 +74,8 @@ public class TutorCourseController {
     }
 
     // Update (tutor tự sửa, chỉ khi chưa có enrollment)
-    @Operation(summary = "Tutor cập nhật course của chính mình (chỉ khi chưa có learner enroll)")
+    @Operation(summary = "Tutor cập nhật course của chính mình (chỉ khi chưa có learner enroll). " +
+            "Nếu đã có learner → dùng API draft để update.")
     @PutMapping("/{courseID}")
     public ApiRespond<TutorCourseResponse> updateMyCourse(
             @AuthenticationPrincipal(expression = "claims['sub']") String email,
@@ -86,8 +87,9 @@ public class TutorCourseController {
                 .build();
     }
 
-    // Delete (tutor tự xoá, chỉ khi Draft) – xoá Resource→Lesson→Section→Course
-    @Operation(summary = "Tutor xóa course của chính mình (chỉ khi status = Draft). Sẽ xóa LessonResource → Lesson → Section → Course")
+    // Delete (tutor tự xoá, chỉ khi Draft/Rejected)
+    @Operation(summary = "Tutor xóa course của chính mình (chỉ khi status = Draft hoặc Rejected). " +
+            "Sẽ xóa LessonResource → Lesson → Section → Course")
     @DeleteMapping("/{courseID}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteMyCourse(
@@ -123,7 +125,7 @@ public class TutorCourseController {
                 .build();
     }
 
-    @Operation(summary = "Tutor gửi khóa học sang trạng thái Pending (submit for review)")
+    @Operation(summary = "Tutor gửi khóa học sang trạng thái Pending (submit for review lần đầu)")
     @PutMapping("/{courseID}/submit")
     public ApiRespond<TutorCourseResponse> submitForReview(
             @AuthenticationPrincipal(expression = "claims['sub']") String email,
@@ -135,4 +137,51 @@ public class TutorCourseController {
                 .build();
     }
 
+    // ====================== NEW: FLOW UPDATE QUA DRAFT ======================
+
+    @Operation(summary = "Tutor bắt đầu/chỉnh sửa bản nháp update cho khóa học (dùng cho course đã Approved)")
+    @PostMapping("/{courseID}/draft")
+    public ApiRespond<TutorCourseDetailResponse> startEditDraft(
+            @AuthenticationPrincipal(expression = "claims['sub']") String email,
+            @PathVariable Long courseID
+    ) {
+        return ApiRespond.<TutorCourseDetailResponse>builder()
+                .result(tutorCourseService.startEditCourseDraft(email, courseID))
+                .build();
+    }
+
+    @Operation(summary = "Tutor xem chi tiết bản nháp của khóa học (Section/Lesson/Resource Draft)")
+    @GetMapping("/drafts/{draftID}")
+    public ApiRespond<TutorCourseDetailResponse> getDraftDetail(
+            @AuthenticationPrincipal(expression = "claims['sub']") String email,
+            @PathVariable Long draftID
+    ) {
+        return ApiRespond.<TutorCourseDetailResponse>builder()
+                .result(tutorCourseService.getMyCourseDraftDetail(email, draftID))
+                .build();
+    }
+
+    @Operation(summary = "Tutor cập nhật thông tin metadata của bản nháp (title, price, language, ...)")
+    @PutMapping("/drafts/{draftID}")
+    public ApiRespond<TutorCourseDetailResponse> updateDraftInfo(
+            @AuthenticationPrincipal(expression = "claims['sub']") String email,
+            @PathVariable Long draftID,
+            @RequestBody @Valid TutorCourseRequest request
+    ) {
+        return ApiRespond.<TutorCourseDetailResponse>builder()
+                .result(tutorCourseService.updateCourseDraftInfo(email, draftID, request))
+                .build();
+    }
+
+    @Operation(summary = "Tutor submit bản nháp update cho Admin duyệt (PENDING_REVIEW)")
+    @PutMapping("/drafts/{draftID}/submit")
+    public ApiRespond<TutorCourseDetailResponse> submitDraftForReview(
+            @AuthenticationPrincipal(expression = "claims['sub']") String email,
+            @PathVariable Long draftID
+    ) {
+        return ApiRespond.<TutorCourseDetailResponse>builder()
+                .result(tutorCourseService.submitCourseDraftForReview(email, draftID))
+                .message("Course draft submitted for review")
+                .build();
+    }
 }

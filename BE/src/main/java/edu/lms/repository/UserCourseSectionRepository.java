@@ -9,5 +9,5 @@ import java.util.Optional;
 public interface UserCourseSectionRepository extends JpaRepository<UserCourseSection, Long> {
     Optional<UserCourseSection> findByUser_UserIDAndSection_SectionID(Long userId, Long sectionId);
     List<UserCourseSection> findByUser_UserIDAndSection_Course_CourseID(Long userId, Long courseId);
-
+    void deleteBySection_SectionIDIn(List<Long> sectionIds);
 }
