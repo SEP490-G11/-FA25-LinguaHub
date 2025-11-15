@@ -245,3 +245,119 @@ export const submitCourseForApproval = async (courseId: number): Promise<CourseD
     );
   }
 };
+
+/**
+ * API 10: Get course objectives
+ * GET /courses/{courseID}/objectives
+ */
+export const getObjectives = async (courseId: number): Promise<any[]> => {
+  try {
+    const response = await axiosInstance.get<ApiResponse<any[]>>(
+      `/courses/${courseId}/objectives`
+    );
+
+    if (response.data.code !== 0) {
+      throw new Error(response.data.message || 'Failed to fetch objectives');
+    }
+
+    return response.data.result || [];
+  } catch (error: any) {
+    console.error('Error fetching objectives:', error);
+    throw new Error(
+      error.response?.data?.message ||
+      error.message ||
+      'Failed to fetch objectives'
+    );
+  }
+};
+
+/**
+ * API 11: Create new objective
+ * POST /courses/{courseID}/objectives
+ */
+export const createObjective = async (
+  courseId: number,
+  data: { objectiveText: string; orderIndex: number }
+): Promise<any> => {
+  try {
+    const response = await axiosInstance.post<ApiResponse<any>>(
+      `/courses/${courseId}/objectives`,
+      data
+    );
+
+    if (response.data.code !== 0) {
+      throw new Error(response.data.message || 'Failed to create objective');
+    }
+
+    return response.data.result;
+  } catch (error: any) {
+    console.error('Error creating objective:', error);
+    throw new Error(
+      error.response?.data?.message ||
+      error.message ||
+      'Failed to create objective'
+    );
+  }
+};
+
+/**
+ * API 12: Update objective
+ * PUT /course-objectives/{objectiveID}
+ */
+export const updateObjective = async (
+  objectiveId: number,
+  data: { objectiveText: string; orderIndex: number }
+): Promise<any> => {
+  try {
+    // Validate objectiveId is a valid number
+    if (!objectiveId || typeof objectiveId !== 'number' || objectiveId <= 0) {
+      throw new Error(`Invalid objective ID: ${objectiveId}`);
+    }
+
+    const response = await axiosInstance.put<ApiResponse<any>>(
+      `/course-objectives/${objectiveId}`,
+      data
+    );
+
+    if (response.data.code !== 0) {
+      throw new Error(response.data.message || 'Failed to update objective');
+    }
+
+    return response.data.result;
+  } catch (error: any) {
+    console.error('Error updating objective:', error);
+    throw new Error(
+      error.response?.data?.message ||
+      error.message ||
+      'Failed to update objective'
+    );
+  }
+};
+
+/**
+ * API 13: Delete objective
+ * DELETE /course-objectives/{objectiveID}
+ */
+export const deleteObjective = async (objectiveId: number): Promise<void> => {
+  try {
+    // Validate objectiveId is a valid number
+    if (!objectiveId || typeof objectiveId !== 'number' || objectiveId <= 0) {
+      throw new Error(`Invalid objective ID: ${objectiveId}`);
+    }
+
+    const response = await axiosInstance.delete<ApiResponse<{}>>(
+      `/course-objectives/${objectiveId}`
+    );
+
+    if (response.data.code !== 0) {
+      throw new Error(response.data.message || 'Failed to delete objective');
+    }
+  } catch (error: any) {
+    console.error('Error deleting objective:', error);
+    throw new Error(
+      error.response?.data?.message ||
+      error.message ||
+      'Failed to delete objective'
+    );
+  }
+};

@@ -27,10 +27,15 @@ import {
   deleteLesson,
   deleteResource,
   submitCourseForApproval,
+  getObjectives,
+  createObjective,
+  updateObjective,
+  deleteObjective,
 } from './edit-course-api';
 import courseApi from '@/pages/TutorPages/CreateCourse/course-api';
 import { CourseDetail, Section, Lesson, Resource } from './types';
 import { EditCourseInfo, EditCourseStructure } from './components';
+import EditCourseObjectives, { ObjectiveEditItem } from './components/edit-course-objectives';
 
 const EditCourse = () => {
   const { courseId } = useParams<{ courseId: string }>();
@@ -39,6 +44,7 @@ const EditCourse = () => {
 
   // ========== MAIN STATES ==========
   const [course, setCourse] = useState<CourseDetail | null>(null);
+  const [objectives, setObjectives] = useState<ObjectiveEditItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
@@ -79,6 +85,27 @@ const EditCourse = () => {
         // Normalize all nested arrays
         const normalizedCourse = normalizeCourseData(courseData);
         setCourse(normalizedCourse);
+
+        // Fetch objectives
+        try {
+          const objectivesData = await getObjectives(parseInt(courseId));
+          console.log('=== FETCHED OBJECTIVES ===', objectivesData);
+          const formattedObjectives = objectivesData.map((obj: any) => {
+            const objectiveId = obj.objectiveID || obj.id;
+            console.log('Mapping objective:', obj, '=> ID:', objectiveId);
+            return {
+              id: objectiveId,
+              objectiveText: obj.objectiveText,
+              orderIndex: obj.orderIndex,
+              isNew: false,
+            };
+          });
+          console.log('=== FORMATTED OBJECTIVES ===', formattedObjectives);
+          setObjectives(formattedObjectives);
+        } catch (objErr) {
+          console.error('Error fetching objectives:', objErr);
+          setObjectives([]);
+        }
       } catch (err: any) {
         console.error('=== ERROR FETCHING COURSE ===', err);
         setError(
@@ -104,7 +131,10 @@ const EditCourse = () => {
       // Update course info
       await updateCourse(parseInt(courseId), {
         title: courseData.title || course.title,
+        shortDescription: courseData.shortDescription || course.shortDescription,
         description: courseData.description || course.description,
+        requirement: courseData.requirement || course.requirement,
+        level: courseData.level || course.level,
         duration: courseData.duration || course.duration,
         price: courseData.price || course.price,
         language: courseData.language || course.language,
@@ -420,6 +450,84 @@ const EditCourse = () => {
     }
   };
 
+  // ========== STEP 1.5: MANAGE OBJECTIVES ==========
+  const handleStep1aSaveObjectives = async (
+    objectivesList: ObjectiveEditItem[]
+  ) => {
+    if (!courseId) return;
+
+    setIsSaving(true);
+    try {
+      console.log('=== HANDLING OBJECTIVES SAVE ===');
+      console.log('Current objectives in state:', objectives);
+      console.log('Updated objectives list:', objectivesList);
+
+      // Handle updates to existing objectives
+      for (const objective of objectivesList) {
+        console.log('Processing objective:', objective);
+        if (objective.isNew || objective.id < 0) {
+          // This is a new objective, create it via API
+          console.log('Creating new objective:', objective);
+          const response = await createObjective(parseInt(courseId), {
+            objectiveText: objective.objectiveText,
+            orderIndex: objective.orderIndex,
+          });
+          // Update the objective with the returned ID
+          objective.id = response.objectiveID || response.id;
+          objective.isNew = false;
+        } else {
+          // Update existing objective
+          console.log('Updating objective:', objective.id);
+          await updateObjective(objective.id, {
+            objectiveText: objective.objectiveText,
+            orderIndex: objective.orderIndex,
+          });
+        }
+      }
+
+      // Handle deleted objectives (those in the old list but not in new list)
+      const oldObjectiveIds = new Set(
+        objectives
+          .map(o => o.id)
+          .filter((id) => id > 0)
+      );
+      const newObjectiveIds = new Set(objectivesList.map(o => o.id).filter(id => id > 0));
+      
+      console.log('Old objective IDs:', Array.from(oldObjectiveIds));
+      console.log('New objective IDs:', Array.from(newObjectiveIds));
+      
+      for (const oldId of oldObjectiveIds) {
+        if (!newObjectiveIds.has(oldId)) {
+          // Validate the ID is a valid number before calling delete
+          console.log('Deleting objective:', oldId, 'Type:', typeof oldId);
+          if (oldId && typeof oldId === 'number') {
+            await deleteObjective(oldId);
+          }
+        }
+      }
+
+      setObjectives(objectivesList);
+
+      toast({
+        title: 'Success',
+        description: 'Objectives have been updated',
+      });
+
+      setCurrentStep(3);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Failed to save objectives';
+      setError(message);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: message,
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   // ========== SUBMIT COURSE ==========
   const handleSubmitCourse = async () => {
     if (!courseId) return;
@@ -683,7 +791,8 @@ const EditCourse = () => {
         {/* Step Indicator */}
         <div className="mb-8">
           <div className="flex items-center justify-center">
-            <div className="flex items-center w-full max-w-md">
+            <div className="flex items-center w-full max-w-2xl">
+              {/* Step 1: Course Information */}
               <div className="flex flex-col items-center flex-1">
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
@@ -699,28 +808,59 @@ const EditCourse = () => {
                   )}
                 </div>
                 <span className="mt-2 text-sm font-medium">
-                  Course Information
+                  Information
                 </span>
               </div>
 
+              {/* Line 1 */}
               <div
                 className={`h-1 flex-1 mx-4 ${
                   currentStep > 1 ? 'bg-green-500' : 'bg-gray-300'
                 }`}
               />
 
+              {/* Step 2: Learning Objectives */}
               <div className="flex flex-col items-center flex-1">
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
                     currentStep === 2
                       ? 'bg-blue-500 text-white'
+                      : currentStep > 2
+                        ? 'bg-green-500 text-white'
+                        : 'bg-gray-300 text-gray-600'
+                  }`}
+                >
+                  {currentStep > 2 ? (
+                    <CheckCircle2 className="w-6 h-6" />
+                  ) : (
+                    '2'
+                  )}
+                </div>
+                <span className="mt-2 text-sm font-medium">
+                  Objectives
+                </span>
+              </div>
+
+              {/* Line 2 */}
+              <div
+                className={`h-1 flex-1 mx-4 ${
+                  currentStep > 2 ? 'bg-green-500' : 'bg-gray-300'
+                }`}
+              />
+
+              {/* Step 3: Course Content */}
+              <div className="flex flex-col items-center flex-1">
+                <div
+                  className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
+                    currentStep === 3
+                      ? 'bg-blue-500 text-white'
                       : 'bg-gray-300 text-gray-600'
                   }`}
                 >
-                  2
+                  3
                 </div>
                 <span className="mt-2 text-sm font-medium">
-                  Course Content
+                  Content
                 </span>
               </div>
             </div>
@@ -737,11 +877,13 @@ const EditCourse = () => {
         {/* Content Card */}
         <Card>
           <CardHeader>
-            <CardTitle>
+            {/* <CardTitle>
               {currentStep === 1
                 ? 'Step 1: Course Information'
-                : 'Step 2: Manage Content'}
-            </CardTitle>
+                : currentStep === 2
+                  ? 'Step 2: Learning Objectives'
+                  : 'Step 3: Manage Content'}
+            </CardTitle> */}
           </CardHeader>
           <CardContent>
             {currentStep === 1 && (
@@ -753,6 +895,37 @@ const EditCourse = () => {
             )}
 
             {currentStep === 2 && (
+              <div className="space-y-4">
+                <EditCourseObjectives
+                  objectives={objectives}
+                  isLoading={isSaving}
+                />
+                <div className="flex gap-3 justify-between pt-6 ">
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentStep(1)}
+                  >
+                    Back
+                  </Button>
+                  <Button
+                    onClick={() => handleStep1aSaveObjectives(objectives)}
+                    disabled={isSaving}
+                    className="gap-2"
+                  >
+                    {isSaving ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      'Continue'
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {currentStep === 3 && (
               <EditCourseStructure
                 course={course}
                 onUpdateSection={handleStep2UpdateSection}
@@ -764,7 +937,7 @@ const EditCourse = () => {
                 onCreateSection={handleCreateSection}
                 onCreateLesson={handleCreateLesson}
                 onCreateResource={handleCreateResource}
-                onBack={() => setCurrentStep(1)}
+                onBack={() => setCurrentStep(2)}
                 onSubmit={handleSubmitCourse}
                 isSubmitting={isSaving}
               />

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
-import TutorSidebar from '@/components/layout/TutorSidebar';
+import TutorSidebar from '@/components/layout/tutor/TutorSidebar';
 import { useSidebar } from '@/contexts/SidebarContext';
 
 const TutorDashboardLayout: React.FC = () => {
