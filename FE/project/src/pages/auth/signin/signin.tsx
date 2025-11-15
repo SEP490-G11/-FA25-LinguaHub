@@ -57,7 +57,24 @@ const SignIn = () => {
         sessionStorage.setItem("access_token", token);
       }
 
-      navigate(ROUTES.HOME, { replace: true });
+      // Get user info to determine role-based redirect
+      try {
+        const userInfoResponse = await api.get("/users/myInfo");
+        const userRole = userInfoResponse.data.result.role;
+
+        // Redirect based on role
+        if (userRole === "Admin") {
+          navigate("/admin/dashboard", { replace: true });
+        } else if (userRole === "Tutor") {
+          navigate("/dashboard", { replace: true });
+        } else {
+          navigate(ROUTES.HOME, { replace: true });
+        }
+      } catch (error) {
+        // If getting user info fails, default to home
+        console.error("Error fetching user info:", error);
+        navigate(ROUTES.HOME, { replace: true });
+      }
 
     } catch (err) {
       console.error(" Login error:", err);

@@ -34,6 +34,11 @@ import TutorApproval from '@/pages/Admin/TutorApproval';
 import EditCourse from '@/pages/TutorPages/EditCourse';
 import CourseList from '@/pages/TutorPages/CourseList';
 import TutorDashboardLayout from '@/components/layout/TutorDashboardLayout';
+import AdminLayout from '@/components/layout/admin/AdminLayout';
+import AdminDashboard from '@/pages/Admin/Dashboard';
+import AdminLearners from '@/pages/Admin/Learners';
+import AdminCourses from '@/pages/Admin/Courses';
+import AdminPayments from '@/pages/Admin/Payments';
 import TutorDashboard from '@/pages/TutorPages/Dashboard';
 import TutorStudents from '@/pages/TutorPages/Students';
 import TutorSchedule from '@/pages/TutorPages/Schedule';
@@ -81,9 +86,16 @@ export function AppRoutes() {
             <Route path={ROUTES.MY_ENROLLMENTS} element={<MyEnrollments />} />
             <Route path={ROUTES.APPLY_TUTOR} element={<ApplyTutor />} />
 
-            {/* Admin & Tutor */}
-            <Route path="/admin/course-approval" element={<CourseApprovalPage />} />
-            <Route path="/admin/tutor-approval" element={<TutorApproval />} />
+            {/* Admin Dashboard with Layout */}
+            <Route path="/admin" element={<AdminLayout />}>
+                <Route index element={<AdminDashboard />} />
+                <Route path="dashboard" element={<AdminDashboard />} />
+                <Route path="learners" element={<AdminLearners />} />
+                <Route path="courses" element={<AdminCourses />} />
+                <Route path="course-approval" element={<CourseApprovalPage />} />
+                <Route path="tutor-approval" element={<TutorApproval />} />
+                <Route path="payments" element={<AdminPayments />} />
+            </Route>
             
             {/* Tutor Dashboard with Layout */}
             <Route  element={<TutorDashboardLayout />}>
