@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
-import { X, Plus } from 'lucide-react';
+import { X, Plus, Trash2 } from 'lucide-react';
 
 export interface ObjectiveItem {
   id?: string;
@@ -170,7 +170,7 @@ export function CourseObjectives({
                   className="ml-2 p-2 text-red-500 hover:bg-red-50 rounded transition-colors"
                   title="Remove objective"
                 >
-                  <X className="w-5 h-5" />
+                  <Trash2 className="w-5 h-5" />
                 </button>
               </Card>
             ))}

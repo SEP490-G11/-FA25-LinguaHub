@@ -89,7 +89,6 @@ export function AppRoutes() {
             <Route  element={<TutorDashboardLayout />}>
                 <Route path="dashboard" element={<TutorDashboard />} />
                 <Route path="courses" element={<CourseList />} />
-                {/* <Route path="courses/:courseId/content" element={<ManageCourseContent />} /> */}
                 <Route path="courses/:courseId/content" element={<EditCourse />} />
                 <Route path="create-courses" element={<CreateCourse />} />
                 <Route path="students" element={<TutorStudents />} />

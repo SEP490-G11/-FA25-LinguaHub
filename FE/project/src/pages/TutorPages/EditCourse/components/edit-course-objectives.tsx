@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
-import { X, Plus } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 
 export interface ObjectiveEditItem {
   id: number;
@@ -141,7 +141,7 @@ export default function EditCourseObjectives({
           Objectives ({objectivesList.length})
         </h3>
         {objectivesList.length === 0 ? (
-          <div className="p-6 text-center border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
+          <div className="p-6 text-center border-dashed border-gray-300 rounded-lg bg-gray-50">
             <p className="text-gray-500">No objectives added yet</p>
             <p className="text-sm text-gray-400">Add your first objective above</p>
           </div>
@@ -150,7 +150,7 @@ export default function EditCourseObjectives({
             {objectivesList.map((objective, index) => (
               <Card
                 key={objective.id}
-                className="p-4 flex items-start justify-between bg-white hover:shadow-md transition-shadow"
+                className="p-4 flex items-start justify-between bg-white"
               >
                 <div className="flex-1 flex items-start gap-3">
                   <span className="font-semibold text-blue-600 min-w-fit pt-3">
@@ -176,7 +176,7 @@ export default function EditCourseObjectives({
                   className="ml-2 p-2 text-red-500 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
                   title="Remove objective"
                 >
-                  <X className="w-5 h-5" />
+                  <Trash2 className="w-5 h-5" />
                 </button>
               </Card>
             ))}

@@ -565,7 +565,7 @@ export default function EditCourseStructure({
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">
-              Course Structure
+              Course Content
             </h2>
             <p className="text-gray-600 mt-1">
               Manage sections, lessons, and resources for your course
@@ -587,7 +587,7 @@ export default function EditCourseStructure({
               <Card key={section.sectionID} className="overflow-hidden">
                 {/* Section Header */}
                 <div
-                  className="flex items-center gap-4 p-4 bg-gradient-to-r from-blue-50 to-blue-100 border-b cursor-pointer hover:bg-blue-100 transition"
+                  className="flex items-center gap-4 p-4 bg-gray-50 border-b cursor-pointer hover:bg-gray-100 transition"
                   onClick={() => toggleSection(sectionIndex)}
                 >
                   <GripVertical className="w-5 h-5 text-gray-400" />
@@ -606,8 +606,7 @@ export default function EditCourseStructure({
                   </div>
                   <div className="flex gap-2">
                     <Button
-                      size="sm"
-                      variant="outline"
+                      variant="ghost"
                       onClick={(e) => {
                         e.stopPropagation();
                         openEditSection(sectionIndex);
@@ -616,8 +615,7 @@ export default function EditCourseStructure({
                       <Edit2 className="w-4 h-4" />
                     </Button>
                     <Button
-                      size="sm"
-                      variant="destructive"
+                      variant="ghost"
                       onClick={(e) => {
                         e.stopPropagation();
                         setDeleteConfirm({
@@ -625,7 +623,7 @@ export default function EditCourseStructure({
                           sectionIndex,
                         });
                       }}
-                      className="gap-2"
+                      className="text-red-500 hover:text-red-700"
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
@@ -857,7 +855,7 @@ export default function EditCourseStructure({
             ) : (
               <>
                 <CheckCircle2 className="w-4 h-4" />
-                Submit Course
+                Submit
               </>
             )}
           </Button>

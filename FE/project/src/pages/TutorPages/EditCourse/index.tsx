@@ -877,13 +877,13 @@ const EditCourse = () => {
         {/* Content Card */}
         <Card>
           <CardHeader>
-            <CardTitle>
+            {/* <CardTitle>
               {currentStep === 1
                 ? 'Step 1: Course Information'
                 : currentStep === 2
                   ? 'Step 2: Learning Objectives'
                   : 'Step 3: Manage Content'}
-            </CardTitle>
+            </CardTitle> */}
           </CardHeader>
           <CardContent>
             {currentStep === 1 && (
