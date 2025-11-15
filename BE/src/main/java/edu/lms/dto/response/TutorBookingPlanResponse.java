@@ -1,8 +1,17 @@
 package edu.lms.dto.response;
 
-import lombok.*;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.LocalDateTime;
 
 @Data
@@ -11,16 +20,37 @@ import java.time.LocalDateTime;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class TutorBookingPlanResponse {
-    Long bookingPlanID;
-    String title; // T2, T3, T4, T5, T6, T7, CN
-    Integer startHours;
-    Integer endHours;
+
+    @JsonProperty("booking_planid")
+    Long bookingPlanId;
+
+    @JsonProperty("tutor_id")
+    Long tutorId;
+
+    String title;
+
+    LocalDate date;
+
+    @JsonProperty("start_hours")
+    @JsonFormat(pattern = "HH:mm")
+    LocalTime startTime;
+
+    @JsonProperty("end_hours")
+    @JsonFormat(pattern = "HH:mm")
+    LocalTime endTime;
+
+    @JsonProperty("slot_duration")
     Integer slotDuration;
-    Double pricePerHours;
-    Boolean isActive;
+
+    @JsonProperty("price_per_hours")
+    BigDecimal pricePerHours;
+
+    @JsonProperty("is_open")
     Boolean isOpen;
-    Long tutorID;
-    Integer numberOfGeneratedSlots; // Số lượng slots đã được tạo
+
+    @JsonProperty("is_active")
+    Boolean isActive;
+
     LocalDateTime createdAt;
     LocalDateTime updatedAt;
 }
