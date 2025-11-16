@@ -5,12 +5,11 @@ import edu.lms.dto.response.TutorCourseResponse;
 import edu.lms.entity.Course;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.MappingConstants;
 
-@Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
+@Mapper(componentModel = "spring")
 public interface TutorCourseMapper {
 
-    @Mapping(target = "status", expression = "java(edu.lms.enums.CourseStatus.Draft)")
+    @Mapping(target = "status", constant = "Draft")
     @Mapping(target = "courseID", ignore = true)
     @Mapping(target = "tutor", ignore = true)
     @Mapping(target = "category", ignore = true)

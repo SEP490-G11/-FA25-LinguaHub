@@ -6,11 +6,10 @@ import edu.lms.dto.response.UserResponse;
 import edu.lms.entity.User;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.MappingConstants;
 
 import java.util.UUID;
 
-@Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
+@Mapper(componentModel = "spring")
 public interface UserMapping {
 
     @Mapping(target = "passwordHash", source = "password")

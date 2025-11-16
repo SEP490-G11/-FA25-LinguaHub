@@ -5,9 +5,8 @@ import edu.lms.dto.response.RoleResponse;
 import edu.lms.entity.Role;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.MappingConstants;
 
-@Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
+@Mapper(componentModel = "spring")
 public interface RoleMapper {
     @Mapping(target =  "permissions", ignore = true)
     Role toRole(RoleRequest roleRequest);
