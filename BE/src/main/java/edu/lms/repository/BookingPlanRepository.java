@@ -32,7 +32,7 @@ public interface BookingPlanRepository extends JpaRepository<BookingPlan, Long> 
           AND bp.title = :title
           AND bp.isActive = true
           AND (:excludeId IS NULL OR bp.bookingPlanID <> :excludeId)
-          AND NOT (bp.endTime <= :startTime OR bp.startTime >= :endTime)
+          AND NOT (bp.endHours <= :startTime OR bp.startHours >= :endTime)
         """)
     List<BookingPlan> findOverlappingPlans(
             @Param("tutorID") Long tutorID,
@@ -42,5 +42,5 @@ public interface BookingPlanRepository extends JpaRepository<BookingPlan, Long> 
             @Param("excludeId") Long excludeId
     );
 
-    List<BookingPlan> findByTutorIDAndIsActiveTrueOrderByTitleAscStartTimeAsc(Long tutorID);
+    List<BookingPlan> findByTutorIDAndIsActiveTrueOrderByTitleAscStartHoursAsc(Long tutorID);
 }
