@@ -1,6 +1,7 @@
 package edu.lms.service;
 
 import edu.lms.dto.request.TutorApplyRequest;
+import edu.lms.dto.request.TutorCertificateRequest;
 import edu.lms.dto.request.TutorUpdateRequest;
 import edu.lms.dto.response.*;
 import edu.lms.entity.*;
@@ -23,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -95,17 +97,60 @@ public class TutorServiceImpl implements TutorService {
                 .specialization(request.getSpecialization())
                 .teachingLanguage(request.getTeachingLanguage())
                 .bio(request.getBio())
+                .documentUrl("") // Set giá trị mặc định
                 .status(TutorVerificationStatus.PENDING)
                 .submittedAt(LocalDateTime.now())
                 .build();
+        
+        // Đảm bảo documentUrl không null sau khi build
+        if (verification.getDocumentUrl() == null) {
+            verification.setDocumentUrl("");
+        }
 
-        List<TutorCertificate> certificates = request.getCertificates().stream()
-                .map(cert -> TutorCertificate.builder()
-                        .tutorVerification(verification)
-                        .certificateName(cert.getCertificateName())
-                        .documentURL(cert.getDocumentURL())
-                        .build())
-                .toList();
+        List<TutorCertificate> certificates = new ArrayList<>();
+        for (TutorCertificateRequest certReq : request.getCertificates()) {
+            log.debug("Processing certificate: name={}, documentUrl={}", 
+                    certReq.getCertificateName(), certReq.getDocumentUrl());
+            
+            String docURL = certReq.getDocumentUrl();
+            
+            // Log warning nếu documentURL là null hoặc empty (không nên xảy ra vì có @NotBlank validation)
+            if (docURL == null) {
+                log.warn("documentURL is null for certificate: {}", certReq.getCertificateName());
+                throw new TutorApplicationException("Document URL is required for certificate: " + certReq.getCertificateName());
+            }
+            
+            // Trim và validate
+            docURL = docURL.trim();
+            if (docURL.isEmpty()) {
+                log.warn("documentURL is empty for certificate: {}", certReq.getCertificateName());
+                throw new TutorApplicationException("Document URL cannot be empty for certificate: " + certReq.getCertificateName());
+            }
+            
+            log.debug("Setting documentUrl to: {}", docURL);
+            
+            TutorCertificate certEntity = TutorCertificate.builder()
+                    .tutorVerification(verification)
+                    .certificateName(certReq.getCertificateName())
+                    .documentUrl(docURL)
+                    .build();
+            
+            // Double check: Đảm bảo giá trị sau khi build cũng không null
+            if (certEntity.getDocumentUrl() == null || certEntity.getDocumentUrl().trim().isEmpty()) {
+                log.error("documentUrl is null or empty after building certificate entity for: {}", certReq.getCertificateName());
+                throw new TutorApplicationException("Failed to set document URL for certificate: " + certReq.getCertificateName());
+            }
+            
+            log.debug("Certificate entity created successfully: certificateId={}, documentUrl={}", 
+                    certEntity.getCertificateId(), certEntity.getDocumentUrl());
+            
+            // Đảm bảo createdAt được set
+            if (certEntity.getCreatedAt() == null) {
+                certEntity.setCreatedAt(LocalDateTime.now());
+            }
+            
+            certificates.add(certEntity);
+        }
         verification.getCertificates().addAll(certificates);
 
         tutorVerificationRepository.save(verification);
@@ -455,7 +500,7 @@ public class TutorServiceImpl implements TutorService {
                         .map(cert -> TutorCertificateResponse.builder()
                                 .certificateId(cert.getCertificateId())
                                 .certificateName(cert.getCertificateName())
-                                .documentURL(cert.getDocumentURL())
+                                .documentUrl(cert.getDocumentUrl())
                                 .build())
                         .toList())
                 .status(verification.getStatus().name())
