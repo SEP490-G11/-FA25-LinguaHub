@@ -88,9 +88,8 @@ public class TutorBookingPlanService {
 
         int updatedSlots;
         if (timeFieldsChanged) {
-            bookingPlanSlotRepository.deleteByBookingPlanID(bookingPlanId);
             LocalDate targetDate = findTargetDateFromTitle(bookingPlan.getTitle());
-            updatedSlots = regenerateSlots(bookingPlan, targetDate);
+            updatedSlots = updateSlotsSmartly(bookingPlan, targetDate);
         } else {
             updatedSlots = (int) bookingPlanSlotRepository.countByBookingPlanID(bookingPlanId);
         }
@@ -245,6 +244,100 @@ public class TutorBookingPlanService {
 
         bookingPlanSlotRepository.saveAll(slots);
         return slots.size();
+    }
+
+    /**
+     * Cập nhật slots một cách thông minh:
+     * - Giữ lại slots cũ nếu trùng với slots mới (cùng startTime và endTime)
+     * - Xóa slots cũ không còn trong danh sách mới
+     * - Tạo slots mới không có trong danh sách cũ
+     */
+    private int updateSlotsSmartly(BookingPlan bookingPlan, LocalDate targetDate) {
+        // Lấy danh sách slots hiện tại
+        List<BookingPlanSlot> existingSlots = bookingPlanSlotRepository
+                .findByBookingPlanIDOrderByStartTimeAsc(bookingPlan.getBookingPlanID());
+
+        // Tạo danh sách slots mới dựa trên thông tin mới
+        List<BookingPlanSlot> newSlots = generateNewSlots(bookingPlan, targetDate);
+
+        // Tạo map để tìm slot cũ nhanh hơn (key: startTime_endTime)
+        java.util.Map<String, BookingPlanSlot> existingSlotsMap = new java.util.HashMap<>();
+        for (BookingPlanSlot slot : existingSlots) {
+            String key = slot.getStartTime().toString() + "_" + slot.getEndTime().toString();
+            existingSlotsMap.put(key, slot);
+        }
+
+        // Danh sách slots cần giữ lại và slots cần tạo mới
+        List<BookingPlanSlot> slotsToKeep = new ArrayList<>();
+        List<BookingPlanSlot> slotsToCreate = new ArrayList<>();
+
+        for (BookingPlanSlot newSlot : newSlots) {
+            String key = newSlot.getStartTime().toString() + "_" + newSlot.getEndTime().toString();
+            BookingPlanSlot existingSlot = existingSlotsMap.get(key);
+
+            if (existingSlot != null) {
+                // Slot trùng nhau, giữ lại slot cũ
+                slotsToKeep.add(existingSlot);
+            } else {
+                // Slot mới, cần tạo
+                slotsToCreate.add(newSlot);
+            }
+        }
+
+        // Tạo map của slots mới để kiểm tra nhanh
+        java.util.Set<String> newSlotsKeys = new java.util.HashSet<>();
+        for (BookingPlanSlot newSlot : newSlots) {
+            String key = newSlot.getStartTime().toString() + "_" + newSlot.getEndTime().toString();
+            newSlotsKeys.add(key);
+        }
+
+        // Xóa slots cũ không còn trong danh sách mới
+        List<BookingPlanSlot> slotsToDelete = new ArrayList<>();
+        for (BookingPlanSlot existingSlot : existingSlots) {
+            String key = existingSlot.getStartTime().toString() + "_" + existingSlot.getEndTime().toString();
+            if (!newSlotsKeys.contains(key)) {
+                slotsToDelete.add(existingSlot);
+            }
+        }
+
+        if (!slotsToDelete.isEmpty()) {
+            bookingPlanSlotRepository.deleteAll(slotsToDelete);
+        }
+
+        // Tạo slots mới
+        if (!slotsToCreate.isEmpty()) {
+            bookingPlanSlotRepository.saveAll(slotsToCreate);
+        }
+
+        return slotsToKeep.size() + slotsToCreate.size();
+    }
+
+    /**
+     * Tạo danh sách slots mới dựa trên thông tin booking plan
+     */
+    private List<BookingPlanSlot> generateNewSlots(BookingPlan bookingPlan, LocalDate targetDate) {
+        List<BookingPlanSlot> slots = new ArrayList<>();
+        LocalDateTime slotStart = LocalDateTime.of(targetDate, bookingPlan.getStartHours());
+        LocalDateTime planEnd = LocalDateTime.of(targetDate, bookingPlan.getEndHours());
+
+        while (!slotStart.plusMinutes(bookingPlan.getSlotDuration()).isAfter(planEnd)) {
+            LocalDateTime slotEnd = slotStart.plusMinutes(bookingPlan.getSlotDuration());
+
+            BookingPlanSlot slot = BookingPlanSlot.builder()
+                    .bookingPlanID(bookingPlan.getBookingPlanID())
+                    .tutorID(bookingPlan.getTutorID())
+                    .startTime(slotStart)
+                    .endTime(slotEnd)
+                    .status(SlotStatus.Available)
+                    .lockedAt(null)
+                    .expiresAt(null)
+                    .build();
+
+            slots.add(slot);
+            slotStart = slotEnd;
+        }
+
+        return slots;
     }
 
     private TutorBookingPlanResponse toBookingPlanResponse(BookingPlan bookingPlan) {
