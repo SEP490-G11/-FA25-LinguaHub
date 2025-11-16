@@ -1,7 +1,7 @@
 package edu.lms.dto.response;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -29,11 +29,11 @@ public class TutorBookingPlanResponse {
     String title;
 
     @JsonProperty("start_hours")
-    @JsonFormat(pattern = "HH:mm")
+    @JsonSerialize(using = LocalTimeSerializer.class)
     LocalTime startTime;
 
     @JsonProperty("end_hours")
-    @JsonFormat(pattern = "HH:mm")
+    @JsonSerialize(using = LocalTimeSerializer.class)
     LocalTime endTime;
 
     @JsonProperty("slot_duration")
