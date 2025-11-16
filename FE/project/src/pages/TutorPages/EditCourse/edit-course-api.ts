@@ -104,7 +104,7 @@ export const updateLesson = async (
 ): Promise<Lesson> => {
   try {
     const response = await axiosInstance.put<ApiResponse<Lesson>>(
-      `/tutor/courses/sections/lessons/${lessonId}`,
+      `/tutor/courses/lessons/${lessonId}`,
       data
     );
 
@@ -182,7 +182,7 @@ export const deleteSection = async (sectionID: number): Promise<void> => {
 export const deleteLesson = async (lessonId: number): Promise<void> => {
   try {
     const response = await axiosInstance.delete<ApiResponse<{}>>(
-      `/tutor/courses/sections/lessons/${lessonId}`
+      `/tutor/courses/lessons/${lessonId}`
     );
 
     if (response.data.code !== 0) {

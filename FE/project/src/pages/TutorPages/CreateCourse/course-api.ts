@@ -131,7 +131,8 @@ export const courseApi = {
       payload.content = lessonData.content;
     }
 
-    const res = await axios.post<ApiResponse<{ id: string; lessonID?: number }>>(`/tutor/courses/sections/${sectionId}/lessons`, payload);
+    // Updated endpoint: /tutor/courses/{sectionID}/lessons
+    const res = await axios.post<ApiResponse<{ id: string; lessonID?: number }>>(`/tutor/courses/${sectionId}/lessons`, payload);
     const lessonId = res?.data?.result?.lessonID || res?.data?.result?.id || res?.data?.id;
     if (!lessonId) throw new Error('Invalid response');
     return { lessonId: lessonId.toString() };

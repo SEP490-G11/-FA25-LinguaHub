@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -6,24 +7,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, Filter } from 'lucide-react';
+import { Search } from 'lucide-react';
+import axios from '@/config/axiosConfig';
 
 interface FiltersProps {
   searchQuery: string;
-  onSearchChange: (query: string) => void;
+  onSearchChange: (value: string) => void;
   selectedCategory: string;
-  onCategoryChange: (category: string) => void;
+  onCategoryChange: (value: string) => void;
 }
-
-const CATEGORIES = [
-  { id: 'ielts', name: 'IELTS' },
-  { id: 'topik', name: 'TOPIK' },
-  { id: 'toeic', name: 'TOEIC' },
-  { id: 'hsk', name: 'HSK' },
-  { id: 'jlpt', name: 'JLPT' },
-  { id: 'english-general', name: 'English General' },
-  { id: 'business-english', name: 'Business English' },
-];
 
 export function Filters({
   searchQuery,
@@ -31,46 +23,94 @@ export function Filters({
   selectedCategory,
   onCategoryChange,
 }: FiltersProps) {
-  return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Search Input */}
-        <div className="relative">
-          <label className="block text-sm font-semibold text-gray-800 mb-2 flex items-center gap-2">
-            <Search className="w-4 h-4 text-indigo-600" />
-            Search Courses
-          </label>
-          <div className="relative">
-            <Input
-              type="text"
-              placeholder="Search by course name…"
-              value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className="border-blue-200 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg"
-            />
-          </div>
-        </div>
+  const [categories, setCategories] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-        {/* Category Filter */}
-        <div>
-          <label className="block text-sm font-semibold text-gray-800 mb-2 flex items-center gap-2">
-            <Filter className="w-4 h-4 text-indigo-600" />
-            Filter by Category
-          </label>
-          <Select value={selectedCategory || 'all'} onValueChange={(value) => onCategoryChange(value === 'all' ? '' : value)}>
-            <SelectTrigger className="border-blue-200 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg">
-              <SelectValue placeholder="All categories" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All categories</SelectItem>
-              {CATEGORIES.map((category) => (
-                <SelectItem key={category.id} value={category.id}>
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setIsLoading(true);
+        console.log('🔍 [Filters] Fetching categories...');
+        const response = await axios.get('/categories');
+        console.log('📊 [Filters] Response:', response?.data);
+        
+        // Try different response formats
+        let rawData = [];
+        if (response?.data?.result) {
+          rawData = response.data.result;
+        } else if (Array.isArray(response?.data)) {
+          rawData = response.data;
+        } else if (response?.data?.data) {
+          rawData = response.data.data;
+        }
+        
+        // Map backend format (categoryId, categoryName) to frontend format (id, name)
+        const categoriesData = rawData.map((cat: any) => ({
+          id: cat.categoryId || cat.id,
+          name: cat.categoryName || cat.name,
+        }));
+        
+        console.log('✅ [Filters] Categories:', categoriesData);
+        
+        if (categoriesData.length === 0) {
+          console.warn('⚠️ [Filters] No categories, using fallback');
+          import('@/constants/categories').then((module) => {
+            setCategories([...module.CATEGORIES]);
+          });
+        } else {
+          setCategories(categoriesData);
+        }
+      } catch (error) {
+        console.error('❌ [Filters] Error, using fallback:', error);
+        import('@/constants/categories').then((module) => {
+          setCategories([...module.CATEGORIES]);
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
+  return (
+    <div className="flex gap-3">
+      {/* Search */}
+      <div className="flex-1">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Input
+            id="search"
+            type="text"
+            placeholder="Tìm theo tên khóa học hoặc giảng viên..."
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+      </div>
+
+      {/* Category Filter */}
+      <div className="w-48">
+        <Select value={selectedCategory} onValueChange={onCategoryChange}>
+          <SelectTrigger id="category">
+            <SelectValue placeholder="Danh mục" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tất cả</SelectItem>
+            {isLoading ? (
+              <SelectItem value="loading" disabled>
+                Loading...
+              </SelectItem>
+            ) : (
+              categories.map((category) => (
+                <SelectItem key={category.id} value={category.id.toString()}>
                   {category.name}
                 </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+              ))
+            )}
+          </SelectContent>
+        </Select>
       </div>
     </div>
   );

@@ -29,6 +29,7 @@ import ChangePassword from '@/pages/ChangePassword/changePassword.tsx';
 import VerifyEmailForgotPassword from '@/pages/auth/verify-email-forgot-password/verify-email-forgot-password.tsx';
 import CreateCourse from '@/pages/TutorPages/CreateCourse/index';
 import CourseApprovalPage from '@/pages/Admin/CourseApproval/index';
+import CourseDetailPage from '@/pages/Admin/CourseApproval/CourseDetailPage';
 import ApplyTutor from '@/pages/ApplyTutor';
 import TutorApproval from '@/pages/Admin/TutorApproval';
 import EditCourse from '@/pages/TutorPages/EditCourse';
@@ -93,6 +94,7 @@ export function AppRoutes() {
                 <Route path="learners" element={<AdminLearners />} />
                 <Route path="courses" element={<AdminCourses />} />
                 <Route path="course-approval" element={<CourseApprovalPage />} />
+                <Route path="course-approval/:courseId" element={<CourseDetailPage />} />
                 <Route path="tutor-approval" element={<TutorApproval />} />
                 <Route path="payments" element={<AdminPayments />} />
             </Route>
