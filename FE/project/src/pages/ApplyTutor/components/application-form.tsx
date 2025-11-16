@@ -31,7 +31,7 @@ export function ApplicationForm({ onSubmit, isSubmitting = false }: ApplicationF
       specialization: '',
       teachingLanguage: '',
       bio: '',
-      certificates: [{ certificateName: '', documentURL: '' }],
+      certificates: [{ certificateName: '', documentUrl: '' }],
     },
   });
 
@@ -246,7 +246,7 @@ export function ApplicationForm({ onSubmit, isSubmitting = false }: ApplicationF
                     {/* Document URL Field */}
                     <FormField
                       control={form.control}
-                      name={`certificates.${index}.documentURL`}
+                      name={`certificates.${index}.documentUrl`}
                       render={({ field, fieldState }) => (
                         <FormItem>
                           <FormLabel>Document URL</FormLabel>
@@ -278,7 +278,7 @@ export function ApplicationForm({ onSubmit, isSubmitting = false }: ApplicationF
                 variant="outline"
                 size="sm"
                 className="w-full transition-all duration-200 hover:scale-[1.02]"
-                onClick={() => append({ certificateName: '', documentURL: '' })}
+                onClick={() => append({ certificateName: '', documentUrl: '' })}
                 disabled={isSubmitting}
                 aria-label="Add another certificate"
               >

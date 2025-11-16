@@ -2,7 +2,7 @@
 
 export interface Certificate {
   certificateName: string;
-  documentURL: string;
+  documentUrl: string;
 }
 
 export interface TutorApplicationRequest {

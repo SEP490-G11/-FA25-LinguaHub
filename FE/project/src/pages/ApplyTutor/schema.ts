@@ -6,7 +6,7 @@ export const certificateSchema = z.object({
     .string()
     .min(1, 'Certificate name is required')
     .max(200, 'Certificate name must not exceed 200 characters'),
-  documentURL: z
+  documentUrl: z
     .string()
     .min(1, 'Document URL is required')
     .url('Must be a valid URL'),
@@ -15,10 +15,7 @@ export const certificateSchema = z.object({
 // Tutor application validation schema
 export const tutorApplicationSchema = z.object({
   experience: z
-    .number({
-      required_error: 'Experience is required',
-      invalid_type_error: 'Experience must be a number',
-    })
+    .number({ message: 'Experience must be a number' })
     .min(0, 'Experience cannot be negative')
     .max(100, 'Experience must not exceed 100 years'),
   specialization: z
