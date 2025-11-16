@@ -63,20 +63,10 @@ export default function EditCourseInfo({
           name: cat.categoryName || cat.name,
         }));
         
-        if (categoriesData.length === 0) {
-          // Fallback to constants
-          import('@/constants/categories').then((module) => {
-            setCategories([...module.CATEGORIES]);
-          });
-        } else {
-          setCategories(categoriesData);
-        }
+        setCategories(categoriesData);
       } catch (error) {
         console.error('Error fetching categories:', error);
-        // Fallback to constants
-        import('@/constants/categories').then((module) => {
-          setCategories([...module.CATEGORIES]);
-        });
+        setCategories([]);
       } finally {
         setIsLoadingCategories(false);
       }

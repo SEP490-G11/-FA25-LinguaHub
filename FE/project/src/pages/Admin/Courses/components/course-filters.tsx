@@ -48,16 +48,10 @@ export default function CourseFiltersComponent({
         name: cat.categoryName || cat.name,
       }));
       
-      if (categoriesData.length === 0) {
-        const module = await import('@/constants/categories');
-        setCategories([...module.CATEGORIES]);
-      } else {
-        setCategories(categoriesData);
-      }
+      setCategories(categoriesData);
     } catch (error) {
       console.error('Error fetching categories:', error);
-      const module = await import('@/constants/categories');
-      setCategories([...module.CATEGORIES]);
+      setCategories([]);
     } finally {
       setIsLoading(false);
     }

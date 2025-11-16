@@ -1,304 +1,312 @@
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
+import { tutorApplicationSchema, TutorApplicationFormData } from '../schema';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
-  Languages, 
-  Award, 
-  Briefcase, 
-  FileText, 
-  Upload, 
-  CheckCircle2,
-  AlertCircle 
-} from 'lucide-react';
-import { TutorApplicationFormData } from '../types';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { X, Plus } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-// ==========================================================
-// Phase 1.2: Form Validation Schema (Zod)
-// ==========================================================
-
-const applicationSchema = z.object({
-  teachingLanguages: z
-    .array(z.string())
-    .min(1, 'Please select at least one teaching language'),
-  specialization: z
-    .string()
-    .min(3, 'Specialization must be at least 3 characters')
-    .max(255, 'Specialization must not exceed 255 characters'),
-  experience: z
-    .number()
-    .min(0, 'Experience cannot be negative')
-    .max(50, 'Experience must be less than 50 years'),
-  bio: z
-    .string()
-    .min(50, 'Bio must be at least 50 characters')
-    .max(1000, 'Bio must not exceed 1000 characters'),
-  certificateName: z
-    .string()
-    .min(3, 'Certificate name must be at least 3 characters')
-    .max(255, 'Certificate name must not exceed 255 characters'),
-  certificateUrl: z
-    .string()
-    .url('Please enter a valid URL')
-    .min(1, 'Certificate URL is required'),
-});
-
-type FormData = z.infer<typeof applicationSchema>;
-
-// Available teaching languages
-const AVAILABLE_LANGUAGES = [
-  'English',
-  'Korean',
-  'Japanese',
-  'Chinese',
-  'French',
-  'Spanish',
-  'German',
-  'Vietnamese',
-  'Thai',
-  'Italian',
-];
-
-interface TutorApplicationFormProps {
+interface ApplicationFormProps {
   onSubmit: (data: TutorApplicationFormData) => void;
-  isSubmitting: boolean;
-  error?: string | null;
+  isSubmitting?: boolean;
 }
 
-// ==========================================================
-// Phase 1.1: UI Component
-// ==========================================================
-
-export function TutorApplicationForm({ 
-  onSubmit, 
-  isSubmitting,
-  error 
-}: TutorApplicationFormProps) {
-  const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    setValue,
-  } = useForm<FormData>({
-    resolver: zodResolver(applicationSchema),
+export function ApplicationForm({ onSubmit, isSubmitting = false }: ApplicationFormProps) {
+  const form = useForm<TutorApplicationFormData>({
+    resolver: zodResolver(tutorApplicationSchema),
+    mode: 'onChange',
     defaultValues: {
-      teachingLanguages: [],
-      specialization: '',
       experience: 0,
+      specialization: '',
+      teachingLanguage: '',
       bio: '',
-      certificateName: '',
-      certificateUrl: '',
+      certificates: [{ certificateName: '', documentUrl: '' }],
     },
   });
 
-  const handleLanguageToggle = (language: string) => {
-    const updated = selectedLanguages.includes(language)
-      ? selectedLanguages.filter((l) => l !== language)
-      : [...selectedLanguages, language];
-
-    setSelectedLanguages(updated);
-    setValue('teachingLanguages', updated, { shouldValidate: true });
-  };
-
-  const onFormSubmit = (data: FormData) => {
-    onSubmit(data);
-  };
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: 'certificates',
+  });
 
   return (
-    <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6">
-      {/* Error Message */}
-      {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
+    <Card className="w-full max-w-3xl mx-auto">
+      <CardHeader>
+        <CardTitle>Apply to Become a Tutor</CardTitle>
+        <CardDescription>
+          Fill out the form below to submit your application to become a tutor on our platform.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* Experience Field */}
+            <FormField
+              control={form.control}
+              name="experience"
+              render={({ field, fieldState }) => (
+                <FormItem>
+                  <FormLabel>Experience (years) *</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="Enter your years of teaching experience"
+                      {...field}
+                      onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                      disabled={isSubmitting}
+                      className={cn(
+                        'transition-all duration-200',
+                        fieldState.error && 'border-red-500 focus-visible:ring-red-500',
+                        !fieldState.error && field.value > 0 && 'border-green-500 focus-visible:ring-green-500'
+                      )}
+                      aria-invalid={fieldState.error ? 'true' : 'false'}
+                      aria-describedby={fieldState.error ? 'experience-error' : 'experience-description'}
+                    />
+                  </FormControl>
+                  <FormDescription id="experience-description">
+                    How many years of teaching experience do you have?
+                  </FormDescription>
+                  <FormMessage id="experience-error" />
+                </FormItem>
+              )}
+            />
 
-      {/* Single Card with All Sections */}
-      <div className="space-y-8">
-        {/* Teaching Languages Section */}
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            <Languages className="w-5 h-5 text-indigo-600" />
-            <h3 className="text-lg font-semibold text-gray-900">Teaching Languages</h3>
-          </div>
-          <p className="text-sm text-gray-600 mb-4">
-            Select the languages you can teach (at least one)
-          </p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {AVAILABLE_LANGUAGES.map((language) => (
-              <button
-                key={language}
+            {/* Specialization Field */}
+            <FormField
+              control={form.control}
+              name="specialization"
+              render={({ field, fieldState }) => (
+                <FormItem>
+                  <FormLabel>Specialization *</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="e.g., Mathematics, English, Programming"
+                      {...field}
+                      disabled={isSubmitting}
+                      className={cn(
+                        'transition-all duration-200',
+                        fieldState.error && 'border-red-500 focus-visible:ring-red-500',
+                        !fieldState.error && field.value.length >= 3 && 'border-green-500 focus-visible:ring-green-500'
+                      )}
+                      aria-invalid={fieldState.error ? 'true' : 'false'}
+                      aria-describedby={fieldState.error ? 'specialization-error' : 'specialization-description'}
+                    />
+                  </FormControl>
+                  <FormDescription id="specialization-description">
+                    What is your area of expertise?
+                  </FormDescription>
+                  <FormMessage id="specialization-error" />
+                </FormItem>
+              )}
+            />
+
+            {/* Teaching Language Field */}
+            <FormField
+              control={form.control}
+              name="teachingLanguage"
+              render={({ field, fieldState }) => (
+                <FormItem>
+                  <FormLabel>Teaching Language *</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="e.g., English, Vietnamese, Spanish"
+                      {...field}
+                      disabled={isSubmitting}
+                      className={cn(
+                        'transition-all duration-200',
+                        fieldState.error && 'border-red-500 focus-visible:ring-red-500',
+                        !fieldState.error && field.value.length >= 2 && 'border-green-500 focus-visible:ring-green-500'
+                      )}
+                      aria-invalid={fieldState.error ? 'true' : 'false'}
+                      aria-describedby={fieldState.error ? 'teaching-language-error' : 'teaching-language-description'}
+                    />
+                  </FormControl>
+                  <FormDescription id="teaching-language-description">
+                    What language will you primarily teach in?
+                  </FormDescription>
+                  <FormMessage id="teaching-language-error" />
+                </FormItem>
+              )}
+            />
+
+            {/* Bio Field */}
+            <FormField
+              control={form.control}
+              name="bio"
+              render={({ field, fieldState }) => {
+                const charCount = field.value?.length || 0;
+                const maxChars = 1000;
+                const minChars = 50;
+                const isValid = charCount >= minChars && charCount <= maxChars;
+                
+                return (
+                  <FormItem>
+                    <FormLabel>Bio *</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Tell us about yourself, your teaching philosophy, and why you want to become a tutor..."
+                        className={cn(
+                          'min-h-[120px] resize-none transition-all duration-200',
+                          fieldState.error && 'border-red-500 focus-visible:ring-red-500',
+                          !fieldState.error && isValid && 'border-green-500 focus-visible:ring-green-500'
+                        )}
+                        {...field}
+                        disabled={isSubmitting}
+                        aria-invalid={fieldState.error ? 'true' : 'false'}
+                        aria-describedby={fieldState.error ? 'bio-error' : 'bio-description'}
+                      />
+                    </FormControl>
+                    <div className="flex items-center justify-between">
+                      <FormDescription id="bio-description">
+                        Minimum 50 characters. Share your background and teaching approach.
+                      </FormDescription>
+                      <span 
+                        className={cn(
+                          'text-sm transition-colors duration-200',
+                          charCount < minChars && 'text-muted-foreground',
+                          charCount >= minChars && charCount <= maxChars && 'text-green-600',
+                          charCount > maxChars && 'text-red-600'
+                        )}
+                        aria-live="polite"
+                      >
+                        {charCount}/{maxChars}
+                      </span>
+                    </div>
+                    <FormMessage id="bio-error" />
+                  </FormItem>
+                );
+              }}
+            />
+
+            {/* Certificates Section */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <FormLabel>Certificates *</FormLabel>
+                  <FormDescription>
+                    Add at least one certificate to demonstrate your qualifications
+                  </FormDescription>
+                </div>
+              </div>
+
+              {fields.map((field, index) => (
+                <Card key={field.id} className="relative transition-all duration-300 hover:shadow-md">
+                  <CardContent className="pt-6 space-y-4">
+                    {fields.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-2 right-2 transition-all duration-200 hover:scale-110 hover:bg-red-50"
+                        onClick={() => remove(index)}
+                        disabled={isSubmitting}
+                        aria-label={`Remove certificate ${index + 1}`}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+
+                    {/* Certificate Name Field */}
+                    <FormField
+                      control={form.control}
+                      name={`certificates.${index}.certificateName`}
+                      render={({ field, fieldState }) => (
+                        <FormItem>
+                          <FormLabel>Certificate Name</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="e.g., TESOL Certificate, Master's Degree in Education"
+                              {...field}
+                              disabled={isSubmitting}
+                              className={cn(
+                                'transition-all duration-200',
+                                fieldState.error && 'border-red-500 focus-visible:ring-red-500',
+                                !fieldState.error && field.value.length > 0 && 'border-green-500 focus-visible:ring-green-500'
+                              )}
+                              aria-invalid={fieldState.error ? 'true' : 'false'}
+                              aria-describedby={fieldState.error ? `certificate-name-${index}-error` : undefined}
+                            />
+                          </FormControl>
+                          <FormMessage id={`certificate-name-${index}-error`} />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Document URL Field */}
+                    <FormField
+                      control={form.control}
+                      name={`certificates.${index}.documentUrl`}
+                      render={({ field, fieldState }) => (
+                        <FormItem>
+                          <FormLabel>Document URL</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="url"
+                              placeholder="https://example.com/certificate.pdf"
+                              {...field}
+                              disabled={isSubmitting}
+                              className={cn(
+                                'transition-all duration-200',
+                                fieldState.error && 'border-red-500 focus-visible:ring-red-500',
+                                !fieldState.error && field.value.length > 0 && 'border-green-500 focus-visible:ring-green-500'
+                              )}
+                              aria-invalid={fieldState.error ? 'true' : 'false'}
+                              aria-describedby={fieldState.error ? `document-url-${index}-error` : undefined}
+                            />
+                          </FormControl>
+                          <FormMessage id={`document-url-${index}-error`} />
+                        </FormItem>
+                      )}
+                    />
+                  </CardContent>
+                </Card>
+              ))}
+
+              <Button
                 type="button"
-                className={`px-4 py-2.5 rounded-md text-sm font-medium transition-all ${
-                  selectedLanguages.includes(language)
-                    ? 'bg-indigo-600 text-white hover:bg-indigo-700'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300'
-                }`}
-                onClick={() => handleLanguageToggle(language)}
+                variant="outline"
+                size="sm"
+                className="w-full transition-all duration-200 hover:scale-[1.02]"
+                onClick={() => append({ certificateName: '', documentUrl: '' })}
+                disabled={isSubmitting}
+                aria-label="Add another certificate"
               >
-                {language}
-              </button>
-            ))}
-          </div>
-          {errors.teachingLanguages && (
-            <p className="text-sm text-red-500 mt-2">
-              {errors.teachingLanguages.message}
-            </p>
-          )}
-        </div>
-
-        {/* Specialization & Experience */}
-        <div className="grid md:grid-cols-2 gap-6">
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <Award className="w-5 h-5 text-indigo-600" />
-              <Label htmlFor="specialization" className="text-base font-semibold">
-                Specialization <span className="text-red-500">*</span>
-              </Label>
-            </div>
-            <Input
-              id="specialization"
-              {...register('specialization')}
-              placeholder="e.g., Business English, IELTS Preparation"
-              className="text-base"
-            />
-            {errors.specialization && (
-              <p className="text-sm text-red-500 mt-1">
-                {errors.specialization.message}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <Briefcase className="w-5 h-5 text-indigo-600" />
-              <Label htmlFor="experience" className="text-base font-semibold">
-                Years of Experience <span className="text-red-500">*</span>
-              </Label>
-            </div>
-            <Input
-              id="experience"
-              {...register('experience', { valueAsNumber: true })}
-              type="number"
-              min="0"
-              max="50"
-              placeholder="Years of experience"
-              className="text-base"
-            />
-            {errors.experience && (
-              <p className="text-sm text-red-500 mt-1">
-                {errors.experience.message}
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* Bio Section */}
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            <FileText className="w-5 h-5 text-indigo-600" />
-            <Label htmlFor="bio" className="text-base font-semibold">
-              Professional Bio <span className="text-red-500">*</span>
-            </Label>
-          </div>
-          <p className="text-sm text-gray-600 mb-3">
-            Tell us about your teaching background and approach (50-1000 characters)
-          </p>
-          <Textarea
-            id="bio"
-            {...register('bio')}
-            placeholder="Describe your teaching experience, methods, achievements, and what makes you a great tutor..."
-            rows={6}
-            className="resize-none text-base"
-          />
-          <div className="flex justify-between items-center mt-2">
-            {errors.bio && (
-              <p className="text-sm text-red-500">{errors.bio.message}</p>
-            )}
-            <p className="text-xs text-gray-500 ml-auto">
-              {errors.bio ? '' : 'Minimum 50 characters'}
-            </p>
-          </div>
-        </div>
-
-        {/* Certificate Section */}
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            <Upload className="w-5 h-5 text-indigo-600" />
-            <h3 className="text-lg font-semibold text-gray-900">Teaching Certificate</h3>
-          </div>
-          <p className="text-sm text-gray-600 mb-4">
-            Provide your teaching certificate or credential information
-          </p>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="certificateName">
-                Certificate Name <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="certificateName"
-                {...register('certificateName')}
-                placeholder="e.g., TESOL Certificate, TEFL Certification"
-                className="mt-1 text-base"
-              />
-              {errors.certificateName && (
-                <p className="text-sm text-red-500 mt-1">
-                  {errors.certificateName.message}
-                </p>
-              )}
+                <Plus className="h-4 w-4 mr-2" />
+                Add Certificate
+              </Button>
             </div>
 
-            <div>
-              <Label htmlFor="certificateUrl">
-                Certificate URL <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="certificateUrl"
-                {...register('certificateUrl')}
-                placeholder="https://example.com/your-certificate.pdf"
-                className="mt-1 text-base"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Provide a link to your certificate (Google Drive, Dropbox, or any cloud storage)
-              </p>
-              {errors.certificateUrl && (
-                <p className="text-sm text-red-500 mt-1">
-                  {errors.certificateUrl.message}
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Submit Button */}
-      <div className="flex justify-end gap-4 pt-4">
-        <Button
-          type="submit"
-          disabled={isSubmitting}
-          className="bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white px-8 py-6 text-lg font-semibold"
-        >
-          {isSubmitting ? (
-            <>
-              <span className="animate-spin mr-2">⏳</span>
-              Submitting Application...
-            </>
-          ) : (
-            <>
-              <CheckCircle2 className="w-5 h-5 mr-2" />
-              Submit Application
-            </>
-          )}
-        </Button>
-      </div>
-    </form>
+            <Button 
+              type="submit" 
+              disabled={isSubmitting || !form.formState.isValid || form.formState.isSubmitting} 
+              className="w-full transition-all duration-200 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label={isSubmitting ? 'Submitting application' : 'Submit application'}
+              aria-busy={isSubmitting}
+            >
+              {isSubmitting ? (
+                <span className="flex items-center justify-center">
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Submitting...
+                </span>
+              ) : 'Submit Application'}
+            </Button>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
   );
 }

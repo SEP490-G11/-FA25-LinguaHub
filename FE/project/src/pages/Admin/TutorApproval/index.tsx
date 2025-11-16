@@ -1,24 +1,17 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Filter, CheckCircle2, Users, Loader2, AlertCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { Filter, Users, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import ApplicationDetailModal from './components/application-detail-modal';
 import { ApplicationList } from './components/application-list';
 import { Filters } from './components/filters';
 import { Application } from './types';
-import * as tutorApi from '@/queries/tutor-approval-api';
+import { tutorApprovalApi as tutorApi } from './api';
 
 export default function TutorApproval() {
-  // ==========================================================
-  // PHASE 3: State Management with React Query
-  // ==========================================================
-  const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Query: Fetch applications
   const {
@@ -34,68 +27,15 @@ export default function TutorApproval() {
       }),
   });
 
-  // Mutation: Approve application
-  const approveMutation = useMutation({
-    mutationFn: ({ id, notes }: { id: string; notes?: string }) =>
-      tutorApi.approveApplication(id, notes),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tutor-applications'] });
-      setSuccessMessage('✅ Application approved successfully!');
-      setIsModalOpen(false);
-      setSelectedApplication(null);
-      setTimeout(() => setSuccessMessage(null), 4000);
-    },
-    onError: (error: any) => {
-      setErrorMessage(error.message || 'Failed to approve application');
-      setTimeout(() => setErrorMessage(null), 4000);
-    },
-  });
-
-  // Mutation: Reject application
-  const rejectMutation = useMutation({
-    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
-      tutorApi.rejectApplication(id, reason),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tutor-applications'] });
-      setSuccessMessage('✅ Application rejected successfully!');
-      setIsModalOpen(false);
-      setSelectedApplication(null);
-      setTimeout(() => setSuccessMessage(null), 4000);
-    },
-    onError: (error: any) => {
-      setErrorMessage(error.message || 'Failed to reject application');
-      setTimeout(() => setErrorMessage(null), 4000);
-    },
-  });
-
-  // ==========================================================
-  // PHASE 4: Handle Different States
-  // ==========================================================
   const applications = applicationsData?.data || [];
   const pendingCount = applications.filter((app) => app.status === 'pending').length;
   const totalCount = applications.length;
 
   const handleViewDetail = (application: Application) => {
-    setSelectedApplication(application);
-    setIsModalOpen(true);
+    // Navigate to detail page instead of opening modal
+    navigate(`/admin/tutor-approval/${application.id}`);
   };
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setSelectedApplication(null);
-  };
-
-  const handleApprove = (applicationId: string, adminNotes?: string) => {
-    approveMutation.mutate({ id: applicationId, notes: adminNotes });
-  };
-
-  const handleReject = (applicationId: string, rejectionReason: string) => {
-    rejectMutation.mutate({ id: applicationId, reason: rejectionReason });
-  };
-
-  // ==========================================================
-  // PHASE 4: Render Different States
-  // ==========================================================
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
       {/* ========== HEADER SECTION ========== */}
@@ -128,32 +68,6 @@ export default function TutorApproval() {
 
       {/* ========== MAIN CONTENT ========== */}
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* ========== Success Message ========== */}
-        {successMessage && (
-          <div className="mb-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-300 rounded-lg flex items-start gap-3 animate-in fade-in slide-in-from-top shadow-md">
-            <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-            <p className="text-green-800 font-semibold">{successMessage}</p>
-          </div>
-        )}
-
-        {/* ========== Error Message ========== */}
-        {errorMessage && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3 justify-between animate-in fade-in slide-in-from-top shadow-sm">
-            <div className="flex items-start gap-3 flex-1">
-              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-red-800 font-medium">Error</p>
-                <p className="text-red-700 text-sm">{errorMessage}</p>
-              </div>
-            </div>
-            <button
-              onClick={() => setErrorMessage(null)}
-              className="flex-shrink-0 text-red-600 hover:text-red-800"
-            >
-              ✕
-            </button>
-          </div>
-        )}
 
         {/* ========== FILTER SECTION ========== */}
         <div className="bg-white rounded-xl shadow-md border border-blue-100 p-8 mb-8 hover:shadow-lg transition-all">
@@ -223,18 +137,6 @@ export default function TutorApproval() {
           />
         )}
       </div>
-
-      {/* ========== Detail Modal ========== */}
-      {selectedApplication && (
-        <ApplicationDetailModal
-          application={selectedApplication}
-          isOpen={isModalOpen}
-          onClose={handleCloseModal}
-          onApprove={handleApprove}
-          onReject={handleReject}
-          isLoading={approveMutation.isPending || rejectMutation.isPending}
-        />
-      )}
     </div>
   );
 }
