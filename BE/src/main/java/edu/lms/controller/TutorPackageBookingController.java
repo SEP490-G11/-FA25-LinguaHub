@@ -7,6 +7,7 @@ import edu.lms.service.TutorPackageBookingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -23,6 +24,7 @@ public class TutorPackageBookingController {
     private final TutorPackageBookingService tutorPackageBookingService;
 
     @PostMapping("/lock-slot")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<OperationStatusResponse> lockSlots(
             @Valid @RequestBody PackageSlotRequest request
     ) {
@@ -32,6 +34,7 @@ public class TutorPackageBookingController {
     }
 
     @PostMapping("/confirm")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<OperationStatusResponse> confirmSlots(
             @Valid @RequestBody PackageSlotRequest request
     ) {
