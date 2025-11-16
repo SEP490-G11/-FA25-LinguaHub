@@ -22,6 +22,7 @@ public interface TutorService {
     void approveTutorApplication(Long verificationId, Long adminId);
     void rejectTutorApplication(Long verificationId, Long adminId, String reason);
     List<TutorApplicationListResponse> getAllTutors(String status);
+    List<TutorApplicationListResponse> getAllApplications();
     void suspendTutor(Long tutorId, Long adminId);
     void unsuspendTutor(Long tutorId, Long adminId);
     void updateTutorInfo(Long tutorId, TutorUpdateRequest request);
