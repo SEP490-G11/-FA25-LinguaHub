@@ -109,7 +109,7 @@ export function AppRoutes() {
             <Route path="/create-courses" element={<CreateCourse />} />
             <Route path="/students" element={<TutorStudents />} />
             <Route path="/schedule" element={<TutorSchedule />} />
-            <Route path="/payment" element={<TutorPayment />} />
+            <Route path="/payments" element={<TutorPayment />} />
             <Route path="/messages" element={<TutorMessages />} />
             <Route path="/resources" element={<TutorResources />} />
             <Route path="/settings" element={<TutorSettings />} />
