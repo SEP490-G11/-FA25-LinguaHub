@@ -15,48 +15,65 @@ import java.util.List;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-@Table(name = "TutorVerification")
+@Table(name = "tutor_verification")
 public class TutorVerification {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "tutor_verificationid")
     Long tutorVerificationID;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "TutorID", nullable = false)
+    @JoinColumn(name = "tutorid", nullable = false)
     Tutor tutor;
 
     @Builder.Default
-    @Column(nullable = false)
+    @Column(name = "experience", nullable = false)
     Short experience = 0;
 
-    @Column(length = 255)
+    @Column(name = "specialization", length = 255)
     String specialization;
 
-    @Column(length = 100)
+    @Column(name = "teaching_language", length = 100)
     String teachingLanguage;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "bio", columnDefinition = "TEXT")
     String bio;
 
     @Builder.Default
+    @Column(name = "documenturl", length = 255, nullable = false)
+    String documentUrl = "";
+
+    @Builder.Default
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "status", nullable = false)
     TutorVerificationStatus status = TutorVerificationStatus.PENDING;
 
     @Builder.Default
+    @Column(name = "submitted_at", nullable = false, updatable = false)
     LocalDateTime submittedAt = LocalDateTime.now();
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ReviewedBy", referencedColumnName = "userID")
+    @JoinColumn(name = "reviewed_by", referencedColumnName = "userid")
     User reviewedBy;
 
+    @Column(name = "reviewed_at")
     LocalDateTime reviewedAt;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "reason_for_reject", columnDefinition = "TEXT")
     String reasonForReject;
 
     @Builder.Default
     @OneToMany(mappedBy = "tutorVerification", cascade = CascadeType.ALL, orphanRemoval = true)
     List<TutorCertificate> certificates = new ArrayList<>();
+
+    @PrePersist
+    void prePersist() {
+        if (documentUrl == null) {
+            documentUrl = "";
+        }
+        if (submittedAt == null) {
+            submittedAt = LocalDateTime.now();
+        }
+    }
 }
