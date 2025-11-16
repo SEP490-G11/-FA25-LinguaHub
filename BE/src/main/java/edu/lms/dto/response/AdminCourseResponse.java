@@ -32,4 +32,6 @@ public class AdminCourseResponse {
 
     LocalDateTime createdAt;
     LocalDateTime updatedAt;
+
+    String adminReviewNote;
 }

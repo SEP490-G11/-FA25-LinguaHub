@@ -15,10 +15,12 @@ import edu.lms.repository.TutorRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -26,6 +28,7 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -39,13 +42,12 @@ public class TutorBookingPlanService {
     public BookingPlanCreateResponse createBookingPlan(Long currentUserId, TutorBookingPlanRequest request) {
         Tutor tutor = getApprovedTutorByUserId(currentUserId);
         validatePlanRequest(request);
-        ensureNoOverlappingPlans(tutor.getTutorID(), request.getDate(), request.getStartTime(), request.getEndTime(), null);
+        ensureNoOverlappingPlans(tutor.getTutorID(), request.getTitle(), request.getStartTime(), request.getEndTime(), null);
 
         BookingPlan bookingPlan = BookingPlan.builder()
                 .title(request.getTitle())
-                .date(request.getDate())
-                .startTime(request.getStartTime())
-                .endTime(request.getEndTime())
+                .startHours(request.getStartTime())
+                .endHours(request.getEndTime())
                 .slotDuration(request.getSlotDuration())
                 .pricePerHours(request.getPricePerHours().doubleValue())
                 .tutorID(tutor.getTutorID())
@@ -54,7 +56,8 @@ public class TutorBookingPlanService {
                 .build();
 
         bookingPlan = bookingPlanRepository.save(bookingPlan);
-        int slotsCreated = regenerateSlots(bookingPlan);
+        LocalDate targetDate = findTargetDateFromTitle(bookingPlan.getTitle());
+        int slotsCreated = regenerateSlots(bookingPlan, targetDate);
 
         return BookingPlanCreateResponse.builder()
                 .success(true)
@@ -71,14 +74,13 @@ public class TutorBookingPlanService {
         ensurePlanOwner(tutor, bookingPlan);
         ensurePlanNotBooked(bookingPlanId);
         validatePlanRequest(request);
-        ensureNoOverlappingPlans(tutor.getTutorID(), request.getDate(), request.getStartTime(), request.getEndTime(), bookingPlanId);
+        ensureNoOverlappingPlans(tutor.getTutorID(), request.getTitle(), request.getStartTime(), request.getEndTime(), bookingPlanId);
 
         boolean timeFieldsChanged = hasTimeFieldsChanged(bookingPlan, request);
 
         bookingPlan.setTitle(request.getTitle());
-        bookingPlan.setDate(request.getDate());
-        bookingPlan.setStartTime(request.getStartTime());
-        bookingPlan.setEndTime(request.getEndTime());
+        bookingPlan.setStartHours(request.getStartTime());
+        bookingPlan.setEndHours(request.getEndTime());
         bookingPlan.setSlotDuration(request.getSlotDuration());
         bookingPlan.setPricePerHours(request.getPricePerHours().doubleValue());
 
@@ -86,8 +88,8 @@ public class TutorBookingPlanService {
 
         int updatedSlots;
         if (timeFieldsChanged) {
-            bookingPlanSlotRepository.deleteByBookingPlanID(bookingPlanId);
-            updatedSlots = regenerateSlots(bookingPlan);
+            LocalDate targetDate = findTargetDateFromTitle(bookingPlan.getTitle());
+            updatedSlots = updateSlotsSmartly(bookingPlan, targetDate);
         } else {
             updatedSlots = (int) bookingPlanSlotRepository.countByBookingPlanID(bookingPlanId);
         }
@@ -113,15 +115,13 @@ public class TutorBookingPlanService {
     }
 
     @Transactional(readOnly = true)
-    public BookingPlanListResponse getBookingPlansByTutor(Long tutorId, LocalDate date) {
+    public BookingPlanListResponse getBookingPlansByTutor(Long tutorId) {
         Tutor tutor = tutorRepository.findById(tutorId)
                 .orElseThrow(() -> new AppException(ErrorCode.TUTOR_NOT_FOUND));
 
-        List<BookingPlan> plans = date == null
-                ? bookingPlanRepository.findByTutorIDAndIsActiveTrueOrderByDateAscStartTimeAsc(tutor.getTutorID())
-                : bookingPlanRepository.findByTutorIDAndIsActiveTrueAndDateOrderByStartTimeAsc(tutor.getTutorID(), date);
-
-        List<TutorBookingPlanResponse> planResponses = plans.stream()
+        List<TutorBookingPlanResponse> planResponses = bookingPlanRepository
+                .findByTutorIDAndIsActiveTrueOrderByTitleAscStartHoursAsc(tutor.getTutorID())
+                .stream()
                 .map(this::toBookingPlanResponse)
                 .toList();
 
@@ -154,7 +154,7 @@ public class TutorBookingPlanService {
                 .startTime(slot.getStartTime())
                 .endTime(slot.getEndTime())
                 .status(slot.getUserID() == null ? "available" : "booked")
-                .build();
+                        .build();
     }
 
     private void validatePlanRequest(TutorBookingPlanRequest request) {
@@ -168,23 +168,33 @@ public class TutorBookingPlanService {
         }
     }
 
-    private void ensureNoOverlappingPlans(Long tutorId, LocalDate date, LocalTime startTime, LocalTime endTime, Long excludeId) {
+    private void ensureNoOverlappingPlans(Long tutorId, String title, LocalTime startTime, LocalTime endTime, Long excludeId) {
         List<BookingPlan> overlappingPlans = bookingPlanRepository.findOverlappingPlans(
-                tutorId, date, startTime, endTime, excludeId);
+                tutorId, title, startTime, endTime, excludeId);
         if (!overlappingPlans.isEmpty()) {
             throw new AppException(ErrorCode.BOOKING_TIME_CONFLICT);
         }
     }
 
     private Tutor getApprovedTutorByUserId(Long currentUserId) {
+        log.info("Looking for tutor with userId: {}", currentUserId);
+        
         Tutor tutor = tutorRepository.findByUser_UserID(currentUserId)
-                .orElseThrow(() -> new AppException(ErrorCode.TUTOR_NOT_FOUND));
+                .orElseThrow(() -> {
+                    log.warn("Tutor not found for userId: {}. User may need to apply to become a tutor first.", currentUserId);
+                    return new AppException(ErrorCode.TUTOR_NOT_FOUND);
+                });
+
+        log.info("Found tutor: tutorId={}, status={}", tutor.getTutorID(), tutor.getStatus());
 
         if (tutor.getStatus() == TutorStatus.SUSPENDED) {
+            log.warn("Tutor account is suspended: tutorId={}", tutor.getTutorID());
             throw new AppException(ErrorCode.TUTOR_ACCOUNT_LOCKED);
         }
 
         if (tutor.getStatus() != TutorStatus.APPROVED) {
+            log.warn("Tutor status is not APPROVED: tutorId={}, status={}. Tutor needs to be approved by admin first.", 
+                    tutor.getTutorID(), tutor.getStatus());
             throw new AppException(ErrorCode.TUTOR_NOT_APPROVED);
         }
 
@@ -204,35 +214,130 @@ public class TutorBookingPlanService {
     }
 
     private boolean hasTimeFieldsChanged(BookingPlan bookingPlan, TutorBookingPlanRequest request) {
-        return !bookingPlan.getDate().equals(request.getDate())
-                || !bookingPlan.getStartTime().equals(request.getStartTime())
-                || !bookingPlan.getEndTime().equals(request.getEndTime())
+        return !bookingPlan.getTitle().equals(request.getTitle())
+                || !bookingPlan.getStartHours().equals(request.getStartTime())
+                || !bookingPlan.getEndHours().equals(request.getEndTime())
                 || !bookingPlan.getSlotDuration().equals(request.getSlotDuration());
     }
 
-    private int regenerateSlots(BookingPlan bookingPlan) {
+    private int regenerateSlots(BookingPlan bookingPlan, LocalDate targetDate) {
         List<BookingPlanSlot> slots = new ArrayList<>();
-        LocalDateTime slotStart = LocalDateTime.of(bookingPlan.getDate(), bookingPlan.getStartTime());
-        LocalDateTime planEnd = LocalDateTime.of(bookingPlan.getDate(), bookingPlan.getEndTime());
+        LocalDateTime slotStart = LocalDateTime.of(targetDate, bookingPlan.getStartHours());
+        LocalDateTime planEnd = LocalDateTime.of(targetDate, bookingPlan.getEndHours());
 
         while (!slotStart.plusMinutes(bookingPlan.getSlotDuration()).isAfter(planEnd)) {
             LocalDateTime slotEnd = slotStart.plusMinutes(bookingPlan.getSlotDuration());
 
-                BookingPlanSlot slot = BookingPlanSlot.builder()
-                        .bookingPlanID(bookingPlan.getBookingPlanID())
-                        .tutorID(bookingPlan.getTutorID())
-                        .startTime(slotStart)
-                        .endTime(slotEnd)
-                    .status(SlotStatus.Locked)
-                        .lockedAt(LocalDateTime.now())
-                        .build();
+            BookingPlanSlot slot = BookingPlanSlot.builder()
+                    .bookingPlanID(bookingPlan.getBookingPlanID())
+                    .tutorID(bookingPlan.getTutorID())
+                    .startTime(slotStart)
+                    .endTime(slotEnd)
+                    .status(SlotStatus.Available)
+                    .lockedAt(null)
+                    .expiresAt(null)
+                    .build();
 
-                slots.add(slot);
+            slots.add(slot);
             slotStart = slotEnd;
         }
 
         bookingPlanSlotRepository.saveAll(slots);
         return slots.size();
+    }
+
+    /**
+     * Cập nhật slots một cách thông minh:
+     * - Giữ lại slots cũ nếu trùng với slots mới (cùng startTime và endTime)
+     * - Xóa slots cũ không còn trong danh sách mới
+     * - Tạo slots mới không có trong danh sách cũ
+     */
+    private int updateSlotsSmartly(BookingPlan bookingPlan, LocalDate targetDate) {
+        // Lấy danh sách slots hiện tại
+        List<BookingPlanSlot> existingSlots = bookingPlanSlotRepository
+                .findByBookingPlanIDOrderByStartTimeAsc(bookingPlan.getBookingPlanID());
+
+        // Tạo danh sách slots mới dựa trên thông tin mới
+        List<BookingPlanSlot> newSlots = generateNewSlots(bookingPlan, targetDate);
+
+        // Tạo map để tìm slot cũ nhanh hơn (key: startTime_endTime)
+        java.util.Map<String, BookingPlanSlot> existingSlotsMap = new java.util.HashMap<>();
+        for (BookingPlanSlot slot : existingSlots) {
+            String key = slot.getStartTime().toString() + "_" + slot.getEndTime().toString();
+            existingSlotsMap.put(key, slot);
+        }
+
+        // Danh sách slots cần giữ lại và slots cần tạo mới
+        List<BookingPlanSlot> slotsToKeep = new ArrayList<>();
+        List<BookingPlanSlot> slotsToCreate = new ArrayList<>();
+
+        for (BookingPlanSlot newSlot : newSlots) {
+            String key = newSlot.getStartTime().toString() + "_" + newSlot.getEndTime().toString();
+            BookingPlanSlot existingSlot = existingSlotsMap.get(key);
+
+            if (existingSlot != null) {
+                // Slot trùng nhau, giữ lại slot cũ
+                slotsToKeep.add(existingSlot);
+            } else {
+                // Slot mới, cần tạo
+                slotsToCreate.add(newSlot);
+            }
+        }
+
+        // Tạo map của slots mới để kiểm tra nhanh
+        java.util.Set<String> newSlotsKeys = new java.util.HashSet<>();
+        for (BookingPlanSlot newSlot : newSlots) {
+            String key = newSlot.getStartTime().toString() + "_" + newSlot.getEndTime().toString();
+            newSlotsKeys.add(key);
+        }
+
+        // Xóa slots cũ không còn trong danh sách mới
+        List<BookingPlanSlot> slotsToDelete = new ArrayList<>();
+        for (BookingPlanSlot existingSlot : existingSlots) {
+            String key = existingSlot.getStartTime().toString() + "_" + existingSlot.getEndTime().toString();
+            if (!newSlotsKeys.contains(key)) {
+                slotsToDelete.add(existingSlot);
+            }
+        }
+
+        if (!slotsToDelete.isEmpty()) {
+            bookingPlanSlotRepository.deleteAll(slotsToDelete);
+        }
+
+        // Tạo slots mới
+        if (!slotsToCreate.isEmpty()) {
+            bookingPlanSlotRepository.saveAll(slotsToCreate);
+        }
+
+        return slotsToKeep.size() + slotsToCreate.size();
+    }
+
+    /**
+     * Tạo danh sách slots mới dựa trên thông tin booking plan
+     */
+    private List<BookingPlanSlot> generateNewSlots(BookingPlan bookingPlan, LocalDate targetDate) {
+        List<BookingPlanSlot> slots = new ArrayList<>();
+        LocalDateTime slotStart = LocalDateTime.of(targetDate, bookingPlan.getStartHours());
+        LocalDateTime planEnd = LocalDateTime.of(targetDate, bookingPlan.getEndHours());
+
+        while (!slotStart.plusMinutes(bookingPlan.getSlotDuration()).isAfter(planEnd)) {
+            LocalDateTime slotEnd = slotStart.plusMinutes(bookingPlan.getSlotDuration());
+
+            BookingPlanSlot slot = BookingPlanSlot.builder()
+                    .bookingPlanID(bookingPlan.getBookingPlanID())
+                    .tutorID(bookingPlan.getTutorID())
+                    .startTime(slotStart)
+                    .endTime(slotEnd)
+                    .status(SlotStatus.Available)
+                    .lockedAt(null)
+                    .expiresAt(null)
+                    .build();
+
+            slots.add(slot);
+            slotStart = slotEnd;
+        }
+
+        return slots;
     }
 
     private TutorBookingPlanResponse toBookingPlanResponse(BookingPlan bookingPlan) {
@@ -242,9 +347,8 @@ public class TutorBookingPlanService {
                 .bookingPlanId(bookingPlan.getBookingPlanID())
                 .tutorId(bookingPlan.getTutorID())
                 .title(bookingPlan.getTitle())
-                .date(bookingPlan.getDate())
-                .startTime(bookingPlan.getStartTime())
-                .endTime(bookingPlan.getEndTime())
+                .startTime(bookingPlan.getStartHours())
+                .endTime(bookingPlan.getEndHours())
                 .slotDuration(bookingPlan.getSlotDuration())
                 .pricePerHours(rawPrice == null ? BigDecimal.ZERO : BigDecimal.valueOf(rawPrice))
                 .isOpen(bookingPlan.getIsOpen())
@@ -252,5 +356,28 @@ public class TutorBookingPlanService {
                 .createdAt(bookingPlan.getCreatedAt())
                 .updatedAt(bookingPlan.getUpdatedAt())
                             .build();
+    }
+
+    private LocalDate findTargetDateFromTitle(String title) {
+        DayOfWeek dayOfWeek = parseTitleToDayOfWeek(title);
+        LocalDate today = LocalDate.now();
+        LocalDate targetDate = today.with(dayOfWeek);
+        if (targetDate.isBefore(today)) {
+            targetDate = targetDate.plusWeeks(1);
+        }
+        return targetDate;
+    }
+
+    private DayOfWeek parseTitleToDayOfWeek(String title) {
+        return switch (title.trim().toUpperCase()) {
+            case "T2" -> DayOfWeek.MONDAY;
+            case "T3" -> DayOfWeek.TUESDAY;
+            case "T4" -> DayOfWeek.WEDNESDAY;
+            case "T5" -> DayOfWeek.THURSDAY;
+            case "T6" -> DayOfWeek.FRIDAY;
+            case "T7" -> DayOfWeek.SATURDAY;
+            case "CN", "CHUNHAT", "CHỦ NHẬT" -> DayOfWeek.SUNDAY;
+            default -> throw new AppException(ErrorCode.INVALID_KEY);
+        };
     }
 }

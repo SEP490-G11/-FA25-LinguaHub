@@ -38,12 +38,13 @@ public class BookingPlanSlot {
     @Column(nullable = true)
     Long paymentID; // liên kết với bảng Payment
 
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
-    SlotStatus status = SlotStatus.Locked; // Locked | Paid
+    SlotStatus status = SlotStatus.Available;
 
-    @Column(nullable = false)
-    LocalDateTime lockedAt = LocalDateTime.now();
+    @Column(nullable = true)
+    LocalDateTime lockedAt;
 
     @Column(nullable = true)
     LocalDateTime expiresAt; // slot hết hạn nếu chưa thanh toán

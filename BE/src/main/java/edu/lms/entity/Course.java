@@ -27,18 +27,18 @@ public class Course {
     String title;
 
     @Column(length = 500)
-    String shortDescription; // 🔹 Mô tả ngắn hiển thị ở card
+    String shortDescription; // Mô tả ngắn hiển thị ở card
 
     @Column(columnDefinition = "TEXT")
-    String description; // 🔹 Mô tả chi tiết khóa học
+    String description; // Mô tả chi tiết khóa học
 
     @Column(columnDefinition = "TEXT")
-    String requirement; // 🔹 Yêu cầu đầu vào
+    String requirement; //  Yêu cầu đầu vào
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20, nullable = false)
     @Builder.Default
-    CourseLevel level = CourseLevel.BEGINNER; // 🔹 BEGINNER / INTERMEDIATE / ADVANCED
+    CourseLevel level = CourseLevel.BEGINNER; //  BEGINNER / INTERMEDIATE / ADVANCED
 
     Integer duration;
 
@@ -52,6 +52,9 @@ public class Course {
     @Enumerated(EnumType.STRING)
     @Builder.Default
     CourseStatus status = CourseStatus.Draft;
+
+    @Column(columnDefinition = "TEXT")
+    String adminReviewNote;   // Lý do reject / ghi chú của admin
 
     @Builder.Default
     LocalDateTime createdAt = LocalDateTime.now();
@@ -71,7 +74,7 @@ public class Course {
     List<CourseSection> sections;
 
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, orphanRemoval = true)
-    List<CourseObjective> objectives; // 🔹 Mục tiêu học tập (what you'll learn)
+    List<CourseObjective> objectives; //  Mục tiêu học tập (what you'll learn)
 
     @PreUpdate
     public void onUpdate() {

@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
@@ -13,56 +12,56 @@ import java.time.LocalTime;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "BookingPlan")
+@Table(name = "booking_plan")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class BookingPlan {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "booking_planid")
     Long bookingPlanID;
 
     @Column(nullable = false, length = 100)
     String title;
 
-    @Column(nullable = false)
-    LocalDate date;
+    @Column(name = "start_hours")
+    LocalTime startHours;
 
-    @Column(nullable = false)
-    LocalTime startTime;
-
-    @Column(nullable = false)
-    LocalTime endTime;
+    @Column(name = "end_hours")
+    LocalTime endHours;
 
     @Builder.Default
-    @Column(nullable = false)
+    @Column(name = "is_active", nullable = false)
     Boolean isActive = true;
 
     @Builder.Default
-    @Column(nullable = false)
+    @Column(name = "is_open", nullable = false)
     Boolean isOpen = true;
 
     @Column(name = "tutor_id", nullable = false)
     Long tutorID;
 
-    @Column(nullable = false)
+    @Column(name = "slot_duration")
     Integer slotDuration; // minutes
 
     @Builder.Default
-    @Column(nullable = false)
+    @Column(name = "price_per_hours")
     Double pricePerHours = 0.0;
 
     @Builder.Default
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     LocalDateTime createdAt = LocalDateTime.now();
 
     @Builder.Default
-    @Column(nullable = false)
+    @Column(name = "updated_at", nullable = false)
     LocalDateTime updatedAt = LocalDateTime.now();
 
     @PrePersist
     void onCreate() {
         LocalDateTime now = LocalDateTime.now();
-        createdAt = now;
+        if (createdAt == null) {
+            createdAt = now;
+        }
         updatedAt = now;
     }
 

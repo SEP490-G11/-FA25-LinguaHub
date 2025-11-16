@@ -1,7 +1,7 @@
 package edu.lms.dto.request;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -15,7 +15,6 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalTime;
 
 @Data
@@ -29,18 +28,14 @@ public class TutorBookingPlanRequest {
     @Size(max = 100, message = "Title must be less than 100 characters")
     String title;
 
-    @NotNull(message = "Date is required")
-    @JsonFormat(pattern = "yyyy-MM-dd")
-    LocalDate date;
-
     @NotNull(message = "Start time is required")
     @JsonProperty("start_hours")
-    @JsonFormat(pattern = "HH:mm")
+    @JsonDeserialize(using = LocalTimeDeserializer.class)
     LocalTime startTime;
 
     @NotNull(message = "End time is required")
     @JsonProperty("end_hours")
-    @JsonFormat(pattern = "HH:mm")
+    @JsonDeserialize(using = LocalTimeDeserializer.class)
     LocalTime endTime;
 
     @NotNull(message = "Slot duration is required")
@@ -52,4 +47,5 @@ public class TutorBookingPlanRequest {
     @JsonProperty("price_per_hours")
     @DecimalMin(value = "0.0", inclusive = false, message = "Price per hour must be greater than 0")
     BigDecimal pricePerHours;
+
 }

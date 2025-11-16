@@ -1,5 +1,6 @@
 package edu.lms.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -26,6 +27,7 @@ public class TutorPackageRequest {
 
     @NotNull(message = "maxSlot is required")
     @Min(value = 1, message = "maxSlot must be greater than 0")
+    @JsonProperty("max_slot")
     Integer maxSlot;
 }
 
