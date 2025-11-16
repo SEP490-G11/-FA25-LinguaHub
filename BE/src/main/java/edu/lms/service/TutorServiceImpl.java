@@ -395,6 +395,26 @@ public class TutorServiceImpl implements TutorService {
     }
 
     @Override
+    public List<TutorApplicationListResponse> getAllApplications() {
+        log.info("Getting all applications with status PENDING, REJECTED, and APPROVED");
+        
+        List<TutorVerificationStatus> statuses = List.of(
+            TutorVerificationStatus.PENDING,
+            TutorVerificationStatus.REJECTED,
+            TutorVerificationStatus.APPROVED
+        );
+        
+        List<TutorVerification> allApplications = 
+            tutorVerificationRepository.findAllByStatusInOrderBySubmittedAtDesc(statuses);
+        
+        log.info("Found {} applications", allApplications.size());
+        
+        return allApplications.stream()
+                .map(this::mapToApplicationListResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public void suspendTutor(Long tutorId, Long adminId) {
         log.info("Suspending tutor ID: {} by admin ID: {}", tutorId, adminId);
         

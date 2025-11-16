@@ -32,7 +32,15 @@ public class AdminTutorController {
         return ResponseEntity.ok(pendingApplications);
     }
 
-    // 2. Xem chi tiết một đơn đăng ký
+    // 2. Xem tất cả các đơn đăng ký (PENDING, REJECTED, APPROVED)
+    @GetMapping("/applications")
+    @PreAuthorize("hasAuthority('VIEW_TUTOR_APPLICATIONS')")
+    public ResponseEntity<List<TutorApplicationListResponse>> getAllApplications() {
+        List<TutorApplicationListResponse> allApplications = tutorService.getAllApplications();
+        return ResponseEntity.ok(allApplications);
+    }
+
+    // 3. Xem chi tiết một đơn đăng ký
     @GetMapping("/applications/{verificationId}")
     public ResponseEntity<TutorApplicationDetailResponse> getApplicationDetail(
             @PathVariable Long verificationId
@@ -41,7 +49,7 @@ public class AdminTutorController {
         return ResponseEntity.ok(applicationDetail);
     }
 
-    // 3. Duyệt đơn đăng ký (approve)
+    // 4. Duyệt đơn đăng ký (approve)
     @PostMapping("/applications/{verificationId}/approve")
     @PreAuthorize("hasAuthority('APPROVE_TUTOR')")
     public ResponseEntity<?> approveApplication(
@@ -52,7 +60,7 @@ public class AdminTutorController {
         return ResponseEntity.ok("Application approved successfully");
     }
 
-    // 4. Từ chối đơn đăng ký (reject)
+    // 5. Từ chối đơn đăng ký (reject)
     @PostMapping("/applications/{verificationId}/reject")
     @PreAuthorize("hasAuthority('REJECT_TUTOR')")
     public ResponseEntity<?> rejectApplication(
@@ -64,7 +72,7 @@ public class AdminTutorController {
         return ResponseEntity.ok("Application rejected successfully");
     }
 
-    // 5. Xem danh sách các tutor đã được approve (có thể filter theo status)
+    // 6. Xem danh sách các tutor đã được approve (có thể filter theo status)
     @GetMapping("/all")
     @PreAuthorize("hasAuthority('VIEW_TUTOR_APPLICATIONS')")
     public ResponseEntity<List<TutorApplicationListResponse>> getAllTutors(
@@ -74,7 +82,7 @@ public class AdminTutorController {
         return ResponseEntity.ok(tutors);
     }
 
-    // 6. Suspend/Unsuspend tutor
+    // 7. Suspend/Unsuspend tutor
     @PostMapping("/{tutorId}/suspend")
     @PreAuthorize("hasAuthority('SUSPEND_TUTOR')")
     public ResponseEntity<?> suspendTutor(
@@ -95,7 +103,7 @@ public class AdminTutorController {
         return ResponseEntity.ok("Tutor unsuspended successfully");
     }
 
-    // 7. Update tutor information
+    // 8. Update tutor information
     @PatchMapping("/{tutorId}")
     @PreAuthorize("hasAuthority('UPDATE_TUTOR_INFO')")
     public ResponseEntity<?> updateTutorInfo(
