@@ -18,24 +18,25 @@ public class BookingPlanSlot {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "slot_id")
     Long slotID;
 
-    @Column(nullable = false)
+    @Column(name = "booking_plan_id", nullable = false)
     Long bookingPlanID;
 
-    @Column(nullable = false)
+    @Column(name = "tutor_id", nullable = false)
     Long tutorID; // tutor có thể xem danh sách learner book slot của mình
 
-    @Column(nullable = true)
+    @Column(name = "user_id", nullable = true)
     Long userID; // learner nào đã book slot
 
-    @Column(nullable = false)
+    @Column(name = "start_time", nullable = false)
     LocalDateTime startTime;
 
-    @Column(nullable = false)
+    @Column(name = "end_time", nullable = false)
     LocalDateTime endTime;
 
-    @Column(nullable = true)
+    @Column(name = "payment_id", nullable = true)
     Long paymentID; // liên kết với bảng Payment
 
     @Builder.Default
@@ -43,10 +44,10 @@ public class BookingPlanSlot {
     @Column(nullable = false, length = 10)
     SlotStatus status = SlotStatus.Available;
 
-    @Column(nullable = true)
+    @Column(name = "locked_at", nullable = true)
     LocalDateTime lockedAt;
 
-    @Column(nullable = true)
+    @Column(name = "expires_at", nullable = true)
     LocalDateTime expiresAt; // slot hết hạn nếu chưa thanh toán
 
     @ManyToOne(fetch = FetchType.LAZY)
