@@ -1,7 +1,7 @@
 import axios from '@/config/axiosConfig';
 import { BookingPlanRequest, BookingPlanResponse } from '@/pages/TutorPages/Schedule/type';
 
-const BASE_URL = '/tutors/booking-plans';
+const BASE_URL = '/tutor/booking-plan';
 
 export const bookingPlanApi = {
   // Create a new booking plan

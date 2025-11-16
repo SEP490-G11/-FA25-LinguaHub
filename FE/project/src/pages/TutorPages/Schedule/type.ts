@@ -16,29 +16,20 @@ export interface DaySchedule {
 
 
 
-export interface TimeObject {
-  hour: number;
-  minute: number;
-  second: number;
-  nano: number;
-}
-
 export interface BookingPlanRequest {
   title: string;
-  start_hours: TimeObject;
-  end_hours: TimeObject;
+  start_hours: string;  // Format: "HH:mm"
+  end_hours: string;    // Format: "HH:mm"
   slot_duration: number;
   price_per_hours: number;
-  // meeting_url: string;
 }
 
 export interface BookingPlanResponse {
   id: number;
   title: string;
-  start_hours: TimeObject;
-  end_hours: TimeObject;
+  start_hours: string;  // Format: "HH:mm"
+  end_hours: string;    // Format: "HH:mm"
   slot_duration: number;
   price_per_hours: number;
-  // meeting_url: string;
   createdAt: string;
 }
