@@ -12,12 +12,13 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "Tutor_Packages")
+@Table(name = "tutor_packages")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class TutorPackage {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "packageid")
     Long packageID;
 
     @Column(nullable = false, length = 100)
@@ -30,7 +31,7 @@ public class TutorPackage {
     @Column(nullable = false)
     BigDecimal price = BigDecimal.ZERO;
 
-    @Column(nullable = false)
+    @Column(name = "max_slots", nullable = false)
     Integer maxSlots; // số slot mà gói này cung cấp
 
     // tutor sở hữu gói này
@@ -39,18 +40,23 @@ public class TutorPackage {
     Tutor tutor;
 
     @Builder.Default
-    @Column(nullable = false)
+    @Column(name = "is_active", nullable = false)
     Boolean isActive = true;
 
     @Builder.Default
+    @Column(name = "created_at", nullable = false, updatable = false)
     LocalDateTime createdAt = LocalDateTime.now();
 
+    @Column(name = "updated_at", nullable = false)
     LocalDateTime updatedAt;
 
     @PrePersist
     public void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now();
+        if (createdAt == null) {
+            createdAt = now;
+        }
+        updatedAt = now;
     }
 
     @PreUpdate
