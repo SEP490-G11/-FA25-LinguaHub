@@ -33,6 +33,7 @@ import CourseApprovalDetailPage from '@/pages/Admin/CourseApproval/CourseDetailP
 import CoursesDetailPage from '@/pages/Admin/Courses/CourseDetailPage';
 import ApplyTutor from '@/pages/ApplyTutor';
 import TutorApproval from '@/pages/Admin/TutorApproval';
+import ApplicationDetailPage from '@/pages/Admin/TutorApproval/ApplicationDetailPage';
 import EditCourse from '@/pages/TutorPages/EditCourse';
 import CourseList from '@/pages/TutorPages/CourseList';
 import TutorDashboardLayout from '@/components/layout/tutor/TutorDashboardLayout';
@@ -98,6 +99,7 @@ export function AppRoutes() {
                 <Route path="course-approval" element={<CourseApprovalPage />} />
                 <Route path="course-approval/:courseId" element={<CourseApprovalDetailPage />} />
                 <Route path="tutor-approval" element={<TutorApproval />} />
+                <Route path="tutor-approval/:id" element={<ApplicationDetailPage />} />
                 <Route path="payments" element={<AdminPayments />} />
             </Route>
             
