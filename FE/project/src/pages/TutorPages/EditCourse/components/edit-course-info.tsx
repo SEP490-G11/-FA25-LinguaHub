@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { CourseDetail } from '../types';
+import axios from '@/config/axiosConfig';
 
 interface EditCourseInfoProps {
   course: CourseDetail;
@@ -33,10 +34,56 @@ export default function EditCourseInfo({
     price: course.price,
     language: course.language,
     thumbnailURL: course.thumbnailURL,
-    categoryID: course.categoryID,
+    categoryID: course.categoryID || 1,
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [categories, setCategories] = useState<any[]>([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+
+  // Fetch categories from API
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setIsLoadingCategories(true);
+        const response = await axios.get('/categories');
+        
+        let rawData = [];
+        if (response?.data?.result) {
+          rawData = response.data.result;
+        } else if (Array.isArray(response?.data)) {
+          rawData = response.data;
+        } else if (response?.data?.data) {
+          rawData = response.data.data;
+        }
+        
+        // Map backend format to frontend format
+        const categoriesData = rawData.map((cat: any) => ({
+          id: cat.categoryId || cat.id,
+          name: cat.categoryName || cat.name,
+        }));
+        
+        if (categoriesData.length === 0) {
+          // Fallback to constants
+          import('@/constants/categories').then((module) => {
+            setCategories([...module.CATEGORIES]);
+          });
+        } else {
+          setCategories(categoriesData);
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+        // Fallback to constants
+        import('@/constants/categories').then((module) => {
+          setCategories([...module.CATEGORIES]);
+        });
+      } finally {
+        setIsLoadingCategories(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -56,7 +103,7 @@ export default function EditCourseInfo({
   const handleSelectChange = (name: string, value: string) => {
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: name === 'categoryID' ? parseInt(value) : value,
     }));
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: '' }));
@@ -232,8 +279,42 @@ export default function EditCourseInfo({
         </div>
       </div>
 
-      {/* Level and Language */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Category, Level and Language */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div>
+          <Label htmlFor="category" className="text-base font-semibold mb-2">
+            Category <span className="text-red-500">*</span>
+          </Label>
+          <Select 
+            value={formData.categoryID?.toString() || ''} 
+            onValueChange={(value) => handleSelectChange('categoryID', value)}
+          >
+            <SelectTrigger disabled={isSubmitting || isLoadingCategories} className={errors.categoryID ? 'border-red-500' : ''}>
+              <SelectValue placeholder="Select category" />
+            </SelectTrigger>
+            <SelectContent>
+              {isLoadingCategories ? (
+                <SelectItem value="loading" disabled>
+                  Loading...
+                </SelectItem>
+              ) : categories.length === 0 ? (
+                <SelectItem value="empty" disabled>
+                  No categories
+                </SelectItem>
+              ) : (
+                categories.map((category) => (
+                  <SelectItem key={category.id} value={String(category.id)}>
+                    {category.name}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
+          {errors.categoryID && (
+            <p className="text-red-500 text-sm mt-1">{errors.categoryID}</p>
+          )}
+        </div>
+
         <div>
           <Label htmlFor="level" className="text-base font-semibold mb-2">
             Level <span className="text-red-500">*</span>
@@ -255,7 +336,7 @@ export default function EditCourseInfo({
 
         <div>
           <Label htmlFor="language" className="text-base font-semibold mb-2">
-            Teaching Language <span className="text-red-500">*</span>
+            Language <span className="text-red-500">*</span>
           </Label>
           <Select value={formData.language} onValueChange={(value) => handleSelectChange('language', value)}>
             <SelectTrigger disabled={isSubmitting} className={errors.language ? 'border-red-500' : ''}>

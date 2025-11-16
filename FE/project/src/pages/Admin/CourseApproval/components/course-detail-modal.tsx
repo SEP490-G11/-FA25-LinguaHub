@@ -1,22 +1,37 @@
 import { useState } from 'react';
-import { CourseDetail } from '@/queries/admin-api';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Check, X, AlertCircle, Video, BookOpen, FileText, Link2 } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import {
+  CheckCircle2,
+  XCircle,
+  Clock,
+  DollarSign,
+  User,
+  BookOpen,
+  Target,
+  FileText,
+  Video,
+  Link as LinkIcon,
+  Loader2,
+} from 'lucide-react';
+import { CourseDetail } from '../types';
 
 interface CourseDetailModalProps {
   isOpen: boolean;
-  course: CourseDetail;
+  course: CourseDetail | null;
   onClose: () => void;
-  onApprove: (courseId: string, notes?: string) => Promise<void>;
-  onReject: (courseId: string, reason: string) => Promise<void>;
+  onApprove: (courseId: number, adminNotes?: string) => Promise<void>;
+  onReject: (courseId: number, rejectionReason: string) => Promise<void>;
   isLoading: boolean;
 }
 
@@ -31,392 +46,318 @@ export function CourseDetailModal({
   const [adminNotes, setAdminNotes] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
   const [showRejectForm, setShowRejectForm] = useState(false);
-  const [validationError, setValidationError] = useState<string | null>(null);
 
-  /**
-   * Handle approve action
-   */
+  if (!course) return null;
+
   const handleApprove = async () => {
-    try {
-      setValidationError(null);
-      await onApprove(course.id, adminNotes);
-      setAdminNotes('');
-      setShowRejectForm(false);
-    } catch (error: any) {
-      setValidationError(error.message);
-    }
+    await onApprove(course.id, adminNotes);
+    setAdminNotes('');
   };
 
-  /**
-   * Handle reject action
-   */
   const handleReject = async () => {
     if (!rejectionReason.trim()) {
-      setValidationError('Please provide a reason for rejection');
+      alert('Vui lòng nhập lý do từ chối');
       return;
     }
-    
-    try {
-      setValidationError(null);
-      await onReject(course.id, rejectionReason);
-      setRejectionReason('');
-      setShowRejectForm(false);
-    } catch (error: any) {
-      setValidationError(error.message);
-    }
+    await onReject(course.id, rejectionReason);
+    setRejectionReason('');
+    setShowRejectForm(false);
   };
 
-  /**
-   * Handle cancel rejection form
-   */
-  const handleCancelReject = () => {
-    setShowRejectForm(false);
-    setRejectionReason('');
-    setValidationError(null);
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+    }).format(price);
   };
+
+  const totalLessons = course.section?.reduce(
+    (sum, section) => sum + (section.lessons?.length || 0),
+    0
+  ) || 0;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-screen overflow-y-auto">
-        {/* ========== Header ========== */}
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl">
-            Review Course: {course.title}
+          <DialogTitle className="text-2xl font-bold text-gray-900">
+            Chi tiết khóa học
           </DialogTitle>
+          <DialogDescription>
+            Xem xét và phê duyệt khóa học từ giảng viên
+          </DialogDescription>
         </DialogHeader>
 
-        {/* ========== Validation Error ========== */}
-        {validationError && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
-            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-            <p className="text-red-800 text-sm">{validationError}</p>
-          </div>
-        )}
-
-        {/* ========== Content Scroll Area ========== */}
         <div className="space-y-6">
-          {/* ========== Course Header ========== */}
-          <div className="border rounded-lg p-4 bg-gradient-to-br from-blue-50 to-indigo-50">
-            {course.thumbnail && (
+          {/* Thumbnail */}
+          {course.thumbnailURL && (
+            <div className="w-full h-64 rounded-lg overflow-hidden bg-gray-100">
               <img
-                src={course.thumbnail}
+                src={course.thumbnailURL}
                 alt={course.title}
-                className="w-full h-48 object-cover rounded mb-4 bg-gray-100"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none';
-                }}
+                className="w-full h-full object-cover"
               />
-            )}
-            <h2 className="text-2xl font-bold mb-2 text-gray-900">
-              {course.title}
-            </h2>
-            <p className="text-gray-700 mb-4 line-clamp-3">{course.description}</p>
-
-            {/* Course Details Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <div>
-                <p className="text-xs text-gray-600 uppercase font-semibold">
-                  Category
-                </p>
-                <p className="text-sm font-medium text-gray-900">
-                  {course.category?.name}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-600 uppercase font-semibold">
-                  Price
-                </p>
-                <p className="text-sm font-medium text-gray-900">
-                  ₫{course.price_vnd.toLocaleString('vi-VN')}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-600 uppercase font-semibold">
-                  Duration
-                </p>
-                <p className="text-sm font-medium text-gray-900">
-                  {course.duration_hours} hours
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-600 uppercase font-semibold">
-                  Tutor
-                </p>
-                <p className="text-sm font-medium text-gray-900">
-                  {course.tutor?.name}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-600 uppercase font-semibold">
-                  Tutor Email
-                </p>
-                <p className="text-sm font-medium text-gray-900 break-all">
-                  {course.tutor?.email}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-600 uppercase font-semibold">
-                  Created
-                </p>
-                <p className="text-sm font-medium text-gray-900">
-                  {new Date(course.created_at).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* ========== Languages ========== */}
-          {course.languages && course.languages.length > 0 && (
-            <div>
-              <h3 className="font-semibold text-gray-900 mb-2">Languages</h3>
-              <div className="flex flex-wrap gap-2">
-                {course.languages.map((lang) => (
-                  <span
-                    key={lang}
-                    className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium"
-                  >
-                    {lang}
-                  </span>
-                ))}
-              </div>
             </div>
           )}
 
-          {/* ========== Course Content (Sections & Lessons) ========== */}
-          {course.sections && course.sections.length > 0 && (
+          {/* Basic Info */}
+          <div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">
+              {course.title}
+            </h3>
+            <div className="flex gap-2 mb-4">
+              <Badge>{course.level}</Badge>
+              <Badge variant="outline">{course.categoryName}</Badge>
+              <Badge variant="outline">{course.language}</Badge>
+            </div>
+            <p className="text-gray-600 mb-4">{course.shortDescription}</p>
+          </div>
+
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <div className="flex items-center gap-2 text-blue-600 mb-1">
+                <User className="w-4 h-4" />
+                <span className="text-sm font-medium">Giảng viên</span>
+              </div>
+              <p className="font-semibold text-gray-900">
+                {course.tutorName || `Tutor #${course.tutorID}`}
+              </p>
+            </div>
+
+            <div className="bg-green-50 p-4 rounded-lg">
+              <div className="flex items-center gap-2 text-green-600 mb-1">
+                <Clock className="w-4 h-4" />
+                <span className="text-sm font-medium">Thời lượng</span>
+              </div>
+              <p className="font-semibold text-gray-900">{course.duration} giờ</p>
+            </div>
+
+            <div className="bg-purple-50 p-4 rounded-lg">
+              <div className="flex items-center gap-2 text-purple-600 mb-1">
+                <BookOpen className="w-4 h-4" />
+                <span className="text-sm font-medium">Bài học</span>
+              </div>
+              <p className="font-semibold text-gray-900">
+                {totalLessons} bài
+              </p>
+            </div>
+
+            <div className="bg-yellow-50 p-4 rounded-lg">
+              <div className="flex items-center gap-2 text-yellow-600 mb-1">
+                <DollarSign className="w-4 h-4" />
+                <span className="text-sm font-medium">Giá</span>
+              </div>
+              <p className="font-semibold text-gray-900">
+                {formatPrice(course.price)}
+              </p>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Description */}
+          <div>
+            <h4 className="text-lg font-semibold text-gray-900 mb-2 flex items-center gap-2">
+              <FileText className="w-5 h-5" />
+              Mô tả chi tiết
+            </h4>
+            <p className="text-gray-600 whitespace-pre-wrap">{course.description}</p>
+          </div>
+
+          {/* Requirements */}
+          {course.requirement && (
             <div>
-              <h3 className="font-semibold text-gray-900 mb-3">
-                Course Content ({course.sections.length} sections)
-              </h3>
-              <div className="space-y-3 max-h-96 overflow-y-auto">
-                {course.sections.map((section, sectionIdx) => (
-                  <details
-                    key={sectionIdx}
-                    className="border rounded-lg p-3 bg-gray-50 cursor-pointer hover:bg-gray-100 transition"
+              <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                Yêu cầu
+              </h4>
+              <p className="text-gray-600 whitespace-pre-wrap">{course.requirement}</p>
+            </div>
+          )}
+
+          <Separator />
+
+          {/* Learning Objectives */}
+          {course.objectives && course.objectives.length > 0 && (
+            <div>
+              <h4 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                <Target className="w-5 h-5" />
+                Mục tiêu học tập ({course.objectives.length})
+              </h4>
+              <ul className="space-y-2">
+                {course.objectives.map((objective) => (
+                  <li
+                    key={objective.objectiveID}
+                    className="flex items-start gap-2 text-gray-700"
                   >
-                    <summary className="font-medium text-gray-900 flex items-center justify-between">
-                      <span>
-                        {sectionIdx + 1}. {section.title}
-                      </span>
-                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                        {section.lessons?.length || 0} lessons
-                      </span>
-                    </summary>
+                    <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                    <span>{objective.objectiveText}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
-                    {section.description && (
-                      <p className="text-sm text-gray-600 mt-2 mb-3">
-                        {section.description}
-                      </p>
-                    )}
+          <Separator />
 
-                    {section.lessons && section.lessons.length > 0 && (
-                      <div className="mt-3 ml-4 space-y-3 border-l-2 border-gray-300 pl-3">
-                        {section.lessons.map((lesson, lessonIdx) => {
-                          const lessonType = lesson.lesson_type || (lesson.video_url ? 'Video' : 'Reading');
-                          const isVideoLesson = lessonType === 'Video';
-                          const hasResources = !!lesson.resources && lesson.resources.length > 0;
+          {/* Course Content */}
+          <div>
+            <h4 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+              <BookOpen className="w-5 h-5" />
+              Nội dung khóa học ({course.section?.length || 0} chương)
+            </h4>
+            <div className="space-y-4">
+              {course.section?.map((section, sectionIndex) => (
+                <div
+                  key={section.sectionID}
+                  className="border border-gray-200 rounded-lg p-4 bg-gray-50"
+                >
+                  <h5 className="font-semibold text-gray-900 mb-1">
+                    Chương {sectionIndex + 1}: {section.title}
+                  </h5>
+                  {section.description && (
+                    <p className="text-sm text-gray-600 mb-3">
+                      {section.description}
+                    </p>
+                  )}
 
-                          return (
-                            <div
-                              key={lessonIdx}
-                              className="text-sm border-b border-gray-200 pb-3 last:border-b-0"
-                            >
-                              <div className="flex items-start gap-2">
-                                {isVideoLesson ? (
-                                  <Video className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
-                                ) : (
-                                  <BookOpen className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
-                                )}
+                  {/* Lessons */}
+                  <div className="space-y-2">
+                    {section.lessons?.map((lesson, lessonIndex) => (
+                      <div
+                        key={lesson.lessonID}
+                        className="bg-white p-3 rounded border border-gray-200"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              {lesson.lessonType === 'Video' ? (
+                                <Video className="w-4 h-4 text-blue-500" />
+                              ) : (
+                                <FileText className="w-4 h-4 text-green-500" />
+                              )}
+                              <span className="font-medium text-gray-900">
+                                Bài {lessonIndex + 1}: {lesson.title}
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-500">
+                              {lesson.duration} phút • {lesson.lessonType}
+                            </p>
 
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <p className="text-gray-900 font-medium">
-                                      Lesson {lessonIdx + 1}: {lesson.title}
-                                    </p>
-                                    <span
-                                      className={`px-2 py-0.5 rounded text-xs font-medium ${
-                                        isVideoLesson
-                                          ? 'bg-blue-100 text-blue-700'
-                                          : 'bg-green-100 text-green-700'
-                                      }`}
-                                    >
-                                      {lessonType}
+                            {/* Resources */}
+                            {lesson.resources && lesson.resources.length > 0 && (
+                              <div className="mt-2 space-y-1">
+                                {lesson.resources.map((resource) => (
+                                  <div
+                                    key={resource.resourceID}
+                                    className="flex items-center gap-2 text-sm text-gray-600"
+                                  >
+                                    <LinkIcon className="w-3 h-3" />
+                                    <span>
+                                      {resource.resourceTitle} ({resource.resourceType})
                                     </span>
                                   </div>
-
-                                  <p className="text-gray-600 text-xs mt-1">
-                                    Duration: {lesson.duration_minutes} minutes
-                                  </p>
-
-                                  {isVideoLesson && lesson.video_url && (
-                                    <a
-                                      href={lesson.video_url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="text-blue-600 hover:underline text-xs mt-1 inline-block"
-                                    >
-                                      🎥 View Video
-                                    </a>
-                                  )}
-
-                                  {!isVideoLesson && lesson.content && (
-                                    <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded">
-                                      <p className="text-xs text-green-900 font-semibold mb-1">
-                                        Content Preview
-                                      </p>
-                                      <p className="text-xs text-gray-700 whitespace-pre-line line-clamp-3">
-                                        {lesson.content}
-                                      </p>
-                                    </div>
-                                  )}
-
-                                  {hasResources && (
-                                    <div className="mt-2">
-                                      <p className="text-xs text-gray-600 font-semibold mb-1">
-                                        Resources ({lesson.resources!.length})
-                                      </p>
-                                      <div className="space-y-1">
-                                        {lesson.resources!.map((resource, resourceIdx) => (
-                                          <a
-                                            key={resourceIdx}
-                                            href={resource.resource_url}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="flex items-center gap-2 text-xs text-blue-600 hover:text-blue-800 hover:underline"
-                                          >
-                                            {resource.resource_type === 'PDF' ? (
-                                              <FileText className="w-3 h-3" />
-                                            ) : (
-                                              <Link2 className="w-3 h-3" />
-                                            )}
-                                            <span className="truncate max-w-[200px]" title={resource.resource_title}>
-                                              {resource.resource_title}
-                                            </span>
-                                            <span className="text-gray-500">
-                                              ({resource.resource_type})
-                                            </span>
-                                          </a>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
+                                ))}
                               </div>
-                            </div>
-                          );
-                        })}
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    )}
-                  </details>
-                ))}
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Admin Actions */}
+          {!showRejectForm ? (
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="adminNotes" className="text-sm font-semibold">
+                  Ghi chú cho giảng viên (tùy chọn)
+                </Label>
+                <Textarea
+                  id="adminNotes"
+                  value={adminNotes}
+                  onChange={(e) => setAdminNotes(e.target.value)}
+                  placeholder="Nhập ghi chú hoặc góp ý cho giảng viên..."
+                  rows={3}
+                  className="mt-2"
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  onClick={handleApprove}
+                  disabled={isLoading}
+                  className="flex-1 bg-green-600 hover:bg-green-700 gap-2"
+                >
+                  {isLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <CheckCircle2 className="w-4 h-4" />
+                  )}
+                  Phê duyệt khóa học
+                </Button>
+                <Button
+                  onClick={() => setShowRejectForm(true)}
+                  disabled={isLoading}
+                  variant="destructive"
+                  className="flex-1 gap-2"
+                >
+                  <XCircle className="w-4 h-4" />
+                  Từ chối khóa học
+                </Button>
               </div>
             </div>
-          )}
+          ) : (
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="rejectionReason" className="text-sm font-semibold text-red-600">
+                  Lý do từ chối *
+                </Label>
+                <Textarea
+                  id="rejectionReason"
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  placeholder="Nhập lý do từ chối khóa học (bắt buộc)..."
+                  rows={4}
+                  className="mt-2 border-red-300 focus:border-red-500"
+                />
+              </div>
 
-          {/* ========== Admin Notes / Rejection Reason ========== */}
-          {!showRejectForm && (
-            <div>
-              <label className="block text-sm font-semibold text-gray-900 mb-2">
-                Admin Notes <span className="text-gray-500 font-normal">(optional)</span>
-              </label>
-              <Textarea
-                placeholder="Add any notes for the tutor or for your records..."
-                value={adminNotes}
-                onChange={(e) => setAdminNotes(e.target.value)}
-                className="w-full"
-                rows={3}
-              />
-            </div>
-          )}
-
-          {/* ========== Rejection Reason ========== */}
-          {showRejectForm && (
-            <div>
-              <label className="block text-sm font-semibold text-gray-900 mb-2">
-                Rejection Reason <span className="text-red-600">*</span>
-              </label>
-              <Textarea
-                placeholder="Please provide a detailed reason for rejection. This will be sent to the tutor..."
-                value={rejectionReason}
-                onChange={(e) => setRejectionReason(e.target.value)}
-                className="w-full"
-                rows={4}
-              />
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => {
+                    setShowRejectForm(false);
+                    setRejectionReason('');
+                  }}
+                  variant="outline"
+                  className="flex-1"
+                  disabled={isLoading}
+                >
+                  Hủy
+                </Button>
+                <Button
+                  onClick={handleReject}
+                  disabled={isLoading || !rejectionReason.trim()}
+                  variant="destructive"
+                  className="flex-1 gap-2"
+                >
+                  {isLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <XCircle className="w-4 h-4" />
+                  )}
+                  Xác nhận từ chối
+                </Button>
+              </div>
             </div>
           )}
         </div>
-
-        {/* ========== Footer Actions ========== */}
-        <DialogFooter className="flex gap-3 justify-between">
-          {/* Cancel Button */}
-          <Button
-            variant="outline"
-            onClick={onClose}
-            disabled={isLoading}
-          >
-            Close
-          </Button>
-
-          {/* Approval or Rejection Buttons */}
-          {!showRejectForm ? (
-            <>
-              {/* Reject Button */}
-              <Button
-                variant="destructive"
-                onClick={() => setShowRejectForm(true)}
-                disabled={isLoading}
-              >
-                <X className="w-4 h-4 mr-2" />
-                Reject
-              </Button>
-
-              {/* Approve Button */}
-              <Button
-                onClick={handleApprove}
-                disabled={isLoading}
-                className="bg-green-600 hover:bg-green-700"
-              >
-                {isLoading ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <Check className="w-4 h-4 mr-2" />
-                )}
-                Approve
-              </Button>
-            </>
-          ) : (
-            <>
-              {/* Cancel Rejection */}
-              <Button
-                variant="outline"
-                onClick={handleCancelReject}
-                disabled={isLoading}
-              >
-                Cancel
-              </Button>
-
-              {/* Confirm Rejection */}
-              <Button
-                variant="destructive"
-                onClick={handleReject}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <X className="w-4 h-4 mr-2" />
-                )}
-                Confirm Rejection
-              </Button>
-            </>
-          )}
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

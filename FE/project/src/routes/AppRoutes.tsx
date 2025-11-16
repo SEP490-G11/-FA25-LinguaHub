@@ -29,6 +29,8 @@ import ChangePassword from '@/pages/ChangePassword/changePassword.tsx';
 import VerifyEmailForgotPassword from '@/pages/auth/verify-email-forgot-password/verify-email-forgot-password.tsx';
 import CreateCourse from '@/pages/TutorPages/CreateCourse/index';
 import CourseApprovalPage from '@/pages/Admin/CourseApproval/index';
+import CourseApprovalDetailPage from '@/pages/Admin/CourseApproval/CourseDetailPage';
+import CoursesDetailPage from '@/pages/Admin/Courses/CourseDetailPage';
 import ApplyTutor from '@/pages/ApplyTutor';
 import TutorApproval from '@/pages/Admin/TutorApproval';
 import EditCourse from '@/pages/TutorPages/EditCourse';
@@ -42,9 +44,9 @@ import AdminPayments from '@/pages/Admin/Payments';
 import TutorDashboard from '@/pages/TutorPages/Dashboard';
 import TutorStudents from '@/pages/TutorPages/Students';
 import TutorSchedule from '@/pages/TutorPages/Schedule';
-import TutorAnalytics from '@/pages/TutorPages/Analytics';
 import TutorMessages from '@/pages/TutorPages/Messages';
 import TutorResources from '@/pages/TutorPages/Resources';
+import TutorPayment from  '@/pages/TutorPages/Payment';
 import TutorSettings from '@/pages/TutorPages/Settings';
 import Messages from '@/pages/MessagesPage/boxchat.tsx';
 import BookTutor from '@/pages/BookTutor/index.tsx';
@@ -92,7 +94,9 @@ export function AppRoutes() {
                 <Route path="dashboard" element={<AdminDashboard />} />
                 <Route path="learners" element={<AdminLearners />} />
                 <Route path="courses" element={<AdminCourses />} />
+                <Route path="courses/:courseId" element={<CoursesDetailPage />} />
                 <Route path="course-approval" element={<CourseApprovalPage />} />
+                <Route path="course-approval/:courseId" element={<CourseApprovalDetailPage />} />
                 <Route path="tutor-approval" element={<TutorApproval />} />
                 <Route path="payments" element={<AdminPayments />} />
             </Route>
@@ -105,7 +109,7 @@ export function AppRoutes() {
             <Route path="/create-courses" element={<CreateCourse />} />
             <Route path="/students" element={<TutorStudents />} />
             <Route path="/schedule" element={<TutorSchedule />} />
-            <Route path="/analytics" element={<TutorAnalytics />} />
+            <Route path="/payments" element={<TutorPayment />} />
             <Route path="/messages" element={<TutorMessages />} />
             <Route path="/resources" element={<TutorResources />} />
             <Route path="/settings" element={<TutorSettings />} />

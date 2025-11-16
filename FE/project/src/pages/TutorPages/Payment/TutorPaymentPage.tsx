@@ -1,20 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, Loader2, CreditCard, Filter } from 'lucide-react';
-import { paymentApi } from './api';
+import { tutorPaymentApi } from './api';
 import { Payment, PaymentFilters } from './types';
 import { calculateStats } from './utils';
-import { Filters, PaymentTable, PaymentStats, Pagination } from './components';
+import { Filters, PaymentTable, PaymentStats } from './components';
 
-export default function PaymentManagementPage() {
+export default function TutorPaymentPage() {
   // State management
   const [payments, setPayments] = useState<Payment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [limit] = useState(10);
-  const [totalPages, setTotalPages] = useState(1);
-  const [total, setTotal] = useState(0);
   
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -22,36 +18,41 @@ export default function PaymentManagementPage() {
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [selectedMethod, setSelectedMethod] = useState<string>('all');
 
+  // Get tutorId from JWT token
+  const getTutorIdFromToken = (): number => {
+    const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+    
+    if (!token) {
+      console.error('No access token found');
+      return 2; // Fallback to mock
+    }
+
+    try {
+      // Decode JWT token (payload is the middle part)
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      console.log('Decoded token payload:', payload);
+      
+      // Adjust this based on your actual token structure
+      // Common fields: userId, id, sub, tutorId
+      return payload.tutorId || payload.userId || payload.id || payload.sub || 2;
+    } catch (error) {
+      console.error('Error decoding token:', error);
+      return 2; // Fallback to mock
+    }
+  };
+
+  const tutorId = getTutorIdFromToken();
+
   /**
-   * Fetch payments from API with pagination and filters
+   * Fetch payments from API
    */
-  const fetchPayments = async (page: number = 1) => {
+  const fetchPayments = async () => {
     try {
       setIsLoading(true);
       setError(null);
 
-      // Build filter object
-      const filters: PaymentFilters = {};
-      
-      if (searchQuery.trim()) {
-        filters.search = searchQuery;
-      }
-      if (selectedType && selectedType !== 'all') {
-        filters.type = selectedType as any;
-      }
-      if (selectedStatus && selectedStatus !== 'all') {
-        filters.status = selectedStatus as any;
-      }
-      if (selectedMethod && selectedMethod !== 'all') {
-        filters.method = selectedMethod as any;
-      }
-
-      const response = await paymentApi.getPayments(page, limit, filters);
-      
-      setPayments(response.data);
-      setTotalPages(response.totalPages);
-      setTotal(response.total);
-      setCurrentPage(page);
+      const data = await tutorPaymentApi.getTutorPayments(tutorId);
+      setPayments(data);
     } catch (err: any) {
       setError(err.message || 'Không thể tải danh sách giao dịch');
       setPayments([]);
@@ -64,7 +65,7 @@ export default function PaymentManagementPage() {
    * Handle retry after error
    */
   const handleRetry = () => {
-    fetchPayments(currentPage);
+    fetchPayments();
   };
 
   /**
@@ -86,13 +87,46 @@ export default function PaymentManagementPage() {
     selectedStatus !== 'all' || 
     selectedMethod !== 'all';
 
-  // Fetch payments on mount and when filters change
+  // Fetch payments on mount
   useEffect(() => {
-    fetchPayments(1);
-  }, [searchQuery, selectedType, selectedStatus, selectedMethod]);
+    fetchPayments();
+  }, []);
 
-  // Calculate statistics from current payments
-  const stats = calculateStats(payments);
+  // Filter payments client-side
+  const filteredPayments = useMemo(() => {
+    return payments.filter((payment) => {
+      // Search filter
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        const matchesSearch = 
+          payment.orderCode.toLowerCase().includes(query) ||
+          payment.userId.toString().includes(query) ||
+          payment.description.toLowerCase().includes(query);
+        
+        if (!matchesSearch) return false;
+      }
+
+      // Type filter
+      if (selectedType !== 'all' && payment.paymentType !== selectedType) {
+        return false;
+      }
+
+      // Status filter
+      if (selectedStatus !== 'all' && payment.status !== selectedStatus) {
+        return false;
+      }
+
+      // Method filter
+      if (selectedMethod !== 'all' && payment.paymentMethod !== selectedMethod) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [payments, searchQuery, selectedType, selectedStatus, selectedMethod]);
+
+  // Calculate statistics from filtered payments
+  const stats = calculateStats(filteredPayments);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -108,8 +142,8 @@ export default function PaymentManagementPage() {
                   <CreditCard className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold text-white">Quản lý thanh toán</h1>
-                  <p className="text-blue-100 text-sm">Theo dõi và quản lý giao dịch thanh toán</p>
+                  <h1 className="text-2xl font-bold text-white">Thu nhập của tôi</h1>
+                  <p className="text-blue-100 text-sm">Theo dõi các giao dịch thanh toán</p>
                 </div>
               </div>
             </div>
@@ -179,7 +213,7 @@ export default function PaymentManagementPage() {
               <p className="text-gray-600 font-medium">Đang tải giao dịch...</p>
             </div>
           </div>
-        ) : payments.length === 0 ? (
+        ) : filteredPayments.length === 0 ? (
           /* Empty State */
           <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -196,21 +230,7 @@ export default function PaymentManagementPage() {
           </div>
         ) : (
           /* Payment Table */
-          <>
-            <PaymentTable payments={payments} />
-            
-            {/* Pagination */}
-            <div className="mt-6">
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                total={total}
-                limit={limit}
-                isLoading={isLoading}
-                onPageChange={fetchPayments}
-              />
-            </div>
-          </>
+          <PaymentTable payments={filteredPayments} />
         )}
       </div>
     </div>

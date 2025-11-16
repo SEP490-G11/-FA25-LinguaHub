@@ -14,20 +14,22 @@ export interface DaySchedule {
   slots: TimeSlot[];
 }
 
+
+
 export interface BookingPlanRequest {
   title: string;
-  startHours: number;
-  endHours: number;
-  slotDuration: number;
-  pricePerHours: number;
+  start_hours: string;  // Format: "HH:mm"
+  end_hours: string;    // Format: "HH:mm"
+  slot_duration: number;
+  price_per_hours: number;
 }
 
 export interface BookingPlanResponse {
   id: number;
   title: string;
-  startHours: number;
-  endHours: number;
-  slotDuration: number;
-  pricePerHours: number;
+  start_hours: string;  // Format: "HH:mm"
+  end_hours: string;    // Format: "HH:mm"
+  slot_duration: number;
+  price_per_hours: number;
   createdAt: string;
 }
