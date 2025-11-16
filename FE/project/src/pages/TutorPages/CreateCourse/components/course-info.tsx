@@ -85,22 +85,10 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
         }));
         
         console.log('✅ Mapped categories:', categoriesData);
-        
-        if (categoriesData.length === 0) {
-          console.warn('⚠️ No categories found, using fallback');
-          // Fallback to constants if API returns empty
-          import('@/constants/categories').then((module) => {
-            setCategories([...module.CATEGORIES]);
-          });
-        } else {
-          setCategories(categoriesData);
-        }
+        setCategories(categoriesData);
       } catch (error) {
-        console.error('❌ Error fetching categories, using fallback:', error);
-        // Fallback to constants on error
-        import('@/constants/categories').then((module) => {
-          setCategories([...module.CATEGORIES]);
-        });
+        console.error('❌ Error fetching categories:', error);
+        setCategories([]);
       } finally {
         setIsLoadingCategories(false);
       }

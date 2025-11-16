@@ -1,7 +1,14 @@
 ﻿import axios from '@/config/axiosConfig';
-import { CATEGORIES, LANGUAGES, type Category, type Language } from '@/constants/categories';
 
-export type { Category, Language };
+export interface Category {
+  id: number;
+  name: string;
+}
+
+export interface Language {
+  id: number;
+  name: string;
+}
 
 export interface CourseFormData {
   title: string;
@@ -202,7 +209,40 @@ export const courseApi = {
   },
 };
 
-export const getCategories = (): Category[] => [...CATEGORIES];
-export const getLanguages = (): Language[] => [...LANGUAGES];
+// Fetch categories from API
+export const getCategories = async (): Promise<Category[]> => {
+  try {
+    const response = await axios.get('/categories');
+    
+    let rawData = [];
+    if (response?.data?.result) {
+      rawData = response.data.result;
+    } else if (Array.isArray(response?.data)) {
+      rawData = response.data;
+    } else if (response?.data?.data) {
+      rawData = response.data.data;
+    }
+    
+    return rawData.map((cat: any) => ({
+      id: cat.categoryId || cat.id,
+      name: cat.categoryName || cat.name,
+    }));
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+    return [];
+  }
+};
+
+// Hardcoded languages (can be moved to API later if needed)
+export const getLanguages = (): Language[] => [
+  { id: 1, name: 'English' },
+  { id: 2, name: 'Vietnamese' },
+  { id: 3, name: 'Spanish' },
+  { id: 4, name: 'French' },
+  { id: 5, name: 'German' },
+  { id: 6, name: 'Chinese' },
+  { id: 7, name: 'Japanese' },
+  { id: 8, name: 'Korean' },
+];
 
 export default courseApi;
