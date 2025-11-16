@@ -68,10 +68,16 @@ public class TutorBookingPlanService {
 
     public BookingPlanUpdateResponse updateBookingPlan(Long currentUserId, Long bookingPlanId, TutorBookingPlanRequest request) {
         Tutor tutor = getApprovedTutorByUserId(currentUserId);
+        
+        // @Transactional đảm bảo tính atomicity của toàn bộ operation
+        // Isolation level mặc định (READ_COMMITTED) đủ để tránh dirty reads
         BookingPlan bookingPlan = bookingPlanRepository.findById(bookingPlanId)
                 .orElseThrow(() -> new AppException(ErrorCode.BOOKING_PLAN_NOT_FOUND));
 
         ensurePlanOwner(tutor, bookingPlan);
+        
+        // Kiểm tra để đảm bảo không có slots đang được sử dụng (Locked hoặc Paid)
+        // Check này được thực hiện trong transaction để tránh race condition
         ensurePlanNotBooked(bookingPlanId);
         validatePlanRequest(request);
         ensureNoOverlappingPlans(tutor.getTutorID(), request.getTitle(), request.getStartTime(), request.getEndTime(), bookingPlanId);
@@ -208,7 +214,8 @@ public class TutorBookingPlanService {
     }
 
     private void ensurePlanNotBooked(Long bookingPlanId) {
-        if (bookingPlanSlotRepository.existsByBookingPlanIDAndUserIDIsNotNull(bookingPlanId)) {
+        // Kiểm tra cả Locked và Paid slots để đảm bảo không có slots đang được sử dụng
+        if (bookingPlanSlotRepository.existsByBookingPlanIDWithLockedOrPaidSlots(bookingPlanId)) {
             throw new AppException(ErrorCode.BOOKING_PLAN_HAS_BOOKED_SLOT);
         }
     }
@@ -292,11 +299,16 @@ public class TutorBookingPlanService {
         }
 
         // Xóa slots cũ không còn trong danh sách mới
+        // CHỈ xóa slots Available (chưa được book/lock) để tránh mất dữ liệu
         List<BookingPlanSlot> slotsToDelete = new ArrayList<>();
         for (BookingPlanSlot existingSlot : existingSlots) {
             String key = existingSlot.getStartTime().toString() + "_" + existingSlot.getEndTime().toString();
             if (!newSlotsKeys.contains(key)) {
-                slotsToDelete.add(existingSlot);
+                // CHỈ xóa nếu slot chưa được sử dụng (Available và không có userID)
+                if (existingSlot.getStatus() == SlotStatus.Available && existingSlot.getUserID() == null) {
+                    slotsToDelete.add(existingSlot);
+                }
+                // Nếu slot đang Locked hoặc Paid, giữ lại để tránh mất dữ liệu booking
             }
         }
 
