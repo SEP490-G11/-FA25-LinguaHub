@@ -129,19 +129,27 @@ const TutorSchedule: React.FC = () => {
         return;
       }
 
-      // Create booking plans for each enabled day
       const bookingPlanPromises = enabledDays.map(async (day) => {
-        const startHours = parseInt(day.startTime.split(':')[0]);
-        const endHours = parseInt(day.endTime.split(':')[0]);
+        const [startHour, startMinute] = day.startTime.split(':').map(Number);
+        const [endHour, endMinute] = day.endTime.split(':').map(Number);
 
         const bookingPlanData: BookingPlanRequest = {
           title: day.shortName,
-          startHours,
-          endHours,
-          slotDuration,
-          pricePerHours: defaultPrice,
+          start_hours: {
+            hour: startHour,
+            minute: startMinute,
+            second: 0,
+            nano: 0
+          },
+          end_hours: {
+            hour: endHour,
+            minute: endMinute,
+            second: 0,
+            nano: 0
+          },
+          slot_duration: slotDuration,
+          price_per_hours: defaultPrice,
         };
-
         return bookingPlanApi.createBookingPlan(bookingPlanData);
       });
 
