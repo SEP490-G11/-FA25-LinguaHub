@@ -4,8 +4,9 @@ import edu.lms.dto.response.PaymentResponse;
 import edu.lms.entity.Payment;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingConstants;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
 public interface PaymentMapper {
 
     @Mapping(target = "description", expression = "java(buildDescription(payment))")

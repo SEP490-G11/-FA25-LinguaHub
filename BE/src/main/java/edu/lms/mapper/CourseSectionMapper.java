@@ -9,11 +9,12 @@ import edu.lms.entity.Lesson;
 import edu.lms.entity.LessonResource;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingConstants;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
 public interface CourseSectionMapper {
 
     // Request → Entity

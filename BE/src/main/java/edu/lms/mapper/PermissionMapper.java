@@ -4,9 +4,10 @@ import edu.lms.dto.request.PermissionRequest;
 import edu.lms.dto.response.PermissionResponse;
 import edu.lms.entity.Permission;
 import org.mapstruct.Mapper;
+import org.mapstruct.MappingConstants;
 
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
 public interface PermissionMapper {
     Permission toPermission(PermissionRequest permissionRequest);
     PermissionResponse toPermissionResponse(Permission permission);
