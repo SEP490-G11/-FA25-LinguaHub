@@ -7,6 +7,7 @@ import edu.lms.service.TutorBookingPlanService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -22,12 +23,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping
+@RequestMapping("/tutor")
 public class TutorBookingPlanController {
 
     private final TutorBookingPlanService tutorBookingPlanService;
 
-    @PostMapping("/tutor/booking-plan")
+    @PostMapping("/booking-plan")
+    @PreAuthorize("principal.claims['role'] == 'Tutor'")
     public ResponseEntity<BookingPlanCreateResponse> createBookingPlan(
             @Valid @RequestBody TutorBookingPlanRequest request
     ) {
@@ -36,7 +38,8 @@ public class TutorBookingPlanController {
         return ResponseEntity.ok(response);
     }
 
-    @PutMapping("/tutor/booking-plan/{bookingPlanId}")
+    @PutMapping("/booking-plan/{bookingPlanId}")
+    @PreAuthorize("principal.claims['role'] == 'Tutor'")
     public ResponseEntity<BookingPlanUpdateResponse> updateBookingPlan(
             @PathVariable Long bookingPlanId,
             @Valid @RequestBody TutorBookingPlanRequest request
@@ -46,20 +49,23 @@ public class TutorBookingPlanController {
         return ResponseEntity.ok(response);
     }
 
-    @DeleteMapping("/tutor/booking-plan/{bookingPlanId}")
+    @DeleteMapping("/booking-plan/{bookingPlanId}")
+    @PreAuthorize("principal.claims['role'] == 'Tutor'")
     public ResponseEntity<OperationStatusResponse> deleteBookingPlan(@PathVariable Long bookingPlanId) {
         Long currentUserId = getCurrentUserId();
         OperationStatusResponse response = tutorBookingPlanService.deleteBookingPlan(currentUserId, bookingPlanId);
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/booking-plan/tutor/{tutorId}")
+    @GetMapping("/{tutorId}/booking-plan")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<BookingPlanListResponse> getBookingPlans(@PathVariable Long tutorId) {
         BookingPlanListResponse response = tutorBookingPlanService.getBookingPlansByTutor(tutorId);
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/tutor/booking-plan/{bookingPlanId}")
+    @GetMapping("/booking-plan/{bookingPlanId}")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<BookingPlanDetailResponse> getBookingPlanDetail(@PathVariable Long bookingPlanId) {
         BookingPlanDetailResponse response = tutorBookingPlanService.getBookingPlanDetail(bookingPlanId);
         return ResponseEntity.ok(response);
