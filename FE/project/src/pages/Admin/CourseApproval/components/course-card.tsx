@@ -7,14 +7,30 @@ import { PendingCourse } from '../types';
 
 interface CourseCardProps {
   course: PendingCourse;
+  onClick?: () => void;
+  showDraftBadge?: boolean;
+  showPendingBadge?: boolean;
+  buttonText?: string;
+  variant?: 'approval' | 'management';
 }
 
-export function CourseCard({ course }: CourseCardProps) {
+export function CourseCard({ 
+  course, 
+  onClick,
+  showDraftBadge = true,
+  showPendingBadge = true,
+  buttonText,
+  variant = 'approval'
+}: CourseCardProps) {
   const navigate = useNavigate();
 
   const handleViewDetails = () => {
-    const isDraftParam = course.isDraft ? '?isDraft=true' : '';
-    navigate(`/admin/course-approval/${course.id}${isDraftParam}`);
+    if (onClick) {
+      onClick();
+    } else {
+      const isDraftParam = course.isDraft ? '?isDraft=true' : '';
+      navigate(`/admin/course-approval/${course.id}${isDraftParam}`);
+    }
   };
 
   const formatPrice = (price: number) => {
@@ -48,10 +64,34 @@ export function CourseCard({ course }: CourseCardProps) {
           </div>
         )}
         <div className="absolute top-3 right-3 flex gap-2">
-          <Badge className="bg-yellow-500 text-white font-semibold shadow-md">
-            Pending
-          </Badge>
-          {course.isDraft && (
+          {/* Status Badge */}
+          {course.status === 'Pending' && showPendingBadge && (
+            <Badge className="bg-yellow-500 text-white font-semibold shadow-md">
+              Chờ duyệt
+            </Badge>
+          )}
+          {course.status === 'Approved' && (
+            <Badge className="bg-green-500 text-white font-semibold shadow-md">
+              Đã duyệt
+            </Badge>
+          )}
+          {course.status === 'Rejected' && (
+            <Badge className="bg-red-500 text-white font-semibold shadow-md">
+              Từ chối
+            </Badge>
+          )}
+          {(course.status === 'DRAFT' || course.status === 'Draft') && (
+            <Badge className="bg-gray-500 text-white font-semibold shadow-md">
+              Nháp
+            </Badge>
+          )}
+          {course.status === 'DISABLED' && (
+            <Badge className="bg-gray-400 text-white font-semibold shadow-md">
+              Vô hiệu
+            </Badge>
+          )}
+          {/* Draft Badge (separate from status) */}
+          {showDraftBadge && course.isDraft && (
             <Badge className="bg-purple-500 text-white font-semibold shadow-md">
               Draft
             </Badge>
@@ -119,7 +159,7 @@ export function CourseCard({ course }: CourseCardProps) {
           size="sm"
         >
           <Eye className="w-4 h-4" />
-          Xem chi tiết & Duyệt
+          {buttonText || (variant === 'approval' ? 'Xem chi tiết & Duyệt' : 'Xem chi tiết')}
         </Button>
       </CardContent>
     </Card>

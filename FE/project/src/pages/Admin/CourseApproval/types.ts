@@ -1,7 +1,7 @@
 // Unified types for Course Approval
 // These types match the structure from TutorPages for consistency
 
-export type CourseStatus = 'Pending' | 'Approved' | 'Rejected' | 'Draft';
+export type CourseStatus = 'Pending' | 'Approved' | 'Rejected' | 'Draft' | 'DRAFT' | 'DISABLED';
 
 export interface Objective {
   objectiveID: number;
