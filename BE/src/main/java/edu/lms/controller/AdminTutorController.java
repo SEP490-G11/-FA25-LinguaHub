@@ -32,15 +32,31 @@ public class AdminTutorController {
         return ResponseEntity.ok(pendingApplications);
     }
 
-    // 2. Xem tất cả các đơn đăng ký (PENDING, REJECTED, APPROVED)
+    // 2. Xem danh sách tất cả đơn đăng ký đã được approve
+    @GetMapping("/applications/approved")
+    public ResponseEntity<List<TutorApplicationListResponse>> getApprovedApplications() {
+        List<TutorApplicationListResponse> approvedApplications = tutorService.getApprovedApplications();
+        return ResponseEntity.ok(approvedApplications);
+    }
+
+    // 3. Xem danh sách tất cả đơn đăng ký đã bị reject
+    @GetMapping("/applications/rejected")
+    public ResponseEntity<List<TutorApplicationListResponse>> getRejectedApplications() {
+        List<TutorApplicationListResponse> rejectedApplications = tutorService.getRejectedApplications();
+        return ResponseEntity.ok(rejectedApplications);
+    }
+
+    // 4. Xem tất cả các đơn đăng ký (PENDING, REJECTED, APPROVED) - có thể filter theo status
     @GetMapping("/applications")
     @PreAuthorize("hasAuthority('VIEW_TUTOR_APPLICATIONS')")
-    public ResponseEntity<List<TutorApplicationListResponse>> getAllApplications() {
-        List<TutorApplicationListResponse> allApplications = tutorService.getAllApplications();
+    public ResponseEntity<List<TutorApplicationListResponse>> getAllApplications(
+            @RequestParam(required = false) String status
+    ) {
+        List<TutorApplicationListResponse> allApplications = tutorService.getAllApplications(status);
         return ResponseEntity.ok(allApplications);
     }
 
-    // 3. Xem chi tiết một đơn đăng ký
+    // 5. Xem chi tiết một đơn đăng ký
     @GetMapping("/applications/{verificationId}")
     public ResponseEntity<TutorApplicationDetailResponse> getApplicationDetail(
             @PathVariable Long verificationId
@@ -49,7 +65,7 @@ public class AdminTutorController {
         return ResponseEntity.ok(applicationDetail);
     }
 
-    // 4. Duyệt đơn đăng ký (approve)
+    // 6. Duyệt đơn đăng ký (approve)
     @PostMapping("/applications/{verificationId}/approve")
     @PreAuthorize("hasAuthority('APPROVE_TUTOR')")
     public ResponseEntity<?> approveApplication(
@@ -60,7 +76,7 @@ public class AdminTutorController {
         return ResponseEntity.ok("Application approved successfully");
     }
 
-    // 5. Từ chối đơn đăng ký (reject)
+    // 7. Từ chối đơn đăng ký (reject)
     @PostMapping("/applications/{verificationId}/reject")
     @PreAuthorize("hasAuthority('REJECT_TUTOR')")
     public ResponseEntity<?> rejectApplication(
@@ -72,7 +88,7 @@ public class AdminTutorController {
         return ResponseEntity.ok("Application rejected successfully");
     }
 
-    // 6. Xem danh sách các tutor đã được approve (có thể filter theo status)
+    // 8. Xem danh sách các tutor đã được approve (có thể filter theo status)
     @GetMapping("/all")
     @PreAuthorize("hasAuthority('VIEW_TUTOR_APPLICATIONS')")
     public ResponseEntity<List<TutorApplicationListResponse>> getAllTutors(
@@ -82,7 +98,7 @@ public class AdminTutorController {
         return ResponseEntity.ok(tutors);
     }
 
-    // 7. Suspend/Unsuspend tutor
+    // 9. Suspend/Unsuspend tutor
     @PostMapping("/{tutorId}/suspend")
     @PreAuthorize("hasAuthority('SUSPEND_TUTOR')")
     public ResponseEntity<?> suspendTutor(
@@ -103,7 +119,7 @@ public class AdminTutorController {
         return ResponseEntity.ok("Tutor unsuspended successfully");
     }
 
-    // 8. Update tutor information
+    // 10. Update tutor information
     @PatchMapping("/{tutorId}")
     @PreAuthorize("hasAuthority('UPDATE_TUTOR_INFO')")
     public ResponseEntity<?> updateTutorInfo(

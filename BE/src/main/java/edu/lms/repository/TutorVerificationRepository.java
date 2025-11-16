@@ -21,6 +21,9 @@ public interface TutorVerificationRepository extends JpaRepository<TutorVerifica
     // Lấy tất cả hồ sơ có trạng thái pending (cho Admin review)
     List<TutorVerification> findAllByStatusOrderBySubmittedAtAsc(TutorVerificationStatus status);
 
+    // Lấy tất cả hồ sơ có trạng thái cụ thể, sắp xếp theo submittedAt giảm dần
+    List<TutorVerification> findAllByStatusOrderBySubmittedAtDesc(TutorVerificationStatus status);
+
     // Lấy tất cả hồ sơ có trạng thái trong danh sách status (PENDING, REJECTED, APPROVED)
     List<TutorVerification> findAllByStatusInOrderBySubmittedAtDesc(List<TutorVerificationStatus> statuses);
 }
