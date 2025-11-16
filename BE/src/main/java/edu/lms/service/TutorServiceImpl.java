@@ -109,40 +109,52 @@ public class TutorServiceImpl implements TutorService {
 
         List<TutorCertificate> certificates = new ArrayList<>();
         for (TutorCertificateRequest certReq : request.getCertificates()) {
-            log.debug("Processing certificate: name={}, documentUrl={}", 
+            log.info("Processing certificate: name={}, documentUrl={}", 
                     certReq.getCertificateName(), certReq.getDocumentUrl());
             
             String docURL = certReq.getDocumentUrl();
             
-            // Log warning nếu documentURL là null hoặc empty (không nên xảy ra vì có @NotBlank validation)
+            // Validate: documentURL không được null (đã có @NotBlank validation nhưng double check)
             if (docURL == null) {
-                log.warn("documentURL is null for certificate: {}", certReq.getCertificateName());
+                log.error("documentURL is null for certificate: {}", certReq.getCertificateName());
                 throw new TutorApplicationException("Document URL is required for certificate: " + certReq.getCertificateName());
             }
             
-            // Trim và validate
+            // Trim và validate không được empty
             docURL = docURL.trim();
             if (docURL.isEmpty()) {
-                log.warn("documentURL is empty for certificate: {}", certReq.getCertificateName());
+                log.error("documentURL is empty after trim for certificate: {}", certReq.getCertificateName());
                 throw new TutorApplicationException("Document URL cannot be empty for certificate: " + certReq.getCertificateName());
             }
             
-            log.debug("Setting documentUrl to: {}", docURL);
+            log.info("Validated documentUrl: '{}' for certificate: {}", docURL, certReq.getCertificateName());
             
+            // Build entity với documentUrl đã được validate
             TutorCertificate certEntity = TutorCertificate.builder()
                     .tutorVerification(verification)
                     .certificateName(certReq.getCertificateName())
-                    .documentUrl(docURL)
+                    .documentUrl(docURL)  // Set giá trị đã validate
                     .build();
             
-            // Double check: Đảm bảo giá trị sau khi build cũng không null
-            if (certEntity.getDocumentUrl() == null || certEntity.getDocumentUrl().trim().isEmpty()) {
-                log.error("documentUrl is null or empty after building certificate entity for: {}", certReq.getCertificateName());
+            // Đảm bảo documentUrl được set đúng sau khi build (phòng trường hợp builder có vấn đề)
+            if (certEntity.getDocumentUrl() == null) {
+                log.error("documentUrl is null after building, setting it explicitly for certificate: {}", certReq.getCertificateName());
+                certEntity.setDocumentUrl(docURL);
+            } else if (!certEntity.getDocumentUrl().equals(docURL)) {
+                log.warn("documentUrl mismatch after building. Expected: '{}', Got: '{}'. Fixing...", 
+                        docURL, certEntity.getDocumentUrl());
+                certEntity.setDocumentUrl(docURL);
+            }
+            
+            // Final validation: Đảm bảo giá trị cuối cùng không null và không empty
+            String finalDocUrl = certEntity.getDocumentUrl();
+            if (finalDocUrl == null || finalDocUrl.trim().isEmpty()) {
+                log.error("documentUrl is still null or empty after all checks for certificate: {}", certReq.getCertificateName());
                 throw new TutorApplicationException("Failed to set document URL for certificate: " + certReq.getCertificateName());
             }
             
-            log.debug("Certificate entity created successfully: certificateId={}, documentUrl={}", 
-                    certEntity.getCertificateId(), certEntity.getDocumentUrl());
+            log.info("Certificate entity created successfully: name={}, documentUrl='{}'", 
+                    certEntity.getCertificateName(), certEntity.getDocumentUrl());
             
             // Đảm bảo createdAt được set
             if (certEntity.getCreatedAt() == null) {
@@ -151,8 +163,23 @@ public class TutorServiceImpl implements TutorService {
             
             certificates.add(certEntity);
         }
+        
+        log.info("Total certificates processed: {}", certificates.size());
+        
+        // Final check: Đảm bảo tất cả certificates đều có documentUrl trước khi save
+        for (TutorCertificate cert : certificates) {
+            if (cert.getDocumentUrl() == null || cert.getDocumentUrl().trim().isEmpty()) {
+                log.error("FINAL CHECK FAILED: Certificate '{}' has null or empty documentUrl before save!", 
+                        cert.getCertificateName());
+                throw new TutorApplicationException("Invalid certificate data: documentUrl is missing for " + cert.getCertificateName());
+            }
+            log.debug("Final check passed for certificate: name={}, documentUrl='{}'", 
+                    cert.getCertificateName(), cert.getDocumentUrl());
+        }
+        
         verification.getCertificates().addAll(certificates);
-
+        
+        log.info("Saving tutor verification with {} certificates", certificates.size());
         tutorVerificationRepository.save(verification);
         log.info("Tutor application submitted successfully for user ID: {}", userID);
     }
