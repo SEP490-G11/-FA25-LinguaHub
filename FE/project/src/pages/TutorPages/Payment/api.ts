@@ -6,16 +6,15 @@ import { Payment } from './types';
  */
 export const tutorPaymentApi = {
   /**
-   * Get all payments for a specific tutor
-   * @param tutorId - The tutor's ID
+   * Get all payments for the authenticated tutor
    * @returns Array of payment records
    */
-  getTutorPayments: async (tutorId: number): Promise<Payment[]> => {
+  getTutorPayments: async (): Promise<Payment[]> => {
     try {
-      console.log('🔍 Fetching tutor payments for tutorId:', tutorId);
+      console.log('🔍 Fetching tutor payments');
 
       // Make API request
-      const response = await axios.get(`/api/payments/tutor/${tutorId}`);
+      const response = await axios.get('/api/payments/me');
       
       console.log('📊 Full API response:', response);
       console.log('📊 Response data:', response?.data);

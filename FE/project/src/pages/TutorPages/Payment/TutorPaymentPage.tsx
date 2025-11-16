@@ -18,31 +18,6 @@ export default function TutorPaymentPage() {
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [selectedMethod, setSelectedMethod] = useState<string>('all');
 
-  // Get tutorId from JWT token
-  const getTutorIdFromToken = (): number => {
-    const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
-    
-    if (!token) {
-      console.error('No access token found');
-      return 2; // Fallback to mock
-    }
-
-    try {
-      // Decode JWT token (payload is the middle part)
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      console.log('Decoded token payload:', payload);
-      
-      // Adjust this based on your actual token structure
-      // Common fields: userId, id, sub, tutorId
-      return payload.tutorId || payload.userId || payload.id || payload.sub || 2;
-    } catch (error) {
-      console.error('Error decoding token:', error);
-      return 2; // Fallback to mock
-    }
-  };
-
-  const tutorId = getTutorIdFromToken();
-
   /**
    * Fetch payments from API
    */
@@ -51,7 +26,7 @@ export default function TutorPaymentPage() {
       setIsLoading(true);
       setError(null);
 
-      const data = await tutorPaymentApi.getTutorPayments(tutorId);
+      const data = await tutorPaymentApi.getTutorPayments();
       setPayments(data);
     } catch (err: any) {
       setError(err.message || 'Không thể tải danh sách giao dịch');
