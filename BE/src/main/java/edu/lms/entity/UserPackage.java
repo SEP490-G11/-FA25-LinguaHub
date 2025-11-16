@@ -11,12 +11,13 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "User_Package")
+@Table(name = "user_package")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserPackage {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "user_packageid")
     Long userPackageID;
 
     // gói mà learner đã mua
@@ -29,25 +30,30 @@ public class UserPackage {
     @JoinColumn(name = "user_id", nullable = false)
     User user;
 
-    @Column(nullable = false)
+    @Column(name = "slots_remaining", nullable = false)
     Integer slotsRemaining; // số slot còn lại
 
-    @Column(nullable = true)
+    @Column(name = "paymentid")
     Long paymentID; // liên kết Payment sau khi thanh toán
 
     @Builder.Default
-    @Column(nullable = false)
+    @Column(name = "is_active", nullable = false)
     Boolean isActive = true;
 
     @Builder.Default
+    @Column(name = "created_at", nullable = false, updatable = false)
     LocalDateTime createdAt = LocalDateTime.now();
 
+    @Column(name = "updated_at", nullable = false)
     LocalDateTime updatedAt;
 
     @PrePersist
     public void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now();
+        if (createdAt == null) {
+            createdAt = now;
+        }
+        updatedAt = now;
     }
 
     @PreUpdate

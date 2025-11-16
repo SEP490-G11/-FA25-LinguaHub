@@ -44,8 +44,8 @@ public class TutorBookingPlanService {
 
         BookingPlan bookingPlan = BookingPlan.builder()
                 .title(request.getTitle())
-                .startTime(request.getStartTime())
-                .endTime(request.getEndTime())
+                .startHours(request.getStartTime())
+                .endHours(request.getEndTime())
                 .slotDuration(request.getSlotDuration())
                 .pricePerHours(request.getPricePerHours().doubleValue())
                 .tutorID(tutor.getTutorID())
@@ -77,8 +77,8 @@ public class TutorBookingPlanService {
         boolean timeFieldsChanged = hasTimeFieldsChanged(bookingPlan, request);
 
         bookingPlan.setTitle(request.getTitle());
-        bookingPlan.setStartTime(request.getStartTime());
-        bookingPlan.setEndTime(request.getEndTime());
+        bookingPlan.setStartHours(request.getStartTime());
+        bookingPlan.setEndHours(request.getEndTime());
         bookingPlan.setSlotDuration(request.getSlotDuration());
         bookingPlan.setPricePerHours(request.getPricePerHours().doubleValue());
 
@@ -119,7 +119,7 @@ public class TutorBookingPlanService {
                 .orElseThrow(() -> new AppException(ErrorCode.TUTOR_NOT_FOUND));
 
         List<TutorBookingPlanResponse> planResponses = bookingPlanRepository
-                .findByTutorIDAndIsActiveTrueOrderByTitleAscStartTimeAsc(tutor.getTutorID())
+                .findByTutorIDAndIsActiveTrueOrderByTitleAscStartHoursAsc(tutor.getTutorID())
                 .stream()
                 .map(this::toBookingPlanResponse)
                 .toList();
@@ -204,15 +204,15 @@ public class TutorBookingPlanService {
 
     private boolean hasTimeFieldsChanged(BookingPlan bookingPlan, TutorBookingPlanRequest request) {
         return !bookingPlan.getTitle().equals(request.getTitle())
-                || !bookingPlan.getStartTime().equals(request.getStartTime())
-                || !bookingPlan.getEndTime().equals(request.getEndTime())
+                || !bookingPlan.getStartHours().equals(request.getStartTime())
+                || !bookingPlan.getEndHours().equals(request.getEndTime())
                 || !bookingPlan.getSlotDuration().equals(request.getSlotDuration());
     }
 
     private int regenerateSlots(BookingPlan bookingPlan, LocalDate targetDate) {
         List<BookingPlanSlot> slots = new ArrayList<>();
-        LocalDateTime slotStart = LocalDateTime.of(targetDate, bookingPlan.getStartTime());
-        LocalDateTime planEnd = LocalDateTime.of(targetDate, bookingPlan.getEndTime());
+        LocalDateTime slotStart = LocalDateTime.of(targetDate, bookingPlan.getStartHours());
+        LocalDateTime planEnd = LocalDateTime.of(targetDate, bookingPlan.getEndHours());
 
         while (!slotStart.plusMinutes(bookingPlan.getSlotDuration()).isAfter(planEnd)) {
             LocalDateTime slotEnd = slotStart.plusMinutes(bookingPlan.getSlotDuration());
@@ -242,8 +242,8 @@ public class TutorBookingPlanService {
                 .bookingPlanId(bookingPlan.getBookingPlanID())
                 .tutorId(bookingPlan.getTutorID())
                 .title(bookingPlan.getTitle())
-                .startTime(bookingPlan.getStartTime())
-                .endTime(bookingPlan.getEndTime())
+                .startTime(bookingPlan.getStartHours())
+                .endTime(bookingPlan.getEndHours())
                 .slotDuration(bookingPlan.getSlotDuration())
                 .pricePerHours(rawPrice == null ? BigDecimal.ZERO : BigDecimal.valueOf(rawPrice))
                 .isOpen(bookingPlan.getIsOpen())
