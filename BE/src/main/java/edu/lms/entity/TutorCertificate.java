@@ -1,55 +1,61 @@
 package edu.lms.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.Table;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.experimental.FieldDefaults;
+import jakarta.persistence.*;
+import lombok.*;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 
+@Slf4j
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-@Table(name = "Tutor_Certificate")
+@Table(name = "tutor_certificate")
 public class TutorCertificate {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Long certificateId;
+    @Column(name = "certificate_id")
+    private Long certificateId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tutor_verification_id", nullable = false)
-    TutorVerification tutorVerification;
+    private TutorVerification tutorVerification;
 
-    @Column(nullable = false, length = 255)
-    String certificateName;
-
-    @Column(nullable = false, length = 255)
-    String documentURL;
+    @Column(name = "certificate_name", nullable = false, length = 255)
+    private String certificateName;
 
     @Builder.Default
-    @Column(nullable = false)
-    LocalDateTime createdAt = LocalDateTime.now();
+    @Column(name = "document_url", nullable = false, length = 255)
+    private String documentUrl = "";
+
+    @Builder.Default
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt = LocalDateTime.now();
 
     @PrePersist
-    void onCreate() {
-        createdAt = LocalDateTime.now();
+    private void onCreate() {
+        // Đảm bảo createdAt luôn có giá trị
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+        // Đảm bảo documentUrl luôn có giá trị (không bao giờ null)
+        // Log warning nếu giá trị bị set thành empty (không nên xảy ra)
+        if (documentUrl == null || documentUrl.trim().isEmpty()) {
+            log.warn("documentUrl is null or empty in @PrePersist for certificate: {}. Setting to empty string.", certificateName);
+            documentUrl = "";
+        }
+    }
+    
+    @PreUpdate
+    private void onUpdate() {
+        // Đảm bảo documentUrl luôn có giá trị khi update
+        // Log warning nếu giá trị bị set thành empty (không nên xảy ra)
+        if (documentUrl == null || documentUrl.trim().isEmpty()) {
+            log.warn("documentUrl is null or empty in @PreUpdate for certificate ID: {}. Setting to empty string.", certificateId);
+            documentUrl = "";
+        }
     }
 }
-
-

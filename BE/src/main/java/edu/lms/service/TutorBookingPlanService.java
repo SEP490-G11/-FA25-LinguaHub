@@ -15,6 +15,7 @@ import edu.lms.repository.TutorRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +28,7 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -176,14 +178,24 @@ public class TutorBookingPlanService {
     }
 
     private Tutor getApprovedTutorByUserId(Long currentUserId) {
+        log.info("Looking for tutor with userId: {}", currentUserId);
+        
         Tutor tutor = tutorRepository.findByUser_UserID(currentUserId)
-                .orElseThrow(() -> new AppException(ErrorCode.TUTOR_NOT_FOUND));
+                .orElseThrow(() -> {
+                    log.warn("Tutor not found for userId: {}. User may need to apply to become a tutor first.", currentUserId);
+                    return new AppException(ErrorCode.TUTOR_NOT_FOUND);
+                });
+
+        log.info("Found tutor: tutorId={}, status={}", tutor.getTutorID(), tutor.getStatus());
 
         if (tutor.getStatus() == TutorStatus.SUSPENDED) {
+            log.warn("Tutor account is suspended: tutorId={}", tutor.getTutorID());
             throw new AppException(ErrorCode.TUTOR_ACCOUNT_LOCKED);
         }
 
         if (tutor.getStatus() != TutorStatus.APPROVED) {
+            log.warn("Tutor status is not APPROVED: tutorId={}, status={}. Tutor needs to be approved by admin first.", 
+                    tutor.getTutorID(), tutor.getStatus());
             throw new AppException(ErrorCode.TUTOR_NOT_APPROVED);
         }
 

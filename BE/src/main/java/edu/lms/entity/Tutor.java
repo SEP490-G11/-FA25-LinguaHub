@@ -13,26 +13,36 @@ import java.util.List;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-@Table(name = "Tutor")
+@Table(name = "tutor")
 public class Tutor {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "tutorid")
     Long tutorID;
 
     @OneToOne
-    @JoinColumn(name = "userID", unique = true, nullable = false)
+    @JoinColumn(name = "userid", unique = true, nullable = false)
     User user;
 
+    @Column(name = "experience")
     Short experience = 0;
+    
+    @Column(name = "specialization")
     String specialization;
+    
+    @Column(name = "teaching_language")
     String teachingLanguage;
+    
+    @Column(name = "bio")
     String bio;
 
     @Builder.Default
+    @Column(name = "rating")
     BigDecimal rating = BigDecimal.ZERO;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "status")
     TutorStatus status = TutorStatus.PENDING;
 
     @OneToMany(mappedBy = "tutor", cascade = CascadeType.ALL)

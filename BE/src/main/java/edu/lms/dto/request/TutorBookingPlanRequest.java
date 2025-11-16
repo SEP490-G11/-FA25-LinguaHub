@@ -1,7 +1,7 @@
 package edu.lms.dto.request;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -30,12 +30,12 @@ public class TutorBookingPlanRequest {
 
     @NotNull(message = "Start time is required")
     @JsonProperty("start_hours")
-    @JsonFormat(pattern = "HH:mm")
+    @JsonDeserialize(using = LocalTimeDeserializer.class)
     LocalTime startTime;
 
     @NotNull(message = "End time is required")
     @JsonProperty("end_hours")
-    @JsonFormat(pattern = "HH:mm")
+    @JsonDeserialize(using = LocalTimeDeserializer.class)
     LocalTime endTime;
 
     @NotNull(message = "Slot duration is required")
