@@ -115,6 +115,16 @@ public interface BookingPlanSlotRepository extends JpaRepository<BookingPlanSlot
 
     boolean existsByBookingPlanIDAndUserIDIsNotNull(Long bookingPlanID);
 
+    /**
+     * Kiểm tra xem booking plan có slots đang được sử dụng (Locked hoặc Paid) không
+     */
+    @Query("""
+        SELECT COUNT(s) > 0 FROM BookingPlanSlot s
+        WHERE s.bookingPlanID = :bookingPlanID
+          AND (s.status = 'Locked' OR s.status = 'Paid' OR s.userID IS NOT NULL)
+    """)
+    boolean existsByBookingPlanIDWithLockedOrPaidSlots(@Param("bookingPlanID") Long bookingPlanID);
+
     long countByBookingPlanID(Long bookingPlanID);
 
     List<BookingPlanSlot> findByBookingPlanIDOrderByStartTimeAsc(Long bookingPlanID);
