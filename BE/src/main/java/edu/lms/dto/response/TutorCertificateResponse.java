@@ -15,7 +15,7 @@ import lombok.experimental.FieldDefaults;
 public class TutorCertificateResponse {
     Long certificateId;
     String certificateName;
-    String documentURL;
+    String documentUrl;
 }
 
 

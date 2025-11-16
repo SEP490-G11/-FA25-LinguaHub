@@ -25,7 +25,7 @@ public class TutorCertificateRequest {
     @NotBlank(message = "Document URL is required")
     @Size(max = 255, message = "Document URL must be <= 255 characters")
     @Pattern(regexp = "^(https?://|/).*", message = "Document URL must start with http://, https://, or /")
-    String documentURL;
+    String documentUrl;
 }
 
 

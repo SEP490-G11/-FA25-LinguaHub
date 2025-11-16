@@ -1,5 +1,6 @@
 package edu.lms.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.lms.dto.request.TutorApplyRequest;
 import edu.lms.dto.response.TutorApplyResponse;
 import edu.lms.dto.response.TutorApplicationListResponse;
@@ -8,6 +9,7 @@ import edu.lms.security.UserPrincipal;
 import edu.lms.service.TutorService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -16,18 +18,42 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/tutors")
 @RequiredArgsConstructor
 public class TutorController {
 
     private final TutorService tutorService;
+    private final ObjectMapper objectMapper;
 
     // 1. Submit application
     @PostMapping("/apply")
     public ResponseEntity<?> applyToBecomeTutor(
             @RequestBody @Valid TutorApplyRequest request
     ) {
+        try {
+            // Log request để debug
+            log.info("Received tutor application request");
+            if (request.getCertificates() != null) {
+                log.info("Number of certificates: {}", request.getCertificates().size());
+                for (int i = 0; i < request.getCertificates().size(); i++) {
+                    var cert = request.getCertificates().get(i);
+                    log.info("Certificate[{}]: name={}, documentUrl={}", 
+                            i, cert.getCertificateName(), cert.getDocumentUrl());
+                }
+            } else {
+                log.warn("Certificates list is null!");
+            }
+            
+            // Log full request as JSON for debugging
+            String requestJson = objectMapper.writerWithDefaultPrettyPrinter()
+                    .writeValueAsString(request);
+            log.debug("Full request body:\n{}", requestJson);
+        } catch (Exception e) {
+            log.error("Error logging request", e);
+        }
+        
         Long userID = getCurrentUserId();
         tutorService.applyToBecomeTutor(userID, request);
         return ResponseEntity.ok("Application submitted successfully and is now pending review.");
