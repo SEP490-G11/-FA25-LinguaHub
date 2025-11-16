@@ -91,17 +91,28 @@ public class PaymentController {
     @GetMapping("/cancel")
     public void cancelPayment(
             @RequestParam("paymentId") Long paymentId,
+            @RequestParam("type") String type,
+            @RequestParam("targetId") Long targetId,
             HttpServletResponse response
     ) throws IOException {
 
-        Payment payment = paymentRepository.findById(paymentId)
-                .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_NOT_FOUND));
+        String t = type.toUpperCase();
+        String redirectUrl;
 
-        Long targetId = payment.getTargetId();
+        switch (t) {
+            case "BOOKING" ->
+                    redirectUrl = "http://localhost:3000/tutor/" + targetId + "?canceled=true";
 
-        //  FE redirect: course page
-        response.sendRedirect("http://localhost:3000/course/" + targetId);
+            case "COURSE" ->
+                    redirectUrl = "http://localhost:3000/course/" + targetId + "?canceled=true";
+
+            default ->
+                    redirectUrl = "http://localhost:3000/";
+        }
+
+        response.sendRedirect(redirectUrl);
     }
+
 
     // ======================================================
     // CALLBACK: SUCCESS (PayOS → Backend → FE)
@@ -109,15 +120,26 @@ public class PaymentController {
     @GetMapping("/success")
     public void successPayment(
             @RequestParam("paymentId") Long paymentId,
+            @RequestParam("type") String type,
+            @RequestParam("targetId") Long targetId,
             HttpServletResponse response
     ) throws IOException {
 
-        Payment payment = paymentRepository.findById(paymentId)
-                .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_NOT_FOUND));
+        String t = type.toUpperCase();
+        String redirectUrl;
 
-        Long targetId = payment.getTargetId();
+        switch (t) {
+            case "BOOKING" ->
+                    redirectUrl = "http://localhost:3000/tutor/" + targetId + "?paid=true";
 
-        // FE redirect with ?paid=true
-        response.sendRedirect("http://localhost:3000/course/" + targetId + "?paid=true");
+            case "COURSE" ->
+                    redirectUrl = "http://localhost:3000/course/" + targetId + "?paid=true";
+
+            default ->
+                    redirectUrl = "http://localhost:3000/";
+        }
+
+        response.sendRedirect(redirectUrl);
     }
+
 }

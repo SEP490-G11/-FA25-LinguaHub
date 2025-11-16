@@ -31,7 +31,7 @@ public class PayOSService {
             new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
 
-    // ⭐ TẠO LINK THANH TOÁN — FULL CHUẨN ⭐
+    //  TẠO LINK THANH TOÁN — FULL CHUẨN
     public CheckoutWrapper createPaymentLink(
             Long paymentId,
             Long userId,
@@ -55,8 +55,15 @@ public class PayOSService {
                     .build();
 
             //  callback URL lấy từ application.yml
-            String returnUrl = props.getReturnUrl() + "?paymentId=" + paymentId;
-            String cancelUrl = props.getCancelUrl() + "?paymentId=" + paymentId;
+            String returnUrl = props.getReturnUrl()
+                    + "?paymentId=" + paymentId
+                    + "&type=" + type.name()
+                    + "&targetId=" + targetId;
+
+            String cancelUrl = props.getCancelUrl()
+                    + "?paymentId=" + paymentId
+                    + "&type=" + type.name()
+                    + "&targetId=" + targetId;
 
             // build dữ liệu gửi PayOS
             PaymentData paymentData = PaymentData.builder()

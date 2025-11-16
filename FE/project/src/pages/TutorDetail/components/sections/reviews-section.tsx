@@ -33,8 +33,9 @@ const ReviewsSection = ({ tutorId }: ReviewsSectionProps) => {
     const fetchReviews = async () => {
       try {
         setLoading(true);
-        const res = await api.get(`/reviews/tutor/${tutorId}`);
-        // ✅ Ràng buộc type tránh `any`
+        const res = await api.get(`/reviews/tutor/${tutorId}`, {
+          skipAuth: true
+        });
         const mapped: Review[] = (res.data || []).map((r: any) => ({
           id: r.id,
           studentName: r.studentName || "Ẩn danh",

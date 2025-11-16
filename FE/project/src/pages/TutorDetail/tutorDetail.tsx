@@ -45,7 +45,7 @@ const TutorDetail = () => {
     const fetchTutor = async () => {
       try {
         setLoading(true);
-        const res = await api.get<Tutor>(`/tutors/${id}`);
+        const res = await api.get(`/tutors/${id}`, { skipAuth: true });
         setTutor(res.data);
       } catch (err) {
         console.error(" Failed to fetch tutor:", err);

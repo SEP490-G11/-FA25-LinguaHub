@@ -11,6 +11,7 @@ const api = axios.create({
 /* ----------------------------- REQUEST TOKEN ----------------------------- */
 api.interceptors.request.use(
     (config: InternalAxiosRequestConfig & { skipAuth?: boolean }) => {
+        // Skip auth if marked
         if (config.skipAuth) return config;
 
         const token =
@@ -49,16 +50,17 @@ api.interceptors.response.use(
 
     async (error) => {
         const originalRequest = error.config;
+        const status = error.response?.status;
 
-        // Chỉ xử lý refresh nếu request chưa retry và lỗi là 401 hoặc 403
-        if (
-            (error.response?.status === 401 || error.response?.status === 403) &&
-            !originalRequest._retry
-        ) {
+        // Skip refresh if this request does not require auth
+        if (originalRequest?.skipAuth) {
+            return Promise.reject(error);
+        }
+
+        if ((status === 401 || status === 403) && !originalRequest._retry) {
             originalRequest._retry = true;
 
             if (isRefreshing) {
-                // Nếu đang refresh thì cho request vào hàng đợi
                 return new Promise((resolve, reject) => {
                     failedQueue.push({
                         resolve: (token: string) => {
@@ -73,7 +75,11 @@ api.interceptors.response.use(
             isRefreshing = true;
 
             try {
-                const refreshToken = localStorage.getItem("refresh_token");
+                //  FIXED: lấy refresh_token từ cả localStorage lẫn sessionStorage
+                const refreshToken =
+                    localStorage.getItem("refresh_token") ||
+                    sessionStorage.getItem("refresh_token");
+
                 if (!refreshToken) throw new Error("No refresh token");
 
                 const res = await api.post(
@@ -85,19 +91,32 @@ api.interceptors.response.use(
                 const newAccess = res.data?.result?.accessToken;
                 const newRefresh = res.data?.result?.refreshToken;
 
-                localStorage.setItem("access_token", newAccess);
-                localStorage.setItem("refresh_token", newRefresh);
+                // WHERE to store? (remember me logic)
+                if (localStorage.getItem("refresh_token")) {
+                    localStorage.setItem("access_token", newAccess);
+                    localStorage.setItem("refresh_token", newRefresh);
+                } else {
+                    sessionStorage.setItem("access_token", newAccess);
+                    sessionStorage.setItem("refresh_token", newRefresh);
+                }
 
                 processQueue(null, newAccess);
 
                 originalRequest.headers.Authorization = `Bearer ${newAccess}`;
                 return api(originalRequest);
+
             } catch (err) {
                 processQueue(err, null);
+
+                // Clear both storage
                 localStorage.removeItem("access_token");
                 localStorage.removeItem("refresh_token");
+                sessionStorage.removeItem("access_token");
+                sessionStorage.removeItem("refresh_token");
+
                 window.location.href = "/sign-in";
                 return Promise.reject(err);
+
             } finally {
                 isRefreshing = false;
             }

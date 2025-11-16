@@ -1,204 +1,381 @@
-import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, Calendar, Clock } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+// ==========================================================
+// FULL FILE — PLAN VIEW (Available / Selected / Booked)
+// TYPE-SAFE — NO ANY
+// ==========================================================
 
-interface CalendarSlotsProps {
-  selectedSlots: Array<{ date: string; time: string; day: string }>;
-  onSlotsChange: (slots: Array<{ date: string; time: string; day: string }>) => void;
+import { useState, useEffect } from "react";
+import api from "@/config/axiosConfig";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Calendar,
+  Package,
+  CheckCircle,
+  XCircle,
+  Award,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+export interface PackageItem {
+  packageId: number;
+  tutorId: number;
+  name: string;
+  description: string;
+  maxSlot: number;
+  active: boolean;
+  numberOfLessons: number;
+  discountPercent: number;
 }
 
-const CalendarSlots = ({ selectedSlots, onSlotsChange }: CalendarSlotsProps) => {
+export interface BookingPlan {
+  booking_planid: number;
+  tutor_id: number;
+  title: string;
+  date: string;
+  start_hours: string;
+  end_hours: string;
+  slot_duration: number;
+  price_per_hours: number;
+  is_open: boolean;
+  is_active: boolean;
+  status?: "Locked" | "Open";
+}
+
+export interface SelectedSlot {
+  date: string;
+  time: string;
+  day: string;
+  bookingPlanId: number;
+}
+
+type PlanByDate = Record<string, BookingPlan[]>;
+
+interface CalendarSlotsProps {
+  tutorId: string;
+  selectedSlots: SelectedSlot[];
+  onSlotsChange: React.Dispatch<React.SetStateAction<SelectedSlot[]>>;
+  packages: PackageItem[];
+}
+
+const formatDateFixed = (date: Date) => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+};
+
+const getPlanHour = (val: string): number => {
+  return parseInt(val.substring(0, 2), 10);
+};
+
+const CalendarSlots = ({
+                         tutorId,
+                         selectedSlots,
+                         onSlotsChange,
+                         packages,
+                       }: CalendarSlotsProps) => {
   const [currentWeekStart, setCurrentWeekStart] = useState(() => {
-    const today = new Date();
-    const day = today.getDay();
-    const diff = today.getDate() - day + (day === 0 ? -6 : 1);
-    return new Date(today.setDate(diff));
+    const now = new Date();
+    const local = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const day = local.getDay();
+    const diff = local.getDate() - (day === 0 ? 6 : day - 1);
+    return new Date(local.getFullYear(), local.getMonth(), diff);
   });
 
-  const timeSlots = [
-    { time: '18:00', label: '6:00 PM' },
-    { time: '19:00', label: '7:00 PM' },
-    { time: '20:00', label: '8:00 PM' }
-  ];
+  const [planByDate, setPlanByDate] = useState<PlanByDate>({});
 
-  const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const weekdayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const hours = Array.from({ length: 11 }).map((_, i) => 6 + i); // 6 → 16
 
-  const getWeekDates = () => {
-    const dates = [];
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(currentWeekStart);
-      date.setDate(currentWeekStart.getDate() + i);
-      dates.push(date);
-    }
-    return dates;
-  };
+  const getWeekDates = () =>
+      Array.from({ length: 7 }).map((_, i) => {
+        const src = currentWeekStart;
+        return new Date(src.getFullYear(), src.getMonth(), src.getDate() + i);
+      });
 
   const weekDates = getWeekDates();
 
-  const goToPreviousWeek = () => {
-    const newDate = new Date(currentWeekStart);
-    newDate.setDate(currentWeekStart.getDate() - 7);
-    setCurrentWeekStart(newDate);
-  };
+  // Load Plans
+  useEffect(() => {
+    const loadPlans = async () => {
+      const planMap: PlanByDate = {};
 
-  const goToNextWeek = () => {
-    const newDate = new Date(currentWeekStart);
-    newDate.setDate(currentWeekStart.getDate() + 7);
-    setCurrentWeekStart(newDate);
-  };
+      for (const date of weekDates) {
+        const dateStr = formatDateFixed(date);
 
-  const formatDate = (date: Date) => {
-    return date.toISOString().split('T')[0];
-  };
+        try {
+          const planRes = await api.get(
+              `/booking-plan/tutor/${tutorId}?date=${dateStr}`
+          );
 
-  const isSlotSelected = (date: Date, time: string) => {
-    const dateStr = formatDate(date);
-    return selectedSlots.some(slot => slot.date === dateStr && slot.time === time);
-  };
+          const rawPlans: BookingPlan[] = planRes.data.plans || [];
 
-  const isSlotAvailable = (date: Date, time: string) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+          planMap[dateStr] = rawPlans.filter(
+              (p) => p.is_open === true && p.is_active === true
+          );
+        } catch  {
+          planMap[dateStr] = [];
+        }
+      }
 
-    if (date < today) return false;
+      setPlanByDate(planMap);
+    };
 
-    const dayOfWeek = date.getDay();
-    if (dayOfWeek === 0) return false;
+    loadPlans();
+  }, [currentWeekStart, tutorId]);
 
-    return true;
-  };
+  const getStatus = (
+      plan: BookingPlan,
+      hour: number
+  ): "available" | "selected" | "booked" | null => {
+    const sH = getPlanHour(plan.start_hours);
+    const eH = getPlanHour(plan.end_hours);
 
-  const toggleSlot = (date: Date, time: string) => {
-    const dateStr = formatDate(date);
-    const dayName = weekDays[date.getDay() === 0 ? 6 : date.getDay() - 1];
+    if (!(hour >= sH && hour < eH)) return null;
 
-    if (!isSlotAvailable(date, time)) return;
+    if (plan.status === "Locked") return "booked";
 
-    const isSelected = isSlotSelected(date, time);
+    const exist = selectedSlots.some(
+        (s) => s.date === plan.date && s.time === `${hour}:00`
+    );
+    if (exist) return "selected";
 
-    if (isSelected) {
-      onSlotsChange(selectedSlots.filter(slot =>
-        !(slot.date === dateStr && slot.time === time)
-      ));
-    } else {
-      onSlotsChange([...selectedSlots, { date: dateStr, time, day: dayName }]);
-    }
-  };
-
-  const getMonthYearDisplay = () => {
-    return currentWeekStart.toLocaleDateString('en-US', {
-      month: 'long',
-      year: 'numeric'
-    });
+    return "available";
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold flex items-center space-x-2">
-          <Calendar className="w-6 h-6 text-blue-600" />
-          <span>Select Available Time Slots</span>
-        </h2>
-      </div>
+      <div className="bg-white rounded-lg shadow-md p-6">
+        {/* PACKAGE LIST */}
+        <div className="mb-10">
+          <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
+            <Package className="w-5 h-5 text-blue-500" /> Tutor Packages
+          </h2>
 
-      <div className="flex items-center justify-between mb-6">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={goToPreviousWeek}
-          className="flex items-center space-x-1"
-        >
-          <ChevronLeft className="w-4 h-4" />
-          <span>Previous</span>
-        </Button>
-
-        <h3 className="text-lg font-semibold">{getMonthYearDisplay()}</h3>
-
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={goToNextWeek}
-          className="flex items-center space-x-1"
-        >
-          <span>Next</span>
-          <ChevronRight className="w-4 h-4" />
-        </Button>
-      </div>
-
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr>
-              <th className="border border-gray-200 bg-gray-50 p-3 text-left font-semibold">
-                <Clock className="w-4 h-4 inline mr-1" />
-                Time
-              </th>
-              {weekDates.map((date, index) => {
-                const isToday = formatDate(date) === formatDate(new Date());
-                return (
-                  <th
-                    key={index}
-                    className={`border border-gray-200 p-3 text-center ${
-                      isToday ? 'bg-blue-50' : 'bg-gray-50'
-                    }`}
-                  >
-                    <div className="font-semibold">{weekDays[index]}</div>
-                    <div className={`text-sm ${isToday ? 'text-blue-600 font-bold' : 'text-gray-600'}`}>
-                      {date.getDate()}/{date.getMonth() + 1}
-                    </div>
-                  </th>
-                );
-              })}
-            </tr>
-          </thead>
-          <tbody>
-            {timeSlots.map((slot) => (
-              <tr key={slot.time}>
-                <td className="border border-gray-200 bg-gray-50 p-3 font-medium">
-                  {slot.label}
-                </td>
-                {weekDates.map((date, index) => {
-                  const available = isSlotAvailable(date, slot.time);
-                  const selected = isSlotSelected(date, slot.time);
-
-                  return (
-                    <td
-                      key={index}
-                      className="border border-gray-200 p-2 text-center"
+          {packages.length === 0 ? (
+              <p className="text-gray-500 italic">No available packages</p>
+          ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {packages.map((pkg) => (
+                    <div
+                        key={pkg.packageId}
+                        className="border rounded-xl p-4 bg-blue-50 flex justify-between"
                     >
-                      <button
-                        onClick={() => toggleSlot(date, slot.time)}
-                        disabled={!available}
-                        className={`w-full h-12 rounded-lg font-medium transition-all ${
-                          !available
-                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                            : selected
-                            ? 'bg-blue-600 text-white hover:bg-blue-700'
-                            : 'bg-green-50 text-green-700 hover:bg-green-100 border-2 border-green-200'
-                        }`}
-                      >
-                        {!available ? 'N/A' : selected ? 'Selected' : 'Available'}
-                      </button>
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                      <div>
+                        <h3 className="font-semibold">{pkg.name}</h3>
+                        <p className="text-sm text-gray-600">{pkg.description}</p>
+                        <p className="text-sm mt-3">
+                          Max Sessions: <b>{pkg.maxSlot}</b>
+                        </p>
+                      </div>
+                      <div>
+                        {pkg.active ? (
+                            <CheckCircle className="text-green-600" />
+                        ) : (
+                            <XCircle className="text-red-500" />
+                        )}
+                      </div>
+                    </div>
+                ))}
+              </div>
+          )}
 
-      <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-        <h4 className="font-semibold text-blue-900 mb-2">How to book:</h4>
-        <ul className="text-sm text-blue-800 space-y-1">
-          <li>• Click on green "Available" slots to select your preferred time</li>
-          <li>• Selected slots will turn blue</li>
-          <li>• Each slot is 1 hour long (6 PM - 9 PM daily)</li>
-          <li>• Click again to deselect a slot</li>
-          <li>• You can select multiple slots across different days</li>
-        </ul>
+          <div className="flex items-center gap-2 mt-6 pt-4 border-t text-gray-700 text-sm">
+            <Award className="w-5 h-5 text-yellow-500" />
+            Prices reflect tutor-defined booking plans.
+          </div>
+        </div>
+
+        {/* WEEK NAV */}
+        <div className="flex justify-between items-center mb-4">
+          <Button
+              variant="outline"
+              onClick={() => {
+                const d = new Date(currentWeekStart);
+                d.setDate(d.getDate() - 7);
+                setCurrentWeekStart(d);
+              }}
+          >
+            <ChevronLeft className="w-4 h-4" /> Previous Week
+          </Button>
+
+          <div className="font-semibold text-lg">
+            Week of {formatDateFixed(currentWeekStart)}
+          </div>
+
+          <Button
+              variant="outline"
+              onClick={() => {
+                const d = new Date(currentWeekStart);
+                d.setDate(d.getDate() + 7);
+                setCurrentWeekStart(d);
+              }}
+          >
+            Next Week <ChevronRight className="w-4 h-4" />
+          </Button>
+        </div>
+
+        {/* CALENDAR */}
+        <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+          <Calendar className="text-blue-600" /> Select Available Plans
+        </h2>
+
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+            <tr>
+              <th className="border p-3 bg-gray-50">Hour</th>
+              {weekDates.map((d, i) => (
+                  <th key={i} className="border p-3 bg-gray-50 text-center">
+                    {weekdayLabels[i]}
+                    <div className="text-xs">{formatDateFixed(d)}</div>
+                  </th>
+              ))}
+            </tr>
+            </thead>
+
+            <tbody>
+            {hours.map((hour) => (
+                <tr key={hour}>
+                  <td className="border p-2 bg-gray-50 font-medium">
+                    {hour}:00
+                  </td>
+
+                  {weekDates.map((date, col) => {
+                    const dateStr = formatDateFixed(date);
+                    const plans = planByDate[dateStr] || [];
+
+                    const now = new Date();
+                    const today = new Date(
+                        now.getFullYear(),
+                        now.getMonth(),
+                        now.getDate()
+                    );
+
+                    const day = new Date(
+                        date.getFullYear(),
+                        date.getMonth(),
+                        date.getDate()
+                    );
+
+                    if (day < today)
+                      return (
+                          <td
+                              key={col}
+                              className="border p-2 text-center text-gray-300"
+                          >
+                            —
+                          </td>
+                      );
+
+                    const isPastHour =
+                        day.getTime() === today.getTime() &&
+                        hour <= now.getHours();
+
+                    if (isPastHour)
+                      return (
+                          <td
+                              key={col}
+                              className="border p-2 text-center text-gray-300"
+                          >
+                            —
+                          </td>
+                      );
+
+                    if (plans.length === 0)
+                      return (
+                          <td
+                              key={col}
+                              className="border p-2 text-center text-gray-300"
+                          >
+                            —
+                          </td>
+                      );
+
+                    let inside = false;
+                    for (const p of plans) {
+                      const sH = getPlanHour(p.start_hours);
+                      const eH = getPlanHour(p.end_hours);
+                      if (hour >= sH && hour < eH) inside = true;
+                    }
+
+                    if (!inside)
+                      return (
+                          <td
+                              key={col}
+                              className="border p-2 text-center text-gray-300"
+                          >
+                            —
+                          </td>
+                      );
+
+                    return (
+                        <td key={col} className="border p-2 text-center">
+                          <div className="flex flex-col gap-1">
+                            {plans.map((p) => {
+                              const sH = getPlanHour(p.start_hours);
+                              const eH = getPlanHour(p.end_hours);
+                              if (!(hour >= sH && hour < eH)) return null;
+
+                              const status = getStatus(p, hour);
+
+                              const styleMap: Record<string, string> = {
+                                available:
+                                    "bg-green-100 border border-green-500 text-green-700 hover:bg-green-200",
+                                selected:
+                                    "bg-blue-100 border border-blue-500 text-blue-700 hover:bg-blue-200",
+                                booked:
+                                    "bg-red-100 border border-red-500 text-red-600 cursor-not-allowed",
+                              };
+
+                              return (
+                                  <button
+                                      key={p.booking_planid}
+                                      className={`w-full h-10 rounded-lg text-sm font-semibold ${styleMap[status!]}`}
+                                      disabled={status === "booked"}
+                                      onClick={() => {
+                                        if (status === "booked") return;
+
+                                        onSlotsChange(
+                                            (prev: SelectedSlot[]): SelectedSlot[] => {
+                                              if (status === "selected") {
+                                                return prev.filter(
+                                                    (x) =>
+                                                        !(
+                                                            x.date === p.date &&
+                                                            x.time === `${hour}:00`
+                                                        )
+                                                );
+                                              }
+
+                                              return [
+                                                ...prev,
+                                                {
+                                                  date: p.date,
+                                                  time: `${hour}:00`,
+                                                  day: weekdayLabels[col],
+                                                  bookingPlanId: p.booking_planid,
+                                                },
+                                              ];
+                                            }
+                                        );
+                                      }}
+                                  >
+                                    {status === "available" && "Available"}
+                                    {status === "selected" && "Selected"}
+                                    {status === "booked" && "Booked"}
+                                  </button>
+                              );
+                            })}
+                          </div>
+                        </td>
+                    );
+                  })}
+                </tr>
+            ))}
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
   );
 };
 
