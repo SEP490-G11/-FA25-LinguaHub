@@ -51,20 +51,10 @@ export function Filters({
         }));
         
         console.log('✅ [Filters] Categories:', categoriesData);
-        
-        if (categoriesData.length === 0) {
-          console.warn('⚠️ [Filters] No categories, using fallback');
-          import('@/constants/categories').then((module) => {
-            setCategories([...module.CATEGORIES]);
-          });
-        } else {
-          setCategories(categoriesData);
-        }
+        setCategories(categoriesData);
       } catch (error) {
-        console.error('❌ [Filters] Error, using fallback:', error);
-        import('@/constants/categories').then((module) => {
-          setCategories([...module.CATEGORIES]);
-        });
+        console.error('❌ [Filters] Error fetching categories:', error);
+        setCategories([]);
       } finally {
         setIsLoading(false);
       }
