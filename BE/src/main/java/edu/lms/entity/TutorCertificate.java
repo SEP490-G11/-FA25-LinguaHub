@@ -27,8 +27,9 @@ public class TutorCertificate {
     @Column(name = "certificate_name", nullable = false, length = 255)
     private String certificateName;
 
+    @Builder.Default
     @Column(name = "document_url", nullable = false, length = 255)
-    private String documentUrl;
+    private String documentUrl = "";
 
     @Builder.Default
     @Column(name = "created_at", nullable = false, updatable = false)
