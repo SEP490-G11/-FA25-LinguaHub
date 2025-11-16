@@ -18,7 +18,6 @@ import vn.payos.type.CheckoutResponseData;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 
@@ -33,7 +32,8 @@ public class PaymentService {
     private final EnrollmentRepository enrollmentRepository;
     private final PaymentRepository paymentRepository;
     private final UserRepository userRepository;
-    private final PayOSService payOSService; // Updated service with wrapper
+    private final TutorRepository tutorRepository;          // 👈 THÊM
+    private final PayOSService payOSService;
     private final ChatService chatService;
     private final PaymentMapper paymentMapper;
 
@@ -131,8 +131,6 @@ public class PaymentService {
             throw new AppException(ErrorCode.INVALID_PAYMENT_TYPE);
         }
 
-        // GỌI PAYOS - SDK + expiredAt API
-
         var wrapper = payOSService.createPaymentLink(
                 payment.getPaymentID(),
                 request.getUserId(),
@@ -147,9 +145,6 @@ public class PaymentService {
                 ? wrapper.expiredAt()
                 : payment.getExpiresAt();
 
-        // ======================================================
-        // CẬP NHẬT PAYMENT TRONG DB
-        // ======================================================
         updatePaymentWithPayOSData(payment, data, expiredAt);
 
         return ResponseEntity.ok(Map.of(
@@ -270,5 +265,42 @@ public class PaymentService {
     public List<PaymentResponse> getAllPayments() {
         return paymentRepository.findAll()
                 .stream().map(paymentMapper::toPaymentResponse).toList();
+    }
+
+    // ======================================================
+    // LẤY PAYMENT THEO ROLE HIỆN TẠI (/me)
+    // ======================================================
+    @Transactional(readOnly = true)
+    public List<PaymentResponse> getPaymentsForMe(Long userId, String roleClaim) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXIST));
+
+        // Ưu tiên role trong token, fallback sang DB nếu cần
+        String roleName = (roleClaim != null && !roleClaim.isBlank())
+                ? roleClaim
+                : (user.getRole() != null ? user.getRole().getName() : null);
+
+        if (roleName == null) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
+        String roleLower = roleName.toLowerCase();
+
+        if (roleLower.contains("tutor")) {
+            Tutor tutor = tutorRepository.findByUser_UserID(user.getUserID())
+                    .orElseThrow(() -> new AppException(ErrorCode.TUTOR_NOT_FOUND));
+            return getPaymentsByTutor(tutor.getTutorID());
+        }
+
+        if (roleLower.contains("learner") || roleLower.contains("student")) {
+            return getPaymentsByUser(user.getUserID());
+        }
+
+        if (roleLower.contains("admin")) {
+            return getAllPayments();
+        }
+
+        // Các role khác không được xem
+        throw new AppException(ErrorCode.UNAUTHORIZED);
     }
 }
