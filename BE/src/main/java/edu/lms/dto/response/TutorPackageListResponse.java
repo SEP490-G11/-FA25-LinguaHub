@@ -1,5 +1,6 @@
 package edu.lms.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,6 +16,8 @@ import java.util.List;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class TutorPackageListResponse {
+    
+    @JsonProperty("packages")
     List<TutorPackageResponse> packages;
 }
 
