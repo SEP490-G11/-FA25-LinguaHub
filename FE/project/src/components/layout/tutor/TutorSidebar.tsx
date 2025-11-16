@@ -4,11 +4,11 @@ import {
   LayoutDashboard,
   BookOpen,
   Users,
-  BarChart3,
   Settings,
   Calendar,
   FileText,
   MessageSquare,
+  CreditCard,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -48,16 +48,17 @@ const menuItems: MenuItem[] = [
     href: '/bookings',
     icon: BookOpen,
   },
-  {
-    title: 'Analytics',
-    href: '/analytics',
-    icon: BarChart3,
-  },
+  
   {
     title: 'Messages',
     href: '/messages',
     icon: MessageSquare,
   },
+  {
+      title: 'Quản lý thanh toán',
+      href: '/payments',
+      icon: CreditCard,
+    },
   {
     title: 'Resources',
     href: '/resources',
