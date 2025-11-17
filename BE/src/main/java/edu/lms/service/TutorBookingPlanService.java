@@ -229,31 +229,31 @@ public class TutorBookingPlanService {
             if (slot.getPaymentID() != null) {
                 Payment payment = paymentRepository.findById(slot.getPaymentID()).orElse(null);
                 if (payment != null && payment.getPaymentLinkId() != null) {
-                    try {
-                        payOSService.cancelPaymentLink(payment.getPaymentLinkId());
-                        payment.setStatus(PaymentStatus.CANCELLED);
-                        payment.setIsPaid(false);
-                        payment.setPaidAt(null);
-                        payment.setExpiresAt(LocalDateTime.now());
-                        paymentRepository.save(payment);
-                        log.info("Payment {} cancelled due to tutor suspension/deletion", payment.getPaymentID());
-                    } catch (Exception e) {
-                        log.error("Cannot cancel payment link {}", payment.getPaymentLinkId(), e);
-                    }
+//                    try {
+//                        payOSService.cancelPaymentLink(payment.getPaymentLinkId());
+//                        payment.setStatus(PaymentStatus.CANCELLED);
+//                        payment.setIsPaid(false);
+//                        payment.setPaidAt(null);
+//                        payment.setExpiresAt(LocalDateTime.now());
+//                        paymentRepository.save(payment);
+//                        log.info("Payment {} cancelled due to tutor suspension/deletion", payment.getPaymentID());
+//                    } catch (Exception e) {
+//                        log.error("Cannot cancel payment link {}", payment.getPaymentLinkId(), e);
+//                    }
                 }
             }
 
-            // Thông báo cho learner
-            sendNotification(
-                    learnerUserId,
-                    "Lịch học đã bị hủy - Tutor đã bị khóa tài khoản",
-                    "Buổi học vào lúc " + formatDateTime(slot.getStartTime()) +
-                            " đã bị hủy do tutor bị khóa tài khoản. " +
-                            "Link thanh toán đã bị vô hiệu hoá, bạn sẽ không bị trừ tiền. " +
-                            "Vui lòng chọn tutor và lịch học mới.",
-                    NotificationType.TUTOR_CANCEL_BOOKING,
-                    "/learner/booking"
-            );
+//            // Thông báo cho learner
+//            sendNotification(
+//                    learnerUserId,
+//                    "Lịch học đã bị hủy - Tutor đã bị khóa tài khoản",
+//                    "Buổi học vào lúc " + formatDateTime(slot.getStartTime()) +
+//                            " đã bị hủy do tutor bị khóa tài khoản. " +
+//                            "Link thanh toán đã bị vô hiệu hoá, bạn sẽ không bị trừ tiền. " +
+//                            "Vui lòng chọn tutor và lịch học mới.",
+//                    NotificationType.TUTOR_CANCEL_BOOKING,
+//                    "/learner/booking"
+//            );
         } else if (slot.getStatus() == SlotStatus.Paid) {
             // Slot đã thanh toán → tạo refund request và thông báo
             BigDecimal refundAmount = calculateRefundAmount(slot, plan);
