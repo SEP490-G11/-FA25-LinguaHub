@@ -1,20 +1,41 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { BookOpen, DollarSign, Clock } from 'lucide-react';
+import { BookOpen, DollarSign, Clock, Trash2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { CourseListItem } from '../course-list-api';
 import { getStatusConfig, formatPrice } from '../utils';
 
 interface CourseCardProps {
   course: CourseListItem;
   index: number;
+  onDelete?: (courseId: number) => void;
 }
 
-export const CourseCard = ({ course, index }: CourseCardProps) => {
+export const CourseCard = ({ course, index, onDelete }: CourseCardProps) => {
   const statusConfig = getStatusConfig(course.status);
   const StatusIcon = statusConfig.icon;
+  
+  // Check if course can be deleted (Draft or Rejected status)
+  const canDelete = course.status === 'Draft' || course.status === 'Rejected';
+
+  const handleDelete = () => {
+    if (onDelete) {
+      onDelete(course.id);
+    }
+  };
 
   return (
     <motion.div
@@ -92,8 +113,8 @@ export const CourseCard = ({ course, index }: CourseCardProps) => {
             </div>
           </div>
 
-          {/* Action Button */}
-          <div className="mt-auto">
+          {/* Action Buttons */}
+          <div className="mt-auto space-y-2">
             <Button
               asChild
               variant="default"
@@ -105,6 +126,40 @@ export const CourseCard = ({ course, index }: CourseCardProps) => {
                 Quản lý nội dung
               </Link>
             </Button>
+            
+            {/* Delete Button - Only show for Draft or Rejected courses */}
+            {canDelete && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="w-full group/btn"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2 group-hover/btn:scale-110 transition-transform" />
+                    Xóa khóa học
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Xác nhận xóa khóa học</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Bạn có chắc chắn muốn xóa khóa học "{course.title}"? 
+                      Hành động này không thể hoàn tác.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Hủy</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDelete}
+                      className="bg-red-600 hover:bg-red-700"
+                    >
+                      Xóa khóa học
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
           </div>
         </CardContent>
       </Card>

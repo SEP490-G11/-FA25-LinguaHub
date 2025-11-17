@@ -3,11 +3,14 @@ import { Link } from 'react-router-dom';
 import { BookOpen, AlertCircle, Loader2, Plus } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { getAllCourses, CourseListItem } from './course-list-api';
+import { useToast } from '@/components/ui/use-toast';
+import { getAllCourses, deleteCourse, CourseListItem } from './course-list-api';
 import { CourseCard, StatsCards, CourseFilters, CoursePagination } from './components';
 import { CourseStats } from './types';
 
 const CourseList = () => {
+  const { toast } = useToast();
+  
   // State for filters
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
@@ -19,6 +22,7 @@ const CourseList = () => {
   const [allCourses, setAllCourses] = useState<CourseListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState<number | null>(null);
 
   // Fetch courses from API
   const fetchCourses = async () => {
@@ -33,6 +37,32 @@ const CourseList = () => {
       setAllCourses([]);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Handle delete course
+  const handleDeleteCourse = async (courseId: number) => {
+    try {
+      setIsDeleting(courseId);
+      
+      await deleteCourse(courseId);
+      
+      // Remove course from local state
+      setAllCourses(prev => prev.filter(course => course.id !== courseId));
+      
+      toast({
+        title: "Thành công",
+        description: "Khóa học đã được xóa thành công",
+      });
+    } catch (error: any) {
+      console.error('Error deleting course:', error);
+      toast({
+        title: "Lỗi",
+        description: error.message || "Không thể xóa khóa học",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(null);
     }
   };
 
@@ -166,7 +196,12 @@ const CourseList = () => {
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
               {paginatedCourses.map((course, index) => (
-                <CourseCard key={course.id} course={course} index={index} />
+                <CourseCard 
+                  key={course.id} 
+                  course={course} 
+                  index={index}
+                  onDelete={handleDeleteCourse}
+                />
               ))}
             </div>
 
