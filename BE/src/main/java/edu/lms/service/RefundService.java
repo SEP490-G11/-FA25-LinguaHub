@@ -1,6 +1,7 @@
 package edu.lms.service;
 
 import edu.lms.dto.request.RefundInfoRequest;
+import edu.lms.dto.response.RefundRequestResponse;
 import edu.lms.entity.RefundRequest;
 import edu.lms.enums.RefundStatus;
 import edu.lms.exception.AppException;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -34,6 +36,32 @@ public class RefundService {
         refundRepo.save(req);
     }
 
+    public List<RefundRequestResponse> getAllRefunds() {
+        return refundRepo.findAll()
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    public List<RefundRequestResponse> getByStatus(RefundStatus status) {
+        return refundRepo.findByStatus(status)
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    public RefundRequestResponse getOne(Long id) {
+        RefundRequest req = refundRepo.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.REFUND_NOT_FOUND));
+
+        return toResponse(req);
+    }
+
+
+    // ==========================
+    //   APPROVE / REJECT ADMIN
+    // ==========================
+
     public void approve(Long refundId) {
         RefundRequest req = refundRepo.findById(refundId)
                 .orElseThrow(() -> new AppException(ErrorCode.REFUND_NOT_FOUND));
@@ -52,5 +80,27 @@ public class RefundService {
         req.setProcessedAt(LocalDateTime.now());
 
         refundRepo.save(req);
+    }
+
+
+    // ==========================
+    //       MAPPER
+    // ==========================
+
+    private RefundRequestResponse toResponse(RefundRequest r) {
+        return RefundRequestResponse.builder()
+                .refundRequestId(r.getRefundRequestId())
+                .bookingPlanId(r.getBookingPlanId())
+                .slotId(r.getSlotId())
+                .userId(r.getUserId())
+                .packageId(r.getPackageId())
+                .refundAmount(r.getRefundAmount())
+                .bankAccountNumber(r.getBankAccountNumber())
+                .bankOwnerName(r.getBankOwnerName())
+                .bankName(r.getBankName())
+                .status(r.getStatus())
+                .createdAt(r.getCreatedAt())
+                .processedAt(r.getProcessedAt())
+                .build();
     }
 }

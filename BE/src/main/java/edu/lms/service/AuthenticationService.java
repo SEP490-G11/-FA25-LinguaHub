@@ -40,7 +40,7 @@ public class AuthenticationService {
 
     final HttpSession session;
     RefreshTokenRepository refreshTokenRepository;
-
+    TutorRepository tutorRepository;
     UserRepository userRepository;
     InvalidatedTokenRepository invalidatedTokenRepository;
     RoleRepository roleRepository;
@@ -166,12 +166,15 @@ public class AuthenticationService {
     // ================= TOKEN GENERATORS =================
     public String generateAccessToken(User user) {
         JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
+
+        // Permissions
         List<String> permissions = user.getRole().getPermissions()
                 .stream()
                 .map(Permission::getName)
                 .collect(Collectors.toList());
 
-        JWTClaimsSet claims = new JWTClaimsSet.Builder()
+        // Base claims
+        JWTClaimsSet.Builder claimBuilder = new JWTClaimsSet.Builder()
                 .subject(StringUtils.hasText(user.getEmail()) ? user.getEmail() : user.getUsername())
                 .issuer("linguahub.com")
                 .issueTime(new Date())
@@ -179,9 +182,19 @@ public class AuthenticationService {
                 .jwtID(UUID.randomUUID().toString())
                 .claim("role", user.getRole().getName())
                 .claim("permissions", permissions)
-                .claim("userId", user.getUserID())
-                .build();
-        log.warn("GENERATE SIGNER=" + SIGNER_KEY);
+                .claim("userId", user.getUserID());
+
+        // 🔥 Nếu user là Tutor → thêm tutorId
+        if ("Tutor".equalsIgnoreCase(user.getRole().getName())) {
+            Tutor tutor = tutorRepository.findByUser(user)
+                    .orElseThrow(() -> new AppException(ErrorCode.TUTOR_NOT_FOUND));
+
+            claimBuilder.claim("tutorId", tutor.getTutorID());
+        }
+
+        JWTClaimsSet claims = claimBuilder.build();
+
+        log.warn("GENERATE SIGNER KEY=" + SIGNER_KEY);
 
         try {
             JWSObject jwsObject = new JWSObject(header, new Payload(claims.toJSONObject()));

@@ -17,17 +17,24 @@ public class RefundRequestResponse {
     Long refundRequestId;
 
     Long bookingPlanId;
+
     Long slotId;
 
+    Long userId;
+
+    Long packageId;
+
     BigDecimal refundAmount;
+
+    String bankAccountNumber;
+
+    String bankOwnerName;
+
+    String bankName;
 
     RefundStatus status;
 
     LocalDateTime createdAt;
-    LocalDateTime processedAt;
 
-    // optional: để show thêm thông tin trên UI nếu cần
-    String bankName;
-    String bankOwnerName;
-    String bankAccountNumber;
+    LocalDateTime processedAt;
 }
