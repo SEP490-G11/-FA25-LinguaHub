@@ -102,6 +102,13 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/tutors/approved").permitAll()
                         .requestMatchers(HttpMethod.GET, "/tutors/*").permitAll()
 
+                        // Tutor package public endpoints
+                        .requestMatchers(HttpMethod.GET, "/tutor/package/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/tutor/*/packages").permitAll()
+                        // Tutor booking plan public endpoints
+                        .requestMatchers(HttpMethod.GET, "/tutor/*/booking-plan").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/tutor/booking-plan/**").permitAll()
+
 
                         // Other public
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
