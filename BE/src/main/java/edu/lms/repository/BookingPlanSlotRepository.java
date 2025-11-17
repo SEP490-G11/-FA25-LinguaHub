@@ -19,6 +19,12 @@ public interface BookingPlanSlotRepository extends JpaRepository<BookingPlanSlot
 
     List<BookingPlanSlot> findAllByPaymentID(Long paymentId);
 
+    // Lấy slot mà learner đã book
+    List<BookingPlanSlot> findByUserID(Long userId);
+
+    // Lấy slot của tutor
+    List<BookingPlanSlot> findByTutorID(Long tutorId);
+
     List<BookingPlanSlot> findAllByUserIDAndPaymentIDAndStatus(Long userId, Long paymentId, SlotStatus status);
 
     @Modifying

@@ -101,6 +101,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/tutors/approved").permitAll()
                         .requestMatchers(HttpMethod.GET, "/tutors/*").permitAll()
+
+
                         // Other public
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
                         // Everything else
@@ -110,7 +112,7 @@ public class SecurityConfig {
                         .jwt(jwt -> jwt
                                 .decoder(customJwtDecoder)
                                 .jwtAuthenticationConverter(jwtAuthenticationConverter()))
-                        .bearerTokenResolver(bearerTokenResolver()) // ⬅️ NEW: gắn resolver
+                        .bearerTokenResolver(bearerTokenResolver())
                         .authenticationEntryPoint(new JwtAuthenticationEntryPoint())
                 );
 
