@@ -164,6 +164,133 @@ public class TutorBookingPlanService {
     }
 
     // =========================================================
+    // DELETE ALL BOOKING PLANS FOR TUTOR (when tutor suspended/deleted)
+    // =========================================================
+    /**
+     * Xóa tất cả booking plans của tutor và thông báo cho learner
+     * Được gọi khi tutor bị suspend hoặc delete
+     */
+    public void deleteAllBookingPlansForTutor(Long tutorId) {
+        log.info("Deleting all booking plans for tutor {}", tutorId);
+        
+        // Lấy tất cả booking plans của tutor
+        List<BookingPlan> allPlans = bookingPlanRepository.findByTutorID(tutorId);
+        
+        if (allPlans.isEmpty()) {
+            log.info("No booking plans found for tutor {}", tutorId);
+            return;
+        }
+
+        int totalPlansDeleted = 0;
+        int totalSlotsWithLearner = 0;
+
+        // Xóa từng booking plan
+        for (BookingPlan plan : allPlans) {
+            // Lấy tất cả slots của booking plan
+            List<BookingPlanSlot> allSlots = bookingPlanSlotRepository
+                    .findByBookingPlanIDOrderByStartTimeAsc(plan.getBookingPlanID());
+
+            // Xử lý từng slot có learner
+            for (BookingPlanSlot slot : allSlots) {
+                Long learnerUserId = slot.getUserID();
+                
+                if (learnerUserId != null) {
+                    // Slot có learner → gửi thông báo và xóa
+                    totalSlotsWithLearner++;
+                    handleSlotDeletionForTutorSuspension(slot, plan, learnerUserId);
+                    bookingPlanSlotRepository.delete(slot);
+                } else {
+                    // Slot không có learner → xóa trực tiếp
+                    bookingPlanSlotRepository.delete(slot);
+                }
+            }
+
+            // Xóa booking plan
+            bookingPlanRepository.delete(plan);
+            totalPlansDeleted++;
+        }
+
+        log.info("Deleted {} booking plans for tutor {} ({} slots had learners and notifications were sent)", 
+                totalPlansDeleted, tutorId, totalSlotsWithLearner);
+    }
+
+    /**
+     * Xử lý xóa slot khi tutor bị suspend/delete: chỉ thông báo cho learner (không thông báo cho tutor)
+     */
+    private void handleSlotDeletionForTutorSuspension(BookingPlanSlot slot, BookingPlan plan, Long learnerUserId) {
+        if (slot.getStatus() == SlotStatus.Locked) {
+            // Slot đang thanh toán → hủy payment link và thông báo
+            if (slot.getPaymentID() != null) {
+                Payment payment = paymentRepository.findById(slot.getPaymentID()).orElse(null);
+                if (payment != null && payment.getPaymentLinkId() != null) {
+                    try {
+                        payOSService.cancelPaymentLink(payment.getPaymentLinkId());
+                        payment.setStatus(PaymentStatus.CANCELLED);
+                        payment.setIsPaid(false);
+                        payment.setPaidAt(null);
+                        payment.setExpiresAt(LocalDateTime.now());
+                        paymentRepository.save(payment);
+                        log.info("Payment {} cancelled due to tutor suspension/deletion", payment.getPaymentID());
+                    } catch (Exception e) {
+                        log.error("Cannot cancel payment link {}", payment.getPaymentLinkId(), e);
+                    }
+                }
+            }
+
+            // Thông báo cho learner
+            sendNotification(
+                    learnerUserId,
+                    "Lịch học đã bị hủy - Tutor đã bị khóa tài khoản",
+                    "Buổi học vào lúc " + formatDateTime(slot.getStartTime()) +
+                            " đã bị hủy do tutor bị khóa tài khoản. " +
+                            "Link thanh toán đã bị vô hiệu hoá, bạn sẽ không bị trừ tiền. " +
+                            "Vui lòng chọn tutor và lịch học mới.",
+                    NotificationType.TUTOR_CANCEL_BOOKING,
+                    "/learner/booking"
+            );
+        } else if (slot.getStatus() == SlotStatus.Paid) {
+            // Slot đã thanh toán → tạo refund request và thông báo
+            BigDecimal refundAmount = calculateRefundAmount(slot, plan);
+
+            RefundRequest refund = RefundRequest.builder()
+                    .bookingPlanId(plan.getBookingPlanID())
+                    .slotId(slot.getSlotID())
+                    .userId(learnerUserId)
+                    .packageId(slot.getUserPackage() != null ? slot.getUserPackage().getUserPackageID() : null)
+                    .refundAmount(refundAmount)
+                    .status(RefundStatus.PENDING)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+
+            refundRequestRepository.save(refund);
+
+            // Thông báo cho learner
+            sendNotification(
+                    learnerUserId,
+                    "Lịch học đã bị hủy - Tutor đã bị khóa tài khoản - Yêu cầu hoàn tiền",
+                    "Buổi học vào lúc " + formatDateTime(slot.getStartTime()) +
+                            " đã bị hủy do tutor bị khóa tài khoản. " +
+                            "Hệ thống đã tạo yêu cầu hoàn tiền. " +
+                            "Vui lòng nhập thông tin ngân hàng để nhận tiền.",
+                    NotificationType.REFUND_AVAILABLE,
+                    "/learner/refunds"
+            );
+        } else {
+            // Slot Available nhưng có userID
+            // Thông báo cho learner
+            sendNotification(
+                    learnerUserId,
+                    "Lịch học đã bị hủy - Tutor đã bị khóa tài khoản",
+                    "Buổi học vào lúc " + formatDateTime(slot.getStartTime()) +
+                            " đã bị hủy do tutor bị khóa tài khoản. " +
+                            "Vui lòng chọn tutor và lịch học mới.",
+                    NotificationType.TUTOR_CANCEL_BOOKING,
+                    "/learner/booking"
+            );
+        }
+    }
+
+    // =========================================================
     // DELETE BOOKING PLAN
     // =========================================================
     public OperationStatusResponse deleteBookingPlan(Long currentUserId, Long bookingPlanId) {
@@ -174,13 +301,160 @@ public class TutorBookingPlanService {
         ensurePlanOwner(tutor, bookingPlan);
         log.info("Tutor {} (approved) deleting booking plan {}", tutor.getTutorID(), bookingPlanId);
 
-        boolean hasAnySlot = bookingPlanSlotRepository.existsByBookingPlanID(bookingPlanId);
-        if (hasAnySlot) {
-            throw new AppException(ErrorCode.BOOKING_PLAN_HAS_BOOKED_SLOT);
+        // Lấy tất cả slots của booking plan
+        List<BookingPlanSlot> allSlots = bookingPlanSlotRepository
+                .findByBookingPlanIDOrderByStartTimeAsc(bookingPlanId);
+
+        // Lấy tutor user ID để gửi thông báo
+        Long tutorUserId = tutor.getUser() != null ? tutor.getUser().getUserID() : null;
+
+        int slotsWithLearner = 0;
+        int deletedSlots = 0;
+
+        // Xử lý từng slot có learner
+        for (BookingPlanSlot slot : allSlots) {
+            Long learnerUserId = slot.getUserID();
+            
+            if (learnerUserId != null) {
+                // Slot có learner → gửi thông báo và xóa
+                slotsWithLearner++;
+                handleSlotDeletion(slot, bookingPlan, learnerUserId, tutorUserId);
+                bookingPlanSlotRepository.delete(slot);
+                deletedSlots++;
+            } else {
+                // Slot không có learner → xóa trực tiếp
+                bookingPlanSlotRepository.delete(slot);
+                deletedSlots++;
+            }
         }
 
+        // Xóa booking plan
         bookingPlanRepository.delete(bookingPlan);
-        return OperationStatusResponse.success("Booking plan deleted.");
+
+        String message = String.format(
+                "Booking plan deleted. %d slots deleted (%d slots had learners and notifications were sent).",
+                deletedSlots, slotsWithLearner
+        );
+
+        log.info("Booking plan {} deleted. Total slots deleted: {}, Slots with learners: {}", 
+                bookingPlanId, deletedSlots, slotsWithLearner);
+
+        return OperationStatusResponse.success(message);
+    }
+
+    /**
+     * Xử lý xóa slot có learner: gửi thông báo cho cả tutor và learner, xử lý payment/refund
+     */
+    private void handleSlotDeletion(BookingPlanSlot slot, BookingPlan plan, Long learnerUserId, Long tutorUserId) {
+        if (slot.getStatus() == SlotStatus.Locked) {
+            // Slot đang thanh toán → hủy payment link và thông báo
+            if (slot.getPaymentID() != null) {
+                Payment payment = paymentRepository.findById(slot.getPaymentID()).orElse(null);
+                if (payment != null && payment.getPaymentLinkId() != null) {
+                    try {
+                        payOSService.cancelPaymentLink(payment.getPaymentLinkId());
+                        payment.setStatus(PaymentStatus.CANCELLED);
+                        payment.setIsPaid(false);
+                        payment.setPaidAt(null);
+                        payment.setExpiresAt(LocalDateTime.now());
+                        paymentRepository.save(payment);
+                        log.info("Payment {} cancelled due to booking plan deletion", payment.getPaymentID());
+                    } catch (Exception e) {
+                        log.error("Cannot cancel payment link {}", payment.getPaymentLinkId(), e);
+                    }
+                }
+            }
+
+            // Thông báo cho learner
+            sendNotification(
+                    learnerUserId,
+                    "Lịch học đã bị hủy",
+                    "Buổi học vào lúc " + formatDateTime(slot.getStartTime()) +
+                            " đã bị hủy do tutor xóa lịch làm việc. " +
+                            "Link thanh toán đã bị vô hiệu hoá, bạn sẽ không bị trừ tiền. " +
+                            "Vui lòng chọn lịch học mới.",
+                    NotificationType.TUTOR_CANCEL_BOOKING,
+                    "/learner/booking"
+            );
+
+            // Thông báo cho tutor
+            if (tutorUserId != null) {
+                sendNotification(
+                        tutorUserId,
+                        "Đã xóa slot có learner đang thanh toán",
+                        "Buổi học vào lúc " + formatDateTime(slot.getStartTime()) +
+                                " có learner đang thanh toán đã bị xóa khi bạn xóa lịch làm việc. " +
+                                "Hệ thống đã hủy link thanh toán và thông báo cho learner.",
+                        NotificationType.TUTOR_CANCEL_BOOKING,
+                        "/tutor/booking-plan"
+                );
+            }
+        } else if (slot.getStatus() == SlotStatus.Paid) {
+            // Slot đã thanh toán → tạo refund request và thông báo
+            BigDecimal refundAmount = calculateRefundAmount(slot, plan);
+
+            RefundRequest refund = RefundRequest.builder()
+                    .bookingPlanId(plan.getBookingPlanID())
+                    .slotId(slot.getSlotID())
+                    .userId(learnerUserId)
+                    .packageId(slot.getUserPackage() != null ? slot.getUserPackage().getUserPackageID() : null)
+                    .refundAmount(refundAmount)
+                    .status(RefundStatus.PENDING)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+
+            refundRequestRepository.save(refund);
+
+            // Thông báo cho learner
+            sendNotification(
+                    learnerUserId,
+                    "Lịch học đã bị hủy - Yêu cầu hoàn tiền",
+                    "Buổi học vào lúc " + formatDateTime(slot.getStartTime()) +
+                            " đã bị hủy do tutor xóa lịch làm việc. " +
+                            "Hệ thống đã tạo yêu cầu hoàn tiền. " +
+                            "Vui lòng nhập thông tin ngân hàng để nhận tiền.",
+                    NotificationType.REFUND_AVAILABLE,
+                    "/learner/refunds"
+            );
+
+            // Thông báo cho tutor
+            if (tutorUserId != null) {
+                sendNotification(
+                        tutorUserId,
+                        "Đã xóa slot đã thanh toán - Yêu cầu hoàn tiền",
+                        "Buổi học vào lúc " + formatDateTime(slot.getStartTime()) +
+                                " đã được thanh toán nhưng đã bị xóa khi bạn xóa lịch làm việc. " +
+                                "Hệ thống đã tạo yêu cầu hoàn tiền cho learner.",
+                        NotificationType.REFUND_AVAILABLE,
+                        "/tutor/booking-plan"
+                );
+            }
+        } else {
+            // Slot Available nhưng có userID (có thể là trường hợp đặc biệt)
+            // Thông báo cho learner
+            sendNotification(
+                    learnerUserId,
+                    "Lịch học đã bị hủy",
+                    "Buổi học vào lúc " + formatDateTime(slot.getStartTime()) +
+                            " đã bị hủy do tutor xóa lịch làm việc. " +
+                            "Vui lòng chọn lịch học mới.",
+                    NotificationType.TUTOR_CANCEL_BOOKING,
+                    "/learner/booking"
+            );
+
+            // Thông báo cho tutor
+            if (tutorUserId != null) {
+                sendNotification(
+                        tutorUserId,
+                        "Đã xóa slot có learner",
+                        "Buổi học vào lúc " + formatDateTime(slot.getStartTime()) +
+                                " có learner đã book nhưng đã bị xóa khi bạn xóa lịch làm việc. " +
+                                "Hệ thống đã thông báo cho learner.",
+                        NotificationType.TUTOR_CANCEL_BOOKING,
+                        "/tutor/booking-plan"
+                );
+            }
+        }
     }
 
     // =========================================================
@@ -563,7 +837,7 @@ public class TutorBookingPlanService {
                     }
                 }
             }
-            
+
             // Thông báo cho learner
             sendNotification(
                     learnerUserId,
@@ -591,7 +865,7 @@ public class TutorBookingPlanService {
         } else if (slot.getStatus() == SlotStatus.Paid) {
             // Slot đã thanh toán → thông báo và tạo refund request
             BigDecimal refundAmount = calculateRefundAmount(slot, plan);
-            
+
             RefundRequest refund = RefundRequest.builder()
                     .bookingPlanId(plan.getBookingPlanID())
                     .slotId(slot.getSlotID())
