@@ -5,11 +5,14 @@ import edu.lms.dto.response.OperationStatusResponse;
 import edu.lms.dto.response.TutorPackageCreateResponse;
 import edu.lms.dto.response.TutorPackageListResponse;
 import edu.lms.dto.response.TutorPackageResponse;
+import edu.lms.exception.AppException;
+import edu.lms.exception.ErrorCode;
 import edu.lms.security.UserPrincipal;
 import edu.lms.service.TutorPackageService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -30,6 +33,7 @@ public class TutorPackageController {
     private final TutorPackageService tutorPackageService;
 
     @PostMapping("/package")
+    @PreAuthorize("principal.claims['role'] == 'Tutor'")
     public ResponseEntity<TutorPackageCreateResponse> createTutorPackage(
             @Valid @RequestBody TutorPackageRequest request
     ) {
@@ -39,6 +43,7 @@ public class TutorPackageController {
     }
 
     @PutMapping("/package/{packageId}")
+    @PreAuthorize("principal.claims['role'] == 'Tutor'")
     public ResponseEntity<OperationStatusResponse> updateTutorPackage(
             @PathVariable Long packageId,
             @Valid @RequestBody TutorPackageRequest request
@@ -49,6 +54,7 @@ public class TutorPackageController {
     }
 
     @DeleteMapping("/package/{packageId}")
+    @PreAuthorize("principal.claims['role'] == 'Tutor'")
     public ResponseEntity<OperationStatusResponse> deleteTutorPackage(
             @PathVariable Long packageId
     ) {
@@ -71,19 +77,36 @@ public class TutorPackageController {
 
     private Long getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.getPrincipal() instanceof Jwt jwt) {
-            Object userId = jwt.getClaim("userId");
-            if (userId instanceof Integer) {
-                return ((Integer) userId).longValue();
-            } else if (userId instanceof Long) {
-                return (Long) userId;
-            } else if (userId instanceof Number) {
-                return ((Number) userId).longValue();
-            }
-        } else if (authentication != null && authentication.getPrincipal() instanceof UserPrincipal principal) {
-            return principal.getUserId();
+        
+        if (authentication == null) {
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
         }
-        throw new RuntimeException("User not authenticated");
+        
+        if (authentication.getPrincipal() instanceof Jwt jwt) {
+            Object userId = jwt.getClaim("userId");
+            if (userId instanceof Integer integerId) {
+                return integerId.longValue();
+            }
+            if (userId instanceof Long longId) {
+                return longId;
+            }
+            if (userId instanceof Number numberId) {
+                return numberId.longValue();
+            }
+            // userId claim không tồn tại hoặc null
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        } 
+        
+        if (authentication.getPrincipal() instanceof UserPrincipal principal) {
+            Long userId = principal.getUserId();
+            if (userId == null) {
+                throw new AppException(ErrorCode.UNAUTHENTICATED);
+            }
+            return userId;
+        }
+        
+        // Principal không phải Jwt hoặc UserPrincipal
+        throw new AppException(ErrorCode.UNAUTHENTICATED);
     }
 }
 

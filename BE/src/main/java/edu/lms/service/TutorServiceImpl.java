@@ -40,6 +40,7 @@ public class TutorServiceImpl implements TutorService {
     private final CourseRepository courseRepository;
     private final BookingPlanRepository bookingPlanRepository;
     private final TutorCourseMapper tutorCourseMapper;
+    private final TutorBookingPlanService tutorBookingPlanService;
 
     @Override
     public void applyToBecomeTutor(Long userID, TutorApplyRequest request) {
@@ -458,6 +459,9 @@ public class TutorServiceImpl implements TutorService {
         
         Tutor tutor = tutorRepository.findById(tutorId)
                 .orElseThrow(() -> new TutorNotFoundException("Tutor not found with ID: " + tutorId));
+        
+        // Xóa tất cả booking plans của tutor và thông báo cho learner
+        tutorBookingPlanService.deleteAllBookingPlansForTutor(tutorId);
         
         tutor.setStatus(TutorStatus.SUSPENDED);
         tutorRepository.save(tutor);
