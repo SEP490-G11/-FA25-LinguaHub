@@ -43,9 +43,10 @@ public class TutorBookingPlanService {
 
         validatePlanRequest(request);
         
-        // Validate giới hạn 4 ngày/tuần
+        // Validate giới hạn 4 ngày/tuần (với pessimistic lock trong repository)
         validateMaxDaysPerWeek(tutor.getTutorID(), request.getTitle());
         
+        // Kiểm tra overlap (với pessimistic lock trong repository)
         ensureNoOverlappingPlans(
                 tutor.getTutorID(),
                 request.getTitle(),
@@ -110,7 +111,7 @@ public class TutorBookingPlanService {
                     currentDaysCount = 0L;
                 }
                 
-                // Kiểm tra xem title cũ có phải là duy nhất không (chỉ có plan đang update)
+                // Kiểm tra xem title cũ có phải là duy nhất không (chỉ có plan đang update cho ngày đó)
                 List<BookingPlan> plansWithOldTitle = bookingPlanRepository
                         .findByTutorIDAndTitle(tutor.getTutorID(), bookingPlan.getTitle());
                 long activePlansWithOldTitle = plansWithOldTitle.stream()
@@ -120,9 +121,14 @@ public class TutorBookingPlanService {
                         && plansWithOldTitle.stream()
                         .anyMatch(plan -> plan.getBookingPlanID().equals(bookingPlanId));
                 
-                // Nếu title cũ là duy nhất, khi đổi sang title mới, số ngày không đổi (vẫn là currentDaysCount)
-                // Nếu title cũ không phải duy nhất, khi đổi sang title mới, số ngày sẽ tăng lên 1
-                // Vì vậy chỉ cần kiểm tra nếu title cũ không phải duy nhất
+                // Tính toán số ngày sau khi update:
+                // - Nếu title cũ là duy nhất (chỉ có plan đang update), khi đổi sang title mới chưa tồn tại:
+                //   + Số ngày không đổi (thay thế: title cũ mất, title mới thêm)
+                // - Nếu title cũ không phải duy nhất, khi đổi sang title mới chưa tồn tại:
+                //   + Số ngày tăng lên 1 (title cũ vẫn còn, title mới được thêm)
+                // - Nếu title mới đã tồn tại: số ngày không đổi (hợp nhất)
+                
+                // Vì vậy: chỉ cần kiểm tra nếu title cũ không phải duy nhất và đã có 4 ngày
                 if (!oldTitleIsUnique && currentDaysCount >= 4) {
                     throw new AppException(ErrorCode.BOOKING_PLAN_MAX_DAYS_EXCEEDED);
                 }
@@ -478,6 +484,50 @@ public class TutorBookingPlanService {
     }
 
     @Transactional(readOnly = true)
+    public BookingPlanListResponse getMyBookingPlans(Long currentUserId) {
+        Tutor tutor = getApprovedTutorByUserId(currentUserId);
+
+        List<TutorBookingPlanResponse> planResponses = bookingPlanRepository
+                .findByTutorIDAndIsActiveTrueOrderByTitleAscStartHoursAsc(tutor.getTutorID())
+                .stream()
+                .map(this::toBookingPlanResponse)
+                .toList();
+
+        return BookingPlanListResponse.builder()
+                .tutorId(tutor.getTutorID())
+                .plans(planResponses)
+                .build();
+    }
+
+    @Transactional(readOnly = true)
+    public BookingPlanListWithSlotsResponse getMyBookingPlansWithSlots(Long currentUserId) {
+        Tutor tutor = getApprovedTutorByUserId(currentUserId);
+
+        List<BookingPlanDetailResponse> planDetailResponses = bookingPlanRepository
+                .findByTutorIDAndIsActiveTrueOrderByTitleAscStartHoursAsc(tutor.getTutorID())
+                .stream()
+                .map(plan -> {
+                    List<BookingPlanSlot> slots = bookingPlanSlotRepository
+                            .findByBookingPlanIDOrderByStartTimeAsc(plan.getBookingPlanID());
+                    
+                    List<BookingPlanSlotSummaryResponse> slotResponses = slots.stream()
+                            .map(this::toSlotSummary)
+                            .toList();
+
+                    return BookingPlanDetailResponse.builder()
+                            .bookingPlan(toBookingPlanResponse(plan))
+                            .slots(slotResponses)
+                            .build();
+                })
+                .toList();
+
+        return BookingPlanListWithSlotsResponse.builder()
+                .tutorId(tutor.getTutorID())
+                .plans(planDetailResponses)
+                .build();
+    }
+
+    @Transactional(readOnly = true)
     public BookingPlanDetailResponse getBookingPlanDetail(Long bookingPlanId) {
         BookingPlan bookingPlan = bookingPlanRepository.findById(bookingPlanId)
                 .orElseThrow(() -> new AppException(ErrorCode.BOOKING_PLAN_NOT_FOUND));
@@ -521,9 +571,14 @@ public class TutorBookingPlanService {
     /**
      * Validate giới hạn 4 ngày/tuần cho tutor
      * Tutor chỉ có thể tạo booking plan cho tối đa 4 ngày khác nhau trong tuần
+     * 
+     * Logic:
+     * - Nếu title (ngày) đã tồn tại: cho phép tạo thêm plan cho ngày đó (số ngày không tăng)
+     * - Nếu title chưa tồn tại và đã có 4 ngày: không cho phép (số ngày sẽ tăng lên 5)
+     * - Sử dụng pessimistic lock trong repository để tránh race condition
      */
     private void validateMaxDaysPerWeek(Long tutorId, String newTitle) {
-        // Đếm số ngày duy nhất hiện tại của tutor
+        // Đếm số ngày duy nhất hiện tại của tutor (với pessimistic lock)
         Long currentDaysCount = bookingPlanRepository.countDistinctDaysByTutorID(tutorId);
         if (currentDaysCount == null) {
             currentDaysCount = 0L;
@@ -536,6 +591,7 @@ public class TutorBookingPlanService {
                 .anyMatch(plan -> plan.getIsActive());
 
         // Nếu tutor đã có 4 ngày và title mới chưa tồn tại, thì không cho phép
+        // Vì tạo plan mới cho ngày chưa có sẽ làm số ngày tăng lên 5, vượt quá giới hạn
         if (currentDaysCount >= 4 && !titleAlreadyExists) {
             throw new AppException(ErrorCode.BOOKING_PLAN_MAX_DAYS_EXCEEDED);
         }
@@ -940,7 +996,7 @@ public class TutorBookingPlanService {
 
         return pricePerHour
                 .multiply(BigDecimal.valueOf(minutes))
-                .divide(BigDecimal.valueOf(60), 2, BigDecimal.ROUND_HALF_UP);
+                .divide(BigDecimal.valueOf(60), 2, java.math.RoundingMode.HALF_UP);
     }
 
     private void sendNotification(
