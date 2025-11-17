@@ -33,7 +33,7 @@ public class TutorPackageController {
     private final TutorPackageService tutorPackageService;
 
     @PostMapping("/package")
-    @PreAuthorize("hasRole('Tutor')")
+    @PreAuthorize("hasRole('TUTOR')")
     public ResponseEntity<TutorPackageCreateResponse> createTutorPackage(
             @Valid @RequestBody TutorPackageRequest request
     ) {
@@ -43,7 +43,7 @@ public class TutorPackageController {
     }
 
     @PutMapping("/package/{packageId}")
-    @PreAuthorize("hasRole('Tutor')")
+    @PreAuthorize("hasRole('TUTOR')")
     public ResponseEntity<OperationStatusResponse> updateTutorPackage(
             @PathVariable Long packageId,
             @Valid @RequestBody TutorPackageRequest request
@@ -54,7 +54,7 @@ public class TutorPackageController {
     }
 
     @DeleteMapping("/package/{packageId}")
-    @PreAuthorize("hasRole('Tutor')")
+    @PreAuthorize("hasRole('TUTOR')")
     public ResponseEntity<OperationStatusResponse> deleteTutorPackage(
             @PathVariable Long packageId
     ) {
@@ -71,7 +71,7 @@ public class TutorPackageController {
     }
 
     @GetMapping("/package/me")
-    @PreAuthorize("hasRole('Tutor')")
+    @PreAuthorize("hasRole('TUTOR')")
     public ResponseEntity<TutorPackageListResponse> getMyPackages() {
         Long tutorUserId = getCurrentUserId();
         TutorPackageListResponse response = tutorPackageService.getMyPackages(tutorUserId);
