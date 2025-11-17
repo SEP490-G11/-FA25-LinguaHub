@@ -31,7 +31,7 @@ public class TutorBookingPlanController {
     private final TutorBookingPlanService tutorBookingPlanService;
 
     @PostMapping("/booking-plan")
-    @PreAuthorize("principal.claims['role'] == 'Tutor'")
+    @PreAuthorize("hasRole('TUTOR')")
     public ResponseEntity<BookingPlanCreateResponse> createBookingPlan(
             @Valid @RequestBody TutorBookingPlanRequest request
     ) {
@@ -41,7 +41,7 @@ public class TutorBookingPlanController {
     }
 
     @PutMapping("/booking-plan/{bookingPlanId}")
-    @PreAuthorize("principal.claims['role'] == 'Tutor'")
+    @PreAuthorize("hasRole('TUTOR')")
     public ResponseEntity<BookingPlanUpdateResponse> updateBookingPlan(
             @PathVariable Long bookingPlanId,
             @Valid @RequestBody TutorBookingPlanRequest request
@@ -52,7 +52,7 @@ public class TutorBookingPlanController {
     }
 
     @DeleteMapping("/booking-plan/{bookingPlanId}")
-    @PreAuthorize("principal.claims['role'] == 'Tutor'")
+    @PreAuthorize("hasRole('TUTOR')")
     public ResponseEntity<OperationStatusResponse> deleteBookingPlan(@PathVariable Long bookingPlanId) {
         Long currentUserId = getCurrentUserId();
         OperationStatusResponse response = tutorBookingPlanService.deleteBookingPlan(currentUserId, bookingPlanId);
