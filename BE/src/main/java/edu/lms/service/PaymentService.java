@@ -36,7 +36,7 @@ public class PaymentService {
     private final PayOSService payOSService;
     private final ChatService chatService;
     private final PaymentMapper paymentMapper;
-
+    private final UserPackageRepository userPackageRepository;
     // ======================================================
     // TẠO THANH TOÁN (PENDING)
     // ======================================================
@@ -72,7 +72,14 @@ public class PaymentService {
         }
 
         // ----------------- BOOKING PAYMENT -----------------
+
         else if (request.getPaymentType() == PaymentType.Booking) {
+            UserPackage userPackage = null;
+
+            if (request.getUserPackageId() != null) {
+                userPackage = userPackageRepository.findById(request.getUserPackageId())
+                        .orElseThrow(() -> new AppException(ErrorCode.USER_PACKAGE_NOT_FOUND));
+            }
             BookingPlan plan = bookingPlanRepository.findById(request.getTargetId())
                     .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
 
@@ -101,8 +108,10 @@ public class PaymentService {
                         .endTime(s.getEndTime())
                         .status(SlotStatus.Locked)
                         .lockedAt(LocalDateTime.now())
-                        .expiresAt(LocalDateTime.now().plusMinutes(3))
+                        .expiresAt(LocalDateTime.now().plusMinutes(15))
+                        .userPackage(userPackage)
                         .build();
+
                 bookingPlanSlotRepository.save(slot);
             }
 
