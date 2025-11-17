@@ -23,52 +23,118 @@ public class PaymentWebhookService {
     private final PaymentRepository paymentRepository;
     private final BookingPlanSlotRepository bookingPlanSlotRepository;
     private final PaymentService paymentService;
+    private final PayOSService payOSService;
 
     /**
-     * Handle webhook callback from PayOS using the old SDK:
+     * Handle webhook callback from PayOS
      * code = "00" -> PAID
-     * code != "00" -> FAILED
+     * code != "00" -> FAILED/CANCELLED
      */
     public void handleWebhook(String orderCode, String code, Map<String, Object> payload) {
         log.info("Handling webhook | orderCode={} | code={} | payload={}", orderCode, code, payload);
 
         paymentRepository.findByOrderCode(orderCode).ifPresentOrElse(payment -> {
             try {
+                boolean isPaid = "00".equals(code);
 
-                boolean isPaid = "00".equals(code);  // PayOS SUCCESS !
+                // ===================================================
+                //PAYMENT ĐÃ BỊ CANCELLED TỪ TRƯỚC → BLOCK PAID
+                // ===================================================
+                if (payment.getStatus() == PaymentStatus.CANCELLED) {
 
+                    log.warn("[BLOCK] Payment {} was CANCELLED earlier → ignoring webhook PAID",
+                            payment.getPaymentID());
+
+                    // Hủy link PayOS nếu vẫn tồn tại
+                    if (payment.getPaymentLinkId() != null) {
+                        try {
+                            payOSService.cancelPaymentLink(payment.getPaymentLinkId());
+                        } catch (Exception ex) {
+                            log.error("[BLOCK] Cannot cancel PayOS link {}", payment.getPaymentLinkId(), ex);
+                        }
+                    }
+
+                    payment.setIsPaid(false);
+                    payment.setPaidAt(null);
+
+                    if (payload != null)
+                        payment.setTransactionResponse(payload.toString());
+
+                    paymentRepository.save(payment);
+                    return;
+                }
+
+                boolean hasRejectedSlot = false;
+                List<BookingPlanSlot> slots = null;
+
+                if (payment.getPaymentType() == PaymentType.Booking) {
+                    slots = bookingPlanSlotRepository.findAllByPaymentID(payment.getPaymentID());
+
+                    if (slots == null || slots.isEmpty()) {
+                        log.warn("No slots found for booking payment {}", payment.getPaymentID());
+                    } else {
+                        hasRejectedSlot = slots.stream()
+                                .anyMatch(s -> s.getStatus() == SlotStatus.Rejected);
+                    }
+                }
+
+                // ===================================================
+                //SLOT ĐÃ BỊ REJECT → FORCE CANCEL PAYMENT
+                // ===================================================
+                if (hasRejectedSlot) {
+
+                    log.warn("[FORCE CANCEL] Payment {} contains REJECTED slot → CANCEL payment",
+                            payment.getPaymentID());
+
+                    // Hủy link PayOS
+                    if (payment.getPaymentLinkId() != null) {
+                        try {
+                            payOSService.cancelPaymentLink(payment.getPaymentLinkId());
+                        } catch (Exception ex) {
+                            log.error("[FORCE CANCEL] Cannot cancel PayOS link {}", payment.getPaymentLinkId(), ex);
+                        }
+                    }
+
+                    payment.setStatus(PaymentStatus.CANCELLED);
+                    payment.setIsPaid(false);
+                    payment.setPaidAt(null);
+
+                    if (payload != null)
+                        payment.setTransactionResponse(payload.toString());
+
+                    paymentRepository.save(payment);
+                    return;
+                }
+
+                // ===================================================
+                // 2️⃣ PAYMENT SUCCESS (VALID)
+                // ===================================================
                 if (isPaid) {
-                    // -----------------------------
-                    // 🔥 PAYMENT SUCCESS
-                    // -----------------------------
+
                     payment.setStatus(PaymentStatus.PAID);
                     payment.setIsPaid(true);
                     payment.setPaidAt(LocalDateTime.now());
-
                     paymentRepository.save(payment);
 
                     log.info("[PAYOS] Payment {} marked as PAID", orderCode);
 
-                    // Update slot after paid
                     paymentService.processPostPayment(payment);
                 } else {
-                    // -----------------------------
-                    // ❌ PAYMENT FAILED / CANCELLED
-                    // -----------------------------
+
+                    // ===================================================
+                    // 3️⃣ PAYMENT FAILED
+                    // ===================================================
                     payment.setStatus(PaymentStatus.FAILED);
                     payment.setIsPaid(false);
-
                     paymentRepository.save(payment);
 
-                    log.warn("[PAYOS] Payment {} FAILED, rolling back slots...", orderCode);
-
+                    log.warn("[PAYOS] Payment {} FAILED → rollback slots", orderCode);
                     handlePaymentRollback(payment, "FAILED");
                 }
 
-                // Save webhook response
-                if (payload != null) {
+                // Save webhook payload
+                if (payload != null)
                     payment.setTransactionResponse(payload.toString());
-                }
 
                 paymentRepository.save(payment);
 
@@ -83,6 +149,7 @@ public class PaymentWebhookService {
      * Rollback booking slot if payment failed/cancelled
      */
     public void handlePaymentRollback(Payment payment, String reason) {
+
         if (payment == null) return;
 
         if (payment.getPaymentType() != PaymentType.Booking) {
@@ -90,7 +157,9 @@ public class PaymentWebhookService {
             return;
         }
 
-        List<BookingPlanSlot> slots = bookingPlanSlotRepository.findAllByPaymentID(payment.getPaymentID());
+        List<BookingPlanSlot> slots =
+                bookingPlanSlotRepository.findAllByPaymentID(payment.getPaymentID());
+
         long deletedCount = 0;
 
         for (BookingPlanSlot slot : slots) {

@@ -102,6 +102,10 @@ public class Payment {
     @Column(nullable = false)
     LocalDateTime expiresAt;
 
+    String returnUrl;
+
+    String cancelUrl;
+
     // ==========================================
     // Lifecycle Hooks
     // ==========================================
