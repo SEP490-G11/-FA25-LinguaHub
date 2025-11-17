@@ -9,6 +9,7 @@ import {
   FileText,
   MessageSquare,
   CreditCard,
+  Package,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -48,7 +49,11 @@ const menuItems: MenuItem[] = [
     href: '/bookings',
     icon: BookOpen,
   },
-  
+  {
+    title: 'Packages',
+    href: '/packages',
+    icon: Package,
+  },
   {
     title: 'Messages',
     href: '/messages',

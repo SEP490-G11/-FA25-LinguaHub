@@ -7,6 +7,7 @@ import {
   FileCheck,
   UserCheck,
   CreditCard,
+  UserCog,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -26,10 +27,11 @@ const menuItems: MenuItem[] = [
     href: '/admin/dashboard',
     icon: LayoutDashboard,
   },
+  
   {
-    title: 'Quản lý người học',
-    href: '/admin/learners',
-    icon: Users,
+    title: 'Quản lý người dùng',
+    href: '/admin/user-management',
+    icon: UserCog,
   },
   {
     title: 'Quản lý khóa học',

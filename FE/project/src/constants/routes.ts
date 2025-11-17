@@ -28,6 +28,7 @@ export const ROUTES = {
     PENDING_COURSES: '/admin/pending-courses',
     TUTOR_DASHBOARD: '/dashboard',
     TUTOR_COURSES: '/courses',
+    TUTOR_PACKAGES: '/packages',
     MY_COURSES: '/my-courses',
     LANGUAGE_COURSES: '/languages/:language',  // Dynamic
 
@@ -37,4 +38,7 @@ export const ROUTES = {
     MY_ENROLLMENTS: '/my-enrollments',
     APPLY_TUTOR: '/learner/apply-tutor',
     SETTINGS: '/settings',
+
+    // Admin routes
+    ADMIN_USER_MANAGEMENT: '/admin/user-management',
 } as const;
