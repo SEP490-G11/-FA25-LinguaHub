@@ -104,22 +104,20 @@ public class CourseSectionService {
     }
 
     // DELETE
-    @org.springframework.transaction.annotation.Transactional
+
+    @Transactional
     public void deleteSection(Long sectionID, String email) {
         CourseSection section = courseSectionRepository.findById(sectionID)
                 .orElseThrow(() -> new AppException(ErrorCode.INVALID_KEY));
-        ensureTutorOwner(email, section.getCourse());
-        var lessons = lessonRepository.findBySectionSectionID(sectionID);
-        if (!lessons.isEmpty()) {
-            var lessonIds = lessons.stream().map(Lesson::getLessonID).toList();
-            var resources = lessonResourceRepository.findByLesson_LessonIDIn(lessonIds);
-            if (!resources.isEmpty()) {
-                lessonResourceRepository.deleteAllInBatch(resources);
-            }
-            lessonRepository.deleteAllInBatch(lessons);
-        }
 
+        // check quyền
+        ensureTutorOwner(email, section.getCourse());
+
+        // KHÔNG xoá lesson / resource thủ công nữa
+        // orphanRemoval = true sẽ tự động xoá hết:
+        // CourseSection -> Lessons -> LessonResources
         courseSectionRepository.delete(section);
     }
+
 }
 

@@ -37,6 +37,7 @@ public enum ErrorCode {
     COURSE_NOT_COMPLETED_HALF(3010, "You must complete at least 50% of the course before reviewing", HttpStatus.BAD_REQUEST),
     COURSE_NOT_APPROVED(3011, "This course is not yet approved for public view", HttpStatus.FORBIDDEN),
     REFUND_NOT_FOUND(1013, "Refund Not found", HttpStatus.NOT_FOUND),
+    COURSE_DELETE_ONLY_DRAFT_OR_PENDING(3015, "COURSE_DELETE_ONLY_DRAFT_OR_PENDING", HttpStatus.BAD_REQUEST),
     // COURSE DRAFT / VERSIONING (THÊM MỚI)
     CAN_ONLY_EDIT_DRAFT_FOR_APPROVED_COURSE(
             3012,

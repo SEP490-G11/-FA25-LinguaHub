@@ -97,4 +97,59 @@ public class EmailService {
         message.setText(content.toString());
         mailSender.send(message);
     }
+
+    // ====================== COURSE DRAFT EMAILS ======================
+
+    // src/main/java/edu/lms/service/EmailService.java
+
+    public void sendCourseDraftApprovedToTutor(String toEmail, String courseTitle, String changeSummary) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(toEmail);
+        message.setSubject("[LinguaHub] Your course updates have been approved");
+
+        StringBuilder content = new StringBuilder();
+        content.append("Dear Tutor,\n\n");
+        content.append("Your updates for the course \"")
+                .append(courseTitle)
+                .append("\" have been approved and applied to the live course.\n\n");
+
+        content.append("Summary of changes:\n");
+        content.append(changeSummary).append("\n");
+
+        content.append("You can log in to LinguaHub to review the updated course content.\n\n");
+        content.append("Best regards,\n");
+        content.append("LinguaHub Team");
+
+        message.setText(content.toString());
+        mailSender.send(message);
+    }
+
+    public void sendCourseDraftRejectedToTutor(String toEmail, String courseTitle, String reason) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(toEmail);
+        message.setSubject("[LinguaHub] Your course draft was rejected");
+
+        StringBuilder content = new StringBuilder();
+        content.append("Dear Tutor,\n\n");
+        content.append("Your draft update for the course \"")
+                .append(courseTitle)
+                .append("\" was rejected by the admin.\n\n");
+
+        if (reason != null && !reason.isBlank()) {
+            content.append("Reason from admin:\n")
+                    .append(reason)
+                    .append("\n\n");
+        } else {
+            content.append("Reason: Not provided by admin.\n\n");
+        }
+
+        content.append("Please update your draft based on the feedback and resubmit.\n\n");
+        content.append("Best regards,\n");
+        content.append("LinguaHub Team");
+
+        message.setText(content.toString());
+        mailSender.send(message);
+    }
+
+
 }

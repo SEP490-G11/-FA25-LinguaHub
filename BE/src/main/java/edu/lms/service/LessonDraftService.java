@@ -123,11 +123,10 @@ public class LessonDraftService {
     public void deleteLesson(Long lessonDraftID, String email) {
         LessonDraft ld = resolveLessonDraftAndCheckOwner(lessonDraftID, email);
 
-        var resources = lessonResourceDraftRepository.findByLessonDraft_LessonDraftID(ld.getLessonDraftID());
-        if (!resources.isEmpty()) {
-            lessonResourceDraftRepository.deleteAllInBatch(resources);
-        }
-
+        // Cascade + orphanRemoval sẽ tự xoá LessonResourceDraft
         lessonDraftRepository.delete(ld);
     }
+
+
+
 }

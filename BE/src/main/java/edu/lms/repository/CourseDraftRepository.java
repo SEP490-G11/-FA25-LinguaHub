@@ -14,4 +14,5 @@ public interface CourseDraftRepository extends JpaRepository<CourseDraft, Long> 
                                                            Collection<CourseDraftStatus> statuses);
 
     List<CourseDraft> findByStatus(CourseDraftStatus status);
+    List<CourseDraft> findByCourse_CourseID(Long courseId);
 }

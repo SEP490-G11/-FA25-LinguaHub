@@ -444,6 +444,8 @@ public class AdminCourseService {
 
         //  7. Gửi email cho learner đã enroll
         notifyLearnersCourseUpdated(course, changes);
+        notifyTutorCourseDraftApproved(draft, changes);
+
 
         return toAdmin(course);
     }
@@ -461,6 +463,7 @@ public class AdminCourseService {
         draft.setUpdatedAt(LocalDateTime.now());
         draft.setAdminReviewNote(note);
         // @Transactional sẽ tự flush
+        notifyTutorCourseDraftRejected(draft, note);
     }
 
     @Transactional
@@ -1274,4 +1277,35 @@ public class AdminCourseService {
             emailService.sendCourseUpdatedToLearner(email, course.getTitle(), summary);
         }
     }
+    private void notifyTutorCourseDraftApproved(CourseDraft draft, AdminCourseDraftChangesResponse changes) {
+        Tutor tutor = draft.getTutor();
+        if (tutor == null || tutor.getUser() == null) return;
+
+        String email = tutor.getUser().getEmail();
+        if (email == null || email.isBlank()) return;
+
+        // Dùng lại logic build summary đã gửi cho learner
+        String summary = buildCourseChangeSummary(changes);
+
+        emailService.sendCourseDraftApprovedToTutor(
+                email,
+                draft.getCourse().getTitle(),
+                summary
+        );
+    }
+
+    private void notifyTutorCourseDraftRejected(CourseDraft draft, String note) {
+        Tutor tutor = draft.getTutor();
+        if (tutor == null || tutor.getUser() == null) return;
+        String email = tutor.getUser().getEmail();
+        if (email == null || email.isBlank()) return;
+
+        emailService.sendCourseDraftRejectedToTutor(
+                email,
+                draft.getCourse().getTitle(),
+                note
+        );
+    }
+
+
 }

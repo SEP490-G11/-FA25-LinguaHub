@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface LessonDraftRepository extends JpaRepository<LessonDraft, Long> {
     List<LessonDraft> findBySectionDraft_SectionDraftIDOrderByOrderIndexAsc(Long sectionDraftID);
+    List<LessonDraft> findBySectionDraft_SectionDraftIDIn(List<Long> sectionDraftIds);
 }

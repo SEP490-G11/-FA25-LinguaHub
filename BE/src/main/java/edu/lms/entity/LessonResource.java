@@ -20,11 +20,13 @@ public class LessonResource {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lessonID", nullable = false)
+    @ToString.Exclude
+    @com.fasterxml.jackson.annotation.JsonIgnore
     Lesson lesson;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    ResourceType resourceType = ResourceType.PDF; // Default value
+    ResourceType resourceType = ResourceType.PDF;
 
     String resourceTitle;
 
@@ -34,4 +36,3 @@ public class LessonResource {
     @Column(updatable = false)
     LocalDateTime uploadedAt = LocalDateTime.now();
 }
-

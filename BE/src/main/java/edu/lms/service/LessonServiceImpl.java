@@ -137,21 +137,21 @@ public class LessonServiceImpl implements LessonService {
 
 
         @Override
+        @Transactional
         public void deleteLesson(Long lessonId, String email) {
                 Lesson lesson = lessonRepository.findById(lessonId)
                         .orElseThrow(() -> new AppException(ErrorCode.INVALID_KEY));
+
                 Course course = lesson.getSection().getCourse();
 
                 User user = findUserByEmailOr401(email);
                 ensureOwner(user, course);
 
-                var resources = lessonResourceRepository.findByLessonLessonID(lessonId);
-                if (!resources.isEmpty()) {
-                        lessonResourceRepository.deleteAllInBatch(resources);
-                }
-
+                // KHÔNG xoá resource thủ công nữa,
+                // orphanRemoval = true sẽ tự xoá LessonResource khi xoá Lesson
                 lessonRepository.delete(lesson);
         }
+
 
         //Read
 

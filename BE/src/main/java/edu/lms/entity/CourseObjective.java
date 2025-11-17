@@ -3,6 +3,7 @@ package edu.lms.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Data
 @NoArgsConstructor
@@ -19,12 +20,14 @@ public class CourseObjective {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "courseID", nullable = false)
+    @ToString.Exclude
+    @JsonIgnore
     Course course;
 
     @Column(nullable = false, length = 255)
-    String objectiveText; // 🔹 Nội dung mục tiêu: “Achieve learning outcomes for Band 7+”, “Improve writing accuracy”…
+    String objectiveText;
 
     @Column(nullable = false)
     @Builder.Default
-    Integer orderIndex = 1; // 🔹 Thứ tự hiển thị
+    Integer orderIndex = 1;
 }

@@ -8,4 +8,5 @@ import java.util.List;
 public interface CourseObjectiveDraftRepository extends JpaRepository<CourseObjectiveDraft, Long> {
 
     List<CourseObjectiveDraft> findByDraft_DraftIDOrderByOrderIndexAsc(Long draftID);
+    List<CourseObjectiveDraft> findByDraft_DraftID(Long draftId);
 }
