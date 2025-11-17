@@ -1,6 +1,6 @@
 // Reuse types from CourseApproval
 export type {
-  Course,
+  CourseDetail as Course,
   Section,
   Lesson,
   Resource,

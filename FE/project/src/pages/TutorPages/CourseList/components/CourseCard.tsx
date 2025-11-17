@@ -1,6 +1,7 @@
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { BookOpen, DollarSign, Clock, Trash2 } from 'lucide-react';
+import { BookOpen, DollarSign, Clock, Trash2, Eye } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,26 +16,90 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { CourseListItem } from '../course-list-api';
 import { getStatusConfig, formatPrice } from '../utils';
+import { createCourseDraft } from '../draft-course-api';
+import { getCourseEditRoute, getCourseDraftEditRoute, getCourseDetailRoute } from '@/utils/course-routes';
 
 interface CourseCardProps {
   course: CourseListItem;
   index: number;
   onDelete?: (courseId: number) => void;
+  onEditApproved?: (courseId: number) => void;
 }
 
-export const CourseCard = ({ course, index, onDelete }: CourseCardProps) => {
+export const CourseCard = ({ course, index, onDelete, onEditApproved }: CourseCardProps) => {
+  const navigate = useNavigate();
   const statusConfig = getStatusConfig(course.status);
   const StatusIcon = statusConfig.icon;
   
   // Check if course can be deleted (Draft or Rejected status)
   const canDelete = course.status === 'Draft' || course.status === 'Rejected';
+  
+  // Check if course is approved and needs confirmation for editing
+  const isApproved = course.status === 'Approved';
+  
+  // State for confirmation dialog
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  
+  // State for draft creation
+  const [isCreatingDraft, setIsCreatingDraft] = useState(false);
+  const [draftError, setDraftError] = useState<string | null>(null);
 
   const handleDelete = () => {
     if (onDelete) {
       onDelete(course.id);
     }
+  };
+  
+  const handleEditClick = () => {
+    if (isApproved) {
+      // Show confirmation dialog for approved courses
+      setShowConfirmDialog(true);
+    } else {
+      // Navigate directly for non-approved courses using React Router
+      navigate(getCourseEditRoute(course.id));
+    }
+  };
+  
+  const handleConfirmEdit = async () => {
+    // Prevent multiple clicks during loading
+    if (isCreatingDraft) return;
+    
+    setIsCreatingDraft(true);
+    setDraftError(null);
+    
+    try {
+      // Create draft from approved course
+      const draftData = await createCourseDraft(course.id);
+      
+      // Navigate to EditCourse with draft context using React Router
+      // Use the new draft-specific route with proper parameters
+      navigate(getCourseDraftEditRoute(course.id, draftData.id), {
+        state: {
+          isDraft: true,
+          draftData: draftData,
+          originalCourseId: course.id
+        }
+      });
+      
+      // Call the onEditApproved callback if provided
+      if (onEditApproved) {
+        onEditApproved(course.id);
+      }
+    } catch (error) {
+      console.error('Error creating course draft:', error);
+      setDraftError(error instanceof Error ? error.message : 'Không thể tạo bản nháp. Vui lòng thử lại.');
+    } finally {
+      setIsCreatingDraft(false);
+      setShowConfirmDialog(false);
+    }
+  };
+  
+  const handleCancelEdit = () => {
+    setShowConfirmDialog(false);
+    setDraftError(null);
   };
 
   return (
@@ -82,6 +147,7 @@ export const CourseCard = ({ course, index, onDelete }: CourseCardProps) => {
             <p className="text-sm text-gray-600 line-clamp-2">
               {course.description}
             </p>
+            
           </div>
 
           {/* Course Stats */}
@@ -115,16 +181,28 @@ export const CourseCard = ({ course, index, onDelete }: CourseCardProps) => {
 
           {/* Action Buttons */}
           <div className="mt-auto space-y-2">
+            {/* View Details Button */}
             <Button
               asChild
+              variant="outline"
+              size="sm"
+              className="w-full group/btn"
+            >
+              <Link to={getCourseDetailRoute(course.id)}>
+                <Eye className="w-4 h-4 mr-2 group-hover/btn:scale-110 transition-transform" />
+                Xem chi tiết
+              </Link>
+            </Button>
+
+            {/* Manage Content Button */}
+            <Button
+              onClick={handleEditClick}
               variant="default"
               size="sm"
               className="w-full group/btn"
             >
-              <Link to={`/courses/${course.id}/content`}>
-                <BookOpen className="w-4 h-4 mr-2 group-hover/btn:scale-110 transition-transform" />
-                Quản lý nội dung
-              </Link>
+              <BookOpen className="w-4 h-4 mr-2 group-hover/btn:scale-110 transition-transform" />
+              Chỉnh sửa 
             </Button>
             
             {/* Delete Button - Only show for Draft or Rejected courses */}
@@ -163,6 +241,24 @@ export const CourseCard = ({ course, index, onDelete }: CourseCardProps) => {
           </div>
         </CardContent>
       </Card>
+      
+      {/* Confirmation Dialog for Approved Course Editing */}
+      <ConfirmationDialog
+        open={showConfirmDialog}
+        onOpenChange={setShowConfirmDialog}
+        title="Xác nhận chỉnh sửa khóa học"
+        description={
+          draftError 
+            ? `Lỗi: ${draftError}` 
+            : isCreatingDraft 
+              ? "Đang tạo bản nháp..." 
+              : "Bạn có chắc chắn muốn chỉnh sửa khóa học đã được duyệt không?"
+        }
+        confirmText={isCreatingDraft ? "Đang tạo..." : "OK"}
+        cancelText="Hủy"
+        onConfirm={handleConfirmEdit}
+        onCancel={handleCancelEdit}
+      />
     </motion.div>
   );
 };

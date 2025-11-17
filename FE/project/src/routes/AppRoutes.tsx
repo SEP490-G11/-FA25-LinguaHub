@@ -50,6 +50,7 @@ import TutorResources from '@/pages/TutorPages/Resources';
 import TutorPayment from  '@/pages/TutorPages/Payment';
 import TutorSettings from '@/pages/TutorPages/Settings';
 import TutorPackages from '@/pages/TutorPages/Packages';
+import TutorCourseDetailPage from '@/pages/TutorPages/CourseDetail';
 import Messages from '@/pages/MessagesPage/boxchat.tsx';
 import BookTutor from '@/pages/BookTutor/index.tsx';
 
@@ -108,7 +109,9 @@ export function AppRoutes() {
             <Route element={<TutorDashboardLayout />}>
             <Route path="/dashboard" element={<TutorDashboard />} />
             <Route path="/courses" element={<CourseList />} />
+            <Route path="/courses/:courseId/details" element={<TutorCourseDetailPage />} />
             <Route path="/courses/:courseId/content" element={<EditCourse />} />
+            <Route path="/courses/:courseId/draft/:draftId/content" element={<EditCourse />} />
             <Route path="/create-courses" element={<CreateCourse />} />
             <Route path="/students" element={<TutorStudents />} />
             <Route path="/schedule" element={<TutorSchedule />} />

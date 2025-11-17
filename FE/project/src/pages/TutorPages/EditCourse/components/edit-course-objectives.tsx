@@ -15,11 +15,13 @@ export interface ObjectiveEditItem {
 interface EditCourseObjectivesProps {
   objectives: ObjectiveEditItem[];
   isLoading?: boolean;
+  onChange?: (objectives: ObjectiveEditItem[]) => void;
 }
 
 export default function EditCourseObjectives({
   objectives: initialObjectives,
   isLoading = false,
+  onChange,
 }: EditCourseObjectivesProps) {
   const [objectivesList, setObjectivesList] = useState<ObjectiveEditItem[]>(
     initialObjectives || []
@@ -30,6 +32,13 @@ export default function EditCourseObjectives({
   useEffect(() => {
     setObjectivesList(initialObjectives || []);
   }, [initialObjectives]);
+
+  // Notify parent component when objectives change
+  useEffect(() => {
+    if (onChange) {
+      onChange(objectivesList);
+    }
+  }, [objectivesList, onChange]);
 
   const handleAddObjective = () => {
     const error: Record<string, string> = {};
