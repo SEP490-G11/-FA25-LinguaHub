@@ -33,7 +33,7 @@ public class TutorPackageController {
     private final TutorPackageService tutorPackageService;
 
     @PostMapping("/package")
-    @PreAuthorize("principal.claims['role'] == 'Tutor'")
+    @PreAuthorize("hasRole('Tutor')")
     public ResponseEntity<TutorPackageCreateResponse> createTutorPackage(
             @Valid @RequestBody TutorPackageRequest request
     ) {
@@ -43,7 +43,7 @@ public class TutorPackageController {
     }
 
     @PutMapping("/package/{packageId}")
-    @PreAuthorize("principal.claims['role'] == 'Tutor'")
+    @PreAuthorize("hasRole('Tutor')")
     public ResponseEntity<OperationStatusResponse> updateTutorPackage(
             @PathVariable Long packageId,
             @Valid @RequestBody TutorPackageRequest request
@@ -54,7 +54,7 @@ public class TutorPackageController {
     }
 
     @DeleteMapping("/package/{packageId}")
-    @PreAuthorize("principal.claims['role'] == 'Tutor'")
+    @PreAuthorize("hasRole('Tutor')")
     public ResponseEntity<OperationStatusResponse> deleteTutorPackage(
             @PathVariable Long packageId
     ) {
@@ -64,12 +64,22 @@ public class TutorPackageController {
     }
 
     @GetMapping("/{tutorId}/packages")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<TutorPackageListResponse> getTutorPackages(@PathVariable Long tutorId) {
         TutorPackageListResponse response = tutorPackageService.getPackagesByTutor(tutorId);
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/package/me")
+    @PreAuthorize("hasRole('Tutor')")
+    public ResponseEntity<TutorPackageListResponse> getMyPackages() {
+        Long tutorUserId = getCurrentUserId();
+        TutorPackageListResponse response = tutorPackageService.getMyPackages(tutorUserId);
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/package/{packageId}")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<TutorPackageResponse> getTutorPackageDetail(@PathVariable Long packageId) {
         TutorPackageResponse response = tutorPackageService.getPackageDetail(packageId);
         return ResponseEntity.ok(response);
