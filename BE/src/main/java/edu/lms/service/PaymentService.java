@@ -25,7 +25,7 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class PaymentService {
-
+    private final WithdrawService withdrawService;
     private final CourseRepository courseRepository;
     private final BookingPlanRepository bookingPlanRepository;
     private final BookingPlanSlotRepository bookingPlanSlotRepository;
@@ -249,6 +249,17 @@ public class PaymentService {
                     log.warn("[CHAT ROOM] Failed: {}", e.getMessage());
                 }
             }
+            BigDecimal newBalance = withdrawService.getBalance(payment.getTutorId());
+
+            Tutor tutor = tutorRepository.findById(payment.getTutorId())
+                    .orElseThrow(() -> new AppException(ErrorCode.TUTOR_NOT_FOUND));
+
+            tutor.setWalletBalance(newBalance);
+
+            tutorRepository.save(tutor);
+
+            log.info("[WALLET] Updated wallet_balance for tutor {} = {}",
+                    tutor.getTutorID(), newBalance);
 
             log.info("[BOOKING PAYMENT] User {} confirmed {} slots",
                     userId, slots.size());
