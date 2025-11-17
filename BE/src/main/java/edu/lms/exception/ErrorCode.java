@@ -65,6 +65,7 @@ public enum ErrorCode {
     TUTOR_PACKAGE_ALREADY_PURCHASED(4013, "This package has been purchased. Cannot modify.", HttpStatus.CONFLICT),
     USER_PACKAGE_NOT_FOUND(4014, "User package not found", HttpStatus.NOT_FOUND),
     USER_PACKAGE_SLOT_NOT_ENOUGH(4015, "Not enough slots remaining in this package", HttpStatus.BAD_REQUEST),
+    TUTOR_PACKAGE_SLOT_CONTENT_MISMATCH(4016, "Number of slot_content must equal max_slots", HttpStatus.BAD_REQUEST),
 
     // ENROLLMENT & LEARNER MODULE
     ENROLLMENT_NOT_FOUND(5001, "Enrollment not found", HttpStatus.NOT_FOUND),
