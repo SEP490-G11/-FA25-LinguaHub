@@ -105,6 +105,20 @@ public class TutorPackageService {
     }
 
     @Transactional(readOnly = true)
+    public TutorPackageListResponse getMyPackages(Long currentUserId) {
+        Tutor tutor = getActiveTutorByUserId(currentUserId);
+
+        List<TutorPackageResponse> packages = tutorPackageRepository.findByTutor_TutorID(tutor.getTutorID())
+                .stream()
+                .map(tutorPackageMapper::toResponse)
+                .toList();
+
+        return TutorPackageListResponse.builder()
+                .packages(packages)
+                .build();
+    }
+
+    @Transactional(readOnly = true)
     public TutorPackageResponse getPackageDetail(Long packageId) {
         TutorPackage tutorPackage = tutorPackageRepository.findById(packageId)
                 .orElseThrow(() -> new AppException(ErrorCode.TUTOR_PACKAGE_NOT_FOUND));
