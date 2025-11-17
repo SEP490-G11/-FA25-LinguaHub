@@ -2,7 +2,7 @@ import React from 'react';
 import { RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { UserRow } from './UserRow';
+import UserRow from './UserRow';
 import { User } from '../types';
 
 interface UserTableProps {
@@ -47,10 +47,6 @@ export const UserTable: React.FC<UserTableProps> = ({ users, onRefresh, onRemove
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className="w-12 text-center" scope="col">#</TableHead>
-              <TableHead className="w-16" scope="col">
-                <span className="sr-only">Avatar</span>
-              </TableHead>
               <TableHead className="w-16 text-center" scope="col">ID</TableHead>
               <TableHead className="min-w-[180px]" scope="col">User Info</TableHead>
               <TableHead className="min-w-[180px]" scope="col">Contact</TableHead>
@@ -62,11 +58,10 @@ export const UserTable: React.FC<UserTableProps> = ({ users, onRefresh, onRemove
             </TableRow>
           </TableHeader>
           <TableBody>
-            {users.map((user, index) => (
+            {users.map((user) => (
               <UserRow 
                 key={user.userID} 
                 user={user} 
-                index={index + 1}
                 onRemoveUser={onRemoveUser}
                 onAddUser={onAddUser}
               />

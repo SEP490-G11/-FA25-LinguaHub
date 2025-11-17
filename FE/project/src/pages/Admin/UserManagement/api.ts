@@ -13,12 +13,139 @@ export const userManagementApi = {
    */
   getUsers: async (): Promise<User[]> => {
     try {
-      console.log('🔍 Fetching all users...');
+      // TEMPORARY: Return mock data for testing
+      // TODO: Replace with actual API call when backend is ready
+      const mockUsers: User[] = [
+        {
+          userID: 1,
+          username: 'admin',
+          email: 'admin@linguahub.com',
+          fullName: 'System Administrator',
+          avatarURL: '',
+          gender: 'Male',
+          dob: '1990-01-01',
+          phone: '0987654321',
+          country: 'Vietnam',
+          address: 'Ho Chi Minh City',
+          bio: 'System administrator',
+          isActive: true,
+          role: 'Admin',
+          createdAt: '2023-11-10T00:00:00Z',
+          updatedAt: '2023-11-10T00:00:00Z',
+        },
+        {
+          userID: 2,
+          username: 'phatvv',
+          email: 'phatuzumaki@gmail.com',
+          fullName: 'Phat Vu',
+          avatarURL: '',
+          gender: 'Male',
+          dob: '2001-05-20',
+          phone: '0987654321',
+          country: 'Vietnam',
+          address: 'Ho Chi Minh City',
+          bio: 'Tutor',
+          isActive: true,
+          role: 'Tutor',
+          createdAt: '2023-11-10T00:00:00Z',
+          updatedAt: '2023-11-10T00:00:00Z',
+        },
+        {
+          userID: 3,
+          username: 'tutor01',
+          email: 'tutor01@linguahub.com',
+          fullName: 'Jane Smith',
+          avatarURL: '',
+          gender: 'Female',
+          dob: '1985-03-15',
+          phone: '',
+          country: 'Vietnam',
+          address: '',
+          bio: '',
+          isActive: true,
+          role: 'Tutor',
+          createdAt: '2023-11-10T00:00:00Z',
+          updatedAt: '2023-11-10T00:00:00Z',
+        },
+        {
+          userID: 4,
+          username: 'learner01',
+          email: 'learner01@linguahub.com',
+          fullName: 'John Nguyen',
+          avatarURL: '',
+          gender: 'Male',
+          dob: '1995-07-22',
+          phone: '',
+          country: 'Vietnam',
+          address: '',
+          bio: '',
+          isActive: true,
+          role: 'Learner',
+          createdAt: '2023-11-10T00:00:00Z',
+          updatedAt: '2023-11-10T00:00:00Z',
+        },
+        {
+          userID: 5,
+          username: 'learner02',
+          email: 'learner02@linguahub.com',
+          fullName: 'Minh Tran',
+          avatarURL: '',
+          gender: 'Female',
+          dob: '1992-12-08',
+          phone: '',
+          country: 'Vietnam',
+          address: '',
+          bio: '',
+          isActive: true,
+          role: 'Learner',
+          createdAt: '2023-11-10T00:00:00Z',
+          updatedAt: '2023-11-10T00:00:00Z',
+        },
+        {
+          userID: 6,
+          username: 'phatvvv',
+          email: 'demngay1234@gmail.com',
+          fullName: 'phat vu',
+          avatarURL: '',
+          gender: 'Male',
+          dob: '2002-02-14',
+          phone: '1111111111',
+          country: '',
+          address: '',
+          bio: '',
+          isActive: true,
+          role: 'Admin',
+          createdAt: '2023-11-15T00:00:00Z',
+          updatedAt: '2023-11-15T00:00:00Z',
+        },
+        {
+          userID: 7,
+          username: 'phatv',
+          email: 'phatvhe170322@fpt.edu.vn',
+          fullName: 'phat vu',
+          avatarURL: '',
+          gender: 'Male',
+          dob: '2000-03-16',
+          phone: '11111111111111111',
+          country: '',
+          address: '',
+          bio: '',
+          isActive: true,
+          role: 'Learner',
+          createdAt: '2023-11-16T00:00:00Z',
+          updatedAt: '2023-11-16T00:00:00Z',
+        }
+      ];
+
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 500));
       
+      return mockUsers;
+      
+      // ACTUAL API CALL (commented out for now):
+      /*
       // Backend endpoint: GET /users
       const response = await axios.get<UsersResponse>('/users');
-      
-      console.log('📊 Backend response:', response?.data);
       
       // Check if response indicates success (code 0)
       if (response?.data?.code !== 0) {
@@ -52,10 +179,9 @@ export const userManagementApi = {
         updatedAt: item.updatedAt || new Date().toISOString(),
       }));
 
-      console.log('✅ Mapped users:', users);
       return users;
+      */
     } catch (error: any) {
-      console.error('❌ Error fetching users:', error);
       throw new Error(
         error?.response?.data?.message || 
         error.message || 
@@ -71,21 +197,14 @@ export const userManagementApi = {
    */
   deleteUser: async (userID: number): Promise<void> => {
     try {
-      console.log('🗑️ Deleting user:', userID);
-      
       // Backend endpoint: DELETE /users/{userID}
       const response = await axios.delete<DeleteUserResponse>(`/users/${userID}`);
-      
-      console.log('📊 Delete response:', response?.data);
       
       // Check if response indicates success (code 0)
       if (response?.data?.code !== 0) {
         throw new Error(response?.data?.message || 'Failed to delete user');
       }
-      
-      console.log('✅ User deleted successfully');
     } catch (error: any) {
-      console.error('❌ Error deleting user:', error);
       throw new Error(
         error?.response?.data?.message || 
         error.message || 

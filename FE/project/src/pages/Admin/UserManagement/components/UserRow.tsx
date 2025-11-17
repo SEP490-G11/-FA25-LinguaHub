@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Trash2, User, Calendar, MapPin, Phone, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+
 import { Badge } from '@/components/ui/badge';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
@@ -9,16 +9,15 @@ import { User as UserType } from '../types';
 
 interface UserRowProps {
   user: UserType;
-  index: number;
   onRemoveUser: (userID: number) => void;
   onAddUser: (user: UserType) => void;
 }
 
 /**
  * UserRow component for individual user display
- * Requirements: 1.2, 3.1, 3.2, 3.3 - display all user fields, action buttons, avatar with fallback
+ * Requirements: 1.2, 3.1, 3.2, 3.3 - display all user fields, action buttons
  */
-export const UserRow: React.FC<UserRowProps> = ({ user, index, onRemoveUser, onAddUser }) => {
+const UserRow: React.FC<UserRowProps> = ({ user, onRemoveUser, onAddUser }) => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   // Format dates for display
@@ -34,17 +33,7 @@ export const UserRow: React.FC<UserRowProps> = ({ user, index, onRemoveUser, onA
     }
   };
 
-  // Generate avatar fallback from user's name
-  const getAvatarFallback = (fullName: string, username: string) => {
-    if (fullName && fullName.trim()) {
-      const names = fullName.trim().split(' ');
-      if (names.length >= 2) {
-        return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
-      }
-      return fullName[0].toUpperCase();
-    }
-    return username ? username[0].toUpperCase() : 'U';
-  };
+
 
   // Truncate long text for display
   const truncateText = (text: string, maxLength: number) => {
@@ -55,26 +44,6 @@ export const UserRow: React.FC<UserRowProps> = ({ user, index, onRemoveUser, onA
   return (
     <>
       <TableRow className="hover:bg-gray-50 focus-within:bg-gray-50">
-        {/* ========== INDEX ========== */}
-        <TableCell className="text-center">
-          <div className="text-sm font-medium text-gray-600">
-            {index}
-          </div>
-        </TableCell>
-
-        {/* ========== AVATAR ========== */}
-        <TableCell>
-          <Avatar className="h-10 w-10">
-            <AvatarImage 
-              src={user.avatarURL} 
-              alt={`${user.fullName || user.username}'s avatar`}
-            />
-            <AvatarFallback className="bg-indigo-100 text-indigo-700 font-semibold">
-              {getAvatarFallback(user.fullName, user.username)}
-            </AvatarFallback>
-          </Avatar>
-        </TableCell>
-
         {/* ========== ID ========== */}
         <TableCell className="text-center">
           <div className="text-sm font-medium text-gray-900">

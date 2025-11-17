@@ -22,15 +22,12 @@ export const useUsers = () => {
       setLoading(true);
       setError(null);
       
-      console.log('🔄 useUsers: Fetching users...');
       const fetchedUsers = await userManagementApi.getUsers();
       
       setUsers(fetchedUsers);
-      console.log('✅ useUsers: Users loaded successfully:', fetchedUsers.length);
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to load users';
       setError(errorMessage);
-      console.error('❌ useUsers: Error loading users:', errorMessage);
       
       // Show error toast for refresh operations (not initial load)
       if (!loading) {
@@ -50,7 +47,6 @@ export const useUsers = () => {
    * Requirement 1.5 - provide refresh functionality for user list
    */
   const refresh = useCallback(() => {
-    console.log('🔄 useUsers: Manual refresh triggered');
     fetchUsers();
   }, [fetchUsers]);
 
