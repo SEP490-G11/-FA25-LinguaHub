@@ -110,13 +110,23 @@ public class UserService {
     }
 
     //6. Xóa user (chỉ Admin)
+//    @PreAuthorize("hasAuthority('DELETE_USER')")
+//    public void deleteUser(Long userId) {
+//        if (!userRepository.existsById(userId)) {
+//            throw new AppException(ErrorCode.USER_NOT_EXIST);
+//        }
+//        userRepository.deleteById(userId);
+//    }
     @PreAuthorize("hasAuthority('DELETE_USER')")
     public void deleteUser(Long userId) {
-        if (!userRepository.existsById(userId)) {
-            throw new AppException(ErrorCode.USER_NOT_EXIST);
-        }
-        userRepository.deleteById(userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXIST));
+
+        // Chỉ cập nhật isActive = false
+        user.setIsActive(false);
+        userRepository.save(user);
     }
+
     public void changePassword(ChangePasswordRequest request) {
         String currentEmail = SecurityContextHolder.getContext().getAuthentication().getName();
 
