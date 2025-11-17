@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -21,6 +20,10 @@ public class TutorPackage {
     @Column(name = "packageid")
     Long packageID;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tutor_id", nullable = false)
+    Tutor tutor;
+
     @Column(nullable = false, length = 100)
     String name;
 
@@ -28,20 +31,20 @@ public class TutorPackage {
     String description;
 
     @Builder.Default
-    @Column(nullable = false)
-    BigDecimal price = BigDecimal.ZERO;
-
-    @Column(name = "max_slots", nullable = false)
-    Integer maxSlots; // số slot mà gói này cung cấp
-
-    // tutor sở hữu gói này
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "tutor_id", nullable = false)
-    Tutor tutor;
-
-    @Builder.Default
     @Column(name = "is_active", nullable = false)
     Boolean isActive = true;
+
+    @Column(name = "max_slots")
+    Integer maxSlots;
+
+    @Column(nullable = true, columnDefinition = "TEXT")
+    String requirement;
+
+    @Column(nullable = true, columnDefinition = "TEXT")
+    String objectives;
+
+    @Column(name = "slot_content", nullable = true, columnDefinition = "TEXT")
+    String slotContent; // Lưu dưới dạng JSON array
 
     @Builder.Default
     @Column(name = "created_at", nullable = false, updatable = false)

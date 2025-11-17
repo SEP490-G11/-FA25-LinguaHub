@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -27,11 +28,21 @@ public class TutorPackageResponse {
     
     String description;
     
-    @JsonProperty("max_slot")
-    Integer maxSlot;
-    
     @JsonProperty("is_active")
     Boolean active;
+    
+    @JsonProperty("max_slots")
+    Integer maxSlots;
+    
+    String requirement;
+    
+    String objectives;
+    
+    @JsonProperty("slot_content")
+    List<SlotContentResponse> slotContent;
+    
+    @JsonProperty("min_booking_price_per_hour")
+    Double minBookingPricePerHour;
     
     @JsonProperty("created_at")
     LocalDateTime createdAt;
