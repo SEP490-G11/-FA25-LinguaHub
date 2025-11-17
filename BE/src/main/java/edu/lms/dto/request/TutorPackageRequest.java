@@ -12,6 +12,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
+import java.util.List;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -25,10 +27,19 @@ public class TutorPackageRequest {
 
     String description;
 
-    @NotNull(message = "maxSlot is required")
-    @Min(value = 1, message = "maxSlot must be greater than 0")
-    @JsonProperty("max_slot")
-    Integer maxSlot;
+    @NotNull(message = "max_slots is required")
+    @Min(value = 1, message = "max_slots must be greater than 0")
+    @JsonProperty("max_slots")
+    Integer maxSlots;
+
+    String requirement;
+
+    String objectives;
+
+    @NotNull(message = "slot_content is required")
+    @Size(min = 1, message = "slot_content must not be empty")
+    @JsonProperty("slot_content")
+    List<SlotContentRequest> slotContent;
 }
 
 
