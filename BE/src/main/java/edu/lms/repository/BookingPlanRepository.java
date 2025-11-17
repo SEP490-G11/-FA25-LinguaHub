@@ -43,4 +43,15 @@ public interface BookingPlanRepository extends JpaRepository<BookingPlan, Long> 
     );
 
     List<BookingPlan> findByTutorIDAndIsActiveTrueOrderByTitleAscStartHoursAsc(Long tutorID);
+
+    /**
+     * Đếm số ngày làm việc duy nhất (distinct titles) của tutor
+     * Giới hạn tối đa 4 ngày/tuần
+     */
+    @Query("""
+        SELECT COUNT(DISTINCT bp.title) FROM BookingPlan bp
+        WHERE bp.tutorID = :tutorID
+          AND bp.isActive = true
+        """)
+    Long countDistinctDaysByTutorID(@Param("tutorID") Long tutorID);
 }
