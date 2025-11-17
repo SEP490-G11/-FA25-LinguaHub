@@ -31,7 +31,7 @@ public class TutorBookingPlanController {
     private final TutorBookingPlanService tutorBookingPlanService;
 
     @PostMapping("/booking-plan")
-    @PreAuthorize("hasRole('TUTOR')")
+    @PreAuthorize("hasRole('Tutor')")
     public ResponseEntity<BookingPlanCreateResponse> createBookingPlan(
             @Valid @RequestBody TutorBookingPlanRequest request
     ) {
@@ -41,7 +41,7 @@ public class TutorBookingPlanController {
     }
 
     @PutMapping("/booking-plan/{bookingPlanId}")
-    @PreAuthorize("hasRole('TUTOR')")
+    @PreAuthorize("hasRole('Tutor')")
     public ResponseEntity<BookingPlanUpdateResponse> updateBookingPlan(
             @PathVariable Long bookingPlanId,
             @Valid @RequestBody TutorBookingPlanRequest request
@@ -52,7 +52,7 @@ public class TutorBookingPlanController {
     }
 
     @DeleteMapping("/booking-plan/{bookingPlanId}")
-    @PreAuthorize("hasRole('TUTOR')")
+    @PreAuthorize("hasRole('Tutor')")
     public ResponseEntity<OperationStatusResponse> deleteBookingPlan(@PathVariable Long bookingPlanId) {
         Long currentUserId = getCurrentUserId();
         OperationStatusResponse response = tutorBookingPlanService.deleteBookingPlan(currentUserId, bookingPlanId);
@@ -63,6 +63,22 @@ public class TutorBookingPlanController {
     @PreAuthorize("permitAll()")
     public ResponseEntity<BookingPlanListResponse> getBookingPlans(@PathVariable Long tutorId) {
         BookingPlanListResponse response = tutorBookingPlanService.getBookingPlansByTutor(tutorId);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/booking-plan/me")
+    @PreAuthorize("hasRole('Tutor')")
+    public ResponseEntity<BookingPlanListResponse> getMyBookingPlans() {
+        Long currentUserId = getCurrentUserId();
+        BookingPlanListResponse response = tutorBookingPlanService.getMyBookingPlans(currentUserId);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/booking-plan/me/with-slots")
+    @PreAuthorize("hasRole('Tutor')")
+    public ResponseEntity<BookingPlanListWithSlotsResponse> getMyBookingPlansWithSlots() {
+        Long currentUserId = getCurrentUserId();
+        BookingPlanListWithSlotsResponse response = tutorBookingPlanService.getMyBookingPlansWithSlots(currentUserId);
         return ResponseEntity.ok(response);
     }
 
