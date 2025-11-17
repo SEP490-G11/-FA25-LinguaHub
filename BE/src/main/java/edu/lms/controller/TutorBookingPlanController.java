@@ -2,6 +2,8 @@ package edu.lms.controller;
 
 import edu.lms.dto.request.TutorBookingPlanRequest;
 import edu.lms.dto.response.*;
+import edu.lms.exception.AppException;
+import edu.lms.exception.ErrorCode;
 import edu.lms.security.UserPrincipal;
 import edu.lms.service.TutorBookingPlanService;
 import jakarta.validation.Valid;
@@ -73,7 +75,12 @@ public class TutorBookingPlanController {
 
     private Long getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.getPrincipal() instanceof Jwt jwt) {
+        
+        if (authentication == null) {
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        }
+        
+        if (authentication.getPrincipal() instanceof Jwt jwt) {
             Object userId = jwt.getClaim("userId");
             if (userId instanceof Integer integerId) {
                 return integerId.longValue();
@@ -84,9 +91,19 @@ public class TutorBookingPlanController {
             if (userId instanceof Number numberId) {
                 return numberId.longValue();
             }
-        } else if (authentication != null && authentication.getPrincipal() instanceof UserPrincipal principal) {
-            return principal.getUserId();
+            // userId claim không tồn tại hoặc null
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        } 
+        
+        if (authentication.getPrincipal() instanceof UserPrincipal principal) {
+            Long userId = principal.getUserId();
+            if (userId == null) {
+                throw new AppException(ErrorCode.UNAUTHENTICATED);
+            }
+            return userId;
         }
-        throw new IllegalStateException("User not authenticated");
+        
+        // Principal không phải Jwt hoặc UserPrincipal
+        throw new AppException(ErrorCode.UNAUTHENTICATED);
     }
 }
