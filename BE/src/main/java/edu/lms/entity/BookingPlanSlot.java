@@ -52,6 +52,4 @@ public class BookingPlanSlot {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_package_id")
     UserPackage userPackage;
-
-
 }

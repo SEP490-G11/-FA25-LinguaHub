@@ -32,7 +32,7 @@ public class PaymentService {
     private final EnrollmentRepository enrollmentRepository;
     private final PaymentRepository paymentRepository;
     private final UserRepository userRepository;
-    private final TutorRepository tutorRepository;          // 👈 THÊM
+    private final TutorRepository tutorRepository;
     private final PayOSService payOSService;
     private final ChatService chatService;
     private final PaymentMapper paymentMapper;
@@ -136,7 +136,7 @@ public class PaymentService {
                 request.getUserId(),
                 request.getPaymentType(),
                 request.getTargetId(),
-                amount,
+                payment.getAmount(),
                 description
         );
 
@@ -275,7 +275,6 @@ public class PaymentService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXIST));
 
-        // Ưu tiên role trong token, fallback sang DB nếu cần
         String roleName = (roleClaim != null && !roleClaim.isBlank())
                 ? roleClaim
                 : (user.getRole() != null ? user.getRole().getName() : null);
@@ -300,7 +299,6 @@ public class PaymentService {
             return getAllPayments();
         }
 
-        // Các role khác không được xem
         throw new AppException(ErrorCode.UNAUTHORIZED);
     }
 }

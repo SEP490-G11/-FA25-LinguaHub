@@ -229,6 +229,34 @@ public class TutorServiceImpl implements TutorService {
     }
 
     @Override
+    public List<TutorApplicationListResponse> getApprovedApplications() {
+        log.info("Getting all approved tutor applications");
+        
+        List<TutorVerification> approvedVerifications = 
+            tutorVerificationRepository.findAllByStatusOrderBySubmittedAtDesc(TutorVerificationStatus.APPROVED);
+        
+        log.info("Found {} approved applications", approvedVerifications.size());
+        
+        return approvedVerifications.stream()
+                .map(this::mapToApplicationListResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<TutorApplicationListResponse> getRejectedApplications() {
+        log.info("Getting all rejected tutor applications");
+        
+        List<TutorVerification> rejectedVerifications = 
+            tutorVerificationRepository.findAllByStatusOrderBySubmittedAtDesc(TutorVerificationStatus.REJECTED);
+        
+        log.info("Found {} rejected applications", rejectedVerifications.size());
+        
+        return rejectedVerifications.stream()
+                .map(this::mapToApplicationListResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public TutorApplicationDetailResponse getApplicationDetail(Long verificationId) {
         log.info("Getting application detail for verification ID: {}", verificationId);
         
@@ -391,6 +419,36 @@ public class TutorServiceImpl implements TutorService {
                             .reviewedAt(latestVerification != null ? latestVerification.getReviewedAt() : null)
                             .build();
                 })
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<TutorApplicationListResponse> getAllApplications(String status) {
+        List<TutorVerification> allApplications;
+        
+        if (status != null && !status.trim().isEmpty()) {
+            try {
+                TutorVerificationStatus verificationStatus = TutorVerificationStatus.valueOf(status.toUpperCase());
+                log.info("Getting applications with status: {}", verificationStatus);
+                allApplications = tutorVerificationRepository.findAllByStatusOrderBySubmittedAtDesc(verificationStatus);
+                log.info("Found {} applications with status: {}", allApplications.size(), verificationStatus);
+            } catch (IllegalArgumentException e) {
+                log.error("Invalid status provided: {}", status);
+                throw new IllegalArgumentException("Invalid status: " + status + ". Valid statuses are: PENDING, REJECTED, APPROVED");
+            }
+        } else {
+            log.info("Getting all applications with status PENDING, REJECTED, and APPROVED");
+            List<TutorVerificationStatus> statuses = List.of(
+                TutorVerificationStatus.PENDING,
+                TutorVerificationStatus.REJECTED,
+                TutorVerificationStatus.APPROVED
+            );
+            allApplications = tutorVerificationRepository.findAllByStatusInOrderBySubmittedAtDesc(statuses);
+            log.info("Found {} applications", allApplications.size());
+        }
+        
+        return allApplications.stream()
+                .map(this::mapToApplicationListResponse)
                 .collect(Collectors.toList());
     }
 

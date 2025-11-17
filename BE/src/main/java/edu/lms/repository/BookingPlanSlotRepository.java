@@ -14,6 +14,7 @@ import java.util.List;
 @Repository
 public interface BookingPlanSlotRepository extends JpaRepository<BookingPlanSlot, Long> {
 
+    boolean existsByBookingPlanID(Long bookingPlanID);
     boolean existsByTutorIDAndStartTimeAndEndTime(Long tutorID, LocalDateTime startTime, LocalDateTime endTime);
 
     List<BookingPlanSlot> findAllByPaymentID(Long paymentId);

@@ -6,6 +6,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 import edu.lms.dto.request.IntrospectRequest;
 import edu.lms.service.AuthenticationService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
@@ -15,7 +16,7 @@ import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.stereotype.Component;
 import com.nimbusds.jose.JOSEException;
-
+@Slf4j
 @Component
 public class CustomJwtDecoder implements JwtDecoder {
 
@@ -54,6 +55,8 @@ public class CustomJwtDecoder implements JwtDecoder {
         }
 
         try {
+            log.warn("DECODE SIGNER=" + signerKey);
+
             return nimbusJwtDecoder.decode(token);
         } catch (Exception e) {
             throw new JwtException("Failed to decode JWT: " + e.getMessage(), e);

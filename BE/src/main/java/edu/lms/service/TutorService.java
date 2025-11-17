@@ -18,10 +18,13 @@ public interface TutorService {
     
     // Admin methods
     List<TutorApplicationListResponse> getPendingApplications();
+    List<TutorApplicationListResponse> getApprovedApplications();
+    List<TutorApplicationListResponse> getRejectedApplications();
     TutorApplicationDetailResponse getApplicationDetail(Long verificationId);
     void approveTutorApplication(Long verificationId, Long adminId);
     void rejectTutorApplication(Long verificationId, Long adminId, String reason);
     List<TutorApplicationListResponse> getAllTutors(String status);
+    List<TutorApplicationListResponse> getAllApplications(String status);
     void suspendTutor(Long tutorId, Long adminId);
     void unsuspendTutor(Long tutorId, Long adminId);
     void updateTutorInfo(Long tutorId, TutorUpdateRequest request);

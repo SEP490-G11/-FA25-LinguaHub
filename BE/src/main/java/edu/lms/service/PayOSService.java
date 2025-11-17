@@ -30,7 +30,6 @@ public class PayOSService {
     private static final ObjectMapper mapper =
             new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-
     // ⭐ TẠO LINK THANH TOÁN — FULL CHUẨN ⭐
     public CheckoutWrapper createPaymentLink(
             Long paymentId,
@@ -43,7 +42,6 @@ public class PayOSService {
         try {
             long orderCode = System.currentTimeMillis() / 1000;
 
-            // mô tả tối đa 25 ký tự cho PayOS
             String safeDesc = (description != null && description.length() > 25)
                     ? description.substring(0, 25)
                     : description;
@@ -54,11 +52,9 @@ public class PayOSService {
                     .price(amount.intValue())
                     .build();
 
-            //  callback URL lấy từ application.yml
             String returnUrl = props.getReturnUrl() + "?paymentId=" + paymentId;
             String cancelUrl = props.getCancelUrl() + "?paymentId=" + paymentId;
 
-            // build dữ liệu gửi PayOS
             PaymentData paymentData = PaymentData.builder()
                     .orderCode(orderCode)
                     .amount(amount.intValue())
@@ -68,7 +64,6 @@ public class PayOSService {
                     .item(item)
                     .build();
 
-            // SIGNATURE bắt buộc
             String signature = SignatureUtils.createSignatureOfPaymentRequest(
                     paymentData,
                     props.getSecretKey()
@@ -112,6 +107,35 @@ public class PayOSService {
         }
     }
 
+    // Huỷ payment link bằng API PayOS
+    public void cancelPaymentLink(String paymentLinkId) {
+        if (paymentLinkId == null || paymentLinkId.isBlank()) {
+            log.warn("[PAYOS] Cannot cancel payment: paymentLinkId is null");
+            return;
+        }
+
+        try {
+            String url = "https://api-merchant.payos.vn/v2/payment-requests/" + paymentLinkId + "/cancel";
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("x-client-id", props.getClientId());
+            headers.set("x-api-key", props.getApiKey());
+
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+            ResponseEntity<String> response =
+                    rest.exchange(url, HttpMethod.POST, entity, String.class);
+
+            log.info("[PAYOS] Cancel payment link {} -> status {} | body={}",
+                    paymentLinkId,
+                    response.getStatusCode(),
+                    response.getBody());
+
+        } catch (Exception e) {
+            log.error("[PAYOS] Failed to cancel payment link {}: {}", paymentLinkId, e.getMessage());
+        }
+    }
 
     public record CheckoutWrapper(
             CheckoutResponseData data,
