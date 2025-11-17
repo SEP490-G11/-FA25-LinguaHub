@@ -92,6 +92,7 @@ public enum ErrorCode {
     // PAYMENT
     INVALID_PAYMENT_TYPE(8003, "Ivalid Payment Type", HttpStatus.NOT_FOUND),
     BOOKING_SLOT_NOT_AVAILABLE(8004, "Booking Slot Amount of this Tutor is 0, Please Choose other Tutor ", HttpStatus.NOT_FOUND),
+    BOOKING_PLAN_MAX_DAYS_EXCEEDED(7008, "Tutor can only work maximum 4 days per week", HttpStatus.BAD_REQUEST),
 
     // WISH LIST
     ALREADY_IN_WISHLIST(8005, "The course already in wishlist", HttpStatus.CONFLICT),
