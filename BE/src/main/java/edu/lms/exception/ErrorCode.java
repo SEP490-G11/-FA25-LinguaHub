@@ -76,6 +76,12 @@ public enum ErrorCode {
     PAYMENT_NOT_FOUND(6001, "Payment not found", HttpStatus.NOT_FOUND),
     PAYMENT_FAILED(6002, "Payment transaction failed", HttpStatus.BAD_REQUEST),
     REFUND_NOT_ALLOWED(6003, "Refund not allowed for this transaction", HttpStatus.FORBIDDEN),
+    INVALID_AMOUNT(6004, "Ballance is not enough", HttpStatus.FORBIDDEN),
+    NOT_FOUND(6005, "withDraw Not found", HttpStatus.FORBIDDEN),
+    INVALID_STATUS(6006, "WithDraw Status Not Found", HttpStatus.FORBIDDEN),
+
+
+
 
     // BOOKING_PLAN & BOOKING
     BOOKING_PLAN_NOT_FOUND(7001, "BookingPlan not found", HttpStatus.NOT_FOUND),

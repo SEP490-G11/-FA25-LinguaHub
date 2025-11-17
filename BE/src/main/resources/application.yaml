@@ -9,7 +9,6 @@ spring:
     url: jdbc:mysql://localhost:3307/lingua_hub?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh
 
     username: root
-
     password: root
 
   jpa:

@@ -107,7 +107,7 @@ public class PaymentWebhookService {
                 }
 
                 // ===================================================
-                // 2️⃣ PAYMENT SUCCESS (VALID)
+                //PAYMENT SUCCESS (VALID)
                 // ===================================================
                 if (isPaid) {
 
@@ -122,7 +122,7 @@ public class PaymentWebhookService {
                 } else {
 
                     // ===================================================
-                    // 3️⃣ PAYMENT FAILED
+                    //PAYMENT FAILED
                     // ===================================================
                     payment.setStatus(PaymentStatus.FAILED);
                     payment.setIsPaid(false);
