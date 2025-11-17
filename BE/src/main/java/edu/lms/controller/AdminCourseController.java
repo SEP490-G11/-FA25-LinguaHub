@@ -3,6 +3,7 @@ package edu.lms.controller;
 
 import edu.lms.dto.request.AdminCourseReviewNoteRequest;
 import edu.lms.dto.request.ApiRespond;
+import edu.lms.dto.response.AdminCourseDraftChangesResponse;
 import edu.lms.dto.response.AdminCourseDraftResponse;
 import edu.lms.dto.response.AdminCourseResponse;
 import edu.lms.dto.response.AdminCourseDetailResponse;
@@ -180,4 +181,17 @@ public class AdminCourseController {
                 .message("Draft rejected")
                 .build();
     }
+
+    @PreAuthorize("principal.claims['role'] == 'Admin'")
+    @Operation(summary = "Admin: xem chi tiết các thay đổi giữa course live và draft")
+    @GetMapping("/drafts/{draftID}/changes")
+    public ApiRespond<AdminCourseDraftChangesResponse> getDraftChanges(
+            @PathVariable Long draftID
+    ) {
+        return ApiRespond.<AdminCourseDraftChangesResponse>builder()
+                .result(adminCourseService.getCourseDraftChanges(draftID))
+                .message("Fetched diff between live course and draft")
+                .build();
+    }
+
 }

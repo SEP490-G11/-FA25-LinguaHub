@@ -8,8 +8,8 @@ spring:
 
     url: jdbc:mysql://localhost:3306/lingua_hub?useSSL=false&serverTimezone=Asia/Ho_Chi_Minh
 
-    username: springstudent
-    password: springstudent
+    username: root
+    password: 123456
 
   jpa:
     hibernate:

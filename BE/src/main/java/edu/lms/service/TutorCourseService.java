@@ -301,30 +301,14 @@ public class TutorCourseService {
             throw new AppException(ErrorCode.CAN_ONLY_EDIT_DRAFT_FOR_APPROVED_COURSE);
         }
 
-        // ================== NEW LOGIC ==================
-        // Nếu course đã Approved NHƯNG CHƯA có learner enroll
-        // => không dùng draft, chuyển trực tiếp course về trạng thái Draft rồi trả về detail
-        boolean hasEnrollment = enrollmentRepository.existsByCourse(course);
-        if (!hasEnrollment) {
-            // Đổi status Approved -> Draft để cho phép sửa metadata + objectives + section/lesson/resource
-            course.setStatus(CourseStatus.Draft);
-            course.setUpdatedAt(LocalDateTime.now());
-            courseRepository.save(course);
-
-            log.info("Tutor [{}] start editing LIVE course [{}]: change status Approved -> Draft (no enrollments)",
-                    tutor.getTutorID(), courseID);
-
-            // Trả về chi tiết course live (lúc này status = Draft)
-            return toTutorCourseDetailResponse(course);
-        }
-        // ================== END NEW LOGIC ==================
-
-        // 5. Nếu đã có draft đang EDITING hoặc PENDING_REVIEW thì dùng lại (GIỮ NGUYÊN LOGIC CŨ)
+        // 5. Nếu đã có draft đang EDITING hoặc PENDING_REVIEW thì dùng lại
         var existingDraftOpt = courseDraftRepository.findByCourse_CourseIDAndStatusIn(
                 courseID,
                 List.of(CourseDraftStatus.EDITING, CourseDraftStatus.PENDING_REVIEW)
         );
         if (existingDraftOpt.isPresent()) {
+            log.info("Tutor [{}] reuse existing draft [{}] for course [{}]",
+                    tutor.getTutorID(), existingDraftOpt.get().getDraftID(), courseID);
             return toTutorCourseDetailResponse(existingDraftOpt.get());
         }
 
@@ -406,7 +390,7 @@ public class TutorCourseService {
             }
         }
 
-        log.info("Tutor [{}] started new draft [{}] for course [{}] (has enrollments)",
+        log.info("Tutor [{}] started new draft [{}] for course [{}] (always clone from Approved)",
                 tutor.getTutorID(), draft.getDraftID(), courseID);
 
         // 9. Trả về detail dựa trên bản draft (sections + lessons + resources + objectives draft)
