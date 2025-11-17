@@ -31,7 +31,7 @@ public class TutorBookingPlanController {
     private final TutorBookingPlanService tutorBookingPlanService;
 
     @PostMapping("/booking-plan")
-    @PreAuthorize("hasRole('Tutor')")
+    @PreAuthorize("hasRole('TUTOR')")
     public ResponseEntity<BookingPlanCreateResponse> createBookingPlan(
             @Valid @RequestBody TutorBookingPlanRequest request
     ) {
@@ -41,7 +41,7 @@ public class TutorBookingPlanController {
     }
 
     @PutMapping("/booking-plan/{bookingPlanId}")
-    @PreAuthorize("hasRole('Tutor')")
+    @PreAuthorize("hasRole('TUTOR')")
     public ResponseEntity<BookingPlanUpdateResponse> updateBookingPlan(
             @PathVariable Long bookingPlanId,
             @Valid @RequestBody TutorBookingPlanRequest request
@@ -52,7 +52,7 @@ public class TutorBookingPlanController {
     }
 
     @DeleteMapping("/booking-plan/{bookingPlanId}")
-    @PreAuthorize("hasRole('Tutor')")
+    @PreAuthorize("hasRole('TUTOR')")
     public ResponseEntity<OperationStatusResponse> deleteBookingPlan(@PathVariable Long bookingPlanId) {
         Long currentUserId = getCurrentUserId();
         OperationStatusResponse response = tutorBookingPlanService.deleteBookingPlan(currentUserId, bookingPlanId);
@@ -67,7 +67,7 @@ public class TutorBookingPlanController {
     }
 
     @GetMapping("/booking-plan/me")
-    @PreAuthorize("hasRole('Tutor')")
+    @PreAuthorize("hasRole('TUTOR')")
     public ResponseEntity<BookingPlanListResponse> getMyBookingPlans() {
         Long currentUserId = getCurrentUserId();
         BookingPlanListResponse response = tutorBookingPlanService.getMyBookingPlans(currentUserId);
@@ -75,7 +75,7 @@ public class TutorBookingPlanController {
     }
 
     @GetMapping("/booking-plan/me/with-slots")
-    @PreAuthorize("hasRole('Tutor')")
+    @PreAuthorize("hasRole('TUTOR')")
     public ResponseEntity<BookingPlanListWithSlotsResponse> getMyBookingPlansWithSlots() {
         Long currentUserId = getCurrentUserId();
         BookingPlanListWithSlotsResponse response = tutorBookingPlanService.getMyBookingPlansWithSlots(currentUserId);
