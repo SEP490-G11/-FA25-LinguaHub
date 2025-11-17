@@ -181,6 +181,7 @@ public class AuthenticationService {
                 .claim("permissions", permissions)
                 .claim("userId", user.getUserID())
                 .build();
+        log.warn("GENERATE SIGNER=" + SIGNER_KEY);
 
         try {
             JWSObject jwsObject = new JWSObject(header, new Payload(claims.toJSONObject()));
