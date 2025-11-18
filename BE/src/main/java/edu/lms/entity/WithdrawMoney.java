@@ -36,17 +36,11 @@ public class WithdrawMoney {
     @Column(nullable = false, length = 100)
     String bankOwnerName;
 
-
+    @Column(nullable = false)
+    BigDecimal totalAmount;
 
     @Column(nullable = false)
-    BigDecimal totalAmount;      // Tổng tiền hiện có trước khi rút
-
-    @Column(nullable = false)
-    BigDecimal withdrawAmount;   // Số tiền sau khi trừ hoa hồng (net amount)
-
-    @Column(nullable = false)
-    BigDecimal commission;       // phần trăm hoa hồng (0.1 = 10%)
-
+    BigDecimal withdrawAmount;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)

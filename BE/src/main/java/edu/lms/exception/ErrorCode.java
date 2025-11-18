@@ -37,6 +37,7 @@ public enum ErrorCode {
     COURSE_NOT_COMPLETED_HALF(3010, "You must complete at least 50% of the course before reviewing", HttpStatus.BAD_REQUEST),
     COURSE_NOT_APPROVED(3011, "This course is not yet approved for public view", HttpStatus.FORBIDDEN),
     REFUND_NOT_FOUND(1013, "Refund Not found", HttpStatus.NOT_FOUND),
+    COURSE_DELETE_ONLY_DRAFT_OR_PENDING(3015, "COURSE_DELETE_ONLY_DRAFT_OR_PENDING", HttpStatus.BAD_REQUEST),
     // COURSE DRAFT / VERSIONING (THÊM MỚI)
     CAN_ONLY_EDIT_DRAFT_FOR_APPROVED_COURSE(
             3012,
@@ -76,6 +77,12 @@ public enum ErrorCode {
     PAYMENT_NOT_FOUND(6001, "Payment not found", HttpStatus.NOT_FOUND),
     PAYMENT_FAILED(6002, "Payment transaction failed", HttpStatus.BAD_REQUEST),
     REFUND_NOT_ALLOWED(6003, "Refund not allowed for this transaction", HttpStatus.FORBIDDEN),
+    INVALID_AMOUNT(6004, "Ballance is not enough", HttpStatus.FORBIDDEN),
+    NOT_FOUND(6005, "withDraw Not found", HttpStatus.FORBIDDEN),
+    INVALID_STATUS(6006, "WithDraw Status Not Found", HttpStatus.FORBIDDEN),
+
+
+
 
     // BOOKING_PLAN & BOOKING
     BOOKING_PLAN_NOT_FOUND(7001, "BookingPlan not found", HttpStatus.NOT_FOUND),

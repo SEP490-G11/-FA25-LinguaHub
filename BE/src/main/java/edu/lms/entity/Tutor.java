@@ -52,4 +52,8 @@ public class Tutor {
     @JoinColumn(name = "tutor_id", referencedColumnName = "tutorID")
     List<BookingPlan> bookingPlans;
 
+    @Column(nullable = false)
+    @Builder.Default
+    BigDecimal walletBalance = BigDecimal.ZERO;
+
 }

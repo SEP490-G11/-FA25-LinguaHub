@@ -184,4 +184,15 @@ public class TutorCourseController {
                 .message("Course draft submitted for review")
                 .build();
     }
+
+    @Operation(summary = "Tutor xóa course draft của chính mình (chỉ khi status = EDITING)")
+    @DeleteMapping("/drafts/{draftID}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteCourseDraft(
+            @AuthenticationPrincipal(expression = "claims['sub']") String email,
+            @PathVariable Long draftID
+    ) {
+        tutorCourseService.deleteCourseDraftForCurrentTutor(email, draftID);
+    }
+
 }

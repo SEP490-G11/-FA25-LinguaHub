@@ -1,5 +1,6 @@
 package edu.lms.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import edu.lms.enums.CourseDraftStatus;
 import edu.lms.enums.CourseLevel;
 import jakarta.persistence.*;
@@ -9,7 +10,6 @@ import lombok.experimental.FieldDefaults;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -24,16 +24,22 @@ public class CourseDraft {
     Long draftID;
 
     // Khóa này luôn trỏ về course "gốc" đang live
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "courseID", nullable = false)
+    @ToString.Exclude
+    @JsonIgnore
     Course course;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tutorID", nullable = false)
+    @ToString.Exclude
+    @JsonIgnore
     Tutor tutor;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "categoryID", nullable = false)
+    @ToString.Exclude
+    @JsonIgnore
     CourseCategory category;
 
     @Enumerated(EnumType.STRING)
@@ -41,7 +47,6 @@ public class CourseDraft {
     @Builder.Default
     CourseDraftStatus status = CourseDraftStatus.EDITING;
 
-    // --------- copy các field quan trọng từ Course ----------
     @Column(nullable = false, length = 255)
     String title;
 
@@ -69,7 +74,7 @@ public class CourseDraft {
     String thumbnailURL;
 
     @Column(columnDefinition = "TEXT")
-    String adminReviewNote;   // Lý do reject / ghi chú admin cho bản draft
+    String adminReviewNote;
 
     @Builder.Default
     LocalDateTime createdAt = LocalDateTime.now();

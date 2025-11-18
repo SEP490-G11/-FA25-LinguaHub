@@ -22,8 +22,8 @@ import LanguageCourses from '@/pages/LanguageCourses/LanguageCourses.tsx';
 import ForgotPassword from '@/pages/auth/forgot-password/forgot-password.tsx';
 import ResetPassword from '@/pages/auth/reset-password/reset-password.tsx';
 import VerifyEmail from '@/pages/auth/verify-email/veryfy-email.tsx';
-import PaymentHistory from "@/pages/PaymentHistory";
-import MyEnrollments from "@/pages/MyEnrollments";
+import PaymentHistory from "@/pages/PaymentHistory/payment-history.tsx";
+import MyEnrollments from "@/pages/MyEnrollments/my-enrollments.tsx";
 import Profile from '@/pages/Profile/profile.tsx';
 import ChangePassword from '@/pages/ChangePassword/changePassword.tsx';
 import VerifyEmailForgotPassword from '@/pages/auth/verify-email-forgot-password/verify-email-forgot-password.tsx';
@@ -52,7 +52,7 @@ import TutorSettings from '@/pages/TutorPages/Settings';
 import TutorPackages from '@/pages/TutorPages/Packages';
 import TutorCourseDetailPage from '@/pages/TutorPages/CourseDetail';
 import Messages from '@/pages/MessagesPage/boxchat.tsx';
-import BookTutor from '@/pages/BookTutor/index.tsx';
+import BookTutor from '@/pages/BookTutor/book-tutor.tsx';
 
 export function AppRoutes() {
     return (

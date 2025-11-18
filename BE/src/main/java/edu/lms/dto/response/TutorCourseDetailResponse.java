@@ -25,6 +25,8 @@ public class TutorCourseDetailResponse {
     String categoryName;
     String status;
 
+  String adminReviewNote;
+
     List<CourseSectionResponse> section;
     List<String> objectives; // "What you'll learn"
 }

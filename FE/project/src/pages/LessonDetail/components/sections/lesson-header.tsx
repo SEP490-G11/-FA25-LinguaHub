@@ -46,7 +46,7 @@ const LessonHeader = ({ lesson, courseId, courseTitle }: LessonHeaderProps) => {
                   asChild
                   className="text-white hover:bg-white/20 border border-white/30"
               >
-                <Link to={`/course/${courseId}`}>
+                <Link to={`/courses/${courseId}`}>
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Back to Course
                 </Link>

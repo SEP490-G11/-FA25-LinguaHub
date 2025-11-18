@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface CourseSectionDraftRepository extends JpaRepository<CourseSectionDraft, Long> {
     List<CourseSectionDraft> findByDraft_DraftIDOrderByOrderIndexAsc(Long draftID);
+    List<CourseSectionDraft> findByDraft_DraftID(Long draftId);
 }

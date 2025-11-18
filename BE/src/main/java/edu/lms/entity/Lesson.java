@@ -21,6 +21,8 @@ public class Lesson {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sectionID", nullable = false)
+    @ToString.Exclude
+    @com.fasterxml.jackson.annotation.JsonIgnore
     CourseSection section;
 
     @Column(nullable = false)
@@ -30,7 +32,7 @@ public class Lesson {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    LessonType lessonType = LessonType.Video; // Default value
+    LessonType lessonType = LessonType.Video;
 
     String videoURL;
 

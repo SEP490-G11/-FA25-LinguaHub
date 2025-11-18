@@ -1,204 +1,565 @@
-import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, Calendar, Clock } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect } from "react";
+import api from "@/config/axiosConfig";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Calendar,
+  Package,
+  Sparkles,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+} from "@/components/ui/dialog";
 
-interface CalendarSlotsProps {
-  selectedSlots: Array<{ date: string; time: string; day: string }>;
-  onSlotsChange: (slots: Array<{ date: string; time: string; day: string }>) => void;
+export interface PackageItem {
+  packageId: number;
+  tutorId: number;
+  name: string;
+  description: string;
+  maxSlot: number;
+  active: boolean;
+  numberOfLessons: number;
+  discountPercent: number;
+  requirement?: string | null;
+  objectives?: string | null;
+  minBookingPricePerHour: number;
+  lessonContent: { slot_number: number; content: string }[];
 }
 
-const CalendarSlots = ({ selectedSlots, onSlotsChange }: CalendarSlotsProps) => {
-  const [currentWeekStart, setCurrentWeekStart] = useState(() => {
-    const today = new Date();
-    const day = today.getDay();
-    const diff = today.getDate() - day + (day === 0 ? -6 : 1);
-    return new Date(today.setDate(diff));
+export interface BookingPlan {
+  booking_planid: number;
+  tutor_id: number;
+  title: string;
+  date: string;
+  start_hours: string;
+  end_hours: string;
+  slot_duration: number;
+  price_per_hours: number;
+  is_open: boolean;
+  is_active: boolean;
+}
+
+export interface SelectedSlot {
+  date: string;
+  time: string;
+  day: string;
+  bookingPlanId: number;
+}
+
+type PlanByDate = Record<string, BookingPlan[]>;
+
+interface CalendarSlotsProps {
+  tutorId: string;
+  selectedSlots: SelectedSlot[];
+  onSlotsChange: React.Dispatch<React.SetStateAction<SelectedSlot[]>>;
+  packages: PackageItem[];
+  selectedPackage: PackageItem | null;
+  onSelectPackage: (p: PackageItem | null) => void;
+  mySlotsEndpoint?: string;
+  myInfoEndpoint?: string;
+}
+
+const formatDateFixed = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+const getPlanHour = (val: string) => parseInt(val.substring(0, 2), 10);
+
+const getMonday = (d: Date) => {
+  const day = d.getDay();
+  const diff = d.getDate() - (day === 0 ? 6 : day - 1);
+  return new Date(d.getFullYear(), d.getMonth(), diff);
+};
+
+const formatVND = (price: number) => price.toLocaleString('vi-VN') + ' ₫';
+
+const CalendarSlots = ({
+                         tutorId,
+                         selectedSlots,
+                         onSlotsChange,
+                         packages,
+                         selectedPackage,
+                         onSelectPackage,
+                       }: CalendarSlotsProps) => {
+  // ===== Packages =====
+  const activePackages = packages.filter((p) => p.active === true);
+  const ITEMS_PER_PAGE = 3;
+  const totalPages = Math.max(1, Math.ceil(activePackages.length / ITEMS_PER_PAGE));
+  const [page, setPage] = useState(0);
+  const pagePackages = activePackages.slice(page * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE + ITEMS_PER_PAGE);
+
+  // ===== Calendar range (4 weeks from current Monday) =====
+  const today = new Date();
+  const firstAllowedWeek = getMonday(today);
+  const fourthAllowedWeek = new Date(firstAllowedWeek);
+  fourthAllowedWeek.setDate(fourthAllowedWeek.getDate() + 21);
+
+  const [currentWeekStart, setCurrentWeekStart] = useState(firstAllowedWeek);
+  const canGoPrev = currentWeekStart.getTime() !== firstAllowedWeek.getTime();
+  const canGoNext = currentWeekStart.getTime() !== fourthAllowedWeek.getTime();
+
+  const weekdayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const hours = Array.from({ length: 11 }).map((_, i) => 6 + i);
+  const weekDates = Array.from({ length: 7 }).map((_, i) => {
+    const src = currentWeekStart;
+    return new Date(src.getFullYear(), src.getMonth(), src.getDate() + i);
   });
 
-  const timeSlots = [
-    { time: '18:00', label: '6:00 PM' },
-    { time: '19:00', label: '7:00 PM' },
-    { time: '20:00', label: '8:00 PM' }
-  ];
+  // ===== Data states =====
+  const [planByDate, setPlanByDate] = useState<PlanByDate>({});
+  const [userId, setUserId] = useState<number | null>(null);
 
-  const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  // Slots booked by me (key -> true)
+  const [bookedByMeMap, setBookedByMeMap] = useState<Record<string, boolean>>({});
+  // Slots booked by others (key -> true). Fill from backend if available.
+  const [bookedByOthersMap, setBookedByOthersMap] = useState<Record<string, boolean>>({});
 
-  const getWeekDates = () => {
-    const dates = [];
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(currentWeekStart);
-      date.setDate(currentWeekStart.getDate() + i);
-      dates.push(date);
-    }
-    return dates;
+  // ===== Modal state for package detail =====
+  const [selectedDetailPackage, setSelectedDetailPackage] = useState<PackageItem | null>(null);
+  const [openDetail, setOpenDetail] = useState(false);
+
+  // ===== Fetch current user info =====
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await api.get("/users/myInfo");
+        if (!mounted) return;
+        setUserId(res?.data?.result?.userID ?? null);
+      } catch (err) {
+        console.error("Error fetching user info:", err);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // ===== Fetch my booked slots, then map only those with matching userId =====
+  useEffect(() => {
+    if (!userId) return;
+    let mounted = true;
+
+    (async () => {
+      try {
+        const res = await api.get("/booking-slots/my-slots");
+        const slots: { startTime: string; bookingPlanID: number; userID: number }[] = res?.data?.result || [];
+
+        const mine: Record<string, boolean> = {};
+        const others: Record<string, boolean> = {};
+
+        slots.forEach((s) => {
+          const date = s.startTime.substring(0, 10); // "YYYY-MM-DD"
+          const hour = s.startTime.substring(11, 13); // "HH"
+          const key = `${date}T${hour}:00_plan_${s.bookingPlanID}`;
+
+          if (s?.userID === userId) {
+            mine[key] = true;
+          } else {
+            others[key] = true;
+          }
+        });
+
+        if (!mounted) return;
+        setBookedByMeMap(mine);
+        setBookedByOthersMap(others);
+      } catch (err) {
+        console.error("Error fetching booked slots:", err);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [userId]);
+
+  // ===== Fetch plans of tutor and align to current week =====
+  useEffect(() => {
+    let mounted = true;
+
+    (async () => {
+      const planMap: PlanByDate = {};
+      weekDates.forEach((d) => (planMap[formatDateFixed(d)] = []));
+
+      try {
+        const res = await api.get(`/tutor/${tutorId}/booking-plan`);
+        const rawPlans: BookingPlan[] = res?.data?.plans || [];
+
+        const dayMap: Record<string, number> = {
+          T2: 0,
+          T3: 1,
+          T4: 2,
+          T5: 3,
+          T6: 4,
+          T7: 5,
+          CN: 6,
+        };
+
+        rawPlans.forEach((plan) => {
+          if (!plan.is_open || !plan.is_active) return;
+          const idx = dayMap[plan.title as keyof typeof dayMap];
+          if (idx === undefined) return;
+
+          const date = formatDateFixed(weekDates[idx]);
+          plan.date = date;
+          planMap[date].push(plan);
+        });
+      } catch (err) {
+        console.error("Error fetching booking plans:", err);
+      }
+
+      if (!mounted) return;
+      setPlanByDate(planMap);
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [currentWeekStart, tutorId]);
+
+  // ===== Business rules =====
+  const isSlotLimitReached = !!selectedPackage && selectedSlots.length >= selectedPackage.maxSlot;
+
+  const getStatus = (
+      plan: BookingPlan,
+      hour: number
+  ): "Available" | "Selected" | "Booked" | "Your Slot" | null => {
+    const sH = getPlanHour(plan.start_hours);
+    const eH = getPlanHour(plan.end_hours);
+    if (!(hour >= sH && hour < eH)) return null;
+
+    const slotKey = `${plan.date}T${String(hour).padStart(2, "0")}:00_plan_${plan.booking_planid}`;
+
+    if (bookedByMeMap[slotKey]) return "Your Slot";
+    if (bookedByOthersMap[slotKey]) return "Booked"; // "Locked" by others
+
+    const exists = selectedSlots.some(
+        (s) => s.bookingPlanId === plan.booking_planid && s.time === `${hour}:00` && s.date === plan.date
+    );
+
+    if (exists) return "Selected";
+    if (isSlotLimitReached) return "Booked";
+
+    return "Available";
   };
 
-  const weekDates = getWeekDates();
-
-  const goToPreviousWeek = () => {
-    const newDate = new Date(currentWeekStart);
-    newDate.setDate(currentWeekStart.getDate() - 7);
-    setCurrentWeekStart(newDate);
+  // ===== Handle open detail modal =====
+  const handleOpenDetail = (pkg: PackageItem) => {
+    setSelectedDetailPackage(pkg);
+    setOpenDetail(true);
   };
 
-  const goToNextWeek = () => {
-    const newDate = new Date(currentWeekStart);
-    newDate.setDate(currentWeekStart.getDate() + 7);
-    setCurrentWeekStart(newDate);
-  };
-
-  const formatDate = (date: Date) => {
-    return date.toISOString().split('T')[0];
-  };
-
-  const isSlotSelected = (date: Date, time: string) => {
-    const dateStr = formatDate(date);
-    return selectedSlots.some(slot => slot.date === dateStr && slot.time === time);
-  };
-
-  const isSlotAvailable = (date: Date, time: string) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    if (date < today) return false;
-
-    const dayOfWeek = date.getDay();
-    if (dayOfWeek === 0) return false;
-
-    return true;
-  };
-
-  const toggleSlot = (date: Date, time: string) => {
-    const dateStr = formatDate(date);
-    const dayName = weekDays[date.getDay() === 0 ? 6 : date.getDay() - 1];
-
-    if (!isSlotAvailable(date, time)) return;
-
-    const isSelected = isSlotSelected(date, time);
-
-    if (isSelected) {
-      onSlotsChange(selectedSlots.filter(slot =>
-        !(slot.date === dateStr && slot.time === time)
-      ));
-    } else {
-      onSlotsChange([...selectedSlots, { date: dateStr, time, day: dayName }]);
-    }
-  };
-
-  const getMonthYearDisplay = () => {
-    return currentWeekStart.toLocaleDateString('en-US', {
-      month: 'long',
-      year: 'numeric'
-    });
-  };
-
+  // ===== Render =====
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold flex items-center space-x-2">
-          <Calendar className="w-6 h-6 text-blue-600" />
-          <span>Select Available Time Slots</span>
+      <div className="bg-blue-50/50 p-6 rounded-xl shadow-md border border-blue-100">
+        {/* PACKAGE SELECTOR */}
+        <h2 className="text-xl font-bold mb-5 flex items-center gap-2 text-blue-900">
+          <Package className="w-5 h-5 text-blue-600" /> Select a Learning Package
         </h2>
-      </div>
 
-      <div className="flex items-center justify-between mb-6">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={goToPreviousWeek}
-          className="flex items-center space-x-1"
-        >
-          <ChevronLeft className="w-4 h-4" />
-          <span>Previous</span>
-        </Button>
+        {activePackages.length === 0 ? (
+            <p className="text-gray-500 italic">No active packages available</p>
+        ) : (
+            <div className="relative w-full">
+              <button
+                  disabled={page === 0}
+                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                  className="absolute -left-6 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white shadow hover:bg-gray-100 disabled:opacity-40"
+              >
+                <ChevronLeft />
+              </button>
 
-        <h3 className="text-lg font-semibold">{getMonthYearDisplay()}</h3>
-
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={goToNextWeek}
-          className="flex items-center space-x-1"
-        >
-          <span>Next</span>
-          <ChevronRight className="w-4 h-4" />
-        </Button>
-      </div>
-
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr>
-              <th className="border border-gray-200 bg-gray-50 p-3 text-left font-semibold">
-                <Clock className="w-4 h-4 inline mr-1" />
-                Time
-              </th>
-              {weekDates.map((date, index) => {
-                const isToday = formatDate(date) === formatDate(new Date());
-                return (
-                  <th
-                    key={index}
-                    className={`border border-gray-200 p-3 text-center ${
-                      isToday ? 'bg-blue-50' : 'bg-gray-50'
-                    }`}
-                  >
-                    <div className="font-semibold">{weekDays[index]}</div>
-                    <div className={`text-sm ${isToday ? 'text-blue-600 font-bold' : 'text-gray-600'}`}>
-                      {date.getDate()}/{date.getMonth() + 1}
-                    </div>
-                  </th>
-                );
-              })}
-            </tr>
-          </thead>
-          <tbody>
-            {timeSlots.map((slot) => (
-              <tr key={slot.time}>
-                <td className="border border-gray-200 bg-gray-50 p-3 font-medium">
-                  {slot.label}
-                </td>
-                {weekDates.map((date, index) => {
-                  const available = isSlotAvailable(date, slot.time);
-                  const selected = isSlotSelected(date, slot.time);
-
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {pagePackages.map((pkg) => {
+                  const active = selectedPackage?.packageId === pkg.packageId;
                   return (
-                    <td
-                      key={index}
-                      className="border border-gray-200 p-2 text-center"
-                    >
-                      <button
-                        onClick={() => toggleSlot(date, slot.time)}
-                        disabled={!available}
-                        className={`w-full h-12 rounded-lg font-medium transition-all ${
-                          !available
-                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                            : selected
-                            ? 'bg-blue-600 text-white hover:bg-blue-700'
-                            : 'bg-green-50 text-green-700 hover:bg-green-100 border-2 border-green-200'
-                        }`}
+                      <div
+                          key={pkg.packageId}
+                          className={`p-6 rounded-2xl border shadow-md transition ${
+                              active
+                                  ? "border-blue-600 bg-blue-100"
+                                  : "border-gray-200 bg-white hover:bg-blue-50"
+                          }`}
                       >
-                        {!available ? 'N/A' : selected ? 'Selected' : 'Available'}
-                      </button>
-                    </td>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Sparkles className="w-4 h-4 text-yellow-500" />
+                            <h3 className="font-bold">{pkg.name}</h3>
+                          </div>
+
+                          <Button
+                              className="bg-blue-600 text-white hover:bg-blue-700"
+                              size="sm"
+                              onClick={() => handleOpenDetail(pkg)}
+                          >
+                            Detail
+                          </Button>
+                        </div>
+
+                        <p className="text-sm text-gray-600 mt-2 mb-4">
+                          {pkg.requirement || "No requirement"}
+                        </p>
+
+                        <div className="space-y-2 text-sm text-gray-700">
+                          <p>
+                            <b>Objectives:</b> {pkg.objectives || "No objectives provided"}
+                          </p>
+                          <p>
+                            <b>Max Sessions:</b> {pkg.maxSlot}
+                          </p>
+                        </div>
+
+                        <Button
+                            className="w-full mt-4"
+                            onClick={() => onSelectPackage(active ? null : pkg)}
+                        >
+                          {active ? "Unselect" : "Select"}
+                        </Button>
+                      </div>
                   );
                 })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+              </div>
 
-      <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-        <h4 className="font-semibold text-blue-900 mb-2">How to book:</h4>
-        <ul className="text-sm text-blue-800 space-y-1">
-          <li>• Click on green "Available" slots to select your preferred time</li>
-          <li>• Selected slots will turn blue</li>
-          <li>• Each slot is 1 hour long (6 PM - 9 PM daily)</li>
-          <li>• Click again to deselect a slot</li>
-          <li>• You can select multiple slots across different days</li>
-        </ul>
+              <button
+                  disabled={page >= totalPages - 1}
+                  onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                  className="absolute -right-6 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white shadow hover:bg-gray-100 disabled:opacity-40"
+              >
+                <ChevronRight />
+              </button>
+            </div>
+        )}
+
+        {/* WEEK NAV */}
+        <div className="flex justify-between items-center my-8 px-1">
+          <Button
+              variant="outline"
+              disabled={!canGoPrev}
+              onClick={() => {
+                const d = new Date(currentWeekStart);
+                d.setDate(d.getDate() - 7);
+                setCurrentWeekStart(d);
+              }}
+          >
+            <ChevronLeft /> Previous
+          </Button>
+
+          <div className="text-lg font-semibold text-blue-900">
+            Week of {formatDateFixed(currentWeekStart)}
+          </div>
+
+          <Button
+              variant="outline"
+              disabled={!canGoNext}
+              onClick={() => {
+                const d = new Date(currentWeekStart);
+                d.setDate(d.getDate() + 7);
+                setCurrentWeekStart(d);
+              }}
+          >
+            Next <ChevronRight />
+          </Button>
+        </div>
+
+        <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-blue-900">
+          <Calendar className="text-blue-600" /> Select Time Slots
+        </h2>
+
+        {/* TABLE */}
+        <div className="overflow-x-auto rounded-lg border border-blue-200 bg-white shadow">
+          <table className="w-full border-collapse">
+            <thead>
+            <tr className="bg-blue-100 text-blue-900">
+              <th className="border p-3">Hour</th>
+              {weekDates.map((d, i) => (
+                  <th key={i} className="border p-3 text-center">
+                    <div className="font-semibold">{weekdayLabels[i]}</div>
+                    <div className="text-xs">{formatDateFixed(d)}</div>
+                  </th>
+              ))}
+            </tr>
+            </thead>
+
+            <tbody>
+            {hours.map((hour) => (
+                <tr key={hour}>
+                  <td className="border p-2 bg-blue-50 font-medium">{hour}:00</td>
+
+                  {weekDates.map((date, col) => {
+                    const dateStr = formatDateFixed(date);
+                    const plans = planByDate[dateStr] || [];
+
+                    const now = new Date();
+                    const todayDate = new Date(
+                        now.getFullYear(),
+                        now.getMonth(),
+                        now.getDate()
+                    );
+                    const thisDay = new Date(
+                        date.getFullYear(),
+                        date.getMonth(),
+                        date.getDate()
+                    );
+
+                    if (
+                        thisDay < todayDate ||
+                        (thisDay.getTime() === todayDate.getTime() &&
+                            hour <= now.getHours())
+                    ) {
+                      return (
+                          <td
+                              key={col}
+                              className="border p-2 text-center text-gray-300 bg-gray-50"
+                          >
+                            —
+                          </td>
+                      );
+                    }
+
+                    if (plans.length === 0) {
+                      return (
+                          <td
+                              key={col}
+                              className="border p-2 text-center text-gray-300"
+                          >
+                            —
+                          </td>
+                      );
+                    }
+
+                    return (
+                        <td key={col} className="border p-2 text-center">
+                          {plans.map((p) => {
+                            const sH = getPlanHour(p.start_hours);
+                            const eH = getPlanHour(p.end_hours);
+                            if (!(hour >= sH && hour < eH)) return null;
+
+                            const status = getStatus(p, hour);
+
+                            const styleMap: Record<string, string> = {
+                              Available:
+                                  "bg-green-500/20 text-green-900 border-green-400",
+                              Selected:
+                                  "bg-blue-500/30 text-blue-900 border-blue-500",
+                              Booked:
+                                  "bg-red-400/20 text-red-700 border-red-300 cursor-not-allowed",
+                              "Your Slot":
+                                  "bg-yellow-500/30 text-yellow-900 border-yellow-500 cursor-not-allowed",
+                            };
+
+                            return (
+                                <button
+                                    key={p.booking_planid}
+                                    disabled={status === "Booked" || status === "Your Slot"}
+                                    onClick={() => {
+                                      if (status === "Booked" || status === "Your Slot")
+                                        return;
+
+                                      onSlotsChange((prev) => {
+                                        if (status === "Selected") {
+                                          return prev.filter(
+                                              (x) =>
+                                                  !(
+                                                      x.bookingPlanId === p.booking_planid &&
+                                                      x.time === `${hour}:00` &&
+                                                      x.date === p.date
+                                                  )
+                                          );
+                                        }
+
+                                        if (isSlotLimitReached) return prev;
+
+                                        return [
+                                          ...prev,
+                                          {
+                                            date: p.date,
+                                            time: `${hour}:00`,
+                                            day: weekdayLabels[col],
+                                            bookingPlanId: p.booking_planid,
+                                          },
+                                        ];
+                                      });
+                                    }}
+                                    className={`w-full h-10 rounded-lg text-sm border transition ${styleMap[status!]}`}
+                                >
+                                  {status}
+                                </button>
+                            );
+                          })}
+                        </td>
+                    );
+                  })}
+                </tr>
+            ))}
+            </tbody>
+          </table>
+        </div>
+
+        {selectedPackage && (
+            <div className="mt-6 p-4 bg-blue-100 border border-blue-300 rounded-xl text-sm text-blue-900 shadow-sm">
+              <b>{selectedPackage.name}</b> — Selected{" "}
+              <b>{selectedSlots.length}</b>/<b>{selectedPackage.maxSlot}</b> slots
+            </div>
+        )}
+
+        {/* Package Detail Modal */}
+        <Dialog open={openDetail} onOpenChange={setOpenDetail}>
+          <DialogContent className="sm:max-w-[600px] bg-white rounded-xl shadow-lg border border-blue-200 p-6">
+            <DialogHeader className="relative">
+              <DialogTitle className="text-2xl font-bold text-blue-900 flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-yellow-500" />
+                {selectedDetailPackage?.name}
+              </DialogTitle>
+              <DialogClose className="absolute right-0 top-0 text-gray-500 hover:text-gray-700">
+                {/*<X className="w-6 h-6" />*/}
+              </DialogClose>
+            </DialogHeader>
+            <div className="mt-4 space-y-4 text-gray-700">
+              <p className="text-sm">
+                <b>Description:</b> {selectedDetailPackage?.description || "No description provided"}
+              </p>
+              <p className="text-sm">
+                <b>Requirement:</b> {selectedDetailPackage?.requirement || "No requirement"}
+              </p>
+              <p className="text-sm">
+                <b>Objectives:</b> {selectedDetailPackage?.objectives || "No objectives provided"}
+              </p>
+              <p className="text-sm">
+                <b>Number of Lessons:</b> {selectedDetailPackage?.numberOfLessons}
+              </p>
+              <p className="text-sm">
+                <b>Max Slots:</b> {selectedDetailPackage?.maxSlot}
+              </p>
+              {selectedDetailPackage?.discountPercent !== 0 && (
+                  <p className="text-sm">
+                    <b>Discount Percent:</b> {selectedDetailPackage?.discountPercent}%
+                  </p>
+              )}
+              <p className="text-sm">
+                <b>Min Booking Price per Hour:</b> {formatVND(selectedDetailPackage?.minBookingPricePerHour || 0)}
+              </p>
+              <div className="text-sm">
+                <b>Lesson Content:</b>
+                {selectedDetailPackage?.lessonContent?.length ? (
+                    <ul className="list-disc pl-5 mt-2 space-y-1">
+                      {selectedDetailPackage.lessonContent.map((lesson) => (
+                          <li key={lesson.slot_number}>
+                            Slot {lesson.slot_number}: {lesson.content}
+                          </li>
+                      ))}
+                    </ul>
+                ) : (
+                    <p className="text-gray-500 italic">No lesson content available</p>
+                )}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
-    </div>
   );
 };
 

@@ -26,7 +26,7 @@ api.interceptors.request.use(
     }
 );
 
-/* ------------------------ REFRESH TOKEN MANAGER ------------------------- */
+/* ------------------------ REFRESH TOKEN QUEUE --------------------------- */
 let isRefreshing = false;
 
 let failedQueue: {
@@ -39,7 +39,6 @@ const processQueue = (error: unknown, token: string | null = null) => {
         if (error) p.reject(error);
         else p.resolve(token!);
     });
-
     failedQueue = [];
 };
 
@@ -49,16 +48,26 @@ api.interceptors.response.use(
 
     async (error) => {
         const originalRequest = error.config;
+        const status = error.response?.status;
 
-        // Chỉ xử lý refresh nếu request chưa retry và lỗi là 401 hoặc 403
-        if (
-            (error.response?.status === 401 || error.response?.status === 403) &&
-            !originalRequest._retry
-        ) {
+        // ---- Stop if this request does not require auth ----
+        if (originalRequest?.skipAuth) {
+            return Promise.reject(error);
+        }
+
+        const refreshToken =
+            localStorage.getItem("refresh_token") ||
+            sessionStorage.getItem("refresh_token");
+
+        // ❌ If no refresh token → user is not logged in → do NOT refresh
+        if ((status === 401 || status === 403) && !refreshToken) {
+            return Promise.reject(error);
+        }
+
+        if ((status === 401 || status === 403) && !originalRequest._retry) {
             originalRequest._retry = true;
 
             if (isRefreshing) {
-                // Nếu đang refresh thì cho request vào hàng đợi
                 return new Promise((resolve, reject) => {
                     failedQueue.push({
                         resolve: (token: string) => {
@@ -73,9 +82,6 @@ api.interceptors.response.use(
             isRefreshing = true;
 
             try {
-                const refreshToken = localStorage.getItem("refresh_token");
-                if (!refreshToken) throw new Error("No refresh token");
-
                 const res = await api.post(
                     "/auth/refresh",
                     { refreshToken },
@@ -85,8 +91,13 @@ api.interceptors.response.use(
                 const newAccess = res.data?.result?.accessToken;
                 const newRefresh = res.data?.result?.refreshToken;
 
-                localStorage.setItem("access_token", newAccess);
-                localStorage.setItem("refresh_token", newRefresh);
+                if (localStorage.getItem("refresh_token")) {
+                    localStorage.setItem("access_token", newAccess);
+                    localStorage.setItem("refresh_token", newRefresh);
+                } else {
+                    sessionStorage.setItem("access_token", newAccess);
+                    sessionStorage.setItem("refresh_token", newRefresh);
+                }
 
                 processQueue(null, newAccess);
 
@@ -94,9 +105,11 @@ api.interceptors.response.use(
                 return api(originalRequest);
             } catch (err) {
                 processQueue(err, null);
-                localStorage.removeItem("access_token");
-                localStorage.removeItem("refresh_token");
-                window.location.href = "/sign-in";
+
+                // Clear token silently - do NOT redirect
+                localStorage.clear();
+                sessionStorage.clear();
+
                 return Promise.reject(err);
             } finally {
                 isRefreshing = false;

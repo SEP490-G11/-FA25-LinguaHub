@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
     Bell, Menu, X, Languages, Heart, User, LogOut,
-    BookOpen, Settings, GraduationCap, CreditCard, Lock, LayoutDashboard
+     Settings, GraduationCap, CreditCard, Lock, LayoutDashboard,MessageCircle
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,6 @@ import {
     DropdownMenu, DropdownMenuContent, DropdownMenuItem,
     DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/constants/routes";
 import api from "@/config/axiosConfig";
@@ -222,7 +221,12 @@ const Header = () => {
                                 </DropdownMenuContent>
                             )}
                         </DropdownMenu>
-
+                        {/* ROLE BADGE */}
+                        {isAuthenticated && user?.role === "Tutor" && (
+                            <div className="px-3 py-1 text-sm font-semibold bg-purple-100 text-purple-700 rounded-full">
+                                Tutor
+                            </div>
+                        )}
                         {/* Auth menu */}
                         {!isAuthenticated ? (
                             <>
@@ -234,6 +238,7 @@ const Header = () => {
                                 </Button>
                             </>
                         ) : (
+
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button
@@ -276,22 +281,18 @@ const Header = () => {
                                             </Link>
                                         </DropdownMenuItem>
                                     )}
-
-                                    {user?.role === "Learner" && (
                                         <>
                                             <DropdownMenuItem asChild>
-                                                <Link to="/my-courses">
-                                                    <BookOpen className="mr-2 h-4 w-4" /> My Courses
-                                                </Link>
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem asChild>
-                                                <Link to="/my-enrollments">
+                                                <Link to={ROUTES.MY_ENROLLMENTS}>
                                                     <GraduationCap className="mr-2 h-4 w-4" /> My Progress
                                                 </Link>
                                             </DropdownMenuItem>
                                         </>
-                                    )}
-
+                                    <DropdownMenuItem asChild>
+                                        <Link to="/messages">
+                                            <MessageCircle className="mr-2 h-4 w-4" />Box Chat
+                                        </Link>
+                                    </DropdownMenuItem>
                                     <DropdownMenuItem asChild>
                                         <Link to="/payment-history">
                                             <CreditCard className="mr-2 h-4 w-4" /> Payment History
