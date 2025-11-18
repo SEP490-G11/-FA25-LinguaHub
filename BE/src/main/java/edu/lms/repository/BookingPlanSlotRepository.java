@@ -14,9 +14,16 @@ import java.util.List;
 @Repository
 public interface BookingPlanSlotRepository extends JpaRepository<BookingPlanSlot, Long> {
 
+    boolean existsByBookingPlanID(Long bookingPlanID);
     boolean existsByTutorIDAndStartTimeAndEndTime(Long tutorID, LocalDateTime startTime, LocalDateTime endTime);
 
     List<BookingPlanSlot> findAllByPaymentID(Long paymentId);
+
+    // Lấy slot mà learner đã book
+    List<BookingPlanSlot> findByUserID(Long userId);
+
+    // Lấy slot của tutor
+    List<BookingPlanSlot> findByTutorID(Long tutorId);
 
     List<BookingPlanSlot> findAllByUserIDAndPaymentIDAndStatus(Long userId, Long paymentId, SlotStatus status);
 

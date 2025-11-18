@@ -25,18 +25,18 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class PaymentService {
-
+    private final WithdrawService withdrawService;
     private final CourseRepository courseRepository;
     private final BookingPlanRepository bookingPlanRepository;
     private final BookingPlanSlotRepository bookingPlanSlotRepository;
     private final EnrollmentRepository enrollmentRepository;
     private final PaymentRepository paymentRepository;
     private final UserRepository userRepository;
-    private final TutorRepository tutorRepository;          // 👈 THÊM
+    private final TutorRepository tutorRepository;
     private final PayOSService payOSService;
     private final ChatService chatService;
     private final PaymentMapper paymentMapper;
-
+    private final UserPackageRepository userPackageRepository;
     // ======================================================
     // TẠO THANH TOÁN (PENDING)
     // ======================================================
@@ -72,7 +72,14 @@ public class PaymentService {
         }
 
         // ----------------- BOOKING PAYMENT -----------------
+
         else if (request.getPaymentType() == PaymentType.Booking) {
+            UserPackage userPackage = null;
+
+            if (request.getUserPackageId() != null) {
+                userPackage = userPackageRepository.findById(request.getUserPackageId())
+                        .orElseThrow(() -> new AppException(ErrorCode.USER_PACKAGE_NOT_FOUND));
+            }
             BookingPlan plan = bookingPlanRepository.findById(request.getTargetId())
                     .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
 
@@ -101,8 +108,10 @@ public class PaymentService {
                         .endTime(s.getEndTime())
                         .status(SlotStatus.Locked)
                         .lockedAt(LocalDateTime.now())
-                        .expiresAt(LocalDateTime.now().plusMinutes(3))
+                        .expiresAt(LocalDateTime.now().plusMinutes(15))
+                        .userPackage(userPackage)
                         .build();
+
                 bookingPlanSlotRepository.save(slot);
             }
 
@@ -136,7 +145,7 @@ public class PaymentService {
                 request.getUserId(),
                 request.getPaymentType(),
                 request.getTargetId(),
-                amount,
+                payment.getAmount(),
                 description
         );
 
@@ -240,6 +249,17 @@ public class PaymentService {
                     log.warn("[CHAT ROOM] Failed: {}", e.getMessage());
                 }
             }
+            BigDecimal newBalance = withdrawService.getBalance(payment.getTutorId());
+
+            Tutor tutor = tutorRepository.findById(payment.getTutorId())
+                    .orElseThrow(() -> new AppException(ErrorCode.TUTOR_NOT_FOUND));
+
+            tutor.setWalletBalance(newBalance);
+
+            tutorRepository.save(tutor);
+
+            log.info("[WALLET] Updated wallet_balance for tutor {} = {}",
+                    tutor.getTutorID(), newBalance);
 
             log.info("[BOOKING PAYMENT] User {} confirmed {} slots",
                     userId, slots.size());
@@ -275,7 +295,6 @@ public class PaymentService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXIST));
 
-        // Ưu tiên role trong token, fallback sang DB nếu cần
         String roleName = (roleClaim != null && !roleClaim.isBlank())
                 ? roleClaim
                 : (user.getRole() != null ? user.getRole().getName() : null);
@@ -300,7 +319,6 @@ public class PaymentService {
             return getAllPayments();
         }
 
-        // Các role khác không được xem
         throw new AppException(ErrorCode.UNAUTHORIZED);
     }
 }

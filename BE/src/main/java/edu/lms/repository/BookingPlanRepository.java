@@ -1,7 +1,9 @@
 package edu.lms.repository;
 
 import edu.lms.entity.BookingPlan;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -25,7 +27,9 @@ public interface BookingPlanRepository extends JpaRepository<BookingPlan, Long> 
     /**
      * Kiểm tra xem có booking plan nào overlap với thời gian cho trước không
      * (cùng tutor, cùng title/ngày, và thời gian overlap)
+     * Sử dụng pessimistic lock để tránh race condition
      */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
         SELECT bp FROM BookingPlan bp
         WHERE bp.tutorID = :tutorID
@@ -43,4 +47,17 @@ public interface BookingPlanRepository extends JpaRepository<BookingPlan, Long> 
     );
 
     List<BookingPlan> findByTutorIDAndIsActiveTrueOrderByTitleAscStartHoursAsc(Long tutorID);
+
+    /**
+     * Đếm số ngày làm việc duy nhất (distinct titles) của tutor
+     * Giới hạn tối đa 4 ngày/tuần
+     * Sử dụng pessimistic lock để tránh race condition
+     */
+    @Lock(LockModeType.PESSIMISTIC_READ)
+    @Query("""
+        SELECT COUNT(DISTINCT bp.title) FROM BookingPlan bp
+        WHERE bp.tutorID = :tutorID
+          AND bp.isActive = true
+        """)
+    Long countDistinctDaysByTutorID(@Param("tutorID") Long tutorID);
 }

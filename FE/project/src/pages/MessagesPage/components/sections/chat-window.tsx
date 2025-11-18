@@ -104,7 +104,6 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
     }
   };
 
-  /** LOADING STATES */
   if (loading || userLoading) {
     return (
         <div className="flex items-center justify-center h-full text-gray-400">
@@ -121,23 +120,16 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
     );
   }
 
-  // =====================================================
-  // 🔥 Determine OTHER PERSON (chuẩn theo rule)
-  // =====================================================
 
   let otherName = "";
   let otherAvatar = "";
-
   if (currentUser.userID === room.userID) {
-    // currentUser là học viên → hiển thị tutor
     otherName = room.tutorName;
     otherAvatar = room.tutorAvatarURL || "";
   } else if (currentUser.userID === room.tutorID) {
-    // currentUser là tutor → hiển thị học viên
     otherName = room.userName;
     otherAvatar = room.userAvatarURL || "";
   } else {
-    // fallback nếu không trùng
     otherName = room.userName;
     otherAvatar = room.userAvatarURL || "";
   }
@@ -213,12 +205,18 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
 
         {/* INPUT BOX */}
         <div className="p-4 bg-white border-t">
+
+          {/* NOTICE WHEN ROOM NOT BOOKED */}
           {!isBooked && (
               <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
-                Book a training session to unlock file sharing, images and Google
-                Meet.
+                {currentUser.role === "Tutor" ? (
+                    <span>This learner has not booked any training session yet.</span>
+                ) : (
+                    <span>Book a training session to unlock file sharing, images and Google Meet.</span>
+                )}
               </div>
           )}
+
 
           <div className="flex items-end space-x-2">
             {isBooked && (

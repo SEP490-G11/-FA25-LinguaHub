@@ -7,7 +7,7 @@ export const ROUTES = {
     LANGUAGES: '/languages',
     TUTORS: '/tutors',
     TUTOR_DETAIL: '/tutors/:id',
-    COURSE_DETAIL: '/course/:id',
+    COURSE_DETAIL: '/courses/:id',
     LESSON_DETAIL: '/lesson/:id',
     PRACTICE_TEST: '/practice-test',
     BECOME_TUTOR: '/become-tutor',

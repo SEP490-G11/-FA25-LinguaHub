@@ -2,6 +2,8 @@ package edu.lms.controller;
 
 import edu.lms.dto.request.TutorBookingPlanRequest;
 import edu.lms.dto.response.*;
+import edu.lms.exception.AppException;
+import edu.lms.exception.ErrorCode;
 import edu.lms.security.UserPrincipal;
 import edu.lms.service.TutorBookingPlanService;
 import jakarta.validation.Valid;
@@ -29,7 +31,7 @@ public class TutorBookingPlanController {
     private final TutorBookingPlanService tutorBookingPlanService;
 
     @PostMapping("/booking-plan")
-    @PreAuthorize("principal.claims['role'] == 'Tutor'")
+    @PreAuthorize("hasRole('TUTOR')")
     public ResponseEntity<BookingPlanCreateResponse> createBookingPlan(
             @Valid @RequestBody TutorBookingPlanRequest request
     ) {
@@ -39,7 +41,7 @@ public class TutorBookingPlanController {
     }
 
     @PutMapping("/booking-plan/{bookingPlanId}")
-    @PreAuthorize("principal.claims['role'] == 'Tutor'")
+    @PreAuthorize("hasRole('TUTOR')")
     public ResponseEntity<BookingPlanUpdateResponse> updateBookingPlan(
             @PathVariable Long bookingPlanId,
             @Valid @RequestBody TutorBookingPlanRequest request
@@ -50,7 +52,7 @@ public class TutorBookingPlanController {
     }
 
     @DeleteMapping("/booking-plan/{bookingPlanId}")
-    @PreAuthorize("principal.claims['role'] == 'Tutor'")
+    @PreAuthorize("hasRole('TUTOR')")
     public ResponseEntity<OperationStatusResponse> deleteBookingPlan(@PathVariable Long bookingPlanId) {
         Long currentUserId = getCurrentUserId();
         OperationStatusResponse response = tutorBookingPlanService.deleteBookingPlan(currentUserId, bookingPlanId);
@@ -64,6 +66,22 @@ public class TutorBookingPlanController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/booking-plan/me")
+    @PreAuthorize("hasRole('TUTOR')")
+    public ResponseEntity<BookingPlanListResponse> getMyBookingPlans() {
+        Long currentUserId = getCurrentUserId();
+        BookingPlanListResponse response = tutorBookingPlanService.getMyBookingPlans(currentUserId);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/booking-plan/me/with-slots")
+    @PreAuthorize("hasRole('TUTOR')")
+    public ResponseEntity<BookingPlanListWithSlotsResponse> getMyBookingPlansWithSlots() {
+        Long currentUserId = getCurrentUserId();
+        BookingPlanListWithSlotsResponse response = tutorBookingPlanService.getMyBookingPlansWithSlots(currentUserId);
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/booking-plan/{bookingPlanId}")
     @PreAuthorize("permitAll()")
     public ResponseEntity<BookingPlanDetailResponse> getBookingPlanDetail(@PathVariable Long bookingPlanId) {
@@ -73,7 +91,12 @@ public class TutorBookingPlanController {
 
     private Long getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.getPrincipal() instanceof Jwt jwt) {
+        
+        if (authentication == null) {
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        }
+        
+        if (authentication.getPrincipal() instanceof Jwt jwt) {
             Object userId = jwt.getClaim("userId");
             if (userId instanceof Integer integerId) {
                 return integerId.longValue();
@@ -84,9 +107,19 @@ public class TutorBookingPlanController {
             if (userId instanceof Number numberId) {
                 return numberId.longValue();
             }
-        } else if (authentication != null && authentication.getPrincipal() instanceof UserPrincipal principal) {
-            return principal.getUserId();
+            // userId claim không tồn tại hoặc null
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
+        } 
+        
+        if (authentication.getPrincipal() instanceof UserPrincipal principal) {
+            Long userId = principal.getUserId();
+            if (userId == null) {
+                throw new AppException(ErrorCode.UNAUTHENTICATED);
+            }
+            return userId;
         }
-        throw new IllegalStateException("User not authenticated");
+        
+        // Principal không phải Jwt hoặc UserPrincipal
+        throw new AppException(ErrorCode.UNAUTHENTICATED);
     }
 }

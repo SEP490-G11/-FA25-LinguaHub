@@ -24,10 +24,10 @@ public class BookingPlanSlot {
     Long bookingPlanID;
 
     @Column(nullable = false)
-    Long tutorID; // tutor có thể xem danh sách learner book slot của mình
+    Long tutorID;
 
     @Column(nullable = true)
-    Long userID; // learner nào đã book slot
+    Long userID;
 
     @Column(nullable = false)
     LocalDateTime startTime;
@@ -36,7 +36,7 @@ public class BookingPlanSlot {
     LocalDateTime endTime;
 
     @Column(nullable = true)
-    Long paymentID; // liên kết với bảng Payment
+    Long paymentID;
 
     @Builder.Default
     @Enumerated(EnumType.STRING)
@@ -47,11 +47,9 @@ public class BookingPlanSlot {
     LocalDateTime lockedAt;
 
     @Column(nullable = true)
-    LocalDateTime expiresAt; // slot hết hạn nếu chưa thanh toán
+    LocalDateTime expiresAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_package_id")
     UserPackage userPackage;
-
-
 }

@@ -62,19 +62,13 @@ const TutorHeroSection = ({ tutor }: TutorHeroSectionProps) => {
   };
 
   const handleSendMessage = async () => {
-    // 1. FE login check
     if (!checkAuthAndRedirect()) return;
-
     try {
-      // 2. Call BE, BE sẽ check JWT
       const res = await api.post(`/chat/advice/${tutor.id}`);
       const room = res.data?.result;
-
       if (!room?.chatRoomID) {
         return alert("Unable to create chat room.");
       }
-
-      // 3. Navigate to chat room
       navigate(`/messages/${room.chatRoomID}`);
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
@@ -216,21 +210,22 @@ const TutorHeroSection = ({ tutor }: TutorHeroSectionProps) => {
                           if (!checkAuthAndRedirect()) return;
                           navigate(`/book-tutor/${tutor.id}`);
                         }}
-                        className="w-full bg-orange-500 text-white py-3 rounded-lg"
+                        className="w-full bg-orange-500 text-white py-3 rounded-lg flex items-center justify-center gap-2 font-semibold hover:bg-orange-600 transition"
                     >
-                    <Video className="w-5 h-5" />
+                      <Video className="w-5 h-5"/>
                       <span>Booking</span>
                     </Button>
 
                     <Button
                         onClick={handleSendMessage}
                         variant="outline"
-                        className="w-full border border-blue-500 text-blue-500 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors flex items-center justify-center space-x-2"
+                        className="w-full border border-blue-500 text-blue-500 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
                     >
-                      <MessageCircle className="w-5 h-5" />
+                      <MessageCircle className="w-5 h-5"/>
                       <span>Send Message Now</span>
                     </Button>
                   </div>
+
                 </div>
               </div>
             </div>

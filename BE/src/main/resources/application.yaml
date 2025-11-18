@@ -3,14 +3,13 @@ server:
   servlet:
     context-path: /
 
-
-
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/lingua_hub?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh&useUnicode=true&characterEncoding=UTF-8
+
+    url: jdbc:mysql://localhost:3306/lingua_hub?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=Asia/Ho_Chi_Minh
+
     username: root
     password: danggxhd123
-
 
   jpa:
     hibernate:

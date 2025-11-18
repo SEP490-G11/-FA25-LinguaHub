@@ -1,8 +1,3 @@
-// ==========================================================
-// FULL FILE — PLAN VIEW (Available / Selected / Booked)
-// TYPE-SAFE — NO ANY
-// ==========================================================
-
 import { useState, useEffect } from "react";
 import api from "@/config/axiosConfig";
 import {
@@ -10,11 +5,16 @@ import {
   ChevronRight,
   Calendar,
   Package,
-  CheckCircle,
-  XCircle,
-  Award,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+} from "@/components/ui/dialog";
 
 export interface PackageItem {
   packageId: number;
@@ -25,6 +25,10 @@ export interface PackageItem {
   active: boolean;
   numberOfLessons: number;
   discountPercent: number;
+  requirement?: string | null;
+  objectives?: string | null;
+  minBookingPricePerHour: number;
+  lessonContent: { slot_number: number; content: string }[];
 }
 
 export interface BookingPlan {
@@ -38,7 +42,6 @@ export interface BookingPlan {
   price_per_hours: number;
   is_open: boolean;
   is_active: boolean;
-  status?: "Locked" | "Open";
 }
 
 export interface SelectedSlot {
@@ -55,178 +58,326 @@ interface CalendarSlotsProps {
   selectedSlots: SelectedSlot[];
   onSlotsChange: React.Dispatch<React.SetStateAction<SelectedSlot[]>>;
   packages: PackageItem[];
+  selectedPackage: PackageItem | null;
+  onSelectPackage: (p: PackageItem | null) => void;
+  mySlotsEndpoint?: string;
+  myInfoEndpoint?: string;
 }
 
-const formatDateFixed = (date: Date) => {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
+const formatDateFixed = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+const getPlanHour = (val: string) => parseInt(val.substring(0, 2), 10);
+
+const getMonday = (d: Date) => {
+  const day = d.getDay();
+  const diff = d.getDate() - (day === 0 ? 6 : day - 1);
+  return new Date(d.getFullYear(), d.getMonth(), diff);
 };
 
-const getPlanHour = (val: string): number => {
-  return parseInt(val.substring(0, 2), 10);
-};
+const formatVND = (price: number) => price.toLocaleString('vi-VN') + ' ₫';
 
 const CalendarSlots = ({
                          tutorId,
                          selectedSlots,
                          onSlotsChange,
                          packages,
+                         selectedPackage,
+                         onSelectPackage,
                        }: CalendarSlotsProps) => {
-  const [currentWeekStart, setCurrentWeekStart] = useState(() => {
-    const now = new Date();
-    const local = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const day = local.getDay();
-    const diff = local.getDate() - (day === 0 ? 6 : day - 1);
-    return new Date(local.getFullYear(), local.getMonth(), diff);
-  });
+  // ===== Packages =====
+  const activePackages = packages.filter((p) => p.active === true);
+  const ITEMS_PER_PAGE = 3;
+  const totalPages = Math.max(1, Math.ceil(activePackages.length / ITEMS_PER_PAGE));
+  const [page, setPage] = useState(0);
+  const pagePackages = activePackages.slice(page * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE + ITEMS_PER_PAGE);
 
-  const [planByDate, setPlanByDate] = useState<PlanByDate>({});
+  // ===== Calendar range (4 weeks from current Monday) =====
+  const today = new Date();
+  const firstAllowedWeek = getMonday(today);
+  const fourthAllowedWeek = new Date(firstAllowedWeek);
+  fourthAllowedWeek.setDate(fourthAllowedWeek.getDate() + 21);
+
+  const [currentWeekStart, setCurrentWeekStart] = useState(firstAllowedWeek);
+  const canGoPrev = currentWeekStart.getTime() !== firstAllowedWeek.getTime();
+  const canGoNext = currentWeekStart.getTime() !== fourthAllowedWeek.getTime();
 
   const weekdayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-  const hours = Array.from({ length: 11 }).map((_, i) => 6 + i); // 6 → 16
+  const hours = Array.from({ length: 11 }).map((_, i) => 6 + i);
+  const weekDates = Array.from({ length: 7 }).map((_, i) => {
+    const src = currentWeekStart;
+    return new Date(src.getFullYear(), src.getMonth(), src.getDate() + i);
+  });
 
-  const getWeekDates = () =>
-      Array.from({ length: 7 }).map((_, i) => {
-        const src = currentWeekStart;
-        return new Date(src.getFullYear(), src.getMonth(), src.getDate() + i);
-      });
+  // ===== Data states =====
+  const [planByDate, setPlanByDate] = useState<PlanByDate>({});
+  const [userId, setUserId] = useState<number | null>(null);
 
-  const weekDates = getWeekDates();
+  // Slots booked by me (key -> true)
+  const [bookedByMeMap, setBookedByMeMap] = useState<Record<string, boolean>>({});
+  // Slots booked by others (key -> true). Fill from backend if available.
+  const [bookedByOthersMap, setBookedByOthersMap] = useState<Record<string, boolean>>({});
 
-  // Load Plans
+  // ===== Modal state for package detail =====
+  const [selectedDetailPackage, setSelectedDetailPackage] = useState<PackageItem | null>(null);
+  const [openDetail, setOpenDetail] = useState(false);
+
+  // ===== Fetch current user info =====
   useEffect(() => {
-    const loadPlans = async () => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await api.get("/users/myInfo");
+        if (!mounted) return;
+        setUserId(res?.data?.result?.userID ?? null);
+      } catch (err) {
+        console.error("Error fetching user info:", err);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // ===== Fetch my booked slots, then map only those with matching userId =====
+  useEffect(() => {
+    if (!userId) return;
+    let mounted = true;
+
+    (async () => {
+      try {
+        const res = await api.get("/booking-slots/my-slots");
+        const slots: { startTime: string; bookingPlanID: number; userID: number }[] = res?.data?.result || [];
+
+        const mine: Record<string, boolean> = {};
+        const others: Record<string, boolean> = {};
+
+        slots.forEach((s) => {
+          const date = s.startTime.substring(0, 10); // "YYYY-MM-DD"
+          const hour = s.startTime.substring(11, 13); // "HH"
+          const key = `${date}T${hour}:00_plan_${s.bookingPlanID}`;
+
+          if (s?.userID === userId) {
+            mine[key] = true;
+          } else {
+            others[key] = true;
+          }
+        });
+
+        if (!mounted) return;
+        setBookedByMeMap(mine);
+        setBookedByOthersMap(others);
+      } catch (err) {
+        console.error("Error fetching booked slots:", err);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [userId]);
+
+  // ===== Fetch plans of tutor and align to current week =====
+  useEffect(() => {
+    let mounted = true;
+
+    (async () => {
       const planMap: PlanByDate = {};
+      weekDates.forEach((d) => (planMap[formatDateFixed(d)] = []));
 
-      for (const date of weekDates) {
-        const dateStr = formatDateFixed(date);
+      try {
+        const res = await api.get(`/tutor/${tutorId}/booking-plan`);
+        const rawPlans: BookingPlan[] = res?.data?.plans || [];
 
-        try {
-          const planRes = await api.get(
-              `/booking-plan/tutor/${tutorId}?date=${dateStr}`
-          );
+        const dayMap: Record<string, number> = {
+          T2: 0,
+          T3: 1,
+          T4: 2,
+          T5: 3,
+          T6: 4,
+          T7: 5,
+          CN: 6,
+        };
 
-          const rawPlans: BookingPlan[] = planRes.data.plans || [];
+        rawPlans.forEach((plan) => {
+          if (!plan.is_open || !plan.is_active) return;
+          const idx = dayMap[plan.title as keyof typeof dayMap];
+          if (idx === undefined) return;
 
-          planMap[dateStr] = rawPlans.filter(
-              (p) => p.is_open === true && p.is_active === true
-          );
-        } catch  {
-          planMap[dateStr] = [];
-        }
+          const date = formatDateFixed(weekDates[idx]);
+          plan.date = date;
+          planMap[date].push(plan);
+        });
+      } catch (err) {
+        console.error("Error fetching booking plans:", err);
       }
 
+      if (!mounted) return;
       setPlanByDate(planMap);
-    };
+    })();
 
-    loadPlans();
+    return () => {
+      mounted = false;
+    };
   }, [currentWeekStart, tutorId]);
+
+  // ===== Business rules =====
+  const isSlotLimitReached = !!selectedPackage && selectedSlots.length >= selectedPackage.maxSlot;
 
   const getStatus = (
       plan: BookingPlan,
       hour: number
-  ): "available" | "selected" | "booked" | null => {
+  ): "Available" | "Selected" | "Booked" | "Your Slot" | null => {
     const sH = getPlanHour(plan.start_hours);
     const eH = getPlanHour(plan.end_hours);
-
     if (!(hour >= sH && hour < eH)) return null;
 
-    if (plan.status === "Locked") return "booked";
+    const slotKey = `${plan.date}T${String(hour).padStart(2, "0")}:00_plan_${plan.booking_planid}`;
 
-    const exist = selectedSlots.some(
-        (s) => s.date === plan.date && s.time === `${hour}:00`
+    if (bookedByMeMap[slotKey]) return "Your Slot";
+    if (bookedByOthersMap[slotKey]) return "Booked"; // "Locked" by others
+
+    const exists = selectedSlots.some(
+        (s) => s.bookingPlanId === plan.booking_planid && s.time === `${hour}:00` && s.date === plan.date
     );
-    if (exist) return "selected";
 
-    return "available";
+    if (exists) return "Selected";
+    if (isSlotLimitReached) return "Booked";
+
+    return "Available";
   };
 
+  // ===== Handle open detail modal =====
+  const handleOpenDetail = (pkg: PackageItem) => {
+    setSelectedDetailPackage(pkg);
+    setOpenDetail(true);
+  };
+
+  // ===== Render =====
   return (
-      <div className="bg-white rounded-lg shadow-md p-6">
-        {/* PACKAGE LIST */}
-        <div className="mb-10">
-          <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
-            <Package className="w-5 h-5 text-blue-500" /> Tutor Packages
-          </h2>
+      <div className="bg-blue-50/50 p-6 rounded-xl shadow-md border border-blue-100">
+        {/* PACKAGE SELECTOR */}
+        <h2 className="text-xl font-bold mb-5 flex items-center gap-2 text-blue-900">
+          <Package className="w-5 h-5 text-blue-600" /> Select a Learning Package
+        </h2>
 
-          {packages.length === 0 ? (
-              <p className="text-gray-500 italic">No available packages</p>
-          ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {packages.map((pkg) => (
-                    <div
-                        key={pkg.packageId}
-                        className="border rounded-xl p-4 bg-blue-50 flex justify-between"
-                    >
-                      <div>
-                        <h3 className="font-semibold">{pkg.name}</h3>
-                        <p className="text-sm text-gray-600">{pkg.description}</p>
-                        <p className="text-sm mt-3">
-                          Max Sessions: <b>{pkg.maxSlot}</b>
+        {activePackages.length === 0 ? (
+            <p className="text-gray-500 italic">No active packages available</p>
+        ) : (
+            <div className="relative w-full">
+              <button
+                  disabled={page === 0}
+                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                  className="absolute -left-6 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white shadow hover:bg-gray-100 disabled:opacity-40"
+              >
+                <ChevronLeft />
+              </button>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {pagePackages.map((pkg) => {
+                  const active = selectedPackage?.packageId === pkg.packageId;
+                  return (
+                      <div
+                          key={pkg.packageId}
+                          className={`p-6 rounded-2xl border shadow-md transition ${
+                              active
+                                  ? "border-blue-600 bg-blue-100"
+                                  : "border-gray-200 bg-white hover:bg-blue-50"
+                          }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Sparkles className="w-4 h-4 text-yellow-500" />
+                            <h3 className="font-bold">{pkg.name}</h3>
+                          </div>
+
+                          <Button
+                              className="bg-blue-600 text-white hover:bg-blue-700"
+                              size="sm"
+                              onClick={() => handleOpenDetail(pkg)}
+                          >
+                            Detail
+                          </Button>
+                        </div>
+
+                        <p className="text-sm text-gray-600 mt-2 mb-4">
+                          {pkg.requirement || "No requirement"}
                         </p>
-                      </div>
-                      <div>
-                        {pkg.active ? (
-                            <CheckCircle className="text-green-600" />
-                        ) : (
-                            <XCircle className="text-red-500" />
-                        )}
-                      </div>
-                    </div>
-                ))}
-              </div>
-          )}
 
-          <div className="flex items-center gap-2 mt-6 pt-4 border-t text-gray-700 text-sm">
-            <Award className="w-5 h-5 text-yellow-500" />
-            Prices reflect tutor-defined booking plans.
-          </div>
-        </div>
+                        <div className="space-y-2 text-sm text-gray-700">
+                          <p>
+                            <b>Objectives:</b> {pkg.objectives || "No objectives provided"}
+                          </p>
+                          <p>
+                            <b>Max Sessions:</b> {pkg.maxSlot}
+                          </p>
+                        </div>
+
+                        <Button
+                            className="w-full mt-4"
+                            onClick={() => onSelectPackage(active ? null : pkg)}
+                        >
+                          {active ? "Unselect" : "Select"}
+                        </Button>
+                      </div>
+                  );
+                })}
+              </div>
+
+              <button
+                  disabled={page >= totalPages - 1}
+                  onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                  className="absolute -right-6 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white shadow hover:bg-gray-100 disabled:opacity-40"
+              >
+                <ChevronRight />
+              </button>
+            </div>
+        )}
 
         {/* WEEK NAV */}
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-between items-center my-8 px-1">
           <Button
               variant="outline"
+              disabled={!canGoPrev}
               onClick={() => {
                 const d = new Date(currentWeekStart);
                 d.setDate(d.getDate() - 7);
                 setCurrentWeekStart(d);
               }}
           >
-            <ChevronLeft className="w-4 h-4" /> Previous Week
+            <ChevronLeft /> Previous
           </Button>
 
-          <div className="font-semibold text-lg">
+          <div className="text-lg font-semibold text-blue-900">
             Week of {formatDateFixed(currentWeekStart)}
           </div>
 
           <Button
               variant="outline"
+              disabled={!canGoNext}
               onClick={() => {
                 const d = new Date(currentWeekStart);
                 d.setDate(d.getDate() + 7);
                 setCurrentWeekStart(d);
               }}
           >
-            Next Week <ChevronRight className="w-4 h-4" />
+            Next <ChevronRight />
           </Button>
         </div>
 
-        {/* CALENDAR */}
-        <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-          <Calendar className="text-blue-600" /> Select Available Plans
+        <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-blue-900">
+          <Calendar className="text-blue-600" /> Select Time Slots
         </h2>
 
-        <div className="overflow-x-auto">
+        {/* TABLE */}
+        <div className="overflow-x-auto rounded-lg border border-blue-200 bg-white shadow">
           <table className="w-full border-collapse">
             <thead>
-            <tr>
-              <th className="border p-3 bg-gray-50">Hour</th>
+            <tr className="bg-blue-100 text-blue-900">
+              <th className="border p-3">Hour</th>
               {weekDates.map((d, i) => (
-                  <th key={i} className="border p-3 bg-gray-50 text-center">
-                    {weekdayLabels[i]}
+                  <th key={i} className="border p-3 text-center">
+                    <div className="font-semibold">{weekdayLabels[i]}</div>
                     <div className="text-xs">{formatDateFixed(d)}</div>
                   </th>
               ))}
@@ -236,69 +387,40 @@ const CalendarSlots = ({
             <tbody>
             {hours.map((hour) => (
                 <tr key={hour}>
-                  <td className="border p-2 bg-gray-50 font-medium">
-                    {hour}:00
-                  </td>
+                  <td className="border p-2 bg-blue-50 font-medium">{hour}:00</td>
 
                   {weekDates.map((date, col) => {
                     const dateStr = formatDateFixed(date);
                     const plans = planByDate[dateStr] || [];
 
                     const now = new Date();
-                    const today = new Date(
+                    const todayDate = new Date(
                         now.getFullYear(),
                         now.getMonth(),
                         now.getDate()
                     );
-
-                    const day = new Date(
+                    const thisDay = new Date(
                         date.getFullYear(),
                         date.getMonth(),
                         date.getDate()
                     );
 
-                    if (day < today)
+                    if (
+                        thisDay < todayDate ||
+                        (thisDay.getTime() === todayDate.getTime() &&
+                            hour <= now.getHours())
+                    ) {
                       return (
                           <td
                               key={col}
-                              className="border p-2 text-center text-gray-300"
+                              className="border p-2 text-center text-gray-300 bg-gray-50"
                           >
                             —
                           </td>
                       );
-
-                    const isPastHour =
-                        day.getTime() === today.getTime() &&
-                        hour <= now.getHours();
-
-                    if (isPastHour)
-                      return (
-                          <td
-                              key={col}
-                              className="border p-2 text-center text-gray-300"
-                          >
-                            —
-                          </td>
-                      );
-
-                    if (plans.length === 0)
-                      return (
-                          <td
-                              key={col}
-                              className="border p-2 text-center text-gray-300"
-                          >
-                            —
-                          </td>
-                      );
-
-                    let inside = false;
-                    for (const p of plans) {
-                      const sH = getPlanHour(p.start_hours);
-                      const eH = getPlanHour(p.end_hours);
-                      if (hour >= sH && hour < eH) inside = true;
                     }
 
-                    if (!inside)
+                    if (plans.length === 0) {
                       return (
                           <td
                               key={col}
@@ -307,66 +429,67 @@ const CalendarSlots = ({
                             —
                           </td>
                       );
+                    }
 
                     return (
                         <td key={col} className="border p-2 text-center">
-                          <div className="flex flex-col gap-1">
-                            {plans.map((p) => {
-                              const sH = getPlanHour(p.start_hours);
-                              const eH = getPlanHour(p.end_hours);
-                              if (!(hour >= sH && hour < eH)) return null;
+                          {plans.map((p) => {
+                            const sH = getPlanHour(p.start_hours);
+                            const eH = getPlanHour(p.end_hours);
+                            if (!(hour >= sH && hour < eH)) return null;
 
-                              const status = getStatus(p, hour);
+                            const status = getStatus(p, hour);
 
-                              const styleMap: Record<string, string> = {
-                                available:
-                                    "bg-green-100 border border-green-500 text-green-700 hover:bg-green-200",
-                                selected:
-                                    "bg-blue-100 border border-blue-500 text-blue-700 hover:bg-blue-200",
-                                booked:
-                                    "bg-red-100 border border-red-500 text-red-600 cursor-not-allowed",
-                              };
+                            const styleMap: Record<string, string> = {
+                              Available:
+                                  "bg-green-500/20 text-green-900 border-green-400",
+                              Selected:
+                                  "bg-blue-500/30 text-blue-900 border-blue-500",
+                              Booked:
+                                  "bg-red-400/20 text-red-700 border-red-300 cursor-not-allowed",
+                              "Your Slot":
+                                  "bg-yellow-500/30 text-yellow-900 border-yellow-500 cursor-not-allowed",
+                            };
 
-                              return (
-                                  <button
-                                      key={p.booking_planid}
-                                      className={`w-full h-10 rounded-lg text-sm font-semibold ${styleMap[status!]}`}
-                                      disabled={status === "booked"}
-                                      onClick={() => {
-                                        if (status === "booked") return;
+                            return (
+                                <button
+                                    key={p.booking_planid}
+                                    disabled={status === "Booked" || status === "Your Slot"}
+                                    onClick={() => {
+                                      if (status === "Booked" || status === "Your Slot")
+                                        return;
 
-                                        onSlotsChange(
-                                            (prev: SelectedSlot[]): SelectedSlot[] => {
-                                              if (status === "selected") {
-                                                return prev.filter(
-                                                    (x) =>
-                                                        !(
-                                                            x.date === p.date &&
-                                                            x.time === `${hour}:00`
-                                                        )
-                                                );
-                                              }
+                                      onSlotsChange((prev) => {
+                                        if (status === "Selected") {
+                                          return prev.filter(
+                                              (x) =>
+                                                  !(
+                                                      x.bookingPlanId === p.booking_planid &&
+                                                      x.time === `${hour}:00` &&
+                                                      x.date === p.date
+                                                  )
+                                          );
+                                        }
 
-                                              return [
-                                                ...prev,
-                                                {
-                                                  date: p.date,
-                                                  time: `${hour}:00`,
-                                                  day: weekdayLabels[col],
-                                                  bookingPlanId: p.booking_planid,
-                                                },
-                                              ];
-                                            }
-                                        );
-                                      }}
-                                  >
-                                    {status === "available" && "Available"}
-                                    {status === "selected" && "Selected"}
-                                    {status === "booked" && "Booked"}
-                                  </button>
-                              );
-                            })}
-                          </div>
+                                        if (isSlotLimitReached) return prev;
+
+                                        return [
+                                          ...prev,
+                                          {
+                                            date: p.date,
+                                            time: `${hour}:00`,
+                                            day: weekdayLabels[col],
+                                            bookingPlanId: p.booking_planid,
+                                          },
+                                        ];
+                                      });
+                                    }}
+                                    className={`w-full h-10 rounded-lg text-sm border transition ${styleMap[status!]}`}
+                                >
+                                  {status}
+                                </button>
+                            );
+                          })}
                         </td>
                     );
                   })}
@@ -375,6 +498,67 @@ const CalendarSlots = ({
             </tbody>
           </table>
         </div>
+
+        {selectedPackage && (
+            <div className="mt-6 p-4 bg-blue-100 border border-blue-300 rounded-xl text-sm text-blue-900 shadow-sm">
+              <b>{selectedPackage.name}</b> — Selected{" "}
+              <b>{selectedSlots.length}</b>/<b>{selectedPackage.maxSlot}</b> slots
+            </div>
+        )}
+
+        {/* Package Detail Modal */}
+        <Dialog open={openDetail} onOpenChange={setOpenDetail}>
+          <DialogContent className="sm:max-w-[600px] bg-white rounded-xl shadow-lg border border-blue-200 p-6">
+            <DialogHeader className="relative">
+              <DialogTitle className="text-2xl font-bold text-blue-900 flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-yellow-500" />
+                {selectedDetailPackage?.name}
+              </DialogTitle>
+              <DialogClose className="absolute right-0 top-0 text-gray-500 hover:text-gray-700">
+                {/*<X className="w-6 h-6" />*/}
+              </DialogClose>
+            </DialogHeader>
+            <div className="mt-4 space-y-4 text-gray-700">
+              <p className="text-sm">
+                <b>Description:</b> {selectedDetailPackage?.description || "No description provided"}
+              </p>
+              <p className="text-sm">
+                <b>Requirement:</b> {selectedDetailPackage?.requirement || "No requirement"}
+              </p>
+              <p className="text-sm">
+                <b>Objectives:</b> {selectedDetailPackage?.objectives || "No objectives provided"}
+              </p>
+              <p className="text-sm">
+                <b>Number of Lessons:</b> {selectedDetailPackage?.numberOfLessons}
+              </p>
+              <p className="text-sm">
+                <b>Max Slots:</b> {selectedDetailPackage?.maxSlot}
+              </p>
+              {selectedDetailPackage?.discountPercent !== 0 && (
+                  <p className="text-sm">
+                    <b>Discount Percent:</b> {selectedDetailPackage?.discountPercent}%
+                  </p>
+              )}
+              <p className="text-sm">
+                <b>Min Booking Price per Hour:</b> {formatVND(selectedDetailPackage?.minBookingPricePerHour || 0)}
+              </p>
+              <div className="text-sm">
+                <b>Lesson Content:</b>
+                {selectedDetailPackage?.lessonContent?.length ? (
+                    <ul className="list-disc pl-5 mt-2 space-y-1">
+                      {selectedDetailPackage.lessonContent.map((lesson) => (
+                          <li key={lesson.slot_number}>
+                            Slot {lesson.slot_number}: {lesson.content}
+                          </li>
+                      ))}
+                    </ul>
+                ) : (
+                    <p className="text-gray-500 italic">No lesson content available</p>
+                )}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
   );
 };

@@ -221,7 +221,12 @@ const Header = () => {
                                 </DropdownMenuContent>
                             )}
                         </DropdownMenu>
-
+                        {/* ROLE BADGE */}
+                        {isAuthenticated && user?.role === "Tutor" && (
+                            <div className="px-3 py-1 text-sm font-semibold bg-purple-100 text-purple-700 rounded-full">
+                                Tutor
+                            </div>
+                        )}
                         {/* Auth menu */}
                         {!isAuthenticated ? (
                             <>
@@ -233,6 +238,7 @@ const Header = () => {
                                 </Button>
                             </>
                         ) : (
+
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button

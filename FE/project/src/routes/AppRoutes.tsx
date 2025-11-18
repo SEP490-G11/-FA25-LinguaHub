@@ -22,7 +22,7 @@ import LanguageCourses from '@/pages/LanguageCourses/LanguageCourses.tsx';
 import ForgotPassword from '@/pages/auth/forgot-password/forgot-password.tsx';
 import ResetPassword from '@/pages/auth/reset-password/reset-password.tsx';
 import VerifyEmail from '@/pages/auth/verify-email/veryfy-email.tsx';
-import PaymentHistory from "@/pages/PaymentHistory";
+import PaymentHistory from "@/pages/PaymentHistory/payment-history.tsx";
 import MyEnrollments from "@/pages/MyEnrollments/my-enrollments.tsx";
 import Profile from '@/pages/Profile/profile.tsx';
 import ChangePassword from '@/pages/ChangePassword/changePassword.tsx';

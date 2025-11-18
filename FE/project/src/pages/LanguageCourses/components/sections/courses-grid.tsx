@@ -13,15 +13,14 @@ import { useState, useEffect } from "react";
 interface CoursesGridProps {
     courses: Course[];
     loading?: boolean;
-
 }
 
 const CoursesGrid = ({ courses, loading }: CoursesGridProps) => {
     const navigate = useNavigate();
     const { toast } = useToast();
-    /**  Store wishlist state */
-    const [wishlistMap, setWishlistMap] = useState<Record<number, boolean>>({});
 
+    /** Wishlist local state */
+    const [wishlistMap, setWishlistMap] = useState<Record<number, boolean>>({});
 
     useEffect(() => {
         setWishlistMap(
@@ -31,7 +30,7 @@ const CoursesGrid = ({ courses, loading }: CoursesGridProps) => {
         );
     }, [courses]);
 
-    /**  Toggle wishlist */
+    /** Toggle wishlist */
     const handleToggleWishlist = async (courseId: number) => {
         const token =
             localStorage.getItem("access_token") ||
@@ -90,12 +89,15 @@ const CoursesGrid = ({ courses, loading }: CoursesGridProps) => {
             </div>
         );
 
-    if (courses.length === 0)
+    /** 🟦 REMOVE purchased courses */
+    const visibleCourses = courses.filter((c) => !c.isPurchased);
+
+    if (visibleCourses.length === 0)
         return (
             <section className="py-16 text-center">
-                <h2 className="text-xl font-semibold">No courses found</h2>
+                <h2 className="text-xl font-semibold">No available courses</h2>
                 <p className="text-muted-foreground mt-2">
-                    Try adjusting search or filters.
+                    You have already purchased all courses.
                 </p>
             </section>
         );
@@ -111,12 +113,12 @@ const CoursesGrid = ({ courses, loading }: CoursesGridProps) => {
                 animate="animate"
                 variants={staggerContainer}
             >
-                {courses.map((course) => {
+                {visibleCourses.map((course) => {
                     const isWishlisted = wishlistMap[course.id] ?? false;
 
                     return (
                         <motion.div key={course.id} variants={fadeInUp}>
-                            <Link to={`/course/${course.id}`} className="block h-full">
+                            <Link to={`/courses/${course.id}`} className="block h-full">
                                 <Card className="overflow-hidden shadow-sm transition-all flex flex-col h-full rounded-xl border bg-white hover:shadow-lg">
 
                                     {/* Thumbnail */}
@@ -137,30 +139,24 @@ const CoursesGrid = ({ courses, loading }: CoursesGridProps) => {
                                                 {course.level}
                                             </Badge>
                                         </div>
+
+                                        {/* Wishlist icon */}
                                         <button
-                                            className={`absolute top-3 right-3 ${
-                                                course.isPurchased ? "cursor-not-allowed opacity-40 pointer-events-none" : ""
-                                            }`}
+                                            className="absolute top-3 right-3"
                                             onClick={(e) => {
                                                 e.preventDefault();
                                                 e.stopPropagation();
-
-                                                if (!course.isPurchased) {
-                                                    handleToggleWishlist(course.id);
-                                                }
+                                                handleToggleWishlist(course.id);
                                             }}
                                         >
                                             <Heart
                                                 className={`w-7 h-7 transition ${
-                                                    course.isPurchased
-                                                        ? "text-gray-400 opacity-40"
-                                                        : isWishlisted
-                                                            ? "fill-red-500 text-red-500"
-                                                            : "text-white hover:text-red-500"
+                                                    isWishlisted
+                                                        ? "fill-red-500 text-red-500"
+                                                        : "text-white hover:text-red-500"
                                                 }`}
                                             />
                                         </button>
-
                                     </div>
 
                                     {/* Content */}
@@ -172,11 +168,11 @@ const CoursesGrid = ({ courses, loading }: CoursesGridProps) => {
                                                 {course.title}
                                             </h3>
                                             <p className="text-sm text-muted-foreground">
-                                            By {course.tutorName}
+                                                By {course.tutorName}
                                             </p>
                                         </div>
 
-                                        {/* Short desc */}
+                                        {/* Short description */}
                                         <p className="text-sm text-muted-foreground line-clamp-2 min-h-[34px] mb-2">
                                             {course.shortDescription || ""}
                                         </p>
@@ -220,18 +216,14 @@ const CoursesGrid = ({ courses, loading }: CoursesGridProps) => {
                                             </div>
 
                                             <Button
-                                                className={`min-w-[100px] ${
-                                                    course.isPurchased
-                                                        ? "bg-green-600 hover:bg-green-700 text-white"
-                                                        : ""
-                                                }`}
+                                                className="min-w-[100px]"
                                                 onClick={(e) => {
                                                     e.preventDefault();
                                                     e.stopPropagation();
-                                                    navigate(`/course/${course.id}`);
+                                                    navigate(`/courses/${course.id}`);
                                                 }}
                                             >
-                                                {course.isPurchased ? "Continue" : "Join"}
+                                                Join
                                             </Button>
                                         </div>
 

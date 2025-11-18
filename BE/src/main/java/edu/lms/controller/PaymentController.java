@@ -8,19 +8,16 @@ import edu.lms.exception.ErrorCode;
 import edu.lms.repository.PaymentRepository;
 import edu.lms.service.PaymentService;
 import edu.lms.service.PayOSService;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
@@ -51,6 +48,18 @@ public class PaymentController {
     }
 
     // ======================================================
+    // GET PAYMENTS CHO USER ĐANG LOGIN (/me)
+    // ======================================================
+    @GetMapping("/me")
+    public ResponseEntity<List<PaymentResponse>> getMyPayments(
+            @AuthenticationPrincipal(expression = "claims['userId']") Long userId,
+            @AuthenticationPrincipal(expression = "claims['role']") String role
+    ) {
+        List<PaymentResponse> payments = paymentService.getPaymentsForMe(userId, role);
+        return ResponseEntity.ok(payments);
+    }
+
+    // ======================================================
     // ADMIN - GET ALL PAYMENTS
     // ======================================================
     @GetMapping("/admin")
@@ -60,7 +69,7 @@ public class PaymentController {
     }
 
     // ======================================================
-    // TUTOR - GET PAYMENTS
+    // TUTOR - GET PAYMENTS BY TUTOR ID (cho admin / thống kê)
     // ======================================================
     @GetMapping("/tutor/{tutorId}")
     public ResponseEntity<List<PaymentResponse>> getPaymentsByTutor(@PathVariable Long tutorId) {
@@ -69,7 +78,7 @@ public class PaymentController {
     }
 
     // ======================================================
-    // USER - GET PAYMENTS
+    // USER - GET PAYMENTS BY USER ID (cho admin)
     // ======================================================
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<PaymentResponse>> getPaymentsByUser(@PathVariable Long userId) {
@@ -91,28 +100,15 @@ public class PaymentController {
     @GetMapping("/cancel")
     public void cancelPayment(
             @RequestParam("paymentId") Long paymentId,
-            @RequestParam("type") String type,
-            @RequestParam("targetId") Long targetId,
             HttpServletResponse response
     ) throws IOException {
 
-        String t = type.toUpperCase();
-        String redirectUrl;
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_NOT_FOUND));
 
-        switch (t) {
-            case "BOOKING" ->
-                    redirectUrl = "http://localhost:3000/tutor/" + targetId + "?canceled=true";
-
-            case "COURSE" ->
-                    redirectUrl = "http://localhost:3000/course/" + targetId + "?canceled=true";
-
-            default ->
-                    redirectUrl = "http://localhost:3000/";
-        }
-
-        response.sendRedirect(redirectUrl);
+        Long targetId = payment.getTargetId();
+        response.sendRedirect("http://localhost:3000/course/" + targetId);
     }
-
 
     // ======================================================
     // CALLBACK: SUCCESS (PayOS → Backend → FE)
@@ -120,26 +116,13 @@ public class PaymentController {
     @GetMapping("/success")
     public void successPayment(
             @RequestParam("paymentId") Long paymentId,
-            @RequestParam("type") String type,
-            @RequestParam("targetId") Long targetId,
             HttpServletResponse response
     ) throws IOException {
 
-        String t = type.toUpperCase();
-        String redirectUrl;
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_NOT_FOUND));
 
-        switch (t) {
-            case "BOOKING" ->
-                    redirectUrl = "http://localhost:3000/tutor/" + targetId + "?paid=true";
-
-            case "COURSE" ->
-                    redirectUrl = "http://localhost:3000/course/" + targetId + "?paid=true";
-
-            default ->
-                    redirectUrl = "http://localhost:3000/";
-        }
-
-        response.sendRedirect(redirectUrl);
+        Long targetId = payment.getTargetId();
+        response.sendRedirect("http://localhost:3000/course/" + targetId + "?paid=true");
     }
-
 }
