@@ -4,6 +4,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
+import { isValidUrl, getUrlErrorMessage, getYouTubeUrlErrorMessage, getResourceUrlErrorMessage } from '@/utils/url-validation';
 import {
   Dialog,
   DialogContent,
@@ -197,6 +199,12 @@ export default function EditCourseStructure({
   });
   const [lessonResources, setLessonResources] = useState<ResourceFormData[]>([]);
 
+  // Validation error states
+  const [videoUrlError, setVideoUrlError] = useState<string>('');
+  const [resourceUrlError, setResourceUrlError] = useState<string>('');
+  const [editVideoUrlError, setEditVideoUrlError] = useState<string>('');
+  const [editResourceUrlError, setEditResourceUrlError] = useState<string>('');
+
   // Edit resource state (for lesson editing)
   const [showEditResourceDialog, setShowEditResourceDialog] = useState(false);
   const [editResourceData, setEditResourceData] = useState<ResourceFormData>({
@@ -261,6 +269,8 @@ export default function EditCourseStructure({
 
   const createLesson = async () => {
     if (isCreatingLesson !== null && newLessonData && newLessonData.title.trim()) {
+      // No need to validate here - button is already disabled if invalid
+      
       setIsSaving(true);
       try {
         const lessonCount = course.section[isCreatingLesson].lessons?.length || 0;
@@ -452,20 +462,32 @@ export default function EditCourseStructure({
   // Open edit lesson dialog
   const openEditLesson = (sectionIndex: number, lessonIndex: number) => {
     const lesson = course.section[sectionIndex].lessons[lessonIndex];
+    const lessonType = lesson.lessonType as 'Video' | 'Reading';
+    const videoURL = lesson.videoURL || '';
+    
     setEditingLessonKey(`${sectionIndex}-${lessonIndex}`);
     setEditingLessonData({
       title: lesson.title,
       duration: lesson.duration,
-      lessonType: lesson.lessonType as 'Video' | 'Reading',
-      videoURL: lesson.videoURL || '',
+      lessonType: lessonType,
+      videoURL: videoURL,
       content: lesson.content || '',
     });
     setEditLessonResources(lesson.resources || []);
+    
+    // Validate video URL if lesson type is Video
+    if (lessonType === 'Video') {
+      setEditVideoUrlError(getYouTubeUrlErrorMessage(videoURL, true));
+    } else {
+      setEditVideoUrlError('');
+    }
   };
 
   // Save lesson
   const saveLesson = async () => {
     if (editingLessonKey && editingLessonData && editingLessonData.title.trim()) {
+      // No need to validate here - button is already disabled if invalid
+      
       setIsSaving(true);
       try {
         const [sectionIndex, lessonIndex] = editingLessonKey
@@ -504,6 +526,10 @@ export default function EditCourseStructure({
       resourceTitle: resource.resourceTitle,
       resourceURL: resource.resourceURL,
     });
+    
+    // Validate existing resource URL
+    const urlError = getResourceUrlErrorMessage(resource.resourceURL, true);
+    setEditResourceUrlError(urlError);
   };
 
   // Save resource
@@ -815,7 +841,11 @@ export default function EditCourseStructure({
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => setIsCreatingLesson(sectionIndex)}
+                        onClick={() => {
+                          setIsCreatingLesson(sectionIndex);
+                          // Set initial validation error for empty video URL (required for video lessons)
+                          setVideoUrlError('Video URL is required');
+                        }}
                         className="w-full gap-2"
                       >
                         <Plus className="w-4 h-4" />
@@ -872,7 +902,7 @@ export default function EditCourseStructure({
           }
         }}
       >
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Edit Section</DialogTitle>
           </DialogHeader>
@@ -943,7 +973,7 @@ export default function EditCourseStructure({
           }
         }}
       >
-        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Lesson</DialogTitle>
           </DialogHeader>
@@ -999,8 +1029,9 @@ export default function EditCourseStructure({
                         lessonType: value as 'Video' | 'Reading',
                       })
                     }
+                    disabled
                   >
-                    <SelectTrigger disabled={isSaving}>
+                    <SelectTrigger disabled>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -1008,6 +1039,9 @@ export default function EditCourseStructure({
                       <SelectItem value="Reading">Reading</SelectItem>
                     </SelectContent>
                   </Select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Lesson type cannot be changed after creation
+                  </p>
                 </div>
               </div>
 
@@ -1019,15 +1053,25 @@ export default function EditCourseStructure({
                   <Input
                     id="lesson-video"
                     value={editingLessonData.videoURL}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const url = e.target.value;
                       setEditingLessonData({
                         ...editingLessonData,
-                        videoURL: e.target.value,
-                      })
-                    }
+                        videoURL: url,
+                      });
+                      setEditVideoUrlError(getYouTubeUrlErrorMessage(url, true));
+                    }}
+                    onBlur={(e) => {
+                      // Re-validate on blur to ensure required check
+                      setEditVideoUrlError(getYouTubeUrlErrorMessage(e.target.value, true));
+                    }}
                     disabled={isSaving}
-                    placeholder="https://example.com/video.mp4"
+                    placeholder="https://www.youtube.com/watch?v=..."
+                    className={editVideoUrlError ? 'border-red-500' : ''}
                   />
+                  {editVideoUrlError && (
+                    <p className="text-sm text-red-600 mt-1">{editVideoUrlError}</p>
+                  )}
                 </div>
               )}
 
@@ -1036,17 +1080,16 @@ export default function EditCourseStructure({
                   <Label htmlFor="lesson-content" className="text-base">
                     Lesson Content
                   </Label>
-                  <Textarea
-                    id="lesson-content"
+                  <RichTextEditor
                     value={editingLessonData.content}
-                    onChange={(e) =>
+                    onChange={(value) =>
                       setEditingLessonData({
                         ...editingLessonData,
-                        content: e.target.value,
+                        content: value,
                       })
                     }
+                    placeholder="Enter your lesson content here. You can format text, add images, videos, and more..."
                     disabled={isSaving}
-                    rows={4}
                   />
                 </div>
               )}
@@ -1064,6 +1107,8 @@ export default function EditCourseStructure({
                     onClick={() => {
                       setEditResourceData({ resourceType: 'PDF', resourceTitle: '', resourceURL: '' });
                       setEditingResourceIndex(null);
+                      // Set initial validation error for empty URL
+                      setEditResourceUrlError('Resource URL is required');
                       setShowEditResourceDialog(true);
                     }}
                     className="gap-2"
@@ -1124,7 +1169,16 @@ export default function EditCourseStructure({
             >
               Cancel
             </Button>
-            <Button onClick={saveLesson} disabled={isSaving}>
+            <Button 
+              onClick={saveLesson} 
+              disabled={
+                isSaving || 
+                !editingLessonData?.title.trim() ||
+                (editingLessonData?.duration || 0) <= 0 ||
+                (editingLessonData?.lessonType === 'Video' && (!!editVideoUrlError || !editingLessonData?.videoURL?.trim())) ||
+                (editingLessonData?.lessonType === 'Reading' && !editingLessonData?.content?.trim())
+              }
+            >
               {isSaving ? 'Saving...' : 'Save'}
             </Button>
           </DialogFooter>
@@ -1133,7 +1187,7 @@ export default function EditCourseStructure({
 
       {/* Add/Edit Resource Dialog for Edit Lesson */}
       <Dialog open={showEditResourceDialog} onOpenChange={setShowEditResourceDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>
               {editingResourceIndex !== null ? 'Edit Resource' : 'Add Resource'}
@@ -1180,15 +1234,26 @@ export default function EditCourseStructure({
               <Input
                 id="edit-lesson-resource-url"
                 value={editResourceData.resourceURL}
-                onChange={(e) =>
+                onChange={(e) => {
+                  const newValue = e.target.value;
                   setEditResourceData({
                     ...editResourceData,
-                    resourceURL: e.target.value,
-                  })
-                }
+                    resourceURL: newValue,
+                  });
+                  // Validate resource URL
+                  setEditResourceUrlError(getResourceUrlErrorMessage(newValue, true));
+                }}
+                onBlur={(e) => {
+                  // Re-validate on blur
+                  setEditResourceUrlError(getResourceUrlErrorMessage(e.target.value, true));
+                }}
                 disabled={isSaving}
                 placeholder="https://example.com/resource"
+                className={editResourceUrlError ? 'border-red-500' : ''}
               />
+              {editResourceUrlError && (
+                <p className="text-sm text-red-600 mt-1">{editResourceUrlError}</p>
+              )}
             </div>
           </div>
           <DialogFooter>
@@ -1209,8 +1274,10 @@ export default function EditCourseStructure({
                   : addResourceToEditLesson
               }
               disabled={
+                isSaving ||
                 !editResourceData.resourceTitle.trim() ||
-                !editResourceData.resourceURL.trim()
+                !editResourceData.resourceURL.trim() ||
+                !!editResourceUrlError
               }
             >
               {editingResourceIndex !== null ? 'Update' : 'Add'}
@@ -1227,7 +1294,7 @@ export default function EditCourseStructure({
           }
         }}
       >
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>Edit Resource</DialogTitle>
           </DialogHeader>
@@ -1287,15 +1354,26 @@ export default function EditCourseStructure({
                 <Input
                   id="resource-url"
                   value={editingResourceData.resourceURL}
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    const newValue = e.target.value;
                     setEditingResourceData({
                       ...editingResourceData,
-                      resourceURL: e.target.value,
-                    })
-                  }
+                      resourceURL: newValue,
+                    });
+                    // Validate resource URL
+                    setEditResourceUrlError(getResourceUrlErrorMessage(newValue, true));
+                  }}
+                  onBlur={(e) => {
+                    // Re-validate on blur
+                    setEditResourceUrlError(getResourceUrlErrorMessage(e.target.value, true));
+                  }}
                   disabled={isSaving}
                   placeholder="https://example.com/resource"
+                  className={editResourceUrlError ? 'border-red-500' : ''}
                 />
+                {editResourceUrlError && (
+                  <p className="text-sm text-red-600 mt-1">{editResourceUrlError}</p>
+                )}
               </div>
             </div>
           )}
@@ -1311,7 +1389,15 @@ export default function EditCourseStructure({
             >
               Hủy
             </Button>
-            <Button onClick={saveResource} disabled={isSaving}>
+            <Button 
+              onClick={saveResource} 
+              disabled={
+                isSaving ||
+                !editingResourceData?.resourceTitle.trim() ||
+                !editingResourceData?.resourceURL.trim() ||
+                !!editResourceUrlError
+              }
+            >
               {isSaving ? 'Đang lưu...' : 'Lưu'}
             </Button>
           </DialogFooter>
@@ -1352,7 +1438,7 @@ export default function EditCourseStructure({
         open={isCreatingSection}
         onOpenChange={setIsCreatingSection}
       >
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Create New Section</DialogTitle>
           </DialogHeader>
@@ -1413,7 +1499,7 @@ export default function EditCourseStructure({
           if (!open) setIsCreatingLesson(null);
         }}
       >
-        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Create New Lesson</DialogTitle>
           </DialogHeader>
@@ -1484,15 +1570,26 @@ export default function EditCourseStructure({
                 <Input
                   id="new-lesson-video"
                   value={newLessonData.videoURL}
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    const url = e.target.value;
                     setNewLessonData({
                       ...newLessonData,
-                      videoURL: e.target.value,
-                    })
-                  }
+                      videoURL: url,
+                    });
+                    // Validate URL on change (required for video lessons)
+                    setVideoUrlError(getYouTubeUrlErrorMessage(url, true));
+                  }}
+                  onBlur={(e) => {
+                    // Re-validate on blur to ensure required check
+                    setVideoUrlError(getYouTubeUrlErrorMessage(e.target.value, true));
+                  }}
                   disabled={isSaving}
-                  placeholder="https://example.com/video.mp4"
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  className={videoUrlError ? 'border-red-500' : ''}
                 />
+                {videoUrlError && (
+                  <p className="text-sm text-red-600 mt-1">{videoUrlError}</p>
+                )}
               </div>
             )}
             {newLessonData.lessonType === 'Reading' && (
@@ -1500,17 +1597,16 @@ export default function EditCourseStructure({
                 <Label htmlFor="new-lesson-content" className="text-base">
                   Lesson Content
                 </Label>
-                <Textarea
-                  id="new-lesson-content"
+                <RichTextEditor
                   value={newLessonData.content}
-                  onChange={(e) =>
+                  onChange={(value) =>
                     setNewLessonData({
                       ...newLessonData,
-                      content: e.target.value,
+                      content: value,
                     })
                   }
+                  placeholder="Enter your lesson content here. You can format text, add images, videos, and more..."
                   disabled={isSaving}
-                  rows={4}
                 />
               </div>
             )}
@@ -1525,7 +1621,11 @@ export default function EditCourseStructure({
                   type="button"
                   size="sm"
                   variant="outline"
-                  onClick={() => setShowNewResourceDialog(true)}
+                  onClick={() => {
+                    // Set initial validation errors for empty fields
+                    setResourceUrlError('Resource URL is required');
+                    setShowNewResourceDialog(true);
+                  }}
                   className="gap-2"
                 >
                   <Plus className="w-3 h-3" />
@@ -1572,7 +1672,16 @@ export default function EditCourseStructure({
             >
               Cancel
             </Button>
-            <Button onClick={createLesson} disabled={isSaving}>
+            <Button 
+              onClick={createLesson} 
+              disabled={
+                isSaving || 
+                !newLessonData.title.trim() ||
+                newLessonData.duration <= 0 ||
+                (newLessonData.lessonType === 'Video' && (!!videoUrlError || !newLessonData.videoURL?.trim())) ||
+                (newLessonData.lessonType === 'Reading' && !newLessonData.content?.trim())
+              }
+            >
               {isSaving ? 'Creating...' : 'Create'}
             </Button>
           </DialogFooter>
@@ -1581,7 +1690,7 @@ export default function EditCourseStructure({
 
       {/* Add Resource to Lesson Dialog (during lesson creation) */}
       <Dialog open={showNewResourceDialog} onOpenChange={setShowNewResourceDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>Add Resource</DialogTitle>
           </DialogHeader>
@@ -1626,15 +1735,26 @@ export default function EditCourseStructure({
               <Input
                 id="lesson-resource-url"
                 value={newResourceData.resourceURL}
-                onChange={(e) =>
+                onChange={(e) => {
+                  const newValue = e.target.value;
                   setNewResourceData({
                     ...newResourceData,
-                    resourceURL: e.target.value,
-                  })
-                }
+                    resourceURL: newValue,
+                  });
+                  // Validate resource URL
+                  setResourceUrlError(getResourceUrlErrorMessage(newValue, true));
+                }}
+                onBlur={(e) => {
+                  // Re-validate on blur
+                  setResourceUrlError(getResourceUrlErrorMessage(e.target.value, true));
+                }}
                 disabled={isSaving}
                 placeholder="https://example.com/resource"
+                className={resourceUrlError ? 'border-red-500' : ''}
               />
+              {resourceUrlError && (
+                <p className="text-sm text-red-600 mt-1">{resourceUrlError}</p>
+              )}
             </div>
           </div>
           <DialogFooter>
@@ -1648,8 +1768,10 @@ export default function EditCourseStructure({
             <Button
               onClick={addResourceToLesson}
               disabled={
+                isSaving ||
                 !newResourceData.resourceTitle.trim() ||
-                !newResourceData.resourceURL.trim()
+                !newResourceData.resourceURL.trim() ||
+                !!resourceUrlError
               }
             >
               Add
@@ -1664,7 +1786,7 @@ export default function EditCourseStructure({
           if (!open) setIsCreatingResource(null);
         }}
       >
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>Create New Resource</DialogTitle>
           </DialogHeader>

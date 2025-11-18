@@ -116,27 +116,27 @@ const EditCourse = () => {
       status: draftData.status,
       section: Array.isArray(draftData.section) 
         ? draftData.section.map((section: any) => ({
-            sectionID: section.id,
-            courseID: originalCourseId,
+            sectionID: section.sectionID,  // Backend returns sectionID (draft ID)
+            courseID: section.courseID || originalCourseId,
             title: section.title,
             description: section.description || '',
             orderIndex: section.orderIndex,
             lessons: Array.isArray(section.lessons)
               ? section.lessons.map((lesson: any) => ({
-                  lessonID: lesson.id,
+                  lessonID: lesson.lessonID,  // Backend returns lessonID (draft ID)
                   title: lesson.title,
                   duration: lesson.duration || 0,
                   lessonType: lesson.lessonType || 'Reading',
                   videoURL: lesson.videoURL || '',
                   content: lesson.content || '',
                   orderIndex: lesson.orderIndex,
-                  createdAt: new Date().toISOString(),
+                  createdAt: lesson.createdAt || new Date().toISOString(),
                   resources: Array.isArray(lesson.resources)
                     ? lesson.resources.map((resource: any) => ({
-                        resourceID: resource.id,
-                        resourceType: resource.type || 'ExternalLink',
-                        resourceTitle: resource.title,
-                        resourceURL: resource.url,
+                        resourceID: resource.resourceID,  // Backend returns resourceID (draft ID)
+                        resourceType: resource.resourceType || 'ExternalLink',
+                        resourceTitle: resource.resourceTitle,
+                        resourceURL: resource.resourceURL,
                         uploadedAt: new Date().toISOString(),
                         orderIndex: resource.orderIndex || 0,
                       }))
@@ -194,18 +194,12 @@ const EditCourse = () => {
         let courseData: CourseDetail;
         
         if (isDraftMode && currentDraftId) {
-          // DRAFT MODE: Fetch draft course data only
+          // DRAFT MODE: Always fetch fresh draft course data from API
+          // Don't use location.state cache as it may contain outdated data
           console.log('=== FETCHING DRAFT COURSE DATA ===', currentDraftId);
           
-          if (location.state?.draftData) {
-            // Use draft data from location state if available (for newly created drafts)
-            const draftData = location.state.draftData;
-            courseData = convertDraftToCourseDetail(draftData, parseInt(courseId));
-          } else {
-            // Fetch draft course data from API
-            const draftData = await getDraftCourseDetail(currentDraftId);
-            courseData = convertDraftToCourseDetail(draftData, parseInt(courseId));
-          }
+          const draftData = await getDraftCourseDetail(currentDraftId);
+          courseData = convertDraftToCourseDetail(draftData, parseInt(courseId));
           
           // Fetch draft objectives only
           try {
@@ -346,8 +340,8 @@ const EditCourse = () => {
       };
 
       if (isDraftMode && currentDraftId) {
-        // Update draft section
-        await updateDraftSection(currentDraftId, updateData);
+        // Update draft section - use sectionID which is actually sectionDraftID in draft mode
+        await updateDraftSection(sectionData.sectionID, updateData);
         
         // Update local state
         const newSections = [...course.section];
@@ -609,8 +603,8 @@ const EditCourse = () => {
 
     try {
       if (isDraftMode && currentDraftId) {
-        // Delete draft section
-        await deleteDraftSection(currentDraftId);
+        // Delete draft section - use sectionId which is actually sectionDraftID in draft mode
+        await deleteDraftSection(sectionId);
       } else {
         // Delete regular section
         await deleteSection(sectionId);
@@ -691,6 +685,12 @@ const EditCourse = () => {
       course.section[sectionIndex].lessons[lessonIndex].resources[
         resourceIndex
       ].resourceID;
+    
+    console.log('=== DELETING RESOURCE ===');
+    console.log('Resource to delete:', course.section[sectionIndex].lessons[lessonIndex].resources[resourceIndex]);
+    console.log('Resource ID:', resourceId);
+    console.log('All resources in lesson:', course.section[sectionIndex].lessons[lessonIndex].resources);
+    
     setIsSaving(true);
 
     try {
@@ -829,16 +829,25 @@ const EditCourse = () => {
 
   // ========== SUBMIT COURSE ==========
   const handleSubmitCourse = async () => {
-    if (!courseId) return;
+    if (!courseId || !course) return;
 
     setIsSaving(true);
     try {
       if (isDraftMode && currentDraftId) {
         // Submit draft course for approval
         await submitCourseDraft(currentDraftId);
+        
+        // Update course status to PENDING_REVIEW after successful submission
+        setCourse({
+          ...course,
+          status: 'PENDING_REVIEW'
+        });
       } else {
         // Submit regular course for approval
-        await submitCourseForApproval(parseInt(courseId));
+        const updatedCourse = await submitCourseForApproval(parseInt(courseId));
+        
+        // Update course with response from API (includes updated status)
+        setCourse(updatedCourse);
       }
       
       setShowSuccessModal(true);
@@ -989,12 +998,18 @@ const EditCourse = () => {
         resourceID: parseInt(result.resourceId),
       };
 
+      console.log('=== CREATED RESOURCE ===');
+      console.log('New resource ID from API:', result.resourceId);
+      console.log('Resource with ID:', resourceWithId);
+
       const newSections = [...course.section];
       newSections[sectionIndex].lessons[lessonIndex].resources = [
         ...newSections[sectionIndex].lessons[lessonIndex].resources,
         resourceWithId,
       ];
       setCourse({ ...course, section: newSections });
+
+      console.log('Updated course state:', newSections[sectionIndex].lessons[lessonIndex].resources);
 
       toast({
         title: 'Success',
@@ -1313,11 +1328,11 @@ const EditCourse = () => {
               </p>
             </div>
 
-            <div className="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-lg border border-green-200">
+            <div className="bg-gradient-to-r from-orange-50 to-orange-100 p-4 rounded-lg border border-orange-200">
               <p className="text-sm text-gray-600 mb-1">
                 📊 Status
               </p>
-              <p className="font-semibold text-green-600">
+              <p className="font-semibold text-orange-600">
                 {course.status}
               </p>
             </div>

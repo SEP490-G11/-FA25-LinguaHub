@@ -1,29 +1,35 @@
 import axiosInstance from '@/config/axiosConfig';
 
 // Interface for section data in draft course response
+// Note: Backend returns sectionID, lessonID, resourceID (not just "id")
 export interface DraftSection {
-  id: number;
+  sectionID: number;  // Backend returns sectionID (which is sectionDraftID)
+  courseID: number;
   title: string;
-  description: string;
+  description?: string;
   orderIndex: number;
   lessons?: DraftLesson[];
 }
 
 // Interface for lesson data in draft course response
 export interface DraftLesson {
-  id: number;
+  lessonID: number;  // Backend returns lessonID (which is lessonDraftID)
   title: string;
-  description: string;
+  duration: number;
+  lessonType: 'Video' | 'Reading';
+  videoURL?: string;
+  content?: string;
   orderIndex: number;
+  createdAt?: string | null;
   resources?: DraftResource[];
 }
 
 // Interface for resource data in draft course response
 export interface DraftResource {
-  id: number;
-  title: string;
-  type: string;
-  url: string;
+  resourceID: number;  // Backend returns resourceID (which is resourceDraftID)
+  resourceType: string;
+  resourceTitle: string;
+  resourceURL: string;
   orderIndex: number;
 }
 
@@ -73,9 +79,9 @@ export interface ApiResponse<T = any> {
   result?: T;
 }
 
-// Interface for objective data
+// Interface for objective data (draft mode)
 export interface ObjectiveItem {
-  objectiveID: number;
+  objectiveDraftID: number; // Changed from objectiveID to objectiveDraftID
   objectiveText: string;
   orderIndex: number;
 }
@@ -92,9 +98,9 @@ export interface UpdateObjectiveRequest {
   orderIndex: number;
 }
 
-// Interface for objective creation response
+// Interface for objective creation response (draft mode)
 export interface ObjectiveResponse {
-  objectiveID: number;
+  objectiveDraftID: number; // Changed from objectiveID to objectiveDraftID
   objectiveText: string;
   orderIndex: number;
 }
@@ -361,14 +367,14 @@ export const createDraftObjective = async (draftId: number, data: CreateObjectiv
  * Update an existing draft objective
  * PUT /tutor/courses/drafts/objectives/{objectiveDraftID}
  * 
- * @param objectiveId - The ID of the objective to update
+ * @param objectiveDraftID - The ID of the objective to update
  * @param data - The updated objective data
  * @returns Promise<void>
  */
-export const updateDraftObjective = async (objectiveId: number, data: UpdateObjectiveRequest): Promise<void> => {
+export const updateDraftObjective = async (objectiveDraftID: number, data: UpdateObjectiveRequest): Promise<void> => {
   try {
     const response = await axiosInstance.put<ApiResponse>(
-      `/tutor/courses/drafts/objectives/${objectiveId}`,
+      `/tutor/courses/drafts/objectives/${objectiveDraftID}`,
       data
     );
 
@@ -390,13 +396,13 @@ export const updateDraftObjective = async (objectiveId: number, data: UpdateObje
  * Delete a draft objective
  * DELETE /tutor/courses/drafts/objectives/{objectiveDraftID}
  * 
- * @param objectiveId - The ID of the objective to delete
+ * @param objectiveDraftID - The ID of the objective to delete
  * @returns Promise<void>
  */
-export const deleteDraftObjective = async (objectiveId: number): Promise<void> => {
+export const deleteDraftObjective = async (objectiveDraftID: number): Promise<void> => {
   try {
     const response = await axiosInstance.delete<ApiResponse>(
-      `/tutor/courses/drafts/objectives/${objectiveId}`
+      `/tutor/courses/drafts/objectives/${objectiveDraftID}`
     );
 
     // Validate response
@@ -483,14 +489,14 @@ export const createDraftSection = async (draftId: number, data: CreateSectionReq
  * Update an existing draft section
  * PUT /tutor/courses/drafts/{draftID}/sections
  * 
- * @param draftId - The ID of the draft course
+ * @param sectionDraftID - The ID of the draft course
  * @param data - The updated section data
  * @returns Promise<void>
  */
-export const updateDraftSection = async (draftId: number, data: UpdateSectionRequest): Promise<void> => {
+export const updateDraftSection = async (sectionDraftID: number, data: UpdateSectionRequest): Promise<void> => {
   try {
     const response = await axiosInstance.put<ApiResponse>(
-      `/tutor/courses/drafts/${draftId}/sections`,
+      `/tutor/courses/drafts/sections/${sectionDraftID}`,
       data
     );
 
@@ -512,13 +518,13 @@ export const updateDraftSection = async (draftId: number, data: UpdateSectionReq
  * Delete a draft section
  * DELETE /tutor/courses/drafts/{draftID}/sections
  * 
- * @param draftId - The ID of the draft course
+ * @param sectionDraftID - The ID of the draft course
  * @returns Promise<void>
  */
-export const deleteDraftSection = async (draftId: number): Promise<void> => {
+export const deleteDraftSection = async (sectionDraftID: number): Promise<void> => {
   try {
     const response = await axiosInstance.delete<ApiResponse>(
-      `/tutor/courses/drafts/${draftId}/sections`
+      `/tutor/courses/drafts/sections/${sectionDraftID}`
     );
 
     // Validate response
@@ -541,13 +547,13 @@ export const deleteDraftSection = async (draftId: number): Promise<void> => {
  * Get all lessons for a draft section
  * GET /tutor/courses/drafts/sections/{sectionDraftID}/lessons
  * 
- * @param sectionId - The ID of the draft section
+ * @param sectionDraftID - The ID of the draft section
  * @returns Promise<Lesson[]> - Array of lessons
  */
-export const getDraftLessons = async (sectionId: number): Promise<Lesson[]> => {
+export const getDraftLessons = async (sectionDraftID: number): Promise<Lesson[]> => {
   try {
     const response = await axiosInstance.get<ApiResponse<Lesson[]>>(
-      `/tutor/courses/drafts/sections/${sectionId}/lessons`
+      `/tutor/courses/drafts/sections/${sectionDraftID}/lessons`
     );
 
     // Validate response
@@ -570,14 +576,14 @@ export const getDraftLessons = async (sectionId: number): Promise<Lesson[]> => {
  * Create a new lesson for a draft section
  * POST /tutor/courses/drafts/sections/{sectionDraftID}/lessons
  * 
- * @param sectionId - The ID of the draft section
+ * @param sectionDraftID - The ID of the draft section
  * @param data - The lesson data to create
  * @returns Promise<LessonResponse> - The created lesson
  */
-export const createDraftLesson = async (sectionId: number, data: CreateLessonRequest): Promise<LessonResponse> => {
+export const createDraftLesson = async (sectionDraftID: number, data: CreateLessonRequest): Promise<LessonResponse> => {
   try {
     const response = await axiosInstance.post<ApiResponse<LessonResponse>>(
-      `/tutor/courses/drafts/sections/${sectionId}/lessons`,
+      `/tutor/courses/drafts/sections/${sectionDraftID}/lessons`,
       data
     );
 
@@ -605,14 +611,14 @@ export const createDraftLesson = async (sectionId: number, data: CreateLessonReq
  * Update an existing draft lesson
  * PUT /tutor/courses/drafts/lessons/{lessonDraftID}
  * 
- * @param lessonId - The ID of the lesson to update
+ * @param lessonDraftID - The ID of the lesson to update
  * @param data - The updated lesson data
  * @returns Promise<void>
  */
-export const updateDraftLesson = async (lessonId: number, data: UpdateLessonRequest): Promise<void> => {
+export const updateDraftLesson = async (lessonDraftID: number, data: UpdateLessonRequest): Promise<void> => {
   try {
     const response = await axiosInstance.put<ApiResponse>(
-      `/tutor/courses/drafts/lessons/${lessonId}`,
+      `/tutor/courses/drafts/lessons/${lessonDraftID}`,
       data
     );
 
@@ -634,13 +640,13 @@ export const updateDraftLesson = async (lessonId: number, data: UpdateLessonRequ
  * Delete a draft lesson
  * DELETE /tutor/courses/drafts/lessons/{lessonDraftID}
  * 
- * @param lessonId - The ID of the lesson to delete
+ * @param lessonDraftID - The ID of the lesson to delete
  * @returns Promise<void>
  */
-export const deleteDraftLesson = async (lessonId: number): Promise<void> => {
+export const deleteDraftLesson = async (lessonDraftID: number): Promise<void> => {
   try {
     const response = await axiosInstance.delete<ApiResponse>(
-      `/tutor/courses/drafts/lessons/${lessonId}`
+      `/tutor/courses/drafts/lessons/${lessonDraftID}`
     );
 
     // Validate response
@@ -663,13 +669,13 @@ export const deleteDraftLesson = async (lessonId: number): Promise<void> => {
  * Get all resources for a draft lesson
  * GET /tutor/courses/drafts/lessons/{lessonDraftID}/resources
  * 
- * @param lessonId - The ID of the draft lesson
+ * @param lessonDraftID - The ID of the draft lesson
  * @returns Promise<Resource[]> - Array of resources
  */
-export const getDraftResources = async (lessonId: number): Promise<Resource[]> => {
+export const getDraftResources = async (lessonDraftID: number): Promise<Resource[]> => {
   try {
     const response = await axiosInstance.get<ApiResponse<Resource[]>>(
-      `/tutor/courses/drafts/lessons/${lessonId}/resources`
+      `/tutor/courses/drafts/lessons/${lessonDraftID}/resources`
     );
 
     // Validate response
@@ -692,14 +698,14 @@ export const getDraftResources = async (lessonId: number): Promise<Resource[]> =
  * Create a new resource for a draft lesson
  * POST /tutor/courses/drafts/lessons/{lessonDraftID}/resources
  * 
- * @param lessonId - The ID of the draft lesson
+ * @param lessonDraftID - The ID of the draft lesson
  * @param data - The resource data to create
  * @returns Promise<ResourceResponse> - The created resource
  */
-export const createDraftResource = async (lessonId: number, data: CreateResourceRequest): Promise<ResourceResponse> => {
+export const createDraftResource = async (lessonDraftID: number, data: CreateResourceRequest): Promise<ResourceResponse> => {
   try {
     const response = await axiosInstance.post<ApiResponse<ResourceResponse>>(
-      `/tutor/courses/drafts/lessons/${lessonId}/resources`,
+      `/tutor/courses/drafts/lessons/${lessonDraftID}/resources`,
       data
     );
 
