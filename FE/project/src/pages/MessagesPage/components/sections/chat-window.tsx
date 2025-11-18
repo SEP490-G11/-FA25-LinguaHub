@@ -1,42 +1,76 @@
-import React, { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   Send,
   Paperclip,
   Image as ImageIcon,
   Link as LinkIcon,
-  Video,
-  MoreVertical,
+  Video
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import api from "@/config/axiosConfig";
+import { useUserInfo } from "@/hooks/useUserInfo";
 
 interface ChatWindowProps {
-  conversationId: string;
+  conversationId: number;
+}
+
+export type MessageType = "Text" | "Image" | "File";
+
+export interface ChatMessage {
+  messageID: number;
+  chatRoomID: number;
+  senderID: number;
+  senderName: string;
+  senderAvatarURL: string | null;
+  content: string;
+  messageType: MessageType;
+  createdAt: string;
+}
+
+export interface ChatRoom {
+  chatRoomID: number;
+  title: string;
+  description: string;
+  userID: number;
+  userName: string;
+  userAvatarURL: string | null;
+  tutorID: number;
+  tutorName: string;
+  tutorAvatarURL: string | null;
+  chatRoomType: "Advice" | "Training";
+  createdAt: string | null;
+  canSendMessage: boolean;
+  allowedMessageTypes: MessageType[];
+  messages: ChatMessage[];
 }
 
 const ChatWindow = ({ conversationId }: ChatWindowProps) => {
   const [message, setMessage] = useState("");
   const [showAttachments, setShowAttachments] = useState(false);
-  const [room, setRoom] = useState<any>(null);
+  const [room, setRoom] = useState<ChatRoom | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const { user: currentUser, loading: userLoading } = useUserInfo();
+  const messageListRef = useRef<HTMLDivElement | null>(null);
 
-  // Auto scroll
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  /** Auto scroll */
+  useEffect(() => {
+    if (messageListRef.current) {
+      messageListRef.current.scrollTop =
+          messageListRef.current.scrollHeight;
+    }
+  }, [room?.messages]);
 
-  // Load room details + messages
+  /** Load chat room */
   useEffect(() => {
     const fetchRoom = async () => {
       try {
         const res = await api.get(`/chat/room/${conversationId}`);
         setRoom(res.data.result);
       } catch (err) {
-        console.error("❌ Failed to load chat room:", err);
+        console.error("Failed to load chat room:", err);
       } finally {
         setLoading(false);
       }
@@ -45,11 +79,9 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
     fetchRoom();
   }, [conversationId]);
 
-  // Auto scroll khi messages thay đổi
-  useEffect(scrollToBottom, [room]);
-
+  /** Send Message */
   const handleSendMessage = async () => {
-    if (!message.trim()) return;
+    if (!message.trim() || !room?.canSendMessage) return;
 
     try {
       const res = await api.post("/chat/message", {
@@ -58,76 +90,91 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
         messageType: "Text",
       });
 
-      setRoom((prev: any) => ({
-        ...prev,
-        messages: [...prev.messages, res.data.result],
-      }));
+      const newMsg = res.data.result as ChatMessage;
+
+      setRoom((prev) =>
+          prev
+              ? { ...prev, messages: [...prev.messages, newMsg] }
+              : null
+      );
 
       setMessage("");
-      scrollToBottom();
     } catch (err) {
-      console.error("❌ Send message failed:", err);
+      console.error("Send message failed:", err);
     }
   };
 
-  if (loading)
+  if (loading || userLoading) {
     return (
         <div className="flex items-center justify-center h-full text-gray-400">
-          Loading chat...
+          Loading...
         </div>
     );
+  }
 
-  if (!room)
+  if (!room || !currentUser) {
     return (
         <div className="flex items-center justify-center h-full text-gray-400">
           Chat room not found
         </div>
     );
+  }
 
-  const isTrainingRoom = room.chatRoomType === "Training";
+
+  let otherName = "";
+  let otherAvatar = "";
+  if (currentUser.userID === room.userID) {
+    otherName = room.tutorName;
+    otherAvatar = room.tutorAvatarURL || "";
+  } else if (currentUser.userID === room.tutorID) {
+    otherName = room.userName;
+    otherAvatar = room.userAvatarURL || "";
+  } else {
+    otherName = room.userName;
+    otherAvatar = room.userAvatarURL || "";
+  }
+
+  const isBooked = room.chatRoomType === "Training";
+  const canSendMessage = room.canSendMessage;
+  const allowedTypes = room.allowedMessageTypes;
 
   return (
-      <div className="flex flex-col h-full">
-        {/* HEADER — giữ nguyên UI */}
-        <div className="p-4 border-b border-gray-200 flex items-center justify-between bg-white">
+      <div className="flex flex-col h-full max-h-full overflow-hidden">
+
+        {/* HEADER */}
+        <div className="p-4 border-b bg-white flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="relative">
-              <Avatar>
-                <AvatarImage src={room.tutorAvatarURL} alt={room.tutorName} />
-                <AvatarFallback>
-                  {room.tutorName?.split(" ").map((n: string) => n[0]).join("")}
-                </AvatarFallback>
-              </Avatar>
-            </div>
+            <Avatar>
+              <AvatarImage src={otherAvatar} alt={otherName} />
+              <AvatarFallback>
+                {otherName
+                    ?.split(" ")
+                    .map((n) => n[0])
+                    .join("")}
+              </AvatarFallback>
+            </Avatar>
 
-            <div>
-              <h3 className="font-semibold">{room.tutorName}</h3>
-              <p className="text-xs text-gray-500">
-                {room.isOnline ? "Online" : "Offline"}
-              </p>
-            </div>
+            <div className="font-semibold">{otherName}</div>
 
-            {isTrainingRoom && (
+            {isBooked && (
                 <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
               Booked
             </span>
             )}
           </div>
 
-          <div className="flex items-center space-x-2">
-            <Button variant="ghost" size="sm">
-              <Video className="w-5 h-5" />
-            </Button>
-            <Button variant="ghost" size="sm">
-              <MoreVertical className="w-5 h-5" />
-            </Button>
-          </div>
+          <Button variant="ghost" size="sm" disabled={!isBooked}>
+            <Video className="w-5 h-5" />
+          </Button>
         </div>
 
         {/* MESSAGE LIST */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
-          {room.messages.map((msg: any) => {
-            const isUser = msg.senderID === room.userID;
+        <div
+            ref={messageListRef}
+            className="flex-1 overflow-y-auto bg-gray-50 p-4 space-y-4 min-h-0"
+        >
+          {room.messages.map((msg) => {
+            const isUser = msg.senderID === currentUser.userID;
 
             return (
                 <div
@@ -141,24 +188,7 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
                               : "bg-white text-gray-900 shadow-sm"
                       }`}
                   >
-                    {msg.messageType === "Image" && (
-                        <img
-                            src={msg.content}
-                            className="rounded-lg mb-2 max-w-full h-auto"
-                        />
-                    )}
-
-                    {msg.messageType === "File" && (
-                        <a
-                            href={msg.content}
-                            className="underline text-sm"
-                            target="_blank"
-                        >
-                          Download File
-                        </a>
-                    )}
-
-                    {msg.messageType === "Text" && <p>{msg.content}</p>}
+                    <p>{msg.content}</p>
 
                     <p
                         className={`text-xs mt-1 ${
@@ -171,20 +201,25 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
                 </div>
             );
           })}
-
-          <div ref={messagesEndRef} />
         </div>
 
         {/* INPUT BOX */}
-        <div className="p-4 bg-white border-t border-gray-200">
-          {!isTrainingRoom && (
+        <div className="p-4 bg-white border-t">
+
+          {/* NOTICE WHEN ROOM NOT BOOKED */}
+          {!isBooked && (
               <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
-                Book a session to unlock image and file sharing.
+                {currentUser.role === "Tutor" ? (
+                    <span>This learner has not booked any training session yet.</span>
+                ) : (
+                    <span>Book a training session to unlock file sharing, images and Google Meet.</span>
+                )}
               </div>
           )}
 
+
           <div className="flex items-end space-x-2">
-            {isTrainingRoom && (
+            {isBooked && (
                 <div className="relative">
                   <Button
                       variant="ghost"
@@ -195,15 +230,20 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
                   </Button>
 
                   {showAttachments && (
-                      <div className="absolute bottom-full left-0 mb-2 bg-white shadow-lg rounded-lg p-2 space-y-1">
-                        <button className="flex items-center space-x-2 w-full px-3 py-2 hover:bg-gray-100 rounded">
-                          <ImageIcon className="w-4 h-4" />
-                          <span className="text-sm">Send Image</span>
-                        </button>
-                        <button className="flex items-center space-x-2 w-full px-3 py-2 hover:bg-gray-100 rounded">
-                          <LinkIcon className="w-4 h-4" />
-                          <span className="text-sm">Send File</span>
-                        </button>
+                      <div className="absolute bottom-full left-0 mb-2 bg-white shadow-lg rounded-lg p-2 space-y-1 z-10">
+                        {allowedTypes.includes("Image") && (
+                            <button className="flex items-center space-x-2 w-full px-3 py-2 hover:bg-gray-100 rounded">
+                              <ImageIcon className="w-4 h-4" />
+                              <span className="text-sm">Send Image</span>
+                            </button>
+                        )}
+
+                        {allowedTypes.includes("File") && (
+                            <button className="flex items-center space-x-2 w-full px-3 py-2 hover:bg-gray-100 rounded">
+                              <LinkIcon className="w-4 h-4" />
+                              <span className="text-sm">Send File</span>
+                            </button>
+                        )}
                       </div>
                   )}
                 </div>
@@ -221,11 +261,12 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
                 }}
                 className="flex-1 min-h-[44px] max-h-32 resize-none"
                 rows={1}
+                disabled={!canSendMessage}
             />
 
             <Button
                 onClick={handleSendMessage}
-                disabled={!message.trim()}
+                disabled={!message.trim() || !canSendMessage}
                 className="bg-blue-600 hover:bg-blue-700"
             >
               <Send className="w-5 h-5" />

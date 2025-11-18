@@ -5,10 +5,7 @@ export type { Category, Language };
 
 export interface CourseFormData {
   title: string;
-  shortDescription: string;
   description: string;
-  requirement: string;
-  level: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
   categoryID: number;
   language: string;
   duration: number;
@@ -36,11 +33,6 @@ export interface ResourceFormData {
   resourceType: 'PDF' | 'ExternalLink';
   resourceTitle: string;
   resourceURL: string;
-}
-
-export interface ObjectiveFormData {
-  objectiveText: string;
-  orderIndex: number;
 }
 
 export interface SectionData {
@@ -84,10 +76,7 @@ export const courseApi = {
   createCourse: async (courseData: CourseFormData): Promise<{ courseId: string }> => {
     const payload = {
       title: courseData.title,
-      shortDescription: courseData.shortDescription,
       description: courseData.description,
-      requirement: courseData.requirement,
-      level: courseData.level,
       categoryID: courseData.categoryID,
       language: courseData.language,
       duration: courseData.duration,
@@ -150,13 +139,6 @@ export const courseApi = {
     return { resourceId: resourceId.toString() };
   },
 
-  uploadThumbnail: async (file: File, courseId: string): Promise<string> => {
-    const form = new FormData();
-    form.append('file', file);
-    const res = await axios.post<ApiResponse<{ url: string }>>(`/tutor/courses/${courseId}/thumbnail`, form, { headers: { 'Content-Type': 'multipart/form-data' } });
-    return res?.data?.result?.url || res?.data?.url || res?.data?.publicUrl || '';
-  },
-
   submitCourse: async (courseId: string): Promise<{ success: boolean; status: string }> => {
     const res = await axios.put<any>(`/tutor/courses/${courseId}/submit`);
     const status = res?.data?.result?.status || res?.data?.status;
@@ -166,38 +148,6 @@ export const courseApi = {
     }
 
     return { success: false, status: status || 'unknown' };
-  },
-
-  updateResource: async (resourceId: string, resourceData: ResourceFormData): Promise<{ resourceId: string }> => {
-    const payload = {
-      resourceType: resourceData.resourceType,
-      resourceTitle: resourceData.resourceTitle,
-      resourceURL: resourceData.resourceURL,
-    };
-
-    const res = await axios.put<any>(`/tutor/resources/${resourceId}`, payload);
-    const resId = res?.data?.result?.resourceID || res?.data?.resourceID || resourceId;
-    return { resourceId: resId.toString() };
-  },
-
-  deleteResource: async (resourceId: string): Promise<void> => {
-    await axios.delete<any>(`/tutor/resources/${resourceId}`);
-  },
-
-  addObjective: async (courseId: string, objectiveData: ObjectiveFormData): Promise<{ objectiveId: string }> => {
-    const payload = {
-      objectiveText: objectiveData.objectiveText,
-      orderIndex: objectiveData.orderIndex,
-    };
-
-    const res = await axios.post<any>(`/courses/${courseId}/objectives`, payload);
-    const objectiveId = res?.data?.result?.id || res?.data?.result?.objectiveID || res?.data?.id || res?.data?.objectiveID;
-    if (!objectiveId) throw new Error('Invalid response from server');
-    return { objectiveId: objectiveId.toString() };
-  },
-
-  deleteObjective: async (objectiveId: string): Promise<void> => {
-    await axios.delete<any>(`/courses/objectives/${objectiveId}`);
   },
 };
 

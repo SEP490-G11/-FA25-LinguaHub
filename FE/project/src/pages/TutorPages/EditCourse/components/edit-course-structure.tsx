@@ -305,25 +305,10 @@ export default function EditCourseStructure({
 
   // Create resource (after lesson created)
   const createResource = async () => {
-    console.log('🔍 createResource called');
-    console.log('  - isCreatingResource:', isCreatingResource);
-    console.log('  - standaloneResourceData:', standaloneResourceData);
-    
-    if (!standaloneResourceData.resourceTitle.trim()) {
-      alert('Please enter resource title');
-      return;
-    }
-    
-    if (!standaloneResourceData.resourceURL.trim()) {
-      alert('Please enter resource URL');
-      return;
-    }
-    
-    if (isCreatingResource && standaloneResourceData) {
+    if (isCreatingResource && standaloneResourceData && standaloneResourceData.resourceTitle.trim()) {
       setIsSaving(true);
       try {
         const [sectionIndex, lessonIndex] = isCreatingResource.split('-').map(Number);
-        console.log('  - sectionIndex:', sectionIndex, 'lessonIndex:', lessonIndex);
 
         const newResource: Resource = {
           resourceID: Math.floor(Math.random() * 10000),
@@ -333,20 +318,16 @@ export default function EditCourseStructure({
           uploadedAt: new Date().toISOString(),
         };
 
-        console.log('  - newResource:', newResource);
-        await onCreateResource(sectionIndex, lessonIndex, newResource);
-        
+        onCreateResource(sectionIndex, lessonIndex, newResource);
         setIsCreatingResource(null);
         setStandaloneResourceData({
           resourceType: 'PDF',
           resourceTitle: '',
           resourceURL: '',
         });
-        
-        console.log('✅ Resource created successfully');
       } catch (error) {
-        console.error('❌ Error creating resource:', error);
-        alert('Failed to create resource: ' + (error instanceof Error ? error.message : 'Unknown error'));
+        console.error('Error creating resource:', error);
+        alert('Failed to create resource');
       } finally {
         setIsSaving(false);
       }
