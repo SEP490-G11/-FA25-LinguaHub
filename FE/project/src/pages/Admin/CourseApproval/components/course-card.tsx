@@ -67,7 +67,12 @@ export function CourseCard({
           {/* Status Badge */}
           {course.status === 'Pending' && showPendingBadge && (
             <Badge className="bg-yellow-500 text-white font-semibold shadow-md">
-              Chờ duyệt
+              Pending
+            </Badge>
+          )}
+          {course.status === 'Pending Review' && showPendingBadge && (
+            <Badge className="bg-orange-500 text-white font-semibold shadow-md">
+              Pending Review
             </Badge>
           )}
           {course.status === 'Approved' && (
@@ -90,12 +95,7 @@ export function CourseCard({
               Vô hiệu
             </Badge>
           )}
-          {/* Draft Badge (separate from status) */}
-          {showDraftBadge && course.isDraft && (
-            <Badge className="bg-purple-500 text-white font-semibold shadow-md">
-              Draft
-            </Badge>
-          )}
+
         </div>
       </div>
 

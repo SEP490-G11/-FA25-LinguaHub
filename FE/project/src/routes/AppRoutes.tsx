@@ -30,6 +30,8 @@ import VerifyEmailForgotPassword from '@/pages/auth/verify-email-forgot-password
 import CreateCourse from '@/pages/TutorPages/CreateCourse/index';
 import CourseApprovalPage from '@/pages/Admin/CourseApproval/index';
 import CourseApprovalDetailPage from '@/pages/Admin/CourseApproval/CourseDetailPage';
+import DraftListPage from '@/pages/Admin/CourseApproval/DraftListPage';
+import DraftDetailPage from '@/pages/Admin/CourseApproval/DraftDetailPage';
 import CoursesDetailPage from '@/pages/Admin/Courses/CourseDetailPage';
 import ApplyTutor from '@/pages/ApplyTutor';
 import TutorApproval from '@/pages/Admin/TutorApproval';
@@ -99,6 +101,8 @@ export function AppRoutes() {
                 <Route path="courses/:courseId" element={<CoursesDetailPage />} />
                 <Route path="course-approval" element={<CourseApprovalPage />} />
                 <Route path="course-approval/:courseId" element={<CourseApprovalDetailPage />} />
+                <Route path="course-approval/drafts" element={<DraftListPage />} />
+                <Route path="course-approval/drafts/:draftId" element={<DraftDetailPage />} />
                 <Route path="tutor-approval" element={<TutorApproval />} />
                 <Route path="tutor-approval/:id" element={<ApplicationDetailPage />} />
                 <Route path="user-management" element={<UserManagement />} />

@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, Loader2, CheckCircle2, Filter, BookOpen } from 'lucide-react';
+import { AlertCircle, Loader2, CheckCircle2, Filter, BookOpen, FileEdit } from 'lucide-react';
 import { courseApprovalApi } from './api';
 import { PendingCourse } from './types';
 import { Filters, CourseCard, Pagination } from './components';
 
 export default function CourseApprovalPage() {
+  const navigate = useNavigate();
   const [courses, setCourses] = useState<PendingCourse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -13,6 +15,7 @@ export default function CourseApprovalPage() {
   const [limit] = useState(9);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
+  const [draftCount, setDraftCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
@@ -42,8 +45,25 @@ export default function CourseApprovalPage() {
     }
   };
 
+  // Fetch draft count separately
+  const fetchDraftCount = async () => {
+    try {
+      const axios = (await import('@/config/axiosConfig')).default;
+      const draftResponse = await axios.get('/admin/courses/drafts', {
+        params: { status: 'PENDING_REVIEW' }
+      });
+      const drafts = draftResponse?.data?.result || [];
+      console.log('📊 Draft count:', drafts.length, drafts);
+      setDraftCount(drafts.length);
+    } catch (err) {
+      console.error('❌ Error fetching draft count:', err);
+      setDraftCount(0);
+    }
+  };
+
   useEffect(() => {
     fetchCourses(1);
+    fetchDraftCount();
   }, [searchQuery, selectedCategory]);
 
   return (
@@ -63,18 +83,87 @@ export default function CourseApprovalPage() {
                   <p className="text-blue-100 text-sm">Quản lý và duyệt khóa học từ giảng viên</p>
                 </div>
               </div>
-              <div className="bg-white/15 backdrop-blur-md rounded-lg px-5 py-3 border border-white/20">
-                <div className="flex items-center gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-yellow-300" />
-                  <div>
-                    <p className="text-blue-100 text-xs font-medium">Chờ phê duyệt</p>
-                    <p className="text-2xl font-bold text-white">{total}</p>
+              <div className="flex items-center gap-4">
+                {/* Update Course Box - Same height as Pending box */}
+                <div 
+                  onClick={() => navigate('/admin/course-approval/drafts')}
+                  className={`relative cursor-pointer rounded-lg px-5 py-3 border backdrop-blur-md transition-all duration-300 hover:scale-105 ${
+                    draftCount > 0
+                      ? 'bg-gradient-to-br from-orange-400/30 to-red-400/30 border-orange-300/60 hover:from-orange-400/40 hover:to-red-400/40 shadow-lg shadow-orange-500/20'
+                      : 'bg-white/15 border-white/20 hover:bg-white/25'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="relative">
+                      <FileEdit className={`w-5 h-5 transition-colors duration-300 ${
+                        draftCount > 0 ? 'text-orange-200' : 'text-blue-200'
+                      }`} />
+                      {draftCount > 0 && (
+                        <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-orange-400"></span>
+                        </span>
+                      )}
+                    </div>
+                    <div>
+                      <p className={`text-xs font-medium transition-colors duration-300 ${
+                        draftCount > 0 ? 'text-orange-100' : 'text-blue-100'
+                      }`}>
+                        Cần cập nhật
+                      </p>
+                      <p className="text-2xl font-bold text-white transition-all duration-300">
+                        {draftCount}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white/15 backdrop-blur-md rounded-lg px-5 py-3 border border-white/20">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle2 className="w-5 h-5 text-yellow-300" />
+                    <div>
+                      <p className="text-blue-100 text-xs font-medium">Pending</p>
+                      <p className="text-2xl font-bold text-white">{total}</p>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
+
+        {/* Subtle Alert Banner for Draft Updates */}
+        {draftCount > 0 && (
+          <div className="bg-gradient-to-r from-amber-50/80 via-orange-50/80 to-amber-50/80 border-b border-amber-200/50">
+            <div className="max-w-[1600px] mx-auto px-6 py-3.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <div className="w-10 h-10 bg-gradient-to-br from-amber-100 to-orange-100 rounded-lg flex items-center justify-center border border-amber-200/50">
+                      <AlertCircle className="w-5 h-5 text-amber-600" />
+                    </div>
+                    <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                    </span>
+                  </div>
+                  <div>
+                    <h3 className="text-amber-900 font-semibold text-sm flex items-center gap-2">
+                      Có {draftCount} khóa học đang chờ xem xét cập nhật
+                    </h3>
+                    <p className="text-amber-700/80 text-xs">
+                      Vui lòng xem xét sớm để không ảnh hưởng đến học viên
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => navigate('/admin/course-approval/drafts')}
+                  className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-medium shadow-sm hover:shadow-md transition-all px-4 py-2 text-sm"
+                >
+                  <FileEdit className="w-4 h-4 mr-1.5" />
+                  Xem ngay
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Filters Bar */}
         <div className="bg-white border-t border-gray-100">
@@ -131,7 +220,7 @@ export default function CourseApprovalPage() {
               <CheckCircle2 className="w-8 h-8 text-gray-400" />
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Không có khóa học chờ duyệt
+              Không có khóa học Pending
             </h3>
             <p className="text-gray-500 text-sm">
               {searchQuery || selectedCategory !== 'all'
