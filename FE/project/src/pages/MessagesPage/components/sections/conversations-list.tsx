@@ -20,6 +20,7 @@ interface MyInfo {
 interface ChatRoomMessage {
   messageID: number;
   content: string;
+  messageType: string; // "Text", "Link", etc.
   createdAt: string;
 }
 
@@ -90,9 +91,6 @@ const ConversationsList = ({
     );
   }
 
-  // ================================================
-  // 🔥 Determine displayName & avatar PER ROOM (Giống ChatWindow)
-  // ================================================
   const getRoomDisplay = (room: ChatRoom) => {
     if (myInfo.userID === room.userID) {
       return {
@@ -115,13 +113,46 @@ const ConversationsList = ({
     };
   };
 
-  // ================================================
-  // 🔍 Search bằng tên người còn lại (không dùng role nữa)
-  // ================================================
   const filteredRooms = rooms.filter((room) => {
     const { name } = getRoomDisplay(room);
     return name?.toLowerCase().includes(searchTerm.toLowerCase());
   });
+
+  const renderMessageContent = (msg: ChatRoomMessage) => {
+    let content = msg.content;
+    let type = msg.messageType;
+
+    // Nếu content là chuỗi JSON, cố gắng parse
+    try {
+      const parsed = JSON.parse(content);
+      if (typeof parsed === "object" && parsed !== null) {
+        if (typeof parsed.content === "string") {
+          content = parsed.content;
+        }
+        if (typeof parsed.messageType === "string") {
+          type = parsed.messageType;
+        }
+      }
+    } catch {
+
+    }
+
+    if (type === "Link") {
+      return (
+          <a
+              href={content}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 underline break-words"
+          >
+            {content}
+          </a>
+      );
+    }
+
+    return <p className="whitespace-pre-wrap break-words text-sm">{content}</p>;
+  };
+
 
   return (
       <div className="border-r border-gray-200 flex flex-col h-full bg-[#F0F9FF]">
@@ -160,7 +191,7 @@ const ConversationsList = ({
                     getRoomDisplay(room);
 
                 const lastMessage = room.messages[room.messages.length - 1];
-                const lastMsgText = lastMessage?.content || "No messages yet";
+                const lastMsgText = renderMessageContent(lastMessage || { content: "No messages yet", messageType: "Text", createdAt: "" });
                 const lastMsgTime = lastMessage
                     ? new Date(lastMessage.createdAt).toLocaleString()
                     : "—";
@@ -195,8 +226,8 @@ const ConversationsList = ({
                               {displayName}
                             </h3>
                             <span className="text-xs text-blue-500">
-                        {lastMsgTime}
-                      </span>
+                              {lastMsgTime}
+                            </span>
                           </div>
 
                           <p className="text-sm text-gray-600 truncate">
@@ -205,8 +236,8 @@ const ConversationsList = ({
 
                           {hasBooking && (
                               <span className="text-xs bg-blue-200 text-blue-700 px-2 py-1 rounded-full mt-1 inline-block">
-                        Booked
-                      </span>
+                                Booked
+                              </span>
                           )}
                         </div>
                       </div>

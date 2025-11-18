@@ -1,9 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import {
   Send,
-  Paperclip,
-  Image as ImageIcon,
-  Link as LinkIcon,
   Video
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -16,7 +13,18 @@ interface ChatWindowProps {
   conversationId: number;
 }
 
-export type MessageType = "Text" | "Image" | "File";
+export type MessageType = "Text" | "Link";
+
+interface RawMessage {
+  messageID?: number;
+  chatRoomID?: number;
+  senderID?: number;
+  senderName?: string;
+  senderAvatarURL?: string | null;
+  content?: string | { content: string; messageType: MessageType };
+  messageType?: MessageType;
+  createdAt?: string;
+}
 
 export interface ChatMessage {
   messageID: number;
@@ -46,20 +54,63 @@ export interface ChatRoom {
   messages: ChatMessage[];
 }
 
-const ChatWindow = ({ conversationId }: ChatWindowProps) => {
-  const [message, setMessage] = useState("");
-  const [showAttachments, setShowAttachments] = useState(false);
-  const [room, setRoom] = useState<ChatRoom | null>(null);
-  const [loading, setLoading] = useState(true);
+/** Normalize the message data */
+function normalizeMessage(
+    m: RawMessage,
+    fallbackChatRoomID: number,
+    currentUserName = "Unknown"
+): ChatMessage {
+  let parsedContent = m.content;
+  let messageType = m.messageType ?? "Text";
 
-  const { user: currentUser, loading: userLoading } = useUserInfo();
-  const messageListRef = useRef<HTMLDivElement | null>(null);
+  // If content is a JSON string, attempt to parse it
+  if (typeof parsedContent === "string") {
+    try {
+      const parsed = JSON.parse(parsedContent);
+      if (typeof parsed === "object" && parsed !== null) {
+        if (typeof (parsed as { content: string }).content === "string") {
+          parsedContent = (parsed as { content: string }).content;
+        }
+        if (typeof (parsed as { messageType: string }).messageType === "string") {
+          messageType = (parsed as { messageType: string }).messageType as MessageType;
+        }
+      }
+    } catch {
+      // Do nothing if parsing fails
+    }
+  }
+
+  return {
+    messageID: m.messageID ?? Date.now(),
+    chatRoomID: m.chatRoomID ?? fallbackChatRoomID,
+    senderID: m.senderID ?? 0,
+    senderName: m.senderName ?? currentUserName,
+    senderAvatarURL: m.senderAvatarURL ?? null,
+    content: typeof parsedContent === "string" ? parsedContent : "",
+    messageType,
+    createdAt: m.createdAt ?? new Date().toISOString(),
+  };
+}
+
+/** Check if the content is a Google Meet link */
+function isGoogleMeetLink(content: string): boolean {
+  return content.includes("https://meet.google.com");
+}
+
+const ChatWindow = ({ conversationId }: ChatWindowProps) => {
+  const [message, setMessage] = useState<string>(""); // Text input for message
+  const [room, setRoom] = useState<ChatRoom | null>(null); // Chat room data
+  const [loading, setLoading] = useState<boolean>(true); // Loading state
+  const [showMeetLinkInput, setShowMeetLinkInput] = useState<boolean>(false); // Show Google Meet link input
+  const [meetLink, setMeetLink] = useState<string>(""); // Google Meet link input
+
+  const { user: currentUser, loading: userLoading } = useUserInfo(); // User information
+  const messageListRef = useRef<HTMLDivElement | null>(null); // Message list ref
 
   /** Auto scroll */
   useEffect(() => {
     if (messageListRef.current) {
-      messageListRef.current.scrollTop =
-          messageListRef.current.scrollHeight;
+      messageListRef.current.scrollTop = messageListRef.current.scrollHeight;
     }
   }, [room?.messages]);
 
@@ -68,7 +119,17 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
     const fetchRoom = async () => {
       try {
         const res = await api.get(`/chat/room/${conversationId}`);
-        setRoom(res.data.result);
+        const rawRoom = res.data.result;
+
+        const normalizedMessages: ChatMessage[] = rawRoom.messages.map(
+            (m: RawMessage) =>
+                normalizeMessage(m, rawRoom.chatRoomID, m.senderName ?? "Unknown")
+        );
+
+        setRoom({
+          ...rawRoom,
+          messages: normalizedMessages,
+        });
       } catch (err) {
         console.error("Failed to load chat room:", err);
       } finally {
@@ -79,28 +140,62 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
     fetchRoom();
   }, [conversationId]);
 
-  /** Send Message */
+  /** Send text / link message */
   const handleSendMessage = async () => {
     if (!message.trim() || !room?.canSendMessage) return;
+
+    let messageType: MessageType = "Text";
+    const urlPattern = /https?:\/\/[^\s]+/;
+    if (urlPattern.test(message.trim())) {
+      messageType = "Link";
+    }
 
     try {
       const res = await api.post("/chat/message", {
         chatRoomID: Number(conversationId),
         content: message,
-        messageType: "Text",
+        messageType,
       });
 
-      const newMsg = res.data.result as ChatMessage;
-
-      setRoom((prev) =>
-          prev
-              ? { ...prev, messages: [...prev.messages, newMsg] }
-              : null
+      const newMsg = normalizeMessage(
+          res.data.result,
+          conversationId,
+          currentUser?.fullName ?? "Unknown"
       );
 
-      setMessage("");
+      setRoom((prev) =>
+          prev ? { ...prev, messages: [...prev.messages, newMsg] } : null
+      );
+      setMessage(""); // Clear message input
     } catch (err) {
       console.error("Send message failed:", err);
+    }
+  };
+
+  /** Send Google Meet link (Tutor only) */
+  const handleSendMeetLink = async () => {
+    if (!meetLink.trim() || !room?.canSendMessage) return;
+    if (currentUser?.role !== "Tutor") return;
+
+    try {
+      const res = await api.post(`/chat/room/${conversationId}/meeting-link`, {
+        content: meetLink,
+        messageType: "Link",
+      });
+
+      const newMsg = normalizeMessage(
+          res.data.result,
+          conversationId,
+          currentUser?.fullName ?? "Unknown"
+      );
+
+      setRoom((prev) =>
+          prev ? { ...prev, messages: [...prev.messages, newMsg] } : null
+      );
+      setMeetLink(""); // Clear meet link input
+      setShowMeetLinkInput(false);
+    } catch (err) {
+      console.error("Send Google Meet link failed:", err);
     }
   };
 
@@ -120,7 +215,6 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
     );
   }
 
-
   let otherName = "";
   let otherAvatar = "";
   if (currentUser.userID === room.userID) {
@@ -136,13 +230,11 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
 
   const isBooked = room.chatRoomType === "Training";
   const canSendMessage = room.canSendMessage;
-  const allowedTypes = room.allowedMessageTypes;
 
   return (
-      <div className="flex flex-col h-full max-h-full overflow-hidden">
-
+      <div className="flex flex-col h-full max-h-full overflow-hidden bg-gradient-to-b from-slate-50 via-sky-50 to-blue-50">
         {/* HEADER */}
-        <div className="p-4 border-b bg-white flex items-center justify-between">
+        <div className="p-4 border-b bg-white/90 backdrop-blur flex items-center justify-between shadow-md">
           <div className="flex items-center space-x-3">
             <Avatar>
               <AvatarImage src={otherAvatar} alt={otherName} />
@@ -153,28 +245,34 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
                     .join("")}
               </AvatarFallback>
             </Avatar>
-
-            <div className="font-semibold">{otherName}</div>
-
+            <div className="font-semibold text-lg">{otherName}</div>
             {isBooked && (
-                <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                <span className="ml-2 text-xs bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full">
               Booked
             </span>
             )}
           </div>
-
-          <Button variant="ghost" size="sm" disabled={!isBooked}>
-            <Video className="w-5 h-5" />
-          </Button>
+          {isBooked && currentUser?.role === "Tutor" && (
+              <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowMeetLinkInput(!showMeetLinkInput)}
+                  className="rounded-full hover:bg-blue-50"
+              >
+                <Video className="w-5 h-5 text-blue-600" />
+              </Button>
+          )}
         </div>
 
         {/* MESSAGE LIST */}
         <div
             ref={messageListRef}
-            className="flex-1 overflow-y-auto bg-gray-50 p-4 space-y-4 min-h-0"
+            className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0"
         >
           {room.messages.map((msg) => {
             const isUser = msg.senderID === currentUser.userID;
+            const meetLink =
+                msg.messageType === "Link" && isGoogleMeetLink(msg.content);
 
             return (
                 <div
@@ -182,17 +280,63 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
                     className={`flex ${isUser ? "justify-end" : "justify-start"}`}
                 >
                   <div
-                      className={`max-w-[70%] rounded-lg p-3 ${
-                          isUser
-                              ? "bg-blue-600 text-white"
-                              : "bg-white text-gray-900 shadow-sm"
-                      }`}
+                      className={
+                        meetLink
+                            ? `max-w-[75%] rounded-2xl px-3 py-2 shadow-md
+                    bg-emerald-500 text-white
+                    ${isUser ? "rounded-br-sm" : "rounded-bl-sm"}`
+                            : `max-w-[75%] rounded-2xl px-3 py-2 shadow-md
+                    ${isUser
+                                ? "bg-blue-600 text-white rounded-br-sm"
+                                : "bg-white text-gray-900 rounded-bl-sm"}`
+                      }
                   >
-                    <p>{msg.content}</p>
+                    {meetLink ? (
+                        <div className="flex items-start space-x-2">
+                          <div className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-full bg-white/20">
+                            <Video className="w-4 h-4" />
+                          </div>
+                          <div className="flex flex-col">
+                      <span className="text-xs uppercase tracking-wide opacity-80">
+                        Google Meet Room
+                      </span>
+                            <a
+                                href={msg.content}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-sm font-medium underline break-all"
+                            >
+                              {msg.content}
+                            </a>
+                            <span className="text-[10px] mt-1 opacity-80">
+                        Click to join the room
+                      </span>
+                          </div>
+                        </div>
+                    ) : msg.messageType === "Link" ? (
+                        <a
+                            href={msg.content}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={`underline break-all ${
+                                isUser ? "text-blue-100" : "text-blue-600"
+                            }`}
+                        >
+                          {msg.content}
+                        </a>
+                    ) : (
+                        <p className="whitespace-pre-wrap break-words text-sm">
+                          {msg.content}
+                        </p>
+                    )}
 
                     <p
-                        className={`text-xs mt-1 ${
-                            isUser ? "text-blue-100" : "text-gray-500"
+                        className={`text-[10px] mt-1 text-right ${
+                            isUser
+                                ? "text-blue-100/80"
+                                : meetLink
+                                    ? "text-emerald-50/80"
+                                    : "text-gray-400"
                         }`}
                     >
                       {new Date(msg.createdAt).toLocaleString()}
@@ -204,51 +348,54 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
         </div>
 
         {/* INPUT BOX */}
-        <div className="p-4 bg-white border-t">
-
-          {/* NOTICE WHEN ROOM NOT BOOKED */}
+        <div className="p-4 bg-white/90 border-t backdrop-blur">
           {!isBooked && (
               <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
-                {currentUser.role === "Tutor" ? (
+                {currentUser?.role === "Tutor" ? (
                     <span>This learner has not booked any training session yet.</span>
                 ) : (
-                    <span>Book a training session to unlock file sharing, images and Google Meet.</span>
+                    <span>
+                Book a training session to unlock file sharing, images and Google
+                Meet.
+              </span>
                 )}
               </div>
           )}
 
+          {showMeetLinkInput && isBooked && (
+              <div className="mb-3 rounded-xl border border-blue-100 bg-blue-50/60 p-3">
+                <div className="flex items-center mb-2 space-x-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-white">
+                    <Video className="w-4 h-4" />
+                  </div>
+                  <div className="flex flex-col">
+                <span className="text-sm font-semibold text-blue-700">
+                  Send Google Meet Room
+                </span>
+                    <span className="text-xs text-blue-500">
+                  Paste your Google Meet link below
+                </span>
+                  </div>
+                </div>
+                <Textarea
+                    placeholder="Example: https://meet.google.com/xxx-xxxx-xxx"
+                    value={meetLink}
+                    onChange={(e) => setMeetLink(e.target.value)}
+                    className="resize-none border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                />
+                <div className="mt-2 flex justify-end">
+                  <Button
+                      onClick={handleSendMeetLink}
+                      disabled={!meetLink.trim()}
+                      className="bg-blue-600 hover:bg-blue-700 rounded-lg text-white px-4"
+                  >
+                    Send Google Meet Link
+                  </Button>
+                </div>
+              </div>
+          )}
 
           <div className="flex items-end space-x-2">
-            {isBooked && (
-                <div className="relative">
-                  <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowAttachments(!showAttachments)}
-                  >
-                    <Paperclip className="w-5 h-5" />
-                  </Button>
-
-                  {showAttachments && (
-                      <div className="absolute bottom-full left-0 mb-2 bg-white shadow-lg rounded-lg p-2 space-y-1 z-10">
-                        {allowedTypes.includes("Image") && (
-                            <button className="flex items-center space-x-2 w-full px-3 py-2 hover:bg-gray-100 rounded">
-                              <ImageIcon className="w-4 h-4" />
-                              <span className="text-sm">Send Image</span>
-                            </button>
-                        )}
-
-                        {allowedTypes.includes("File") && (
-                            <button className="flex items-center space-x-2 w-full px-3 py-2 hover:bg-gray-100 rounded">
-                              <LinkIcon className="w-4 h-4" />
-                              <span className="text-sm">Send File</span>
-                            </button>
-                        )}
-                      </div>
-                  )}
-                </div>
-            )}
-
             <Textarea
                 placeholder="Type your message..."
                 value={message}
@@ -259,7 +406,7 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
                     handleSendMessage();
                   }
                 }}
-                className="flex-1 min-h-[44px] max-h-32 resize-none"
+                className="flex-1 min-h-[44px] max-h-32 resize-none rounded-xl shadow-sm border border-slate-200 p-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                 rows={1}
                 disabled={!canSendMessage}
             />
@@ -267,7 +414,7 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
             <Button
                 onClick={handleSendMessage}
                 disabled={!message.trim() || !canSendMessage}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-blue-600 hover:bg-blue-700 rounded-full text-white px-4 h-[44px] flex items-center justify-center"
             >
               <Send className="w-5 h-5" />
             </Button>
