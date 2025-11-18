@@ -39,7 +39,9 @@ import {
   createDraftObjective,
   updateDraftObjective,
   deleteDraftObjective,
+  createDraftSection,
   updateDraftSection,
+  createDraftLesson,
   updateDraftLesson,
   updateDraftResource,
   deleteDraftSection,
@@ -71,7 +73,8 @@ const EditCourse = () => {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   // ========== DRAFT MODE STATES ==========
-  const [isDraftMode, setIsDraftMode] = useState(false);
+  // Initialize as undefined to prevent race condition
+  const [isDraftMode, setIsDraftMode] = useState<boolean | undefined>(undefined);
   const [currentDraftId, setCurrentDraftId] = useState<number | null>(null);
 
   // ========== NAVIGATION HELPERS ==========
@@ -195,18 +198,14 @@ const EditCourse = () => {
         
         if (isDraftMode && currentDraftId) {
           // DRAFT MODE: Always fetch fresh draft course data from API
-          // Don't use location.state cache as it may contain outdated data
-          console.log('=== FETCHING DRAFT COURSE DATA ===', currentDraftId);
-          
           const draftData = await getDraftCourseDetail(currentDraftId);
           courseData = convertDraftToCourseDetail(draftData, parseInt(courseId));
           
           // Fetch draft objectives only
           try {
             const objectivesData = await getDraftObjectives(currentDraftId);
-            console.log('=== FETCHED DRAFT OBJECTIVES ===', objectivesData);
             const formattedObjectives = objectivesData.map((obj: any) => {
-              const objectiveId = obj.objectiveID || obj.id;
+              const objectiveId = obj.objectiveDraftID || obj.objectiveID || obj.id;
               return {
                 id: objectiveId,
                 objectiveText: obj.objectiveText,
@@ -219,15 +218,13 @@ const EditCourse = () => {
             console.error('Error fetching draft objectives:', objErr);
             setObjectives([]);
           }
-        } else {
+        } else if (isDraftMode === false) {
           // REGULAR MODE: Fetch regular course data only
-          console.log('=== FETCHING REGULAR COURSE DATA ===', courseId);
           courseData = await getCourseDetail(parseInt(courseId));
           
           // Fetch regular objectives only
           try {
             const objectivesData = await getObjectives(parseInt(courseId));
-            console.log('=== FETCHED REGULAR OBJECTIVES ===', objectivesData);
             const formattedObjectives = objectivesData.map((obj: any) => {
               const objectiveId = obj.objectiveID || obj.id;
               return {
@@ -242,16 +239,17 @@ const EditCourse = () => {
             console.error('Error fetching regular objectives:', objErr);
             setObjectives([]);
           }
+        } else {
+          // Mode not determined yet
+          return;
         }
 
         // Normalize all nested arrays
         const normalizedCourse = normalizeCourseData(courseData);
         setCourse(normalizedCourse);
       } catch (err: any) {
-        console.error('=== ERROR FETCHING COURSE ===', err);
-        setError(
-          err.message || 'Unable to load course information'
-        );
+        console.error('Error fetching course:', err);
+        setError(err.message || 'Unable to load course information');
         setCourse(null);
       } finally {
         setIsLoading(false);
@@ -259,10 +257,11 @@ const EditCourse = () => {
     };
 
     // Only fetch data when we have determined the mode
+    // This prevents race condition where we fetch with wrong mode
     if (isDraftMode !== undefined) {
       fetchCourseData();
     }
-  }, [courseId, isDraftMode, currentDraftId, location.state]);
+  }, [courseId, isDraftMode, currentDraftId]);
 
   // ========== STEP 1: UPDATE COURSE INFO ==========
   const handleStep1Save = async (
@@ -340,7 +339,7 @@ const EditCourse = () => {
       };
 
       if (isDraftMode && currentDraftId) {
-        // Update draft section - use sectionID which is actually sectionDraftID in draft mode
+        // Update draft section
         await updateDraftSection(sectionData.sectionID, updateData);
         
         // Update local state
@@ -603,7 +602,7 @@ const EditCourse = () => {
 
     try {
       if (isDraftMode && currentDraftId) {
-        // Delete draft section - use sectionId which is actually sectionDraftID in draft mode
+        // Delete draft section
         await deleteDraftSection(sectionId);
       } else {
         // Delete regular section
@@ -686,11 +685,6 @@ const EditCourse = () => {
         resourceIndex
       ].resourceID;
     
-    console.log('=== DELETING RESOURCE ===');
-    console.log('Resource to delete:', course.section[sectionIndex].lessons[lessonIndex].resources[resourceIndex]);
-    console.log('Resource ID:', resourceId);
-    console.log('All resources in lesson:', course.section[sectionIndex].lessons[lessonIndex].resources);
-    
     setIsSaving(true);
 
     try {
@@ -734,17 +728,10 @@ const EditCourse = () => {
 
     setIsSaving(true);
     try {
-      console.log('=== HANDLING OBJECTIVES SAVE ===');
-      console.log('Current objectives in state:', objectives);
-      console.log('Updated objectives list:', objectivesList);
-      console.log('Draft mode:', isDraftMode, 'Draft ID:', currentDraftId);
-
       // Handle updates to existing objectives
       for (const objective of objectivesList) {
-        console.log('Processing objective:', objective);
         if (objective.isNew || objective.id < 0) {
-          // This is a new objective, create it via API
-          console.log('Creating new objective:', objective);
+          // Create new objective
           let response;
           
           if (isDraftMode && currentDraftId) {
@@ -760,12 +747,11 @@ const EditCourse = () => {
           }
           
           // Update the objective with the returned ID
-          objective.id = response.objectiveID || response.id;
+          const newId = response.objectiveDraftID || response.objectiveID || response.id;
+          objective.id = newId;
           objective.isNew = false;
         } else {
           // Update existing objective
-          console.log('Updating objective:', objective.id);
-          
           if (isDraftMode && currentDraftId) {
             await updateDraftObjective(objective.id, {
               objectiveText: objective.objectiveText,
@@ -780,27 +766,21 @@ const EditCourse = () => {
         }
       }
 
-      // Handle deleted objectives (those in the old list but not in new list)
-      const oldObjectiveIds = new Set(
-        objectives
-          .map(o => o.id)
-          .filter((id) => id > 0)
-      );
-      const newObjectiveIds = new Set(objectivesList.map(o => o.id).filter(id => id > 0));
+      // Handle deleted objectives
+      const oldObjectivesValid = objectives.filter(o => o.id > 0 && !o.isNew);
+      const newObjectivesValid = objectivesList.filter(o => o.id > 0);
       
-      console.log('Old objective IDs:', Array.from(oldObjectiveIds));
-      console.log('New objective IDs:', Array.from(newObjectiveIds));
+      const oldObjectiveIds = new Set(oldObjectivesValid.map(o => o.id));
+      const newObjectiveIds = new Set(newObjectivesValid.map(o => o.id));
       
-      for (const oldId of oldObjectiveIds) {
-        if (!newObjectiveIds.has(oldId)) {
-          // Validate the ID is a valid number before calling delete
-          console.log('Deleting objective:', oldId, 'Type:', typeof oldId);
-          if (oldId && typeof oldId === 'number') {
-            if (isDraftMode && currentDraftId) {
-              await deleteDraftObjective(oldId);
-            } else {
-              await deleteObjective(oldId);
-            }
+      const objectivesToDelete = Array.from(oldObjectiveIds).filter(id => !newObjectiveIds.has(id));
+      
+      for (const oldId of objectivesToDelete) {
+        if (oldId && typeof oldId === 'number' && oldId > 0) {
+          if (isDraftMode && currentDraftId) {
+            await deleteDraftObjective(oldId);
+          } else {
+            await deleteObjective(oldId);
           }
         }
       }
@@ -870,23 +850,39 @@ const EditCourse = () => {
 
     setIsSaving(true);
     try {
-      // Call API để create section
-      const result = await courseApi.addSection(
-        course.id.toString(),
-        {
-          courseID: course.id,
-          title: newSection.title,
-          description: newSection.description || null,
-          orderIndex: course.section.length,
-        }
-      );
+      let sectionWithId: Section;
 
-      // Cập nhật state với section mới từ API response
-      const sectionWithId: Section = {
-        ...newSection,
-        sectionID: parseInt(result.sectionId),
-        lessons: [],
-      };
+      if (isDraftMode && currentDraftId) {
+        // Create draft section
+        const result = await createDraftSection(currentDraftId, {
+          title: newSection.title,
+          description: newSection.description || '',
+          orderIndex: course.section.length,
+        });
+
+        sectionWithId = {
+          ...newSection,
+          sectionID: result.sectionID,
+          lessons: [],
+        };
+      } else {
+        // Create regular section
+        const result = await courseApi.addSection(
+          course.id.toString(),
+          {
+            courseID: course.id,
+            title: newSection.title,
+            description: newSection.description || null,
+            orderIndex: course.section.length,
+          }
+        );
+
+        sectionWithId = {
+          ...newSection,
+          sectionID: parseInt(result.sectionId),
+          lessons: [],
+        };
+      }
 
       setCourse({
         ...course,
@@ -921,26 +917,45 @@ const EditCourse = () => {
     try {
       const sectionId = course.section[sectionIndex].sectionID;
 
-      // Call API để create lesson
-      const result = await courseApi.addLesson(
-        course.id.toString(),
-        sectionId.toString(),
-        {
+      let lessonWithId: Lesson;
+
+      if (isDraftMode && currentDraftId) {
+        // Create draft lesson
+        const result = await createDraftLesson(sectionId, {
           title: newLesson.title,
           duration: newLesson.duration,
           lessonType: newLesson.lessonType,
           videoURL: newLesson.videoURL || '',
           content: newLesson.content || '',
           orderIndex: course.section[sectionIndex].lessons.length,
-        }
-      );
+        });
 
-      // Cập nhật state với lesson mới từ API response
-      const lessonWithId: Lesson = {
-        ...newLesson,
-        lessonID: parseInt(result.lessonId),
-        resources: [],
-      };
+        lessonWithId = {
+          ...newLesson,
+          lessonID: result.lessonID,
+          resources: [],
+        };
+      } else {
+        // Create regular lesson
+        const result = await courseApi.addLesson(
+          course.id.toString(),
+          sectionId.toString(),
+          {
+            title: newLesson.title,
+            duration: newLesson.duration,
+            lessonType: newLesson.lessonType,
+            videoURL: newLesson.videoURL || '',
+            content: newLesson.content || '',
+            orderIndex: course.section[sectionIndex].lessons.length,
+          }
+        );
+
+        lessonWithId = {
+          ...newLesson,
+          lessonID: parseInt(result.lessonId),
+          resources: [],
+        };
+      }
 
       const newSections = [...course.section];
       newSections[sectionIndex].lessons = [
@@ -980,27 +995,40 @@ const EditCourse = () => {
       const lessonId =
         course.section[sectionIndex].lessons[lessonIndex].lessonID;
 
-      // Call API để create resource
-      const result = await courseApi.addLessonResource(
-        course.id.toString(),
-        sectionId.toString(),
-        lessonId.toString(),
-        {
+      let resourceWithId: Resource;
+
+      if (isDraftMode && currentDraftId) {
+        // Create draft resource
+        const result = await createDraftResource(lessonId, {
           resourceType: newResource.resourceType as 'PDF' | 'ExternalLink',
           resourceTitle: newResource.resourceTitle,
           resourceURL: newResource.resourceURL,
-        }
-      );
+          orderIndex: course.section[sectionIndex].lessons[lessonIndex].resources.length,
+        });
 
-      // Cập nhật state với resource mới từ API response
-      const resourceWithId: Resource = {
-        ...newResource,
-        resourceID: parseInt(result.resourceId),
-      };
+        resourceWithId = {
+          ...newResource,
+          resourceID: result.resourceID,
+          orderIndex: result.orderIndex,
+        };
+      } else {
+        // Create regular resource
+        const result = await courseApi.addLessonResource(
+          course.id.toString(),
+          sectionId.toString(),
+          lessonId.toString(),
+          {
+            resourceType: newResource.resourceType as 'PDF' | 'ExternalLink',
+            resourceTitle: newResource.resourceTitle,
+            resourceURL: newResource.resourceURL,
+          }
+        );
 
-      console.log('=== CREATED RESOURCE ===');
-      console.log('New resource ID from API:', result.resourceId);
-      console.log('Resource with ID:', resourceWithId);
+        resourceWithId = {
+          ...newResource,
+          resourceID: parseInt(result.resourceId),
+        };
+      }
 
       const newSections = [...course.section];
       newSections[sectionIndex].lessons[lessonIndex].resources = [
@@ -1008,8 +1036,6 @@ const EditCourse = () => {
         resourceWithId,
       ];
       setCourse({ ...course, section: newSections });
-
-      console.log('Updated course state:', newSections[sectionIndex].lessons[lessonIndex].resources);
 
       toast({
         title: 'Success',
