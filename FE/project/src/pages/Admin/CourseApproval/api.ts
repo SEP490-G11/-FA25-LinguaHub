@@ -1,12 +1,12 @@
 import axios from '@/config/axiosConfig';
-import { PendingCourse, CourseDetail, PaginatedResponse, ApprovalFilters } from './types';
+import { PendingCourse, CourseDetail, PaginatedResponse, ApprovalFilters, CourseChangeData } from './types';
 
 /**
  * Admin API for Course Approval Management
  */
 export const courseApprovalApi = {
   /**
-   * Get all pending courses (both live courses and drafts)
+   * Get pending courses (only live courses with Pending status, NOT draft updates)
    */
   getPendingCourses: async (
     page: number = 1,
@@ -14,75 +14,43 @@ export const courseApprovalApi = {
     filters?: ApprovalFilters
   ): Promise<PaginatedResponse<PendingCourse>> => {
     try {
-      // Fetch both live pending courses and draft pending courses
-      const [liveCoursesResponse, draftCoursesResponse] = await Promise.all([
-        axios.get('/admin/courses/by-status', { params: { status: 'Pending' } }),
-        axios.get('/admin/courses/drafts', { params: { status: 'PENDING_REVIEW' } }),
-      ]);
+      // Fetch only live pending courses (NOT draft courses)
+      const liveCoursesResponse = await axios.get('/admin/courses/by-status', { 
+        params: { status: 'Pending' } 
+      });
 
       const liveCourses = liveCoursesResponse?.data?.result || [];
-      const draftCourses = draftCoursesResponse?.data?.result || [];
 
       console.log('📊 Live courses response:', liveCourses);
-      console.log('📊 Draft courses response:', draftCourses);
 
-      // Combine and map to PendingCourse format
-      let allCourses: PendingCourse[] = [
-        ...liveCourses.map((course: any) => {
-          console.log('🔍 Mapping live course:', course);
-          console.log('  - categoryName:', course.categoryName);
-          console.log('  - level:', course.level);
-          console.log('  - language:', course.language);
-          return {
-            id: course.id, // AdminCourseResponse uses 'id' field
-            title: course.title,
-            shortDescription: course.shortDescription || '',
-            description: course.description || '',
-            requirement: course.requirement || '',
-            level: course.level || 'BEGINNER',
-            categoryID: 0, // Not provided in response
-            categoryName: course.categoryName || 'Unknown',
-            language: course.language || 'English',
-            duration: course.duration || 0,
-            price: course.price || 0,
-            thumbnailURL: course.thumbnailURL || '',
-            status: 'Pending',
-            tutorID: 0, // Not provided in response
-            tutorName: course.tutorName,
-            tutorEmail: course.tutorEmail,
-            createdAt: course.createdAt || new Date().toISOString(),
-            updatedAt: course.updatedAt || new Date().toISOString(),
-            isDraft: false,
-          };
-        }),
-        ...draftCourses.map((draft: any) => {
-          console.log('🔍 Mapping draft course:', draft);
-          console.log('  - categoryName:', draft.categoryName);
-          console.log('  - level:', draft.level);
-          console.log('  - language:', draft.language);
-          return {
-            id: draft.draftID, // AdminCourseDraftResponse uses 'draftID' field
-            title: draft.title,
-            shortDescription: draft.shortDescription || '',
-            description: draft.description || '',
-            requirement: draft.requirement || '',
-            level: draft.level || 'BEGINNER',
-            categoryID: 0, // Not provided in response
-            categoryName: draft.categoryName || 'Unknown',
-            language: draft.language || 'English',
-            duration: draft.duration || 0,
-            price: draft.price || 0,
-            thumbnailURL: draft.thumbnailURL || '',
-            status: 'Pending',
-            tutorID: 0, // Not provided in response
-            tutorName: draft.tutorName,
-            tutorEmail: draft.tutorEmail,
-            createdAt: draft.createdAt || new Date().toISOString(),
-            updatedAt: draft.updatedAt || new Date().toISOString(),
-            isDraft: true,
-          };
-        }),
-      ];
+      // Map to PendingCourse format (only live courses)
+      let allCourses: PendingCourse[] = liveCourses.map((course: any) => {
+        console.log('🔍 Mapping live course:', course);
+        console.log('  - categoryName:', course.categoryName);
+        console.log('  - level:', course.level);
+        console.log('  - language:', course.language);
+        return {
+          id: course.id, // AdminCourseResponse uses 'id' field
+          title: course.title,
+          shortDescription: course.shortDescription || '',
+          description: course.description || '',
+          requirement: course.requirement || '',
+          level: course.level || 'BEGINNER',
+          categoryID: 0, // Not provided in response
+          categoryName: course.categoryName || 'Unknown',
+          language: course.language || 'English',
+          duration: course.duration || 0,
+          price: course.price || 0,
+          thumbnailURL: course.thumbnailURL || '',
+          status: 'Pending', // Live courses have "Pending" status
+          tutorID: 0, // Not provided in response
+          tutorName: course.tutorName,
+          tutorEmail: course.tutorEmail,
+          createdAt: course.createdAt || new Date().toISOString(),
+          updatedAt: course.updatedAt || new Date().toISOString(),
+          isDraft: false,
+        };
+      });
 
       console.log('✅ All mapped courses:', allCourses);
 
@@ -122,6 +90,17 @@ export const courseApprovalApi = {
       };
     } catch (error: any) {
       console.error('❌ Error fetching pending courses:', error);
+      
+      // Handle specific error cases
+      if (error?.response?.status === 403) {
+        throw new Error('You do not have permission to view pending courses');
+      }
+      
+      // Network or other errors
+      if (!error?.response) {
+        throw new Error('Network error: Unable to fetch pending courses');
+      }
+      
       throw new Error(
         error?.response?.data?.message || 
         error.message || 
@@ -181,6 +160,21 @@ export const courseApprovalApi = {
       };
     } catch (error: any) {
       console.error('❌ Error fetching course detail:', error);
+      
+      // Handle specific error cases
+      if (error?.response?.status === 404) {
+        throw new Error('Course not found or has been already processed');
+      }
+      
+      if (error?.response?.status === 403) {
+        throw new Error('You do not have permission to view this course');
+      }
+      
+      // Network or other errors
+      if (!error?.response) {
+        throw new Error('Network error: Unable to fetch course details');
+      }
+      
       throw new Error(
         error?.response?.data?.message || 
         error.message || 
@@ -211,6 +205,25 @@ export const courseApprovalApi = {
       };
     } catch (error: any) {
       console.error('❌ Error approving course:', error);
+      
+      // Handle specific error cases
+      if (error?.response?.status === 404) {
+        throw new Error('Course not found or has already been processed');
+      }
+      
+      if (error?.response?.status === 403) {
+        throw new Error('You do not have permission to approve this course');
+      }
+      
+      if (error?.response?.status === 409) {
+        throw new Error('Course has already been approved or rejected');
+      }
+      
+      // Network or other errors
+      if (!error?.response) {
+        throw new Error('Network error: Unable to approve course');
+      }
+      
       throw new Error(
         error?.response?.data?.message || 
         error.message || 
@@ -240,10 +253,75 @@ export const courseApprovalApi = {
       };
     } catch (error: any) {
       console.error('❌ Error rejecting course:', error);
+      
+      // Handle specific error cases
+      if (error?.response?.status === 404) {
+        throw new Error('Course not found or has already been processed');
+      }
+      
+      if (error?.response?.status === 403) {
+        throw new Error('You do not have permission to reject this course');
+      }
+      
+      if (error?.response?.status === 409) {
+        throw new Error('Course has already been approved or rejected');
+      }
+      
+      // Network or other errors
+      if (!error?.response) {
+        throw new Error('Network error: Unable to reject course');
+      }
+      
       throw new Error(
         error?.response?.data?.message || 
         error.message || 
         'Failed to reject course'
+      );
+    }
+  },
+
+  /**
+   * Get change comparison between original course and draft
+   */
+  getDraftChanges: async (draftID: number): Promise<CourseChangeData> => {
+    try {
+      console.log('🔍 Fetching draft changes for draftID:', draftID);
+      
+      const response = await axios.get(`/admin/courses/drafts/${draftID}/changes`);
+      const data = response?.data?.result || response?.data || {};
+
+      console.log('📊 Draft changes response:', data);
+
+      return {
+        courseId: data.courseId || 0,
+        draftId: data.draftId || draftID,
+        courseChanges: data.courseChanges || [],
+        objectives: data.objectives || [],
+        sections: data.sections || [],
+        lessons: data.lessons || [],
+        resources: data.resources || [],
+      };
+    } catch (error: any) {
+      console.error('❌ Error fetching draft changes:', error);
+      
+      // Handle specific error cases
+      if (error?.response?.status === 404) {
+        throw new Error('Draft not found or has been already processed');
+      }
+      
+      if (error?.response?.status === 403) {
+        throw new Error('You do not have permission to view this draft');
+      }
+      
+      // Network or other errors
+      if (!error?.response) {
+        throw new Error('Network error: Unable to fetch draft changes');
+      }
+      
+      throw new Error(
+        error?.response?.data?.message || 
+        error.message || 
+        'Failed to fetch draft changes'
       );
     }
   },

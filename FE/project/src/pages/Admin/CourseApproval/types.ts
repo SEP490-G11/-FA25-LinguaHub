@@ -78,3 +78,55 @@ export interface PaginatedResponse<T> {
   limit: number;
   totalPages: number;
 }
+
+// Change comparison types
+export type ChangeType = 'ADDED' | 'MODIFIED' | 'DELETED';
+
+export interface FieldChange {
+  field: string;
+  oldValue: string;
+  newValue: string;
+}
+
+export interface ObjectiveChange {
+  originalObjectiveId: number;
+  draftObjectiveId: number;
+  changeType: ChangeType;
+  fieldChanges: FieldChange[];
+}
+
+export interface SectionChange {
+  originalSectionId: number;
+  draftSectionId: number;
+  title: string;
+  changeType: ChangeType;
+  fieldChanges: FieldChange[];
+}
+
+export interface LessonChange {
+  originalLessonId: number;
+  draftLessonId: number;
+  title: string;
+  lessonType: string;
+  changeType: ChangeType;
+  fieldChanges: FieldChange[];
+  resetUserProgressRequired: boolean;
+}
+
+export interface ResourceChange {
+  originalResourceId: number;
+  draftResourceId: number;
+  resourceTitle: string;
+  changeType: ChangeType;
+  fieldChanges: FieldChange[];
+}
+
+export interface CourseChangeData {
+  courseId: number;
+  draftId: number;
+  courseChanges: FieldChange[];
+  objectives: ObjectiveChange[];
+  sections: SectionChange[];
+  lessons: LessonChange[];
+  resources: ResourceChange[];
+}
