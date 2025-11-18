@@ -7,21 +7,18 @@ const Messages = () => {
   const { conversationId } = useParams();
   const navigate = useNavigate();
 
-  // convert URL param thành number hoặc null
   const initialRoomId = conversationId ? Number(conversationId) : null;
 
   const [selectedConversation, setSelectedConversation] = useState<number | null>(
       initialRoomId
   );
 
-  // Khi URL thay đổi → cập nhật selectedConversation
   useEffect(() => {
     if (conversationId) {
       setSelectedConversation(Number(conversationId));
     }
   }, [conversationId]);
 
-  // Khi user chọn room bên trái → update URL
   const handleSelectConversation = (roomId: number) => {
     setSelectedConversation(roomId);
     navigate(`/messages/${roomId}`);
@@ -30,19 +27,22 @@ const Messages = () => {
   return (
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 py-8">
+
+          {/* Wrapper không overflow-hidden */}
           <div
-              className="bg-white rounded-lg shadow-lg overflow-hidden"
+              className="bg-white rounded-lg shadow-lg"
               style={{ height: "calc(100vh - 8rem)" }}
           >
-            <div className="grid grid-cols-1 md:grid-cols-3 h-full">
-              {/* LEFT COLUMN: Conversations list */}
+            <div className="grid grid-cols-1 md:grid-cols-3 h-full min-h-0">
+
+              {/* LEFT LIST */}
               <ConversationsList
                   selectedConversation={selectedConversation}
                   onSelectConversation={handleSelectConversation}
               />
 
-              {/* RIGHT COLUMN: Chat window */}
-              <div className="md:col-span-2">
+              {/* RIGHT CHAT WINDOW FIX TRÀN */}
+              <div className="md:col-span-2 min-h-0 flex flex-col">
                 {selectedConversation ? (
                     <ChatWindow conversationId={selectedConversation} />
                 ) : (
@@ -54,8 +54,10 @@ const Messages = () => {
                     </div>
                 )}
               </div>
+
             </div>
           </div>
+
         </div>
       </div>
   );

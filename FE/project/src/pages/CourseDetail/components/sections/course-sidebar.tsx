@@ -5,7 +5,7 @@ import api from "@/config/axiosConfig";
 import { ROUTES } from "@/constants/routes";
 import { useEffect, useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
-import { getUserId } from "@/lib/getUserId.ts";
+import { getUserId } from "@/lib/getUserId";
 
 interface CourseSidebarProps {
   course: {
@@ -54,10 +54,12 @@ interface TutorCourse {
 
 const CourseSidebar = ({ course, wishlisted, setWishlisted }: CourseSidebarProps) => {
   const navigate = useNavigate();
-  const [isOwner, setIsOwner] = useState(false);
   const { toast } = useToast();
+  const [isOwner, setIsOwner] = useState(false);
 
-  // Kiểm tra user có phải tutor của khóa học
+  /** ===============================
+   *  CHECK TUTOR OWNERSHIP
+   * =============================== */
   useEffect(() => {
     const token =
         localStorage.getItem("access_token") ||
@@ -69,176 +71,165 @@ const CourseSidebar = ({ course, wishlisted, setWishlisted }: CourseSidebarProps
       try {
         const res = await api.get("/tutor/courses/me");
         const myCourses: TutorCourse[] = res.data.result || [];
-        const found = myCourses.some((c) => c.id === course.id);
-        if (found) setIsOwner(true);
+        if (myCourses.some((c) => c.id === course.id)) {
+          setIsOwner(true);
+        }
       } catch {
-        // tránh lỗi không cần thiết
+        //no
       }
     };
 
     checkTutorCourse();
   }, [course.id]);
 
-  // Nếu khóa học đã được mua, xoá khỏi wishlist tự động
+  /** ===============================
+   *  AUTO-REMOVE WISHLIST IF PURCHASED
+   * =============================== */
   useEffect(() => {
     if (course.isPurchased && wishlisted) {
       const removeWishlist = async () => {
         try {
           await api.delete(`/wishlist/${course.id}`);
           setWishlisted(false);
-        } catch (error) {
-          console.log("Failed to auto-remove wishlist:", error);
+        } catch {
+          //no
         }
       };
       removeWishlist();
     }
-  }, [course.isPurchased, wishlisted, course.id]);
+  }, [course.isPurchased]);
 
-  // Toggle wishlist
+  /** ===============================
+   *  WISHLIST TOGGLE
+   * =============================== */
   const toggleWishlist = async () => {
     const token =
         localStorage.getItem("access_token") ||
         sessionStorage.getItem("access_token");
 
     if (!token) {
-      const redirectURL = encodeURIComponent(window.location.pathname);
-      navigate(`${ROUTES.SIGN_IN}?redirect=${redirectURL}`);
+      navigate(`${ROUTES.SIGN_IN}?redirect=${window.location.pathname}`);
       toast({
         variant: "destructive",
-        title: "You are not logged in",
-        description: "Please login to use wishlist.",
+        title: "You must be logged in",
       });
       return;
     }
+
     try {
       if (wishlisted) {
         await api.delete(`/wishlist/${course.id}`);
         setWishlisted(false);
-        toast({
-          variant: "success",
-          title: "Removed from wishlist",
-        });
+        toast({ title: "Removed from wishlist" });
       } else {
         await api.post(`/wishlist/${course.id}`);
         setWishlisted(true);
-        toast({
-          variant: "success",
-          title: "Added to wishlist",
-        });
+        toast({ title: "Added to wishlist" });
       }
     } catch {
       toast({
         variant: "destructive",
-        title: "Something went wrong",
+        title: "Wishlist error",
       });
     }
   };
 
-  // Handle Buy Now
+  /** ===============================
+   *  BUY NOW
+   * =============================== */
   const handleBuyNow = async () => {
     const token =
         localStorage.getItem("access_token") ||
         sessionStorage.getItem("access_token");
 
     if (!token) {
-      const redirectURL = encodeURIComponent(window.location.pathname);
-      navigate(`${ROUTES.SIGN_IN}?redirect=${redirectURL}`);
+      navigate(`${ROUTES.SIGN_IN}?redirect=${window.location.pathname}`);
       toast({
-        title: "Login Required",
-        description: "Please sign in before buying the course.",
         variant: "destructive",
+        title: "Login required",
       });
       return;
     }
 
-    // LẤY USER ID
     const userId = await getUserId();
-
     if (!userId) {
       toast({
-        title: "User Error",
-        description: "Cannot detect user information.",
         variant: "destructive",
+        title: "User not found",
       });
       return;
     }
 
     try {
-      const response = await api.post("/api/payments/create", {
-        userId,               // ✔ userID dạng number
-        targetId: course.id,  // ✔ ID khóa học
-        paymentType: "Course"
+      const res = await api.post("/api/payments/create", {
+        userId,
+        targetId: course.id,
+        paymentType: "Course",
       });
 
-      // Xóa khóa học khỏi wishlist nếu đã được thêm
       if (wishlisted) {
         await api.delete(`/wishlist/${course.id}`);
         setWishlisted(false);
       }
 
-      // Điều hướng đến trang thanh toán nội bộ
-      navigate(ROUTES.PAYMENT.replace(":id", String(course.id)), {
-        state: {
-          ...course,
-          ...response.data,
-        },
+      navigate(ROUTES.PAYMENT.replace(":id", `${course.id}`), {
+        state: { ...course, ...res.data },
       });
-
     } catch {
       toast({
         variant: "destructive",
         title: "Payment failed",
-        description: "Unable to initialize payment.",
       });
     }
   };
 
-  // Handle Go to Course
+  /** ===============================
+   *  GO TO COURSE
+   * =============================== */
   const handleGoToCourse = () => navigate(`/learning/${course.id}`);
   const handleViewProfile = () =>
       navigate(ROUTES.TUTOR_DETAIL.replace(":id", `${course.tutorID}`));
 
   const totalLessons = course.section?.reduce(
-      (total, sec) => total + sec.lessons.length,
+      (t, sec) => t + sec.lessons.length,
       0
   );
 
   const formatPrice = (price: number) =>
-      new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(price);
+      new Intl.NumberFormat("vi-VN", {
+        style: "currency",
+        currency: "VND",
+      }).format(price);
 
   return (
-      <div className="lg:col-span-1">
+      <div className="lg:col-span-1 space-y-8">
 
-
-
-        {/* Instructor Card */}
+        {/* ================= INSTRUCTOR CARD ================= */}
         <motion.div
-            className="bg-white rounded-xl p-6 shadow-md mb-8"
-            initial={{opacity: 0, y: 60}}
-            whileInView={{opacity: 1, y: 0}}
-            viewport={{once: true}}
-            transition={{duration: 0.6}}
+            className="bg-white rounded-2xl p-6 shadow-lg"
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
         >
           <h3 className="text-xl font-bold text-gray-900 mb-4">Instructor</h3>
 
           <div className="flex items-center space-x-4 mb-4">
             <img
-                src={course.tutorAvatarURL || "https://placehold.co/150x150/png?text=Tutor"}
-                alt={course.tutorName}
-                className="w-16 h-16 rounded-full object-cover"
+                src={course.tutorAvatarURL || "https://placehold.co/150x150/png"}
+                className="w-16 h-16 rounded-full object-cover shadow"
             />
 
             <div>
               <h4 className="font-semibold text-gray-900">{course.tutorName}</h4>
-              {course.tutorAddress && (
-                  <p className="text-sm text-gray-500 mt-0.5">{course.tutorAddress}</p>
-              )}
+              <p className="text-sm text-gray-500">{course.tutorAddress}</p>
+
               <div className="flex items-center space-x-1 mt-1">
-                <Star className="w-4 h-4 fill-yellow-400 text-yellow-400"/>
+                <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
                 <span className="text-sm">{course.avgRating.toFixed(1)}</span>
                 <span className="text-sm text-gray-500">
-                  ({course.totalRatings} reviews)
-                </span>
+                ({course.totalRatings})
+              </span>
               </div>
             </div>
           </div>
@@ -250,119 +241,106 @@ const CourseSidebar = ({ course, wishlisted, setWishlisted }: CourseSidebarProps
             View Profile
           </button>
         </motion.div>
-        {/* Objectives Section */}
+
+        {/* ================= OBJECTIVES ================= */}
         <motion.div
-            className="bg-white rounded-xl p-6 shadow-md mb-8"
-            initial={{opacity: 0, y: 60}}
-            whileInView={{opacity: 1, y: 0}}
-            viewport={{once: true}}
-            transition={{duration: 0.6}}
+            className="bg-white rounded-2xl p-6 shadow-lg"
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
         >
           <h3 className="text-xl font-bold text-gray-900 mb-4">Objectives</h3>
-          <ul className="list-disc pl-5 space-y-2">
-            {course.objectives?.map((objective, index) => (
-                <li key={index} className="text-gray-600">{objective}</li>
+
+          <ul className="list-disc pl-5 space-y-2 text-gray-700">
+            {course.objectives?.map((o, i) => (
+                <li key={i}>{o}</li>
             ))}
           </ul>
         </motion.div>
 
-        {/* Course Info */}
+        {/* ================= COURSE INFO ================= */}
         <motion.div
-            className="bg-white rounded-xl p-6 shadow-md mb-8"
-            initial={{opacity: 0, y: 60}}
-            whileInView={{opacity: 1, y: 0}}
-            viewport={{once: true}}
-            transition={{duration: 0.6}}
+            className="bg-white rounded-2xl p-6 shadow-lg"
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
         >
           <h3 className="text-xl font-bold text-gray-900 mb-4">
             Course Information
           </h3>
 
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Clock className="w-5 h-5 text-gray-500"/>
-                <span className="text-gray-600">Duration</span>
+            <div className="flex justify-between">
+              <div className="flex items-center space-x-2 text-gray-600">
+                <Clock className="w-5 h-5" />
+                <span>Duration</span>
               </div>
-              <span className="font-medium">{course.duration} hours</span>
+              <span className="font-semibold">{course.duration} hours</span>
             </div>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <BookOpen className="w-5 h-5 text-gray-500"/>
-                <span className="text-gray-600">Lessons</span>
+            <div className="flex justify-between">
+              <div className="flex items-center space-x-2 text-gray-600">
+                <BookOpen className="w-5 h-5" />
+                <span>Lessons</span>
               </div>
-              <span className="font-medium">{totalLessons}</span>
+              <span className="font-semibold">{totalLessons}</span>
             </div>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Globe className="w-5 h-5 text-gray-500"/>
-                <span className="text-gray-600">Language</span>
+            <div className="flex justify-between">
+              <div className="flex items-center space-x-2 text-gray-600">
+                <Globe className="w-5 h-5" />
+                <span>Language</span>
               </div>
-              <span className="font-medium">{course.language}</span>
-            </div>
-
-            {/* Content Summary Section */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Total Video Hours</span>
-                <span className="font-medium">{course.contentSummary.totalVideoHours} hours</span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Practice Tests</span>
-                <span className="font-medium">{course.contentSummary.totalPracticeTests}</span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Articles</span>
-                <span className="font-medium">{course.contentSummary.totalArticles}</span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Downloadable Resources</span>
-                <span className="font-medium">{course.contentSummary.totalDownloadableResources}</span>
-              </div>
+              <span className="font-semibold">{course.language}</span>
             </div>
           </div>
         </motion.div>
 
-        {/* Payment / Wishlist / Go To Course */}
+        {/* ================= PAYMENT SECTION ================= */}
         <motion.div
-            className="bg-white rounded-xl p-6 shadow-md"
-            initial={{opacity: 0, y: 60}}
-            whileInView={{opacity: 1, y: 0}}
-            viewport={{once: true}}
-            transition={{duration: 0.6}}
+            className="bg-white rounded-2xl p-6 shadow-lg"
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
         >
-          <div className="text-center mb-4">
-            <span className="text-3xl font-bold text-blue-600">
-              {formatPrice(course.price)}
-            </span>
+          {/* Price */}
+          <div className="text-center mb-6">
+          <span className="text-3xl font-bold text-blue-600">
+            {formatPrice(course.price)}
+          </span>
           </div>
 
+          {/* If Owner OR Purchased → Go To Course */}
           {isOwner || course.isPurchased ? (
               <button
                   onClick={handleGoToCourse}
-                  className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition mb-3"
+                  className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition mb-3"
               >
                 Go to Course
               </button>
           ) : (
               <>
+                {/* Buy Now */}
                 <button
                     onClick={handleBuyNow}
-                    className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition mb-3"
+                    className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition mb-3"
                 >
                   Buy Now
                 </button>
 
+                {/* Wishlist */}
                 <button
                     onClick={toggleWishlist}
-                    className="w-full flex justify-center items-center gap-2 border border-blue-600 text-blue-600 py-3 rounded-lg font-semibold hover:bg-blue-50 transition"
+                    className="w-full border flex items-center justify-center gap-2 border-blue-600 text-blue-600 py-3 rounded-lg hover:bg-blue-50 transition"
                 >
-                  <Heart className={`w-5 h-5 ${wishlisted ? "fill-blue-600 text-blue-600" : ""}`}/>
+                  <Heart
+                      className={`w-5 h-5 ${
+                          wishlisted ? "fill-blue-600 text-blue-600" : ""
+                      }`}
+                  />
                   {wishlisted ? "Remove from Wishlist" : "Add to Wishlist"}
                 </button>
               </>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,9 +11,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { X } from 'lucide-react';
-import { getLanguages } from '@/pages/TutorPages/CreateCourse/course-api';
+import { getCategories, getLanguages } from '@/pages/TutorPages/CreateCourse/course-api';
 import { CourseFormData, Language, Category } from '@/pages/TutorPages/CreateCourse/course-api';
-import axios from '@/config/axiosConfig';
 
 interface Step1Props {
   data: Partial<CourseFormData>;
@@ -40,7 +39,7 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
     description: data.description || '',
     requirement: data.requirement || '',
     level: data.level || 'BEGINNER',
-    categoryID: data.categoryID || 1, // Default to category 1
+    categoryID: data.categoryID || 1,
     language: data.language || 'English',
     duration: data.duration || 0,
     price: data.price || 0,
@@ -48,54 +47,12 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
   });
 
   const [errors, setErrors] = useState<ValidationErrors>({});
-  const [touched, setTouched] = useState<Record<string, boolean>>({
-    categoryID: true, // Mark as touched so default value is visible
-  });
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [thumbnailURLPreview, setThumbnailPreview] = useState<string | null>(null);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   
-  // Get languages from constants
+  // Get hardcoded categories and languages (no API call needed)
+  const categories: Category[] = getCategories();
   const languages: Language[] = getLanguages();
-
-  // Fetch categories from API
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        setIsLoadingCategories(true);
-        console.log('🔍 Fetching categories from /categories...');
-        const response = await axios.get('/categories');
-        console.log('📊 Categories API response:', response);
-        console.log('📊 Response data:', response?.data);
-        
-        // Try different response formats
-        let rawData = [];
-        if (response?.data?.result) {
-          rawData = response.data.result;
-        } else if (Array.isArray(response?.data)) {
-          rawData = response.data;
-        } else if (response?.data?.data) {
-          rawData = response.data.data;
-        }
-        
-        // Map backend format to frontend format
-        const categoriesData = rawData.map((cat: any) => ({
-          id: cat.categoryId || cat.id,
-          name: cat.categoryName || cat.name,
-        }));
-        
-        console.log('✅ Mapped categories:', categoriesData);
-        setCategories(categoriesData);
-      } catch (error) {
-        console.error('❌ Error fetching categories:', error);
-        setCategories([]);
-      } finally {
-        setIsLoadingCategories(false);
-      }
-    };
-
-    fetchCategories();
-  }, []);
 
   const validateField = (name: string, value: unknown): string | undefined => {
     switch (name) {
@@ -363,21 +320,11 @@ export function Step1CourseInfo({ data, onNext }: Step1Props) {
               <SelectValue placeholder="Select a category" />
             </SelectTrigger>
             <SelectContent>
-              {isLoadingCategories ? (
-                <SelectItem value="loading" disabled>
-                  Loading categories...
+              {categories.map((category) => (
+                <SelectItem key={category.id} value={String(category.id)}>
+                  {category.name}
                 </SelectItem>
-              ) : categories.length === 0 ? (
-                <SelectItem value="empty" disabled>
-                  No categories available
-                </SelectItem>
-              ) : (
-                categories.map((category) => (
-                  <SelectItem key={category.id} value={String(category.id)}>
-                    {category.name}
-                  </SelectItem>
-                ))
-              )}
+              ))}
             </SelectContent>
           </Select>
           {errors.categoryID && touched.categoryID && (

@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
+import { AxiosError } from "axios";
 
 interface CourseFeedbackProps {
     feedbacks?: {
@@ -101,7 +102,6 @@ const CourseFeedback = ({ feedbacks = [], courseId, isPurchased }: CourseFeedbac
         }
     };
 
-    /**  Delete Review (now includes login check + toast on backend error) */
     const deleteReview = async () => {
         const token = localStorage.getItem("access_token") || sessionStorage.getItem("access_token");
 
@@ -120,7 +120,6 @@ const CourseFeedback = ({ feedbacks = [], courseId, isPurchased }: CourseFeedbac
             return;
         }
 
-
         try {
             await api.delete(`/review/${selectedReviewId}`);
 
@@ -129,15 +128,25 @@ const CourseFeedback = ({ feedbacks = [], courseId, isPurchased }: CourseFeedbac
             );
 
             setDeleteDialogOpen(false);
-        }  catch (err: unknown) {
-        const error = err as { response?: { data?: { message?: string } } };
-        toast({
-            variant: "destructive",
-            title: "Delete failed",
-            description: error.response?.data?.message || "Something went wrong.",
-        });
-    }
-};
+
+
+            toast({
+                variant: "success",
+                title: "Review deleted successfully",
+            });
+
+        } catch (error) {
+            const err = error as AxiosError<{ message?: string }>;
+
+            toast({
+                variant: "destructive",
+                title: "Delete failed",
+                description: err.response?.data?.message || "Something went wrong.",
+            });
+        }
+    };
+
+
 
     return (
         <div className="bg-white rounded-xl p-8 shadow-md">

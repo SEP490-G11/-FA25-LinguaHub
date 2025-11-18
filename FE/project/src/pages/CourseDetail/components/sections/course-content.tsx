@@ -88,7 +88,7 @@ const CourseContent = ({ course, isPurchased }: CourseContentProps) => {
     return (
         <div className="lg:col-span-2">
 
-            {/* 🎯 OBJECTIVES SECTION */}
+            {/*  OBJECTIVES SECTION */}
             <motion.div
                 className="bg-white rounded-xl p-8 shadow-md mb-8"
                 initial="initial"
@@ -112,7 +112,7 @@ const CourseContent = ({ course, isPurchased }: CourseContentProps) => {
                 )}
             </motion.div>
 
-            {/* 📌 REQUIREMENTS SECTION */}
+            {/*  REQUIREMENTS SECTION */}
             <motion.div
                 className="bg-white rounded-xl p-8 shadow-md mb-8"
                 initial="initial"
@@ -126,7 +126,7 @@ const CourseContent = ({ course, isPurchased }: CourseContentProps) => {
                 </p>
             </motion.div>
 
-            {/* 📘 COURSE CURRICULUM */}
+            {/*  COURSE CURRICULUM */}
             {course.section && (
                 <motion.div
                     className="bg-white rounded-xl p-8 shadow-md mb-8"

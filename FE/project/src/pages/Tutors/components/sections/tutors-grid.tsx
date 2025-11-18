@@ -80,26 +80,17 @@ const TutorsGrid = ({ tutors, loading }: TutorsGridProps) => {
                         className="block bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden group cursor-pointer flex flex-col h-full"
                     >
                       {/* IMAGE */}
-                      <div className="relative h-65 w-full overflow-hidden flex-shrink-0 bg-gray-100 flex items-center justify-center">
-                        {tutor.image ? (
-                            <img
-                                src={tutor.image}
-                                alt={tutor.name}
-                                className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500 ease-out"
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).style.display = "none";
-                                  const parent = (e.target as HTMLElement).parentElement;
-                                  if (parent) {
-                                    parent.innerHTML = `<div class='flex items-center justify-center w-full h-full text-gray-400 font-medium text-lg'>No Image</div>`;
-                                  }
-                                }}
-                            />
-                        ) : (
-                            <div className="flex items-center justify-center w-full h-full text-gray-400 font-medium text-lg">
-                              No Image
-                            </div>
-                        )}
+                      <div className="relative w-full h-96 overflow-hidden rounded-t-xl bg-gray-100">
+                        <img
+                            src={tutor.image || 'https://via.placeholder.com/400x400'}
+                            alt={tutor.name}
+                            className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = "https://via.placeholder.com/400x400";
+                            }}
+                        />
                       </div>
+
                       {/* CARD BODY */}
                       <div className="p-6 flex flex-col flex-grow">
                         <div className="flex items-center justify-between mb-3">
@@ -108,7 +99,7 @@ const TutorsGrid = ({ tutors, loading }: TutorsGridProps) => {
                           </h3>
 
                           <div className="flex items-center space-x-1">
-                            <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                            <Star className="w-4 h-4 fill-yellow-400 text-yellow-400"/>
                             <span className="text-sm font-medium">
                           {tutor.rating}
                         </span>
@@ -120,10 +111,10 @@ const TutorsGrid = ({ tutors, loading }: TutorsGridProps) => {
 
                         {/* COUNTRY + LANGUAGE */}
                         <div className="flex items-center gap-3 mb-3 text-gray-600 text-sm">
-                          <MapPin className="w-4 h-4 text-gray-500" />
+                          <MapPin className="w-4 h-4 text-gray-500"/>
                           <span>{tutor.country}</span>
 
-                          <Languages className="w-4 h-4 text-gray-500 ml-3" />
+                          <Languages className="w-4 h-4 text-gray-500 ml-3"/>
                           <span>{tutor.language}</span>
                         </div>
 
