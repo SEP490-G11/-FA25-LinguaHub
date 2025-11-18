@@ -38,8 +38,11 @@ export const tutorPackageApi = {
         packageid: pkg.packageid,
         name: pkg.name,
         description: pkg.description,
+        requirement: pkg.requirement || '',
+        objectives: pkg.objectives || '',
         tutor_id: pkg.tutor_id,
-        max_slot: pkg.max_slot,
+        max_slots: pkg.max_slots || pkg.max_slot || 0,
+        slot_content: pkg.slot_content || [],
         is_active: pkg.is_active,
         created_at: pkg.created_at,
         updated_at: pkg.updated_at,
@@ -86,7 +89,17 @@ export const tutorPackageApi = {
     try {
       console.log('➕ Creating new package:', data);
 
-      const response = await axios.post('/tutor/package', data);
+      // Prepare request body with all required fields
+      const requestBody = {
+        name: data.name,
+        description: data.description,
+        requirement: data.requirement,
+        objectives: data.objectives,
+        max_slots: data.max_slots,
+        slot_content: data.slot_content,
+      };
+
+      const response = await axios.post('/tutor/package', requestBody);
       
       console.log('📦 Create package response:', response);
 
@@ -141,8 +154,12 @@ export const tutorPackageApi = {
         packageid: pkg.packageid,
         name: pkg.name,
         description: pkg.description,
+        requirement: pkg.requirement || '',
+        objectives: pkg.objectives || '',
         tutor_id: pkg.tutor_id,
-        max_slot: pkg.max_slot,
+        max_slots: pkg.max_slots || pkg.max_slot || 0,
+        slot_content: pkg.slot_content || [],
+        min_booking_price_per_hour: pkg.min_booking_price_per_hour || 0,
         is_active: pkg.is_active,
         created_at: pkg.created_at,
         updated_at: pkg.updated_at,
@@ -185,7 +202,17 @@ export const tutorPackageApi = {
     try {
       console.log('✏️ Updating package:', packageId, data);
 
-      const response = await axios.put(`/tutor/package/${packageId}`, data);
+      // Prepare request body with all required fields
+      const requestBody = {
+        name: data.name,
+        description: data.description,
+        requirement: data.requirement,
+        objectives: data.objectives,
+        max_slots: data.max_slots,
+        slot_content: data.slot_content,
+      };
+
+      const response = await axios.put(`/tutor/package/${packageId}`, requestBody);
       
       console.log('📦 Update package response:', response);
 

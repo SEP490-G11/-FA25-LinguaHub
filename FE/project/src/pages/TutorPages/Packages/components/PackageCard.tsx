@@ -8,9 +8,19 @@ import { PackageCardProps } from '../types';
 
 const PackageCard: React.FC<PackageCardProps> = ({ 
   package: pkg, 
+  onView,
   onEdit, 
-  onDelete 
+  onDelete
 }) => {
+  // Handle card click - navigate to detail view
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Prevent navigation if clicking on action buttons
+    const target = e.target as HTMLElement;
+    if (target.closest('button')) {
+      return;
+    }
+    onView(pkg.packageid);
+  };
   // Format dates for display
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('vi-VN', {
@@ -27,7 +37,10 @@ const PackageCard: React.FC<PackageCardProps> = ({
       transition={{ duration: 0.3 }}
       className="h-full"
     >
-      <Card className="h-full flex flex-col hover:shadow-lg transition-all duration-300 border-2 hover:border-blue-200">
+      <Card 
+        className="h-full flex flex-col hover:shadow-lg transition-all duration-300 border-2 hover:border-blue-200 cursor-pointer"
+        onClick={handleCardClick}
+      >
         <CardContent className="flex-1 p-6">
           {/* Header with status badge */}
           <div className="flex justify-between items-start mb-4">
@@ -57,7 +70,7 @@ const PackageCard: React.FC<PackageCardProps> = ({
                 <span className="text-sm">Số slot tối đa</span>
               </div>
               <span className="font-semibold text-blue-600">
-                {pkg.max_slot}
+                {pkg.max_slots}
               </span>
             </div>
           </div>

@@ -52,7 +52,7 @@ const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
             <div className="space-y-1 text-sm text-gray-700">
               <p><span className="font-medium">Tên:</span> {pkg.name}</p>
               <p><span className="font-medium">Mô tả:</span> {pkg.description}</p>
-              <p><span className="font-medium">Số slot tối đa:</span> {pkg.max_slot}</p>
+              <p><span className="font-medium">Số slot tối đa:</span> {pkg.max_slots}</p>
               <p><span className="font-medium">Trạng thái:</span> {pkg.is_active ? 'Hoạt động' : 'Không hoạt động'}</p>
             </div>
           </div>

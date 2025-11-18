@@ -3,14 +3,25 @@
  * Based on the design document and API specifications
  */
 
+import { z } from 'zod';
+
+// Slot content interface
+export interface SlotContent {
+  slot_number: number;
+  content: string;
+}
+
 // Main Package interface matching the API response structure
 export interface Package {
   packageid: number;
   name: string;
   description: string;
+  requirement: string;
+  objectives: string;
   tutor_id: number;
-  max_slot: number;
   is_active: boolean;
+  max_slots: number;
+  slot_content: SlotContent[];
   created_at: string;
   updated_at: string;
 }
@@ -19,8 +30,37 @@ export interface Package {
 export interface PackageFormData {
   name: string;
   description: string;
-  max_slot: number;
+  requirement: string;
+  objectives: string;
+  max_slots: number;
+  slot_content: SlotContent[];
 }
+
+// Zod schema for form validation
+export const packageFormSchema = z.object({
+  name: z.string()
+    .min(3, 'Tên package phải có ít nhất 3 ký tự')
+    .max(200, 'Tên package không được vượt quá 200 ký tự'),
+  description: z.string()
+    .min(10, 'Mô tả phải có ít nhất 10 ký tự')
+    .max(2000, 'Mô tả không được vượt quá 2000 ký tự'),
+  requirement: z.string()
+    .min(10, 'Yêu cầu phải có ít nhất 10 ký tự')
+    .max(1000, 'Yêu cầu không được vượt quá 1000 ký tự'),
+  objectives: z.string()
+    .min(10, 'Mục tiêu phải có ít nhất 10 ký tự')
+    .max(1000, 'Mục tiêu không được vượt quá 1000 ký tự'),
+  max_slots: z.number()
+    .int('Số slot phải là số nguyên')
+    .min(1, 'Số slot tối thiểu là 1')
+    .max(100, 'Số slot tối đa là 100'),
+  slot_content: z.array(z.object({
+    slot_number: z.number().int().positive('Số slot phải là số nguyên dương'),
+    content: z.string()
+      .min(10, 'Nội dung slot phải có ít nhất 10 ký tự')
+      .max(1000, 'Nội dung slot không được vượt quá 1000 ký tự')
+  })).min(1, 'Phải có ít nhất 1 slot content')
+});
 
 // API response interfaces
 export interface PackageListResponse {
@@ -35,14 +75,15 @@ export interface PackageResponse {
 // Component prop interfaces
 export interface PackageCardProps {
   package: Package;
+  onView: (packageId: number) => void;
   onEdit: (packageId: number) => void;
   onDelete: (packageId: number) => void;
 }
 
 export interface PackageFormProps {
   mode: 'create' | 'edit';
-  initialData?: Partial<Package>;
-  onSubmit: (data: PackageFormData) => void;
+  initialData?: Package;
+  onSubmit: (data: PackageFormData) => Promise<void>;
   onCancel: () => void;
   isLoading?: boolean;
 }
@@ -64,13 +105,6 @@ export interface PackageFilters {
 export interface PackageFiltersProps {
   filters: PackageFilters;
   onFiltersChange: (filters: PackageFilters) => void;
-}
-
-// Utility types for form validation
-export interface PackageFormErrors {
-  name?: string;
-  description?: string;
-  max_slot?: string;
 }
 
 // Package statistics interface (for future use)

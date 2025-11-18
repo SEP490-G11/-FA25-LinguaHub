@@ -7,6 +7,7 @@ import { tutorPackageApi } from './api';
 import { Package as PackageType, PackageFormData } from './types';
 import PackageCard from './components/PackageCard';
 import PackageForm from './components/PackageForm';
+import PackageDetailView from './components/PackageDetailView';
 import DeleteConfirmDialog from './components/DeleteConfirmDialog';
 
 const PackageManagementPage: React.FC = () => {
@@ -15,8 +16,11 @@ const PackageManagementPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
+  // Navigation states
+  const [currentView, setCurrentView] = useState<'list' | 'detail' | 'form'>('list');
+  const [selectedPackageId, setSelectedPackageId] = useState<number | null>(null);
+  
   // Form states
-  const [showForm, setShowForm] = useState(false);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
   const [editingPackage, setEditingPackage] = useState<PackageType | null>(null);
   const [isFormLoading, setIsFormLoading] = useState(false);
@@ -52,12 +56,29 @@ const PackageManagementPage: React.FC = () => {
   };
 
   /**
+   * Handle view package detail
+   */
+  const handleViewPackage = (packageId: number) => {
+    setSelectedPackageId(packageId);
+    setCurrentView('detail');
+  };
+
+  /**
+   * Handle back to list
+   */
+  const handleBackToList = () => {
+    setCurrentView('list');
+    setSelectedPackageId(null);
+    setEditingPackage(null);
+  };
+
+  /**
    * Handle create package
    */
   const handleCreatePackage = () => {
     setFormMode('create');
     setEditingPackage(null);
-    setShowForm(true);
+    setCurrentView('form');
   };
 
   /**
@@ -69,7 +90,7 @@ const PackageManagementPage: React.FC = () => {
       const packageData = await tutorPackageApi.getPackageById(packageId);
       setFormMode('edit');
       setEditingPackage(packageData);
-      setShowForm(true);
+      setCurrentView('form');
     } catch (err: any) {
       toast.error(err.message || 'Không thể tải thông tin package');
     } finally {
@@ -103,8 +124,7 @@ const PackageManagementPage: React.FC = () => {
         toast.success('Package đã được cập nhật thành công!');
       }
 
-      setShowForm(false);
-      setEditingPackage(null);
+      handleBackToList();
       await fetchPackages(); // Refresh the list
     } catch (err: any) {
       toast.error(err.message || 'Không thể lưu package');
@@ -117,8 +137,7 @@ const PackageManagementPage: React.FC = () => {
    * Handle form cancel
    */
   const handleFormCancel = () => {
-    setShowForm(false);
-    setEditingPackage(null);
+    handleBackToList();
   };
 
   /**
@@ -154,8 +173,24 @@ const PackageManagementPage: React.FC = () => {
     fetchPackages();
   }, []);
 
-  // Show form overlay
-  if (showForm) {
+  // Render detail view
+  if (currentView === 'detail' && selectedPackageId) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-4xl mx-auto">
+          <PackageDetailView
+            packageId={selectedPackageId}
+            onBack={handleBackToList}
+            onEdit={handleEditPackage}
+            onDelete={handleDeletePackage}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Render form view
+  if (currentView === 'form') {
     return (
       <div className="min-h-screen bg-gray-50 p-6">
         <div className="max-w-4xl mx-auto">
@@ -171,6 +206,7 @@ const PackageManagementPage: React.FC = () => {
     );
   }
 
+  // Render list view
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <div className="container mx-auto px-4 py-8">
@@ -251,6 +287,7 @@ const PackageManagementPage: React.FC = () => {
               <PackageCard
                 key={pkg.packageid}
                 package={pkg}
+                onView={handleViewPackage}
                 onEdit={handleEditPackage}
                 onDelete={handleDeletePackage}
               />
