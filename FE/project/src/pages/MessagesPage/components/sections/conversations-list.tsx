@@ -1,26 +1,39 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import api from "@/config/axiosConfig";
 
 interface ConversationsListProps {
-  selectedConversation: string | null;
-  onSelectConversation: (id: string) => void;
+  selectedConversation: number | null;
+  onSelectConversation: (id: number) => void;
+}
+
+interface MyInfo {
+  userID: number;
+  fullName: string;
+  avatarURL: string | null;
+  email: string;
+  role: string;
+}
+
+interface ChatRoomMessage {
+  messageID: number;
+  content: string;
+  messageType: string; // "Text", "Link", etc.
+  createdAt: string;
 }
 
 interface ChatRoom {
   chatRoomID: number;
+  tutorID: number;
   tutorName: string;
   tutorAvatarURL: string | null;
+  userID: number;
   userName: string;
   userAvatarURL: string | null;
   chatRoomType: "Advice" | "Training";
-  messages: {
-    messageID: number;
-    content: string;
-    createdAt: string;
-  }[];
+  messages: ChatRoomMessage[];
 }
 
 const ConversationsList = ({
@@ -29,10 +42,10 @@ const ConversationsList = ({
                            }: ConversationsListProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
-  const [myInfo, setMyInfo] = useState<any>(null);
+  const [myInfo, setMyInfo] = useState<MyInfo | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Load current user info
+  // Load my info
   useEffect(() => {
     api
         .get("/users/myInfo")
@@ -40,19 +53,34 @@ const ConversationsList = ({
         .catch(() => {});
   }, []);
 
-  // Load chat rooms
+  // Load + auto-refresh list
   useEffect(() => {
     const fetchRooms = async () => {
       try {
         const res = await api.get("/chat/rooms");
-        setRooms(res.data?.result || []);
+        const roomsData = res.data?.result || [];
+
+        const normalized = roomsData.map((room: ChatRoom) => ({
+          ...room,
+          messages: [...room.messages].sort(
+              (a, b) =>
+                  new Date(a.createdAt).getTime() -
+                  new Date(b.createdAt).getTime()
+          ),
+        }));
+
+        setRooms(normalized);
       } catch (err) {
-        console.error("❌ Error loading chat rooms:", err);
+        console.error("Error loading chat rooms:", err);
       } finally {
         setLoading(false);
       }
     };
+
     fetchRooms();
+    const interval = setInterval(fetchRooms, 800);
+
+    return () => clearInterval(interval);
   }, []);
 
   if (!myInfo) {
@@ -63,12 +91,68 @@ const ConversationsList = ({
     );
   }
 
-  const isTutor = myInfo.role === "Tutor";
+  const getRoomDisplay = (room: ChatRoom) => {
+    if (myInfo.userID === room.userID) {
+      return {
+        name: room.tutorName,
+        avatar: room.tutorAvatarURL,
+      };
+    }
+
+    if (myInfo.userID === room.tutorID) {
+      return {
+        name: room.userName,
+        avatar: room.userAvatarURL,
+      };
+    }
+
+    // fallback
+    return {
+      name: room.userName,
+      avatar: room.userAvatarURL,
+    };
+  };
 
   const filteredRooms = rooms.filter((room) => {
-    const displayName = isTutor ? room.userName : room.tutorName;
-    return displayName?.toLowerCase().includes(searchTerm.toLowerCase());
+    const { name } = getRoomDisplay(room);
+    return name?.toLowerCase().includes(searchTerm.toLowerCase());
   });
+
+  const renderMessageContent = (msg: ChatRoomMessage) => {
+    let content = msg.content;
+    let type = msg.messageType;
+
+    // Nếu content là chuỗi JSON, cố gắng parse
+    try {
+      const parsed = JSON.parse(content);
+      if (typeof parsed === "object" && parsed !== null) {
+        if (typeof parsed.content === "string") {
+          content = parsed.content;
+        }
+        if (typeof parsed.messageType === "string") {
+          type = parsed.messageType;
+        }
+      }
+    } catch {
+
+    }
+
+    if (type === "Link") {
+      return (
+          <a
+              href={content}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 underline break-words"
+          >
+            {content}
+          </a>
+      );
+    }
+
+    return <p className="whitespace-pre-wrap break-words text-sm">{content}</p>;
+  };
+
 
   return (
       <div className="border-r border-gray-200 flex flex-col h-full bg-[#F0F9FF]">
@@ -77,7 +161,7 @@ const ConversationsList = ({
           <h2 className="text-xl font-bold mb-4 text-blue-900">Messages</h2>
 
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-400 w-4 h-4" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-400 w-4 h-4" />
             <Input
                 placeholder="Search conversations..."
                 value={searchTerm}
@@ -90,36 +174,35 @@ const ConversationsList = ({
         {/* LIST */}
         <div className="flex-1 overflow-y-auto">
           {loading && (
-              <div className="p-4 text-center text-blue-500">Loading conversations...</div>
+              <div className="p-4 text-center text-blue-500">
+                Loading conversations...
+              </div>
           )}
 
           {!loading && filteredRooms.length === 0 && (
-              <div className="p-4 text-center text-gray-500">No conversations found.</div>
+              <div className="p-4 text-center text-gray-500">
+                No conversations found.
+              </div>
           )}
 
           {!loading &&
               filteredRooms.map((room) => {
-                const displayName = isTutor ? room.userName : room.tutorName;
-                const displayAvatar = isTutor
-                    ? room.userAvatarURL
-                    : room.tutorAvatarURL;
+                const { name: displayName, avatar: displayAvatar } =
+                    getRoomDisplay(room);
 
-                const lastMessage = room.messages?.[room.messages.length - 1];
-                const lastMsgText = lastMessage?.content || "No messages yet";
-
+                const lastMessage = room.messages[room.messages.length - 1];
+                const lastMsgText = renderMessageContent(lastMessage || { content: "No messages yet", messageType: "Text", createdAt: "" });
                 const lastMsgTime = lastMessage
                     ? new Date(lastMessage.createdAt).toLocaleString()
                     : "—";
 
+                const isSelected = selectedConversation === room.chatRoomID;
                 const hasBooking = room.chatRoomType === "Training";
-
-                const isSelected =
-                    selectedConversation === String(room.chatRoomID);
 
                 return (
                     <div
                         key={room.chatRoomID}
-                        onClick={() => onSelectConversation(String(room.chatRoomID))}
+                        onClick={() => onSelectConversation(room.chatRoomID)}
                         className={`p-4 border-b border-blue-100 cursor-pointer transition-all ${
                             isSelected
                                 ? "bg-blue-100 shadow-inner"
@@ -142,17 +225,19 @@ const ConversationsList = ({
                             <h3 className="font-semibold text-sm text-blue-900 truncate">
                               {displayName}
                             </h3>
-                            <span className="text-xs text-blue-500">{lastMsgTime}</span>
+                            <span className="text-xs text-blue-500">
+                              {lastMsgTime}
+                            </span>
                           </div>
 
-                          <p className="text-sm text-gray-600 truncate">{lastMsgText}</p>
+                          <p className="text-sm text-gray-600 truncate">
+                            {lastMsgText}
+                          </p>
 
                           {hasBooking && (
-                              <div className="mt-1">
-                        <span className="text-xs bg-blue-200 text-blue-700 px-2 py-1 rounded-full">
-                          Booked
-                        </span>
-                              </div>
+                              <span className="text-xs bg-blue-200 text-blue-700 px-2 py-1 rounded-full mt-1 inline-block">
+                                Booked
+                              </span>
                           )}
                         </div>
                       </div>

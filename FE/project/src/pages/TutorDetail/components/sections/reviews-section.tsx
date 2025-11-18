@@ -3,17 +3,26 @@ import { motion } from "framer-motion";
 import { Star } from "lucide-react";
 import api from "@/config/axiosConfig";
 
+interface ReviewApiResponse {
+  id: number;
+  studentName?: string;
+  flag?: string;
+  rating?: number;
+  createdAt?: string;
+  comment?: string;
+  avatarURL?: string;
+}
+
 interface Review {
   id: number;
   studentName: string;
-  studentFlag?: string;
+  studentFlag: string;
   rating: number;
   date: string;
   comment: string;
   avatarURL?: string;
 }
 
-//  Interface đúng: nhận tutorId để tự fetch
 interface ReviewsSectionProps {
   tutorId: number;
 }
@@ -33,23 +42,31 @@ const ReviewsSection = ({ tutorId }: ReviewsSectionProps) => {
     const fetchReviews = async () => {
       try {
         setLoading(true);
-        const res = await api.get(`/reviews/tutor/${tutorId}`);
-        // ✅ Ràng buộc type tránh `any`
-        const mapped: Review[] = (res.data || []).map((r: any) => ({
-          id: r.id,
-          studentName: r.studentName || "Ẩn danh",
-          studentFlag: r.flag || "🌍",
-          rating: r.rating || 0,
-          date: r.createdAt
-              ? new Date(r.createdAt).toLocaleDateString("vi-VN")
-              : "Không rõ",
-          comment: r.comment || "Không có nhận xét.",
-          avatarURL: r.avatarURL,
-        }));
+
+        const res = await api.get<ReviewApiResponse[]>(
+            `/reviews/tutor/${tutorId}`,
+            {
+              skipAuth: true,
+            }
+        );
+
+        const mapped: Review[] =
+            res.data?.map((r) => ({
+              id: r.id,
+              studentName: r.studentName || "Anonymous",
+              studentFlag: r.flag || "🌍",
+              rating: r.rating || 0,
+              date: r.createdAt
+                  ? new Date(r.createdAt).toLocaleDateString("en-US")
+                  : "Unknown",
+              comment: r.comment || "No comment provided.",
+              avatarURL: r.avatarURL,
+            })) || [];
+
         setReviews(mapped);
       } catch (err) {
-        console.error("❌ Lỗi khi tải đánh giá:", err);
-        setError("Không thể tải danh sách đánh giá.");
+        console.error("Error loading reviews:", err);
+        setError("Unable to load reviews.");
       } finally {
         setLoading(false);
       }
@@ -71,14 +88,14 @@ const ReviewsSection = ({ tutorId }: ReviewsSectionProps) => {
         </h2>
 
         {loading && (
-            <p className="text-gray-500 text-center py-4">Đang tải đánh giá...</p>
+            <p className="text-gray-500 text-center py-4">Loading reviews...</p>
         )}
 
         {error && <p className="text-red-500 text-center py-4">{error}</p>}
 
         {!loading && !error && reviews.length === 0 && (
             <p className="text-gray-500 text-center py-4">
-              Chưa có đánh giá nào cho gia sư này.
+              No reviews available for this tutor.
             </p>
         )}
 
@@ -99,7 +116,7 @@ const ReviewsSection = ({ tutorId }: ReviewsSectionProps) => {
                             />
                         ) : (
                             <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm">
-                              {review.studentFlag || "🌍"}
+                              {review.studentFlag}
                             </div>
                         )}
                         <span className="font-medium text-gray-900">

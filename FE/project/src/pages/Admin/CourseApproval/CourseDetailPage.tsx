@@ -31,8 +31,19 @@ import { courseApprovalApi } from './api';
 import { CourseDetail } from './types';
 import { CourseContentSection } from './components/course-content-section';
 
-export default function CourseDetailPage() {
-  const { courseId } = useParams<{ courseId: string }>();
+interface CourseDetailPageProps {
+  courseId?: string;
+  isDraft?: boolean;
+  additionalActions?: React.ReactNode;
+}
+
+export default function CourseDetailPage({
+  courseId: propCourseId,
+  isDraft: propIsDraft,
+  additionalActions,
+}: CourseDetailPageProps = {}) {
+  const { courseId: paramCourseId } = useParams<{ courseId: string }>();
+  const courseId = propCourseId || paramCourseId;
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -45,6 +56,8 @@ export default function CourseDetailPage() {
   const [rejectionReason, setRejectionReason] = useState('');
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showApproveConfirm, setShowApproveConfirm] = useState(false);
+  const [showRejectConfirm, setShowRejectConfirm] = useState(false);
   const [actionType, setActionType] = useState<'approve' | 'reject'>('approve');
 
   // Fetch course detail
@@ -56,8 +69,9 @@ export default function CourseDetailPage() {
         setIsLoading(true);
         setError(null);
 
-        // Check if it's a draft (URL param or localStorage)
-        const isDraft = new URLSearchParams(window.location.search).get('isDraft') === 'true';
+        // Check if it's a draft (URL param, prop, or localStorage)
+        const urlIsDraft = new URLSearchParams(window.location.search).get('isDraft') === 'true';
+        const isDraft = propIsDraft !== undefined ? propIsDraft : urlIsDraft;
         
         const courseDetail = await courseApprovalApi.getCourseDetail(
           parseInt(courseId),
@@ -65,24 +79,42 @@ export default function CourseDetailPage() {
         );
         setCourse(courseDetail);
       } catch (err: any) {
-        setError(err.message || 'Không thể tải chi tiết khóa học');
+        console.error('Error fetching course detail:', err);
+        
+        // Handle specific error cases
+        if (err?.response?.status === 404) {
+          setError('Không tìm thấy khóa học này. Có thể khóa học đã bị xóa hoặc đã được xử lý.');
+        } else if (err?.response?.status === 403) {
+          setError('Bạn không có quyền truy cập khóa học này.');
+          // Redirect to dashboard after showing error
+          setTimeout(() => navigate('/admin/dashboard'), 2000);
+        } else if (!err?.response) {
+          setError('Lỗi kết nối mạng. Vui lòng kiểm tra kết nối internet của bạn.');
+        } else {
+          setError(err.message || 'Không thể tải chi tiết khóa học');
+        }
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchCourseDetail();
-  }, [courseId]);
+  }, [courseId, propIsDraft]);
+
+  const handleApproveClick = () => {
+    setShowApproveConfirm(true);
+  };
 
   const handleApprove = async () => {
     if (!course) return;
 
     try {
       setIsActionLoading(true);
+      setShowApproveConfirm(false);
+      
       await courseApprovalApi.approveCourse(
         course.id,
-        course.isDraft || false,
-        adminNotes
+        course.isDraft || false
       );
 
       setActionType('approve');
@@ -98,9 +130,7 @@ export default function CourseDetailPage() {
     }
   };
 
-  const handleReject = async () => {
-    if (!course) return;
-
+  const handleRejectClick = () => {
     if (!rejectionReason.trim()) {
       toast({
         variant: 'destructive',
@@ -109,9 +139,16 @@ export default function CourseDetailPage() {
       });
       return;
     }
+    setShowRejectConfirm(true);
+  };
+
+  const handleReject = async () => {
+    if (!course) return;
 
     try {
       setIsActionLoading(true);
+      setShowRejectConfirm(false);
+      
       await courseApprovalApi.rejectCourse(
         course.id,
         course.isDraft || false,
@@ -150,12 +187,14 @@ export default function CourseDetailPage() {
   }
 
   if (error || !course) {
+    const errorBackUrl = propIsDraft ? '/admin/course-approval/drafts' : '/admin/course-approval';
+    
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50 p-8">
         <div className="max-w-4xl mx-auto">
           <Button
             variant="outline"
-            onClick={() => navigate('/admin/course-approval')}
+            onClick={() => navigate(errorBackUrl)}
             className="mb-6 gap-2"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -165,13 +204,30 @@ export default function CourseDetailPage() {
           <div className="bg-red-50 border border-red-200 rounded-lg p-8">
             <div className="flex gap-4 items-start">
               <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0 mt-1" />
-              <div>
-                <p className="text-red-800 font-semibold text-lg mb-2">
+              <div className="flex-1">
+                <h3 className="text-red-800 font-semibold text-lg mb-2">
+                  Không thể tải khóa học
+                </h3>
+                <p className="text-red-700 mb-4">
                   {error || 'Không tìm thấy khóa học'}
                 </p>
-                <Button onClick={() => window.location.reload()} size="sm">
-                  Thử lại
-                </Button>
+                <div className="flex gap-3">
+                  <Button 
+                    onClick={() => window.location.reload()} 
+                    size="sm"
+                    variant="outline"
+                    className="border-red-300 text-red-700 hover:bg-red-100"
+                  >
+                    Thử lại
+                  </Button>
+                  <Button 
+                    onClick={() => navigate(errorBackUrl)} 
+                    size="sm"
+                    className="bg-red-600 hover:bg-red-700 text-white"
+                  >
+                    Quay lại danh sách
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
@@ -185,6 +241,8 @@ export default function CourseDetailPage() {
     0
   ) || 0;
 
+  const backUrl = course?.isDraft ? '/admin/course-approval/drafts' : '/admin/course-approval';
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-50">
       {/* Header */}
@@ -192,7 +250,7 @@ export default function CourseDetailPage() {
         <div className="max-w-7xl mx-auto">
           <Button
             variant="outline"
-            onClick={() => navigate('/admin/course-approval')}
+            onClick={() => navigate(backUrl)}
             className="mb-4 gap-2 bg-white/10 border-white/20 text-white hover:bg-white/20"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -226,9 +284,6 @@ export default function CourseDetailPage() {
                 <Badge className="text-sm">{course.level}</Badge>
                 <Badge variant="outline" className="text-sm">{course.categoryName}</Badge>
                 <Badge variant="outline" className="text-sm">{course.language}</Badge>
-                {course.isDraft && (
-                  <Badge className="bg-purple-500 text-sm">Draft</Badge>
-                )}
               </div>
 
               <h2 className="text-3xl font-bold text-gray-900 mb-4">
@@ -339,24 +394,17 @@ export default function CourseDetailPage() {
                 Hành động Admin
               </h3>
 
-              {!showRejectForm ? (
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="adminNotes" className="text-sm font-semibold">
-                      Ghi chú cho giảng viên (tùy chọn)
-                    </Label>
-                    <Textarea
-                      id="adminNotes"
-                      value={adminNotes}
-                      onChange={(e) => setAdminNotes(e.target.value)}
-                      placeholder="Nhập ghi chú hoặc góp ý..."
-                      rows={4}
-                      className="mt-2"
-                    />
-                  </div>
+              {/* Additional Actions (for draft-specific buttons) */}
+              {additionalActions && (
+                <div className="mb-4 pb-4 border-b border-gray-200">
+                  {additionalActions}
+                </div>
+              )}
 
+              {!showRejectForm ? (
+                <div className="space-y-3">
                   <Button
-                    onClick={handleApprove}
+                    onClick={handleApproveClick}
                     disabled={isActionLoading}
                     className="w-full bg-green-600 hover:bg-green-700 gap-2"
                     size="lg"
@@ -412,7 +460,7 @@ export default function CourseDetailPage() {
                   </Button>
 
                   <Button
-                    onClick={handleReject}
+                    onClick={handleRejectClick}
                     disabled={isActionLoading || !rejectionReason.trim()}
                     variant="destructive"
                     className="w-full gap-2"
@@ -431,6 +479,106 @@ export default function CourseDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Approve Confirmation Dialog */}
+      <Dialog open={showApproveConfirm} onOpenChange={setShowApproveConfirm}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-green-700">
+              <CheckCircle2 className="w-5 h-5" />
+              Xác nhận phê duyệt
+            </DialogTitle>
+            <DialogDescription>
+              Bạn có chắc chắn muốn phê duyệt khóa học này không?
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 my-4">
+            <p className="text-sm text-gray-600 mb-1">📚 Khóa học</p>
+            <p className="font-semibold text-gray-900">{course?.title}</p>
+            <p className="text-sm text-gray-600 mt-2">👨‍🏫 Giảng viên</p>
+            <p className="font-semibold text-gray-900">
+              {course?.tutorName || `Tutor #${course?.tutorID}`}
+            </p>
+          </div>
+
+          <DialogFooter className="flex gap-2 sm:gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowApproveConfirm(false)}
+              disabled={isActionLoading}
+              className="flex-1"
+            >
+              Hủy
+            </Button>
+            <Button
+              onClick={handleApprove}
+              disabled={isActionLoading}
+              className="flex-1 bg-green-600 hover:bg-green-700 gap-2"
+            >
+              {isActionLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <CheckCircle2 className="w-4 h-4" />
+              )}
+              Xác nhận phê duyệt
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reject Confirmation Dialog */}
+      <Dialog open={showRejectConfirm} onOpenChange={setShowRejectConfirm}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-700">
+              <XCircle className="w-5 h-5" />
+              Xác nhận từ chối
+            </DialogTitle>
+            <DialogDescription>
+              Bạn có chắc chắn muốn từ chối khóa học này không?
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 my-4">
+            <p className="text-sm text-gray-600 mb-1">📚 Khóa học</p>
+            <p className="font-semibold text-gray-900">{course?.title}</p>
+            <p className="text-sm text-gray-600 mt-2">👨‍🏫 Giảng viên</p>
+            <p className="font-semibold text-gray-900">
+              {course?.tutorName || `Tutor #${course?.tutorID}`}
+            </p>
+          </div>
+
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+            <p className="text-xs text-gray-600 mb-1">Lý do từ chối:</p>
+            <p className="text-sm text-gray-700 whitespace-pre-wrap">{rejectionReason}</p>
+          </div>
+
+          <DialogFooter className="flex gap-2 sm:gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowRejectConfirm(false)}
+              disabled={isActionLoading}
+              className="flex-1"
+            >
+              Hủy
+            </Button>
+            <Button
+              onClick={handleReject}
+              disabled={isActionLoading}
+              variant="destructive"
+              className="flex-1 gap-2"
+            >
+              {isActionLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <XCircle className="w-4 h-4" />
+              )}
+              Xác nhận từ chối
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Success Modal */}
       <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
@@ -512,7 +660,7 @@ export default function CourseDetailPage() {
             <Button
               onClick={() => {
                 setShowSuccessModal(false);
-                navigate('/admin/course-approval');
+                navigate(backUrl);
               }}
               className={`flex-1 font-semibold ${
                 actionType === 'approve'

@@ -96,7 +96,7 @@ export const updateSection = async (
 
 /**
  * API 4: Update lesson
- * PUT /tutor/courses/sections/lessons/{lessonId}
+ * PUT /tutor/courses/lessons/{lessonId}
  */
 export const updateLesson = async (
   lessonId: number,
@@ -177,7 +177,7 @@ export const deleteSection = async (sectionID: number): Promise<void> => {
 
 /**
  * API 7: Delete lesson
- * DELETE /tutor/courses/sections/lessons/{lessonId}
+ * DELETE /tutor/courses/lessons/{lessonId}
  */
 export const deleteLesson = async (lessonId: number): Promise<void> => {
   try {

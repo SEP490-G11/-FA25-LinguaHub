@@ -5,6 +5,7 @@ export interface Resource {
   resourceTitle: string;
   resourceURL: string;
   uploadedAt: string;
+  orderIndex?: number;
 }
 
 // Objective types

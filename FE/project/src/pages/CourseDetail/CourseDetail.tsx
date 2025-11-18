@@ -62,17 +62,17 @@ interface CourseDetailResponse {
   avgRating: number;
   totalRatings: number;
   createdAt: string;
-  tutorID: number; // Thêm tutorID
-  learnerCount: number; // Thêm learnerCount
+  tutorID: number;
+  learnerCount: number;
   section: Section[];
-  review: Feedback[]; // Các đánh giá từ người học
+  review: Feedback[];
   isWishListed: boolean | null;
   contentSummary: {
     totalVideoHours: number;
     totalPracticeTests: number;
     totalArticles: number;
     totalDownloadableResources: number;
-  }; // Cập nhật contentSummary
+  };
 }
 
 const CourseDetail = () => {
@@ -85,14 +85,15 @@ const CourseDetail = () => {
     const fetchCourseDetail = async () => {
       setLoading(true);
       try {
-        const res = await api.get<{ code: number; result: CourseDetailResponse }>(`/courses/detail/${id}`);
+        const res = await api.get<{ code: number; result: CourseDetailResponse }>(
+            `/courses/detail/${id}`
+        );
 
         const data = res.data.result;
         setCourse(data);
 
         /** --- AUTO REMOVE WISHLIST WHEN PURCHASED --- */
         if (data.isPurchased) {
-          // nếu backend có API xóa wishlist:
           await api.delete(`/wishlist/${data.id}`).catch(() => {});
           setWishlisted(false);
         } else {
@@ -108,27 +109,32 @@ const CourseDetail = () => {
     fetchCourseDetail();
   }, [id]);
 
-  if (loading) return <p className="text-center py-10 text-lg">Loading course...</p>;
-  if (!course) return <p className="text-center py-10 text-red-500">Course not found</p>;
+  if (loading)
+    return <p className="text-center py-10 text-lg">Loading course...</p>;
+
+  if (!course)
+    return <p className="text-center py-10 text-red-500">Course not found</p>;
 
   return (
       <div className="min-h-screen bg-gray-50">
 
-        {/* Hero Section */}
+        {/* ================= HERO =================== */}
         <CourseHeroSection
-            course={{ ...course, isPurchased: Boolean(course.isPurchased), tutorId: course.tutorID, learnerCount: course.learnerCount }}
+            course={{
+              ...course,
+              isPurchased: Boolean(course.isPurchased),   // ép boolean
+            }}
             wishlisted={wishlisted}
             setWishlisted={setWishlisted}
         />
-
         <section className="py-16">
           <div className="max-w-7xl mx-auto px-8 lg:px-16">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+
+              {/* LEFT CONTENT */}
               <div className="lg:col-span-2 space-y-10">
-                {/* Course Content Section */}
                 <CourseContent course={course} isPurchased={course.isPurchased} />
 
-                {/* Course Feedback Section */}
                 <CourseFeedback
                     feedbacks={course.review || []}
                     courseId={course.id}
@@ -136,9 +142,12 @@ const CourseDetail = () => {
                 />
               </div>
 
-              {/* Sidebar Section */}
+              {/* SIDEBAR */}
               <CourseSidebar
-                  course={{ ...course, isPurchased: Boolean(course.isPurchased), tutorID: course.tutorID, learnerCount: course.learnerCount }}
+                  course={{
+                    ...course,
+                    isPurchased: Boolean(course.isPurchased),
+                  }}
                   wishlisted={wishlisted}
                   setWishlisted={setWishlisted}
               />

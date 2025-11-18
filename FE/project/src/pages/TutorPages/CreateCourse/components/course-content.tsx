@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import {
   ChevronDown,
   ChevronUp,
@@ -33,6 +34,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
+import { isValidYouTubeUrl, isValidUrl, getYouTubeUrlErrorMessage, getResourceUrlErrorMessage } from '@/utils/url-validation';
 
 interface Step2Props {
   sections: SectionData[];
@@ -113,6 +115,9 @@ export function Step2CourseContent({
   // Custom confirmation dialog state
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [confirmCallback, setConfirmCallback] = useState<(() => void) | null>(null);
+  
+  // URL validation errors
+  const [videoURLError, setVideoURLError] = useState<string>('');
 
   // Helper function to validate URL
   const isValidUrl = (url: string): boolean => {
@@ -232,6 +237,8 @@ export function Step2CourseContent({
       },
     });
     setIsEditingLesson(false);
+    // Set initial validation error for empty video URL (required for video lessons)
+    setVideoURLError('Video URL is required');
   };
 
   const saveNewLesson = () => {
@@ -243,12 +250,7 @@ export function Step2CourseContent({
       return;
     }
 
-    // Validate based on lesson type
-    if (newLesson.data.lessonType === 'Video' && !newLesson.data.videoURL?.trim()) {
-      alert('Please enter a video URL for this video lesson');
-      return;
-    }
-
+    // No need to validate here - button is already disabled if invalid
     setSections((prev) =>
       prev.map((section, idx) =>
         idx === newLesson.sectionIndex
@@ -266,23 +268,34 @@ export function Step2CourseContent({
       )
     );
     setNewLesson(null);
+    setVideoURLError('');
   };
 
   const startEditLesson = (sectionIndex: number, lessonIndex: number) => {
     const lesson = sections[sectionIndex].lessons[lessonIndex];
+    const lessonType = (lesson as any).lessonType || 'Video';
+    const videoURL = (lesson as any).videoURL || '';
+    
     setEditingLesson({
       sectionIndex,
       lessonIndex,
       data: {
         title: lesson.title,
         duration: lesson.duration,
-        lessonType: (lesson as any).lessonType || 'Video',
-        videoURL: (lesson as any).videoURL || '',
+        lessonType: lessonType,
+        videoURL: videoURL,
         content: (lesson as any).content || '',
         resources: (lesson as any).resources || [],
       },
     });
     setIsEditingLesson(true);
+    
+    // Validate video URL if lesson type is Video
+    if (lessonType === 'Video') {
+      setVideoURLError(getYouTubeUrlErrorMessage(videoURL, true));
+    } else {
+      setVideoURLError('');
+    }
   };
 
   const saveEditLesson = () => {
@@ -294,12 +307,7 @@ export function Step2CourseContent({
       return;
     }
 
-    // Validate based on lesson type
-    if (editingLesson.data.lessonType === 'Video' && !editingLesson.data.videoURL?.trim()) {
-      alert('Please enter a video URL for this video lesson');
-      return;
-    }
-
+    // No need to validate here - button is already disabled if invalid
     setSections((prev) =>
       prev.map((section, sIdx) =>
         sIdx === editingLesson.sectionIndex
@@ -315,6 +323,7 @@ export function Step2CourseContent({
       )
     );
     setEditingLesson(null);
+    setVideoURLError('');
   };
 
   const deleteLesson = (sectionIndex: number, lessonIndex: number) => {
@@ -413,23 +422,7 @@ export function Step2CourseContent({
     const currentData = getCurrentLessonData();
     if (!currentData) return;
 
-    const errors: { resourceTitle?: string; resourceURL?: string } = {};
-
-    if (!resourceForm.resourceTitle.trim()) {
-      errors.resourceTitle = 'Resource title is required';
-    }
-    
-    if (!resourceForm.resourceURL.trim()) {
-      errors.resourceURL = 'Resource URL is required';
-    } else if (!isValidUrl(resourceForm.resourceURL)) {
-      errors.resourceURL = 'Invalid URL format. Must start with http:// or https://';
-    }
-
-    if (Object.keys(errors).length > 0) {
-      setResourceFormErrors(errors);
-      return;
-    }
-
+    // No need to validate here - button is already disabled if invalid
     const updatedData = {
       ...currentData,
       resources: [...(currentData.resources || []), resourceForm],
@@ -445,23 +438,7 @@ export function Step2CourseContent({
     const currentData = getCurrentLessonData();
     if (!currentData || editingResourceIndex === null) return;
 
-    const errors: { resourceTitle?: string; resourceURL?: string } = {};
-
-    if (!resourceForm.resourceTitle.trim()) {
-      errors.resourceTitle = 'Resource title is required';
-    }
-    
-    if (!resourceForm.resourceURL.trim()) {
-      errors.resourceURL = 'Resource URL is required';
-    } else if (!isValidUrl(resourceForm.resourceURL)) {
-      errors.resourceURL = 'Invalid URL format. Must start with http:// or https://';
-    }
-
-    if (Object.keys(errors).length > 0) {
-      setResourceFormErrors(errors);
-      return;
-    }
-
+    // No need to validate here - button is already disabled if invalid
     const updatedResources = [...(currentData.resources || [])];
     updatedResources[editingResourceIndex] = resourceForm;
 
@@ -496,6 +473,18 @@ export function Step2CourseContent({
     const resource = currentData.resources[index];
     setResourceForm(resource);
     setEditingResourceIndex(index);
+    
+    // Validate existing resource data
+    const errors: { resourceTitle?: string; resourceURL?: string } = {};
+    if (!resource.resourceTitle.trim()) {
+      errors.resourceTitle = 'Resource title is required';
+    }
+    const urlError = getResourceUrlErrorMessage(resource.resourceURL, true);
+    if (urlError) {
+      errors.resourceURL = urlError;
+    }
+    setResourceFormErrors(errors);
+    
     setShowEditResourceDialog(true);
   };
 
@@ -832,10 +821,11 @@ export function Step2CourseContent({
             setShowNewResourceDialog(false);
             setShowEditResourceDialog(false);
             setEditingResourceIndex(null);
+            setVideoURLError('');
           }
         }}
       >
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {isEditingLesson ? 'Edit Lesson' : 'Add New Lesson'}
@@ -868,12 +858,13 @@ export function Step2CourseContent({
                 Lesson Type <span className="text-red-500">*</span>
               </Label>
               <div className="flex gap-4 mt-2">
-                <label className="flex items-center gap-2 cursor-pointer">
+                <label className={`flex items-center gap-2 ${isEditingLesson ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}>
                   <input
                     type="radio"
                     name="lesson-type"
                     value="Video"
                     checked={getCurrentLessonData()?.lessonType === 'Video'}
+                    disabled={isEditingLesson}
                     onChange={(e) => {
                       const data = getCurrentLessonData();
                       if (data) {
@@ -882,16 +873,18 @@ export function Step2CourseContent({
                           lessonType: e.target.value as 'Video' | 'Reading',
                         });
                       }
+                      setVideoURLError('');
                     }}
                   />
                   <span className="text-sm">Video Lesson</span>
                 </label>
-                <label className="flex items-center gap-2 cursor-pointer">
+                <label className={`flex items-center gap-2 ${isEditingLesson ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}>
                   <input
                     type="radio"
                     name="lesson-type"
                     value="Reading"
                     checked={getCurrentLessonData()?.lessonType === 'Reading'}
+                    disabled={isEditingLesson}
                     onChange={(e) => {
                       const data = getCurrentLessonData();
                       if (data) {
@@ -900,11 +893,17 @@ export function Step2CourseContent({
                           lessonType: e.target.value as 'Video' | 'Reading',
                         });
                       }
+                      setVideoURLError('');
                     }}
                   />
                   <span className="text-sm">Reading Lesson</span>
                 </label>
               </div>
+              {isEditingLesson && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Lesson type cannot be changed after creation
+                </p>
+              )}
             </div>
 
             <div>
@@ -939,14 +938,29 @@ export function Step2CourseContent({
                   id="lesson-video-url"
                   value={getCurrentLessonData()?.videoURL || ''}
                   onChange={(e) => {
+                    const newValue = e.target.value;
                     const data = getCurrentLessonData();
                     if (data) {
-                      setCurrentLessonData({ ...data, videoURL: e.target.value });
+                      setCurrentLessonData({ ...data, videoURL: newValue });
                     }
+                    // Validate YouTube URL (required for video lessons)
+                    const errorMessage = getYouTubeUrlErrorMessage(newValue, true);
+                    setVideoURLError(errorMessage);
+                  }}
+                  onBlur={(e) => {
+                    // Re-validate on blur to ensure required check
+                    const errorMessage = getYouTubeUrlErrorMessage(e.target.value, true);
+                    setVideoURLError(errorMessage);
                   }}
                   placeholder="https://www.youtube.com/watch?v=..."
+                  className={videoURLError ? 'border-red-500' : ''}
                 />
-                {getCurrentLessonData()?.videoURL && (
+                {videoURLError && (
+                  <p className="text-sm text-red-500 mt-1">
+                    {videoURLError}
+                  </p>
+                )}
+                {getCurrentLessonData()?.videoURL && !videoURLError && (
                   <div className="mt-3">
                     <p className="text-sm text-gray-600 mb-2">Preview:</p>
                     <div className="aspect-video">
@@ -966,17 +980,15 @@ export function Step2CourseContent({
                 <Label htmlFor="lesson-content">
                   Content <span className="text-red-500">*</span>
                 </Label>
-                <Textarea
-                  id="lesson-content"
+                <RichTextEditor
                   value={getCurrentLessonData()?.content || ''}
-                  onChange={(e) => {
+                  onChange={(value) => {
                     const data = getCurrentLessonData();
                     if (data) {
-                      setCurrentLessonData({ ...data, content: e.target.value });
+                      setCurrentLessonData({ ...data, content: value });
                     }
                   }}
-                  placeholder="Enter lesson content here..."
-                  className="min-h-[200px]"
+                  placeholder="Enter your lesson content here. You can format text, add images, videos, and more..."
                 />
               </div>
             )}
@@ -994,7 +1006,11 @@ export function Step2CourseContent({
                       resourceTitle: '',
                       resourceURL: '',
                     });
-                    setResourceFormErrors({});
+                    // Set initial validation errors for empty fields
+                    setResourceFormErrors({
+                      resourceTitle: 'Resource title is required',
+                      resourceURL: 'Resource URL is required',
+                    });
                     setShowNewResourceDialog(true);
                   }}
                 >
@@ -1059,7 +1075,7 @@ export function Step2CourseContent({
                 !getCurrentLessonData()?.title.trim() ||
                 (getCurrentLessonData()?.duration || 0) <= 0 ||
                 (getCurrentLessonData()?.lessonType === 'Video' &&
-                  !getCurrentLessonData()?.videoURL?.trim()) ||
+                  (!getCurrentLessonData()?.videoURL?.trim() || !!videoURLError)) ||
                 (getCurrentLessonData()?.lessonType === 'Reading' &&
                   !getCurrentLessonData()?.content?.trim())
               }
@@ -1074,7 +1090,7 @@ export function Step2CourseContent({
         open={showNewResourceDialog}
         onOpenChange={setShowNewResourceDialog}
       >
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle>Add Resource</DialogTitle>
           </DialogHeader>
@@ -1105,13 +1121,25 @@ export function Step2CourseContent({
                 id="resource-title"
                 value={resourceForm.resourceTitle}
                 onChange={(e) => {
+                  const newValue = e.target.value;
                   setResourceForm({
                     ...resourceForm,
-                    resourceTitle: e.target.value,
+                    resourceTitle: newValue,
                   });
-                  if (resourceFormErrors.resourceTitle) {
-                    setResourceFormErrors({ ...resourceFormErrors, resourceTitle: undefined });
-                  }
+                  // Validate title
+                  const errorMessage = !newValue.trim() ? 'Resource title is required' : '';
+                  setResourceFormErrors({ 
+                    ...resourceFormErrors, 
+                    resourceTitle: errorMessage || undefined 
+                  });
+                }}
+                onBlur={(e) => {
+                  // Re-validate on blur
+                  const errorMessage = !e.target.value.trim() ? 'Resource title is required' : '';
+                  setResourceFormErrors({ 
+                    ...resourceFormErrors, 
+                    resourceTitle: errorMessage || undefined 
+                  });
                 }}
                 placeholder="e.g., Grammar Guide"
                 className={resourceFormErrors.resourceTitle ? 'border-red-500' : ''}
@@ -1130,13 +1158,25 @@ export function Step2CourseContent({
                 id="resource-url"
                 value={resourceForm.resourceURL}
                 onChange={(e) => {
+                  const newValue = e.target.value;
                   setResourceForm({
                     ...resourceForm,
-                    resourceURL: e.target.value,
+                    resourceURL: newValue,
                   });
-                  if (resourceFormErrors.resourceURL) {
-                    setResourceFormErrors({ ...resourceFormErrors, resourceURL: undefined });
-                  }
+                  // Validate resource URL
+                  const errorMessage = getResourceUrlErrorMessage(newValue, true);
+                  setResourceFormErrors({ 
+                    ...resourceFormErrors, 
+                    resourceURL: errorMessage || undefined 
+                  });
+                }}
+                onBlur={(e) => {
+                  // Re-validate on blur
+                  const errorMessage = getResourceUrlErrorMessage(e.target.value, true);
+                  setResourceFormErrors({ 
+                    ...resourceFormErrors, 
+                    resourceURL: errorMessage || undefined 
+                  });
                 }}
                 placeholder={
                   resourceForm.resourceType === 'PDF'
@@ -1161,7 +1201,9 @@ export function Step2CourseContent({
               onClick={addResource}
               disabled={
                 !resourceForm.resourceTitle.trim() ||
-                !resourceForm.resourceURL.trim()
+                !resourceForm.resourceURL.trim() ||
+                !!resourceFormErrors.resourceTitle ||
+                !!resourceFormErrors.resourceURL
               }
             >
               Add
@@ -1174,7 +1216,7 @@ export function Step2CourseContent({
         open={showEditResourceDialog}
         onOpenChange={setShowEditResourceDialog}
       >
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle>Edit Resource</DialogTitle>
           </DialogHeader>
@@ -1205,13 +1247,25 @@ export function Step2CourseContent({
                 id="edit-resource-title"
                 value={resourceForm.resourceTitle}
                 onChange={(e) => {
+                  const newValue = e.target.value;
                   setResourceForm({
                     ...resourceForm,
-                    resourceTitle: e.target.value,
+                    resourceTitle: newValue,
                   });
-                  if (resourceFormErrors.resourceTitle) {
-                    setResourceFormErrors({ ...resourceFormErrors, resourceTitle: undefined });
-                  }
+                  // Validate title
+                  const errorMessage = !newValue.trim() ? 'Resource title is required' : '';
+                  setResourceFormErrors({ 
+                    ...resourceFormErrors, 
+                    resourceTitle: errorMessage || undefined 
+                  });
+                }}
+                onBlur={(e) => {
+                  // Re-validate on blur
+                  const errorMessage = !e.target.value.trim() ? 'Resource title is required' : '';
+                  setResourceFormErrors({ 
+                    ...resourceFormErrors, 
+                    resourceTitle: errorMessage || undefined 
+                  });
                 }}
                 placeholder="e.g., Grammar Guide"
                 className={resourceFormErrors.resourceTitle ? 'border-red-500' : ''}
@@ -1230,13 +1284,25 @@ export function Step2CourseContent({
                 id="edit-resource-url"
                 value={resourceForm.resourceURL}
                 onChange={(e) => {
+                  const newValue = e.target.value;
                   setResourceForm({
                     ...resourceForm,
-                    resourceURL: e.target.value,
+                    resourceURL: newValue,
                   });
-                  if (resourceFormErrors.resourceURL) {
-                    setResourceFormErrors({ ...resourceFormErrors, resourceURL: undefined });
-                  }
+                  // Validate resource URL
+                  const errorMessage = getResourceUrlErrorMessage(newValue, true);
+                  setResourceFormErrors({ 
+                    ...resourceFormErrors, 
+                    resourceURL: errorMessage || undefined 
+                  });
+                }}
+                onBlur={(e) => {
+                  // Re-validate on blur
+                  const errorMessage = getResourceUrlErrorMessage(e.target.value, true);
+                  setResourceFormErrors({ 
+                    ...resourceFormErrors, 
+                    resourceURL: errorMessage || undefined 
+                  });
                 }}
                 placeholder={
                   resourceForm.resourceType === 'PDF'
@@ -1261,7 +1327,9 @@ export function Step2CourseContent({
               onClick={updateResource}
               disabled={
                 !resourceForm.resourceTitle.trim() ||
-                !resourceForm.resourceURL.trim()
+                !resourceForm.resourceURL.trim() ||
+                !!resourceFormErrors.resourceTitle ||
+                !!resourceFormErrors.resourceURL
               }
             >
               Update
