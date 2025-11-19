@@ -45,4 +45,6 @@ export const ROUTES = {
 
     // Admin routes
     ADMIN_USER_MANAGEMENT: '/admin/user-management',
+    ADMIN_WITHDRAW_REQUESTS: '/admin/withdraw-requests',
+    ADMIN_PAYMENTS: '/admin/payments',
 } as const;
