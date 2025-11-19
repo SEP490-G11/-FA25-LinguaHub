@@ -59,16 +59,16 @@ const menuItems: MenuItem[] = [
       href: '/payments',
       icon: CreditCard,
     },
-  {
-    title: 'Resources',
-    href: '/resources',
-    icon: FileText,
-  },
-  {
-    title: 'Settings',
-    href: '/settings',
-    icon: Settings,
-  },
+  // {
+  //   title: 'Resources',
+  //   href: '/resources',
+  //   icon: FileText,
+  // },
+  // {
+  //   title: 'Settings',
+  //   href: '/settings',
+  //   icon: Settings,
+  // },
 ];
 
 const TutorSidebar: React.FC<TutorSidebarProps> = ({ isOpen }) => {

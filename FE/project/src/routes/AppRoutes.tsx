@@ -130,8 +130,8 @@ export function AppRoutes() {
             <Route path="/withdrawal" element={<TutorWithdrawal />} />
             <Route path="/withdrawal-history" element={<TutorWithdrawalHistory />} />
             <Route path="/messages" element={<TutorMessages />} />
-            <Route path="/resources" element={<TutorResources />} />
-            <Route path="/settings" element={<TutorSettings />} />
+            {/* <Route path="/resources" element={<TutorResources />} />
+            <Route path="/settings" element={<TutorSettings />} /> */}
         </Route>
 
 
