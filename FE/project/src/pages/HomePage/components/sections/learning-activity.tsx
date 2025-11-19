@@ -1,133 +1,194 @@
 import { motion } from 'framer-motion';
-import { Activity, Award, Zap, Gift } from 'lucide-react';
+import { Calendar, Clock, BookOpen } from 'lucide-react';
 import { Card } from '@/components/ui/card';
-import { Trophy } from "lucide-react";
+import { Button } from '@/components/ui/button';
+import { useState, useEffect } from 'react';
+import api from '@/config/axiosConfig';
+import { useNavigate } from 'react-router-dom';
+
+interface BookingSlot {
+    slotID: number;
+    bookingPlanID: number;
+    tutorID: number;
+    userID: number;
+    startTime: string;
+    endTime: string;
+    paymentID: number;
+    status: string;
+    lockedAt: string;
+    expiresAt: string;
+    userPackage: null;
+}
 
 const LearningActivity = () => {
-    const activities = [
-        {
-            id: 1,
-            type: 'achievement',
-            icon: <Award className="w-5 h-5 text-yellow-500" />,
-            title: 'Achievement Unlocked!',
-            description: 'You completed 10 lessons in a row',
-            time: '2 hours ago',
-            color: 'from-yellow-50 to-orange-50',
-            borderColor: 'border-yellow-500'
-        },
-        {
-            id: 2,
-            type: 'streak',
-            icon: <Zap className="w-5 h-5 text-orange-500" />,
-            title: 'Streak Milestone',
-            description: '12 days learning streak! Keep it up!',
-            time: '5 hours ago',
-            color: 'from-orange-50 to-red-50',
-            borderColor: 'border-orange-500'
-        },
-        {
-            id: 3,
-            type: 'reward',
-            icon: <Gift className="w-5 h-5 text-purple-500" />,
-            title: 'Reward Earned',
-            description: 'You earned 50 learning points',
-            time: 'Yesterday',
-            color: 'from-purple-50 to-pink-50',
-            borderColor: 'border-purple-500'
-        }
-    ];
+    const navigate = useNavigate();
+    const [bookings, setBookings] = useState<BookingSlot[]>([]);
+    const [loading, setLoading] = useState(true);
 
-    const stats = [
-        { label: 'Current Streak', value: '12 days', icon: <Zap className="w-6 h-6 text-orange-500" /> },
-        { label: 'Total Points', value: '2,450', icon: <Award className="w-6 h-6 text-yellow-500" /> },
-        { label: 'Rank', value: 'Gold', icon: <Award className="w-6 h-6 text-yellow-500" /> }
-    ];
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const userRes = await api.get('/users/myInfo');
+                const userId = userRes.data.result?.userID;
+
+                if (userId) {
+                    const slotsRes = await api.get('/booking-slots/my-slots');
+                    const userSlots = slotsRes.data.result
+                        .filter((b: BookingSlot) => b.userID === userId)
+                        .sort((a: BookingSlot, b: BookingSlot) => 
+                            new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
+                        )
+                        .slice(0, 6);
+                    setBookings(userSlots);
+                }
+            } catch (error) {
+                console.error('Failed to fetch bookings:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+    }, []);
+
+    const formatDateTime = (dateStr: string) => {
+        const date = new Date(dateStr);
+        return {
+            date: date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }),
+            time: date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+        };
+    };
+
+    const isPast = (endTime: string) => {
+        return new Date(endTime) < new Date();
+    };
+
+    if (loading) {
+        return (
+            <section className="py-16 bg-white">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <p className="text-center text-gray-600">Loading your bookings...</p>
+                </div>
+            </section>
+        );
+    }
 
     return (
-        <section className="py-16 bg-white">
+        <section className="py-16 bg-gradient-to-b from-white to-blue-50">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6 }}
                 >
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        <div className="lg:col-span-2">
-                            <h2 className="text-3xl font-bold text-gray-900 mb-6 flex items-center space-x-3">
-                                <Activity className="w-8 h-8 text-blue-600" />
-                                <span>Recent Activity</span>
-                            </h2>
-
-                            <div className="space-y-4">
-                                {activities.map((activity, index) => (
-                                    <motion.div
-                                        key={activity.id}
-                                        initial={{ opacity: 0, x: -20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        transition={{ duration: 0.6, delay: index * 0.1 }}
-                                    >
-                                        <Card className={`p-5 bg-gradient-to-r ${activity.color} border-l-4 ${activity.borderColor} hover:shadow-lg transition-shadow`}>
-                                            <div className="flex items-start space-x-4">
-                                                <div className="p-3 bg-white rounded-full shadow-md">
-                                                    {activity.icon}
-                                                </div>
-                                                <div className="flex-1">
-                                                    <h3 className="font-bold text-gray-900 mb-1">{activity.title}</h3>
-                                                    <p className="text-sm text-gray-600 mb-2">{activity.description}</p>
-                                                    <span className="text-xs text-gray-500">{activity.time}</span>
-                                                </div>
-                                            </div>
-                                        </Card>
-                                    </motion.div>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div>
-                            <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center space-x-2">
-                                <Award className="w-6 h-6 text-yellow-500" />
-                                <span>Your Stats</span>
-                            </h2>
-
-                            <div className="space-y-4">
-                                {stats.map((stat, index) => (
-                                    <motion.div
-                                        key={index}
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ duration: 0.6, delay: index * 0.1 }}
-                                    >
-                                        <Card className="p-5 bg-gradient-to-br from-blue-50 to-purple-50 border-0 shadow-lg">
-                                            <div className="flex items-center justify-between">
-                                                <div>
-                                                    <p className="text-sm text-gray-600 mb-1">{stat.label}</p>
-                                                    <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                                                </div>
-                                                <div className="p-3 bg-white rounded-full shadow-md">
-                                                    {stat.icon}
-                                                </div>
-                                            </div>
-                                        </Card>
-                                    </motion.div>
-                                ))}
-
-                                <Card className="p-6 bg-gradient-to-br from-yellow-50 to-orange-50 border-0 shadow-lg mt-6">
-                                    <div className="text-center">
-                                        <div className="inline-block p-4 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-full mb-4">
-                                            <Trophy className="w-8 h-8 text-white" />
-                                        </div>
-                                        <h3 className="font-bold text-gray-900 mb-2">Level Up Soon!</h3>
-                                        <p className="text-sm text-gray-600 mb-4">
-                                            Complete 3 more lessons to reach Level 5
-                                        </p>
-                                        <div className="h-2 bg-white/50 rounded-full overflow-hidden">
-                                            <div className="h-full bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full" style={{ width: '75%' }}></div>
-                                        </div>
-                                    </div>
-                                </Card>
-                            </div>
-                        </div>
+                    <div className="text-center mb-12">
+                        <h2 className="text-4xl font-bold text-gray-900 mb-4 flex items-center justify-center space-x-3">
+                            <Calendar className="w-10 h-10 text-blue-600" />
+                            <span>Your Booked Sessions</span>
+                        </h2>
+                        <p className="text-lg text-gray-600">
+                            Keep track of your upcoming learning sessions
+                        </p>
                     </div>
+
+                    {bookings.length === 0 ? (
+                        <Card className="p-12 text-center bg-gradient-to-br from-blue-50 to-purple-50 border-2 border-dashed border-blue-300">
+                            <BookOpen className="w-16 h-16 text-blue-400 mx-auto mb-4" />
+                            <h3 className="text-2xl font-bold text-gray-900 mb-3">No Sessions Booked Yet</h3>
+                            <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                                Start your learning journey by booking a session with one of our expert tutors!
+                            </p>
+                            <Button 
+                                onClick={() => navigate('/tutors')}
+                                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold px-8 py-3 text-lg"
+                            >
+                                Browse Tutors
+                            </Button>
+                        </Card>
+                    ) : (
+                        <>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                                {bookings.map((booking, index) => {
+                                    const { date, time } = formatDateTime(booking.startTime);
+                                    const endTime = formatDateTime(booking.endTime).time;
+                                    const isExpired = isPast(booking.endTime);
+
+                                    return (
+                                        <motion.div
+                                            key={booking.slotID}
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            transition={{ duration: 0.6, delay: index * 0.1 }}
+                                        >
+                                            <Card className={`p-6 border-l-4 hover:shadow-xl transition-all h-full ${
+                                                isExpired 
+                                                    ? 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-400' 
+                                                    : 'bg-gradient-to-br from-blue-50 to-purple-50 border-blue-500'
+                                            }`}>
+                                                <div className="flex flex-col h-full">
+                                                    <div className="flex items-start space-x-4 flex-1">
+                                                        <div className={`p-3 rounded-full shadow-md flex-shrink-0 ${
+                                                            isExpired ? 'bg-gray-200' : 'bg-white'
+                                                        }`}>
+                                                            <Clock className={`w-6 h-6 ${
+                                                                isExpired ? 'text-gray-500' : 'text-blue-600'
+                                                            }`} />
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center justify-between mb-2">
+                                                                <span className={`text-xs font-semibold px-3 py-1 rounded-full whitespace-nowrap ${
+                                                                    isExpired 
+                                                                        ? 'bg-gray-300 text-gray-700' 
+                                                                        : 'bg-blue-600 text-white'
+                                                                }`}>
+                                                                    {isExpired ? 'Completed' : 'Upcoming'}
+                                                                </span>
+                                                            </div>
+                                                            <h3 className="font-bold text-gray-900 mb-2 text-lg">
+                                                                Session #{booking.slotID}
+                                                            </h3>
+                                                            <div className="space-y-1 text-sm text-gray-700">
+                                                                <p className="flex items-center gap-2">
+                                                                    <Calendar className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                                                                    <span className="font-semibold">{date}</span>
+                                                                </p>
+                                                                <p className="flex items-center gap-2">
+                                                                    <Clock className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                                                                    <span>{time} - {endTime}</span>
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </Card>
+                                        </motion.div>
+                                    );
+                                })}
+                            </div>
+
+                            <Card className="p-8 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-center">
+                                <h3 className="text-2xl font-bold mb-3">Ready for More Learning?</h3>
+                                <p className="text-blue-100 mb-6 max-w-2xl mx-auto">
+                                    Continue your progress by booking more sessions with our expert tutors. 
+                                    Consistency is the key to mastering any language!
+                                </p>
+                                <div className="flex flex-wrap gap-4 justify-center">
+                                    <Button 
+                                        onClick={() => navigate('/tutors')}
+                                        className="bg-white text-blue-600 hover:bg-blue-50 font-semibold px-8 py-3 min-w-[200px]"
+                                    >
+                                        Book More Sessions
+                                    </Button>
+                                    <Button 
+                                        onClick={() => navigate('/my-bookings')}
+                                        className="border-2 border-white bg-transparent text-white hover:bg-white hover:text-blue-600 font-semibold px-8 py-3 min-w-[200px]"
+                                    >
+                                        View All Bookings
+                                    </Button>
+                                </div>
+                            </Card>
+                        </>
+                    )}
                 </motion.div>
             </div>
         </section>
