@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
     Bell, Menu, X, Languages, Heart, User, LogOut,
-     Settings, GraduationCap, CreditCard, Lock, LayoutDashboard,MessageCircle
+    Settings, GraduationCap, CreditCard, Lock, LayoutDashboard, MessageCircle, DollarSign, Calendar
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -289,12 +289,24 @@ const Header = () => {
                                             </DropdownMenuItem>
                                         </>
                                     <DropdownMenuItem asChild>
+                                        <Link to="/my-bookings" className="cursor-pointer">
+                                            <Calendar className="mr-2 h-4 w-4" />
+                                            <span>My study schedule</span>
+                                        </Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem asChild>
                                         <Link to="/messages">
                                             <MessageCircle className="mr-2 h-4 w-4" />Box Chat
                                         </Link>
                                     </DropdownMenuItem>
                                     <DropdownMenuItem asChild>
-                                        <Link to="/payment-history">
+                                        <Link to="/refund-requests" className="cursor-pointer">
+                                            <DollarSign className="mr-2 h-4 w-4" />
+                                            <span>Request a refund</span>
+                                        </Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem asChild>
+                                        <Link to={ROUTES.PAYMENT_HISTORY}>
                                             <CreditCard className="mr-2 h-4 w-4" /> Payment History
                                         </Link>
                                     </DropdownMenuItem>

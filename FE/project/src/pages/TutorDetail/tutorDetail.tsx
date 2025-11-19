@@ -5,8 +5,14 @@ import TutorHeroSection from "./components/sections/hero-section";
 import CoursesSection from "./components/sections/courses-section";
 import ReviewsSection from "./components/sections/reviews-section";
 import { Button } from "@/components/ui/button";
-import { Video } from "lucide-react";
+import { Video, ChevronLeft, ChevronRight } from "lucide-react";
 import { ROUTES } from "@/constants/routes";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface Course {
   id: number;
@@ -20,13 +26,24 @@ interface Course {
   status: string;
 }
 
+interface SlotContent {
+  slot_number: number;
+  content: string;
+}
+
 interface PackageItem {
   name: string;
   description: string;
   packageid: number;
   tutor_id: number;
-  max_slot: number;
+  max_slots: number;
   is_active: boolean;
+  requirement?: string;
+  objectives?: string;
+  min_booking_price_per_hour?: number;
+  slot_content?: SlotContent[];
+  created_at?: string;
+  updated_at?: string;
 }
 
 interface Tutor {
@@ -54,8 +71,25 @@ const TutorDetail = () => {
   const [loading, setLoading] = useState(true);
   const [loadingPackages, setLoadingPackages] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentPackageIndex, setCurrentPackageIndex] = useState(0);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [selectedPackage, setSelectedPackage] = useState<PackageItem | null>(null);
+  const [openDetail, setOpenDetail] = useState(false);
   const navigate = useNavigate();
+
+  const PACKAGES_PER_PAGE = 2;
+  const activePackages = packages.filter(p => p.is_active);
+  const totalPages = Math.max(1, Math.ceil(activePackages.length / PACKAGES_PER_PAGE));
+  const displayedPackages = activePackages.slice(
+    currentPage * PACKAGES_PER_PAGE,
+    currentPage * PACKAGES_PER_PAGE + PACKAGES_PER_PAGE
+  );
+
+  const getMaxSlot = (pkg: PackageItem) => pkg.max_slots || 0;
+
+  const handleOpenDetail = (pkg: PackageItem) => {
+    setSelectedPackage(pkg);
+    setOpenDetail(true);
+  };
 
   // FETCH TUTOR
   useEffect(() => {
@@ -152,75 +186,131 @@ const TutorDetail = () => {
               <div className="lg:col-span-2 space-y-12">
 
                 {/* PACKAGES */}
-                <div className="bg-white shadow-md rounded-xl p-6">
-                  <h2 className="text-2xl font-bold mb-4">Tutor Packages</h2>
+                <div className="bg-blue-50/50 p-6 rounded-xl shadow-md border border-blue-100">
+                  <h2 className="text-2xl font-bold mb-2 text-blue-900 flex items-center gap-2">
+                    <span>📦</span> Learning Packages
+                  </h2>
+                  <p className="text-gray-600 mb-6">View available learning packages offered by this tutor</p>
 
                   {loadingPackages ? (
-                      <p className="text-gray-500">Đang tải gói học...</p>
-                  ) : packages.length === 0 ? (
-                      <p className="text-gray-500 italic">Không có gói học nào.</p>
+                      <p className="text-gray-500">Loading packages...</p>
+                  ) : activePackages.length === 0 ? (
+                      <p className="text-gray-500 italic">No active packages available.</p>
                   ) : (
-                      <div className="flex flex-col gap-6">
+                      <div className="relative">
+                        {/* Previous Button */}
+                        <button
+                            disabled={currentPage === 0}
+                            onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
+                            className="absolute -left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white shadow-lg hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed z-10"
+                        >
+                          <ChevronLeft className="w-5 h-5" />
+                        </button>
 
-                        {/* ONE PACKAGE ONLY */}
-                        <div className="border rounded-xl p-5 bg-blue-50">
-                          <h3 className="text-xl font-semibold">
-                            {packages[currentPackageIndex].name}
-                          </h3>
+                        {/* Packages Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {displayedPackages.map((pkg) => (
+                              <div 
+                                  key={pkg.packageid} 
+                                  className="rounded-2xl border-2 border-blue-300 bg-white shadow-md transition-all p-6 hover:shadow-xl"
+                              >
+                                <div className="flex items-center justify-between mb-3">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-yellow-500">✨</span>
+                                    <h3 className="text-lg font-bold text-gray-900">
+                                      {pkg.name}
+                                    </h3>
+                                  </div>
+                                  <Button
+                                      className="bg-blue-600 text-white hover:bg-blue-700"
+                                      size="sm"
+                                      onClick={() => handleOpenDetail(pkg)}
+                                  >
+                                    Detail
+                                  </Button>
+                                </div>
 
-                          <p className="text-gray-700 mt-1">
-                            {packages[currentPackageIndex].description}
-                          </p>
+                                <p className="text-gray-600 text-sm mb-4 leading-relaxed line-clamp-2">
+                                  {pkg.requirement || "No specific requirements"}
+                                </p>
 
-                          <div className="mt-3 text-sm grid grid-cols-2 gap-2">
-                            <p>
-                              Max Slots:{" "}
-                              <b>{packages[currentPackageIndex].max_slot}</b>
-                            </p>
-                            <p>
-                              Status:{" "}
-                              {packages[currentPackageIndex].is_active ? (
-                                  <span className="text-green-600 font-semibold">
-                              Active
-                            </span>
-                              ) : (
-                                  <span className="text-red-600 font-semibold">
-                              Inactive
-                            </span>
-                              )}
-                            </p>
-                          </div>
+                                <div className="space-y-2 text-sm text-gray-700">
+                                  <p>
+                                    <strong>Objectives:</strong> <span className="line-clamp-1">{pkg.objectives || "No objectives provided"}</span>
+                                  </p>
+                                  <p>
+                                    <strong>Max Sessions:</strong> {getMaxSlot(pkg)}
+                                  </p>
+                                </div>
+                              </div>
+                          ))}
                         </div>
 
-                        {/* PAGINATION */}
-                        <div className="flex justify-between">
-                          <button
-                              className={`px-4 py-2 rounded-lg text-white ${
-                                  currentPackageIndex === 0
-                                      ? "bg-gray-300 cursor-not-allowed"
-                                      : "bg-blue-500 hover:bg-blue-600"
-                              }`}
-                              disabled={currentPackageIndex === 0}
-                              onClick={() => setCurrentPackageIndex((prev) => prev - 1)}
-                          >
-                            ⬅ Previous
-                          </button>
-
-                          <button
-                              className={`px-4 py-2 rounded-lg text-white ${
-                                  currentPackageIndex === packages.length - 1
-                                      ? "bg-gray-300 cursor-not-allowed"
-                                      : "bg-blue-500 hover:bg-blue-600"
-                              }`}
-                              disabled={currentPackageIndex === packages.length - 1}
-                              onClick={() => setCurrentPackageIndex((prev) => prev + 1)}
-                          >
-                            Next ➡
-                          </button>
-                        </div>
+                        {/* Next Button */}
+                        <button
+                            disabled={currentPage >= totalPages - 1}
+                            onClick={() => setCurrentPage(p => Math.min(totalPages - 1, p + 1))}
+                            className="absolute -right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white shadow-lg hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed z-10"
+                        >
+                          <ChevronRight className="w-5 h-5" />
+                        </button>
                       </div>
                   )}
                 </div>
+
+                {/* Package Detail Modal */}
+                <Dialog open={openDetail} onOpenChange={setOpenDetail}>
+                  <DialogContent className="max-w-3xl">
+                    <DialogHeader>
+                      <DialogTitle className="text-3xl font-bold text-blue-900 flex items-center gap-2">
+                        <span>✨</span> {selectedPackage?.name}
+                      </DialogTitle>
+                    </DialogHeader>
+                    
+                    {selectedPackage && (
+                        <div className="space-y-3 text-gray-700">
+                          <p>
+                            <strong className="text-gray-900">Description:</strong> {selectedPackage.description || "No description available"}
+                          </p>
+
+                          <p>
+                            <strong className="text-gray-900">Requirement:</strong> {selectedPackage.requirement || "No specific requirements"}
+                          </p>
+
+                          <p>
+                            <strong className="text-gray-900">Objectives:</strong> {selectedPackage.objectives || "No objectives provided"}
+                          </p>
+
+                          <p>
+                            <strong className="text-gray-900">Number of Lessons:</strong> {selectedPackage.slot_content?.length || getMaxSlot(selectedPackage)}
+                          </p>
+
+                          <p>
+                            <strong className="text-gray-900">Max Slots:</strong> {getMaxSlot(selectedPackage)}
+                          </p>
+
+                          {selectedPackage.min_booking_price_per_hour && (
+                              <p>
+                                <strong className="text-gray-900">Min Booking Price per Hour:</strong> {selectedPackage.min_booking_price_per_hour.toLocaleString('vi-VN')} ₫
+                              </p>
+                          )}
+
+                          {selectedPackage.slot_content && selectedPackage.slot_content.length > 0 && (
+                              <div>
+                                <strong className="text-gray-900 block mb-2">Lesson Content:</strong>
+                                <ul className="list-disc list-inside space-y-1 ml-2">
+                                  {selectedPackage.slot_content.map((slot) => (
+                                      <li key={slot.slot_number}>
+                                        Slot {slot.slot_number}: {slot.content}
+                                      </li>
+                                  ))}
+                                </ul>
+                              </div>
+                          )}
+                        </div>
+                    )}
+                  </DialogContent>
+                </Dialog>
 
                 {/* COURSES */}
                 <CoursesSection courses={tutor.courses || []} />

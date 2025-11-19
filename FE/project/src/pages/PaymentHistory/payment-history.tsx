@@ -1,7 +1,4 @@
-/* ==========================================
-    IMPORTS
-========================================== */
-import { useEffect, useState } from "react";
+import  { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
     CreditCard,
@@ -30,9 +27,7 @@ import {
 
 import api from "@/config/axiosConfig";
 
-/* ==========================================
-    INTERFACES
-========================================== */
+// Interfaces for data types
 interface Payment {
     paymentID: number;
     userId: number;
@@ -57,9 +52,7 @@ interface Course {
     tutorName: string;
 }
 
-/* ==========================================
-    COMPONENT
-========================================== */
+// Main Payment History Component
 const PaymentHistory = () => {
     const [payments, setPayments] = useState<Payment[]>([]);
     const [courses, setCourses] = useState<Course[]>([]);
@@ -77,7 +70,7 @@ const PaymentHistory = () => {
     const [page, setPage] = useState(1);
     const pageSize = 5;
 
-    /* -------------------- GET USER ID -------------------- */
+    // Get User ID
     const getUserId = async (): Promise<number | null> => {
         try {
             const res = await api.get("/users/myInfo");
@@ -87,7 +80,7 @@ const PaymentHistory = () => {
         }
     };
 
-    /* -------------------- FETCH PAYMENTS + COURSES -------------------- */
+    // Fetch Payments + Courses
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -114,10 +107,11 @@ const PaymentHistory = () => {
         fetchData();
     }, []);
 
-    /* -------------------- Utils -------------------- */
+    // Currency format helper
     const formatCurrency = (amount: number) =>
         new Intl.NumberFormat("vi-VN").format(amount) + " đ";
 
+    // Status Badge Mapping
     const statusBadgeMap: Record<string, JSX.Element> = {
         PAID: <Badge className="bg-green-100 text-green-700 px-3 py-1">Paid</Badge>,
         EXPIRED: <Badge className="bg-orange-100 text-orange-700 px-3 py-1">Expired</Badge>,
@@ -139,9 +133,7 @@ const PaymentHistory = () => {
     const getCourseInfo = (courseId: number) =>
         courses.find((c) => c.id === courseId);
 
-    /* ==========================================
-        FILTER + SORT LOGIC
-    ========================================== */
+    // Filter and sort logic
     const filtered = payments
         .filter((p) => {
             const course = getCourseInfo(p.targetId);
@@ -168,7 +160,7 @@ const PaymentHistory = () => {
             return dateSort === "newest" ? dateB - dateA : dateA - dateB;
         });
 
-    /* -------------------- Pagination -------------------- */
+    // Pagination logic
     const totalPages = Math.ceil(filtered.length / pageSize);
     const paginated = filtered.slice((page - 1) * pageSize, page * pageSize);
 
@@ -176,7 +168,7 @@ const PaymentHistory = () => {
         setPage(1);
     }, [searchQuery, statusFilter, dateSort, priceSort]);
 
-    /* -------------------- STATS -------------------- */
+    // Stats
     const stats = {
         totalPaid: payments.filter((p) => p.status === "PAID").length,
         totalAmount: payments
@@ -186,9 +178,7 @@ const PaymentHistory = () => {
         failed: payments.filter((p) => p.status === "FAILED").length,
     };
 
-    /* ==========================================
-        RENDER
-    ========================================== */
+    // Loading state
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
@@ -205,12 +195,7 @@ const PaymentHistory = () => {
 
             {/* STATS */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-                {[
-                    { label: "Total Paid", value: stats.totalPaid },
-                    { label: "Total Spent", value: formatCurrency(stats.totalAmount) },
-                    { label: "Expired", value: stats.expired },
-                    { label: "Failed", value: stats.failed },
-                ].map((item) => (
+                {[{ label: "Total Paid", value: stats.totalPaid }, { label: "Total Spent", value: formatCurrency(stats.totalAmount) }, { label: "Expired", value: stats.expired }, { label: "Failed", value: stats.failed }].map((item) => (
                     <Card key={item.label} className="shadow-sm rounded-xl">
                         <CardContent className="pt-6">
                             <p className="text-gray-600">{item.label}</p>
@@ -225,7 +210,6 @@ const PaymentHistory = () => {
                 <CardHeader>
                     <div className="flex justify-between items-center">
                         <CardTitle className="text-lg font-semibold">Transactions</CardTitle>
-
                         <div className="flex gap-3">
 
                             {/* Search */}
@@ -367,12 +351,12 @@ const PaymentHistory = () => {
                                     </p>
 
                                     <div className="flex justify-end gap-2 mt-3">
-                                        {p.status === "PAID" && (
-                                            <Button variant="outline" size="sm">
-                                                <Download className="mr-2 w-4 h-4" />
-                                                Receipt
-                                            </Button>
-                                        )}
+                                        {/*{p.status === "PAID" && (*/}
+                                        {/*    <Button variant="outline" size="sm">*/}
+                                        {/*        <Download className="mr-2 w-4 h-4" />*/}
+                                        {/*        Receipt*/}
+                                        {/*    </Button>*/}
+                                        {/*)}*/}
 
                                         {!isBooking && (
                                             <Button variant="outline" size="sm" asChild>
