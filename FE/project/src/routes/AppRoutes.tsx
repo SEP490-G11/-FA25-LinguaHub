@@ -51,6 +51,9 @@ import TutorPayment from  '@/pages/TutorPages/Payment';
 import TutorSettings from '@/pages/TutorPages/Settings';
 import Messages from '@/pages/MessagesPage/boxchat.tsx';
 import BookTutor from '@/pages/BookTutor/book-tutor.tsx';
+import MyBookings from "@/pages/MyBookings/my-booking.tsx";
+
+import RefundRequests from "@/pages/RefundRequests/refund-requests.tsx";
 
 export function AppRoutes() {
     return (
@@ -81,6 +84,8 @@ export function AppRoutes() {
             <Route path="/messages" element={<Messages />} />
             <Route path="/messages/:conversationId" element={<Messages />} />
             <Route path="/book-tutor/:tutorId" element={<BookTutor />} />
+            <Route path="/my-bookings" element={<MyBookings />} />
+            <Route path="/refund-requests" element={<RefundRequests />} />
 
             {/* User */}
             <Route path={ROUTES.PROFILE} element={<Profile />} />

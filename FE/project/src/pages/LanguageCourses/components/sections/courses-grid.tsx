@@ -89,10 +89,7 @@ const CoursesGrid = ({ courses, loading }: CoursesGridProps) => {
             </div>
         );
 
-    /** 🟦 REMOVE purchased courses */
-    const visibleCourses = courses.filter((c) => !c.isPurchased);
-
-    if (visibleCourses.length === 0)
+    if (courses.length === 0)
         return (
             <section className="py-16 text-center">
                 <h2 className="text-xl font-semibold">No available courses</h2>
@@ -113,7 +110,7 @@ const CoursesGrid = ({ courses, loading }: CoursesGridProps) => {
                 animate="animate"
                 variants={staggerContainer}
             >
-                {visibleCourses.map((course) => {
+                {courses.map((course) => {
                     const isWishlisted = wishlistMap[course.id] ?? false;
 
                     return (

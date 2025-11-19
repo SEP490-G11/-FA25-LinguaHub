@@ -37,4 +37,5 @@ export const ROUTES = {
     MY_ENROLLMENTS: '/my-enrollments',
     APPLY_TUTOR: '/learner/apply-tutor',
     SETTINGS: '/settings',
+
 } as const;
