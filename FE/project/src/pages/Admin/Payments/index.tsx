@@ -1,12 +1,16 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, Loader2, CreditCard, Filter } from 'lucide-react';
+import { AlertCircle, Loader2, CreditCard, Filter, DollarSign, Settings } from 'lucide-react';
+import { ROUTES } from '@/constants/routes';
 import { paymentApi } from './api';
 import { Payment, PaymentFilters } from './types';
 import { calculateStats } from './utils';
 import { Filters, PaymentTable, PaymentStats, Pagination } from './components';
 
 export default function PaymentManagementPage() {
+  const navigate = useNavigate();
+
   // State management
   const [payments, setPayments] = useState<Payment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -99,7 +103,7 @@ export default function PaymentManagementPage() {
       {/* ========== STICKY HEADER ========== */}
       <div className="sticky top-0 z-10 bg-white shadow-md">
         {/* Gradient Top Bar with Stats */}
-        <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600">
+        <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700">
           <div className="max-w-[1600px] mx-auto px-6 py-5">
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
@@ -111,6 +115,22 @@ export default function PaymentManagementPage() {
                   <h1 className="text-2xl font-bold text-white">Quản lý thanh toán</h1>
                   <p className="text-blue-100 text-sm">Theo dõi và quản lý giao dịch thanh toán</p>
                 </div>
+              </div>
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => navigate(ROUTES.ADMIN_WITHDRAW_REQUESTS)}
+                  className="bg-white text-emerald-600 hover:bg-emerald-50 font-semibold shadow-lg"
+                >
+                  <DollarSign className="w-4 h-4 mr-2" />
+                  Withdraw Requests
+                </Button>
+                <Button
+                  onClick={() => navigate('/admin/commission-settings')}
+                  className="bg-white text-blue-600 hover:bg-blue-50 font-semibold shadow-lg"
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  Commission Settings
+                </Button>
               </div>
             </div>
             
