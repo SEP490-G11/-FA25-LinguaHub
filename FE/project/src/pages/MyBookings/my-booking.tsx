@@ -46,6 +46,23 @@ const StatBox = ({ label, value, icon }: { label: string; value: number; icon: R
 /* =======================================================
    CALENDAR VIEW
    ======================================================= */
+// API Response từ backend (snake_case)
+interface BookingSlotAPI {
+    slotid: number;
+    booking_planid: number;
+    tutor_id: number;
+    user_id: number;
+    start_time: string;
+    end_time: string;
+    payment_id: number;
+    status: string;
+    locked_at: string;
+    expires_at: string;
+    learner_name: string | null;
+    meeting_url: string | null;
+}
+
+// Interface sử dụng trong component (camelCase)
 interface BookingSlot {
     slotID: number;
     bookingPlanID: number;
@@ -57,7 +74,8 @@ interface BookingSlot {
     status: string;
     lockedAt: string;
     expiresAt: string;
-    userPackage: null;
+    learnerName: string | null;
+    meetingUrl: string | null;
 }
 
 const CalendarView = ({ 
@@ -228,13 +246,45 @@ const UpcomingSessions = ({ bookings, selectedDate, userID }: { bookings: Bookin
                                 </span>
                             </div>
 
-                            <div className="text-sm text-slate-600">
+                            <div className="text-sm text-slate-600 space-y-1">
                                 <div>
                                     Status: <span className={`font-medium ${isPast ? 'text-slate-500' : 'text-blue-600'}`}>
-                                        {isPast ? 'Past' : booking.status}
+                                        {isPast ? 'Past Session' : booking.status}
                                     </span>
                                 </div>
                                 <div>Slot ID: {booking.slotID}</div>
+                                
+                                {/* Google Meet Link */}
+                                {booking.meetingUrl ? (
+                                    <div className="mt-2 pt-2 border-t border-slate-200">
+                                        <a
+                                            href={booking.meetingUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                                isPast
+                                                    ? 'bg-slate-200 text-slate-600 cursor-not-allowed'
+                                                    : 'bg-green-600 text-white hover:bg-green-700'
+                                            }`}
+                                            onClick={(e) => {
+                                                if (isPast) {
+                                                    e.preventDefault();
+                                                }
+                                            }}
+                                        >
+                                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M15 12c0 1.654-1.346 3-3 3s-3-1.346-3-3 1.346-3 3-3 3 1.346 3 3zm9-.449s-4.252 8.449-11.985 8.449c-7.18 0-12.015-8.449-12.015-8.449s4.446-7.551 12.015-7.551c7.694 0 11.985 7.551 11.985 7.551zm-7 .449c0-2.757-2.243-5-5-5s-5 2.243-5 5 2.243 5 5 5 5-2.243 5-5z"/>
+                                            </svg>
+                                            {isPast ? 'Meeting Ended' : 'Join Google Meet'}
+                                        </a>
+                                    </div>
+                                ) : (
+                                    <div className="mt-2 pt-2 border-t border-slate-200">
+                                        <span className="text-xs text-slate-500 italic">
+                                            Meeting link not available yet
+                                        </span>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     );
@@ -265,8 +315,25 @@ const MyBookings = () => {
     useEffect(() => {
         if (!userID) return;
         api.get('/booking-slots/my-slots').then((res) => {
-            const slots = res.data.result.filter((b: BookingSlot) => b.userID === userID);
-            setBookings(slots);
+            // Map API response (snake_case) to component interface (camelCase)
+            const apiSlots: BookingSlotAPI[] = res.data.result || [];
+            const mappedSlots: BookingSlot[] = apiSlots
+                .filter((b) => b.user_id === userID)
+                .map((b) => ({
+                    slotID: b.slotid,
+                    bookingPlanID: b.booking_planid,
+                    tutorID: b.tutor_id,
+                    userID: b.user_id,
+                    startTime: b.start_time,
+                    endTime: b.end_time,
+                    paymentID: b.payment_id,
+                    status: b.status,
+                    lockedAt: b.locked_at,
+                    expiresAt: b.expires_at,
+                    learnerName: b.learner_name,
+                    meetingUrl: b.meeting_url,
+                }));
+            setBookings(mappedSlots);
         });
     }, [userID]);
 

@@ -92,7 +92,8 @@ export function AppRoutes() {
             <Route path="/messages/:conversationId" element={<Messages />} />
             <Route path="/book-tutor/:tutorId" element={<BookTutor />} />
             <Route path="/my-bookings" element={<MyBookings />} />
-            <Route path="/refund-requests" element={<RefundRequests />} />
+            <Route path={ROUTES.REFUND_REQUESTS} element={<RefundRequests />} />
+            <Route path={ROUTES.NOTIFICATIONS} element={<Notifications />} />
             {/* User */}
             <Route path={ROUTES.PROFILE} element={<Profile />} />
             <Route path={ROUTES.CHANGE_PASSWORD} element={<ChangePassword />} />
