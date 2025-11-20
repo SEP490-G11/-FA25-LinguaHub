@@ -24,7 +24,7 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Transactional
 public class TutorBookingPlanService {
-
+    NotificationService notificationService;
     BookingPlanRepository bookingPlanRepository;
     BookingPlanSlotRepository bookingPlanSlotRepository;
     TutorRepository tutorRepository;
@@ -271,7 +271,7 @@ public class TutorBookingPlanService {
             refundRequestRepository.save(refund);
 
             // Thông báo cho learner
-            sendNotification(
+            notificationService.sendNotification(
                     learnerUserId,
                     "Lịch học đã bị hủy - Tutor đã bị khóa tài khoản - Yêu cầu hoàn tiền",
                     "Buổi học vào lúc " + formatDateTime(slot.getStartTime()) +
@@ -284,7 +284,7 @@ public class TutorBookingPlanService {
         } else {
             // Slot Available nhưng có userID
             // Thông báo cho learner
-            sendNotification(
+            notificationService.sendNotification(
                     learnerUserId,
                     "Lịch học đã bị hủy - Tutor đã bị khóa tài khoản",
                     "Buổi học vào lúc " + formatDateTime(slot.getStartTime()) +
@@ -372,7 +372,7 @@ public class TutorBookingPlanService {
             }
 
             // Thông báo cho learner
-            sendNotification(
+            notificationService.sendNotification(
                     learnerUserId,
                     "Lịch học đã bị hủy",
                     "Buổi học vào lúc " + formatDateTime(slot.getStartTime()) +
@@ -385,7 +385,7 @@ public class TutorBookingPlanService {
 
             // Thông báo cho tutor
             if (tutorUserId != null) {
-                sendNotification(
+                notificationService.sendNotification(
                         tutorUserId,
                         "Đã xóa slot có learner đang thanh toán",
                         "Buổi học vào lúc " + formatDateTime(slot.getStartTime()) +
@@ -412,7 +412,7 @@ public class TutorBookingPlanService {
             refundRequestRepository.save(refund);
 
             // Thông báo cho learner
-            sendNotification(
+            notificationService.sendNotification(
                     learnerUserId,
                     "Lịch học đã bị hủy - Yêu cầu hoàn tiền",
                     "Buổi học vào lúc " + formatDateTime(slot.getStartTime()) +
@@ -425,7 +425,7 @@ public class TutorBookingPlanService {
 
             // Thông báo cho tutor
             if (tutorUserId != null) {
-                sendNotification(
+                notificationService.sendNotification(
                         tutorUserId,
                         "Đã xóa slot đã thanh toán - Yêu cầu hoàn tiền",
                         "Buổi học vào lúc " + formatDateTime(slot.getStartTime()) +
@@ -438,7 +438,7 @@ public class TutorBookingPlanService {
         } else {
             // Slot Available nhưng có userID (có thể là trường hợp đặc biệt)
             // Thông báo cho learner
-            sendNotification(
+            notificationService.sendNotification(
                     learnerUserId,
                     "Lịch học đã bị hủy",
                     "Buổi học vào lúc " + formatDateTime(slot.getStartTime()) +
@@ -450,7 +450,7 @@ public class TutorBookingPlanService {
 
             // Thông báo cho tutor
             if (tutorUserId != null) {
-                sendNotification(
+                notificationService.sendNotification(
                         tutorUserId,
                         "Đã xóa slot có learner",
                         "Buổi học vào lúc " + formatDateTime(slot.getStartTime()) +
@@ -798,8 +798,8 @@ public class TutorBookingPlanService {
                         .status(SlotStatus.Available)
                         .build();
 
-                bookingPlanSlotRepository.save(newSlot);
-                created++;
+//                bookingPlanSlotRepository.save(newSlot);
+//                created++;
             }
 
             currentStart = currentEnd;
@@ -895,7 +895,7 @@ public class TutorBookingPlanService {
             }
 
             // Thông báo cho learner
-            sendNotification(
+            notificationService.sendNotification(
                     learnerUserId,
                     "Lịch học đã thay đổi",
                     "Buổi học vào lúc " + formatDateTime(slot.getStartTime()) +
@@ -907,7 +907,7 @@ public class TutorBookingPlanService {
             
             // Thông báo cho tutor
             if (tutorUserId != null) {
-                sendNotification(
+                notificationService.sendNotification(
                         tutorUserId,
                         "Lịch học có learner đang thanh toán bị ảnh hưởng",
                         "Buổi học vào lúc " + formatDateTime(slot.getStartTime()) +
@@ -930,12 +930,13 @@ public class TutorBookingPlanService {
                     .refundAmount(refundAmount)
                     .status(RefundStatus.PENDING)
                     .createdAt(LocalDateTime.now())
+                    .tutor(tutor)
                     .build();
-
+            slot.setStatus(SlotStatus.Rejected);
             refundRequestRepository.save(refund);
 
             // Thông báo cho learner
-            sendNotification(
+            notificationService.sendNotification(
                     learnerUserId,
                     "Lịch học đã thay đổi - Yêu cầu hoàn tiền",
                     "Buổi học vào lúc " + formatDateTime(slot.getStartTime()) +
@@ -948,7 +949,7 @@ public class TutorBookingPlanService {
             
             // Thông báo cho tutor
             if (tutorUserId != null) {
-                sendNotification(
+                notificationService.sendNotification(
                         tutorUserId,
                         "Lịch học đã thanh toán bị ảnh hưởng - Yêu cầu hoàn tiền",
                         "Buổi học vào lúc " + formatDateTime(slot.getStartTime()) +
@@ -962,7 +963,7 @@ public class TutorBookingPlanService {
         } else {
             // Slot Available nhưng có userID (có thể là trường hợp đặc biệt)
             // Thông báo cho learner
-            sendNotification(
+            notificationService.sendNotification(
                     learnerUserId,
                     "Lịch học đã thay đổi",
                     "Buổi học vào lúc " + formatDateTime(slot.getStartTime()) +
@@ -974,7 +975,7 @@ public class TutorBookingPlanService {
             
             // Thông báo cho tutor
             if (tutorUserId != null) {
-                sendNotification(
+                notificationService.sendNotification(
                         tutorUserId,
                         "Lịch học có learner bị ảnh hưởng",
                         "Buổi học vào lúc " + formatDateTime(slot.getStartTime()) +
@@ -999,25 +1000,25 @@ public class TutorBookingPlanService {
                 .divide(BigDecimal.valueOf(60), 2, java.math.RoundingMode.HALF_UP);
     }
 
-    private void sendNotification(
-            Long userId,
-            String title,
-            String content,
-            NotificationType type,
-            String primaryUrl
-    ) {
-        Notification n = Notification.builder()
-                .userId(userId)
-                .title(title)
-                .content(content)
-                .type(type)
-                .primaryActionUrl(primaryUrl)
-                .isRead(false)
-                .createdAt(LocalDateTime.now())
-                .build();
-
-        notificationRepository.save(n);
-    }
+//    private void sendNotification(
+//            Long userId,
+//            String title,
+//            String content,
+//            NotificationType type,
+//            String primaryUrl
+//    ) {
+//        Notification n = Notification.builder()
+//                .userId(userId)
+//                .title(title)
+//                .content(content)
+//                .type(type)
+//                .primaryActionUrl(primaryUrl)
+//                .isRead(false)
+//                .createdAt(LocalDateTime.now())
+//                .build();
+//
+//        notificationRepository.save(n);
+//    }
 
     private String formatDateTime(LocalDateTime dt) {
         return dt.toLocalTime() + " ngày " + dt.toLocalDate();

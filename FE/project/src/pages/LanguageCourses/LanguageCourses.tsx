@@ -112,13 +112,16 @@ const LanguageCourses = () => {
         const matchesPrice =
             course.price >= priceRange[0] && course.price <= priceRange[1];
 
+        const notPurchased = !course.isPurchased;
+
         return (
             matchesLanguage &&
             matchesSearch &&
             matchesCategory &&
             matchesLevel &&
             matchesRating &&
-            matchesPrice
+            matchesPrice &&
+            notPurchased
         );
     })
 

@@ -35,16 +35,15 @@ public class WithdrawService {
     SettingRepository settingRepository;
 
     // =============================
-    // CALCULATE REALTIME BALANCE
+    // CALCULATE NET INCOME (REPORT)
     // =============================
+    // Chỉ dùng nếu sau này cần làm báo cáo tổng thu (không trừ withdraw)
     private BigDecimal calculateNetIncome(Long tutorId) {
 
-        // Lấy commission
         Setting setting = settingRepository.getCurrentSetting();
         BigDecimal commissionCourse = setting.getCommissionCourse();
         BigDecimal commissionBooking = setting.getCommissionBooking();
 
-        // Lấy tất cả payment PAID
         List<Payment> payments = paymentRepository.findSuccessPaymentsByTutor(tutorId);
 
         BigDecimal totalNet = BigDecimal.ZERO;
@@ -75,20 +74,23 @@ public class WithdrawService {
         Tutor tutor = tutorRepository.findById(tutorId)
                 .orElseThrow(() -> new AppException(ErrorCode.TUTOR_NOT_FOUND));
 
-        // Tính tổng số tiền NET hiện tại
-        BigDecimal totalNet = calculateNetIncome(tutorId);
+        // Số dư thực tế trong ví
+        BigDecimal currentBalance = tutor.getWalletBalance();
+        if (currentBalance == null) {
+            currentBalance = BigDecimal.ZERO;
+        }
 
         BigDecimal withdrawAmount = req.getWithdrawAmount();
 
         // Không cho rút quá số đang có
-        if (withdrawAmount.compareTo(totalNet) > 0) {
+        if (withdrawAmount.compareTo(currentBalance) > 0) {
             throw new AppException(ErrorCode.INVALID_AMOUNT);
         }
 
-        // Tạo bản ghi Withdraw
+        // Tạo bản ghi Withdraw (totalAmount = snapshot số dư tại thời điểm yêu cầu)
         WithdrawMoney withdraw = WithdrawMoney.builder()
                 .tutor(tutor)
-                .totalAmount(totalNet)
+                .totalAmount(currentBalance)
                 .withdrawAmount(withdrawAmount)
                 .bankAccountNumber(req.getBankAccountNumber())
                 .bankName(req.getBankName())
@@ -103,13 +105,14 @@ public class WithdrawService {
 
 
     // =============================
-    // GET BALANCE (REALTIME)
+    // GET BALANCE TỪ VÍ
     // =============================
     public BigDecimal getBalance(Long tutorId) {
-        tutorRepository.findById(tutorId)
+        Tutor tutor = tutorRepository.findById(tutorId)
                 .orElseThrow(() -> new AppException(ErrorCode.TUTOR_NOT_FOUND));
 
-        return calculateNetIncome(tutorId);
+        BigDecimal wallet = tutor.getWalletBalance();
+        return wallet != null ? wallet : BigDecimal.ZERO;
     }
 
 
