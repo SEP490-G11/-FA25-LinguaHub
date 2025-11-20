@@ -14,6 +14,8 @@ const TutorSchedule: React.FC = () => {
   const [defaultEndTime, setDefaultEndTime] = useState('22:00');
   const [slotDuration, setSlotDuration] = useState(60);
   const [defaultPrice, setDefaultPrice] = useState(50000);
+  const [meetingUrl, setMeetingUrl] = useState('');
+  const [meetingUrlError, setMeetingUrlError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [schedule, setSchedule] = useState<DaySchedule[]>([
@@ -112,9 +114,42 @@ const TutorSchedule: React.FC = () => {
     return day.slots.find(slot => slot.id === timeId) || null;
   };
 
+  const validateMeetingUrl = (url: string): boolean => {
+    if (!url.trim()) {
+      setMeetingUrlError('Vui lòng nhập link meeting');
+      return false;
+    }
+
+    try {
+      const urlObj = new URL(url);
+      if (!urlObj.protocol.startsWith('http')) {
+        setMeetingUrlError('Link meeting phải bắt đầu bằng http:// hoặc https://');
+        return false;
+      }
+      setMeetingUrlError('');
+      return true;
+    } catch {
+      setMeetingUrlError('Link meeting không hợp lệ');
+      return false;
+    }
+  };
+
+  const handleMeetingUrlChange = (url: string) => {
+    setMeetingUrl(url);
+    if (meetingUrlError && url.trim()) {
+      validateMeetingUrl(url);
+    }
+  };
+
   const handleSubmitSchedule = async () => {
     try {
       setIsSubmitting(true);
+
+      // Validate meeting URL
+      if (!validateMeetingUrl(meetingUrl)) {
+        setIsSubmitting(false);
+        return;
+      }
 
       // Validate that at least one day is selected
       const enabledDays = schedule.filter(day => day.isEnabled);
@@ -140,6 +175,7 @@ const TutorSchedule: React.FC = () => {
           endHours,
           slotDuration,
           pricePerHours: defaultPrice,
+          meeting_url: meetingUrl,
         };
 
         return bookingPlanApi.createBookingPlan(bookingPlanData);
@@ -177,10 +213,13 @@ const TutorSchedule: React.FC = () => {
               defaultEndTime={defaultEndTime}
               slotDuration={slotDuration}
               defaultPrice={defaultPrice}
+              meetingUrl={meetingUrl}
+              meetingUrlError={meetingUrlError}
               onStartTimeChange={handleDefaultStartTimeChange}
               onEndTimeChange={handleDefaultEndTimeChange}
               onSlotDurationChange={setSlotDuration}
               onDefaultPriceChange={setDefaultPrice}
+              onMeetingUrlChange={handleMeetingUrlChange}
             />
 
             <DaySelection

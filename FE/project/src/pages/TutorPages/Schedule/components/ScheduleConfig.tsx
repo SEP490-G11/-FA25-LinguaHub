@@ -8,10 +8,13 @@ interface ScheduleConfigProps {
   defaultEndTime: string;
   slotDuration: number;
   defaultPrice: number;
+  meetingUrl: string;
+  meetingUrlError: string;
   onStartTimeChange: (time: string) => void;
   onEndTimeChange: (time: string) => void;
   onSlotDurationChange: (duration: number) => void;
   onDefaultPriceChange: (price: number) => void;
+  onMeetingUrlChange: (url: string) => void;
 }
 
 export const ScheduleConfig: React.FC<ScheduleConfigProps> = ({
@@ -19,10 +22,13 @@ export const ScheduleConfig: React.FC<ScheduleConfigProps> = ({
   defaultEndTime,
   slotDuration,
   defaultPrice,
+  meetingUrl,
+  meetingUrlError,
   onStartTimeChange,
   onEndTimeChange,
   onSlotDurationChange,
   onDefaultPriceChange,
+  onMeetingUrlChange,
 }) => {
   return (
     <>
@@ -82,6 +88,23 @@ export const ScheduleConfig: React.FC<ScheduleConfigProps> = ({
           />
           <span className="text-xs text-gray-500 min-w-[40px]">VNĐ</span>
         </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="meetingUrl" className="text-xs font-medium">
+          Link Meeting
+        </Label>
+        <Input
+          id="meetingUrl"
+          type="url"
+          placeholder="https://meet.google.com/..."
+          value={meetingUrl}
+          onChange={(e) => onMeetingUrlChange(e.target.value)}
+          className={`h-8 text-xs ${meetingUrlError ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
+        />
+        {meetingUrlError && (
+          <p className="text-xs text-red-500 mt-1">{meetingUrlError}</p>
+        )}
       </div>
     </>
   );

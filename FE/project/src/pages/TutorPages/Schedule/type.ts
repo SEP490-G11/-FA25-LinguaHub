@@ -20,6 +20,7 @@ export interface BookingPlanRequest {
   endHours: number;
   slotDuration: number;
   pricePerHours: number;
+  meeting_url: string;
 }
 
 export interface BookingPlanResponse {
@@ -29,5 +30,6 @@ export interface BookingPlanResponse {
   endHours: number;
   slotDuration: number;
   pricePerHours: number;
+  meeting_url: string;
   createdAt: string;
 }
