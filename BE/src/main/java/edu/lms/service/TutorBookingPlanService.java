@@ -17,6 +17,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.*;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -61,6 +63,7 @@ public class TutorBookingPlanService {
                 .endHours(request.getEndTime())
                 .slotDuration(request.getSlotDuration())
                 .pricePerHours(request.getPricePerHours().doubleValue())
+                .meetingUrl(request.getMeetingUrl())
                 .tutorID(tutor.getTutorID())
                 .isActive(true)
                 .isOpen(true)
@@ -155,6 +158,7 @@ public class TutorBookingPlanService {
         bookingPlan.setEndHours(request.getEndTime());
         bookingPlan.setSlotDuration(request.getSlotDuration());
         bookingPlan.setPricePerHours(request.getPricePerHours().doubleValue());
+        bookingPlan.setMeetingUrl(request.getMeetingUrl());
 
         bookingPlanRepository.save(bookingPlan);
 
@@ -471,10 +475,11 @@ public class TutorBookingPlanService {
         Tutor tutor = tutorRepository.findById(tutorId)
                 .orElseThrow(() -> new AppException(ErrorCode.TUTOR_NOT_FOUND));
 
+        // API public - không trả về meetingUrl cho guest/learner
         List<TutorBookingPlanResponse> planResponses = bookingPlanRepository
                 .findByTutorIDAndIsActiveTrueOrderByTitleAscStartHoursAsc(tutor.getTutorID())
                 .stream()
-                .map(this::toBookingPlanResponse)
+                .map(plan -> toBookingPlanResponse(plan, false))
                 .toList();
 
         return BookingPlanListResponse.builder()
@@ -487,10 +492,11 @@ public class TutorBookingPlanService {
     public BookingPlanListResponse getMyBookingPlans(Long currentUserId) {
         Tutor tutor = getApprovedTutorByUserId(currentUserId);
 
+        // API của tutor - trả về đầy đủ thông tin bao gồm meetingUrl
         List<TutorBookingPlanResponse> planResponses = bookingPlanRepository
                 .findByTutorIDAndIsActiveTrueOrderByTitleAscStartHoursAsc(tutor.getTutorID())
                 .stream()
-                .map(this::toBookingPlanResponse)
+                .map(plan -> toBookingPlanResponse(plan, true))
                 .toList();
 
         return BookingPlanListResponse.builder()
@@ -503,19 +509,29 @@ public class TutorBookingPlanService {
     public BookingPlanListWithSlotsResponse getMyBookingPlansWithSlots(Long currentUserId) {
         Tutor tutor = getApprovedTutorByUserId(currentUserId);
 
-        List<BookingPlanDetailResponse> planDetailResponses = bookingPlanRepository
-                .findByTutorIDAndIsActiveTrueOrderByTitleAscStartHoursAsc(tutor.getTutorID())
-                .stream()
+        List<BookingPlan> plans = bookingPlanRepository
+                .findByTutorIDAndIsActiveTrueOrderByTitleAscStartHoursAsc(tutor.getTutorID());
+        
+        // Tạo map để lấy meetingUrl nhanh
+        Map<Long, String> meetingUrlMap = plans.stream()
+                .filter(plan -> plan != null && plan.getBookingPlanID() != null)
+                .collect(Collectors.toMap(
+                        BookingPlan::getBookingPlanID,
+                        plan -> plan.getMeetingUrl() != null ? plan.getMeetingUrl() : "",
+                        (existing, replacement) -> existing
+                ));
+
+        List<BookingPlanDetailResponse> planDetailResponses = plans.stream()
                 .map(plan -> {
                     List<BookingPlanSlot> slots = bookingPlanSlotRepository
                             .findByBookingPlanIDOrderByStartTimeAsc(plan.getBookingPlanID());
                     
                     List<BookingPlanSlotSummaryResponse> slotResponses = slots.stream()
-                            .map(this::toSlotSummary)
+                            .map(slot -> toSlotSummary(slot, meetingUrlMap))
                             .toList();
 
                     return BookingPlanDetailResponse.builder()
-                            .bookingPlan(toBookingPlanResponse(plan))
+                            .bookingPlan(toBookingPlanResponse(plan, true))
                             .slots(slotResponses)
                             .build();
                 })
@@ -535,22 +551,38 @@ public class TutorBookingPlanService {
         List<BookingPlanSlot> slots = bookingPlanSlotRepository
                 .findByBookingPlanIDOrderByStartTimeAsc(bookingPlanId);
 
+        // Tạo map để lấy meetingUrl nhanh (chỉ cho slot đã thanh toán)
+        String meetingUrl = bookingPlan.getMeetingUrl() != null ? bookingPlan.getMeetingUrl() : "";
+        Map<Long, String> meetingUrlMap = Map.of(bookingPlanId, meetingUrl);
+
         List<BookingPlanSlotSummaryResponse> slotResponses = slots.stream()
-                .map(this::toSlotSummary)
+                .map(slot -> toSlotSummary(slot, meetingUrlMap))
                 .toList();
 
+        // API public - không trả về meetingUrl trong booking plan cho guest/learner
         return BookingPlanDetailResponse.builder()
-                .bookingPlan(toBookingPlanResponse(bookingPlan))
+                .bookingPlan(toBookingPlanResponse(bookingPlan, false))
                 .slots(slotResponses)
                 .build();
     }
 
-    private BookingPlanSlotSummaryResponse toSlotSummary(BookingPlanSlot slot) {
+    private BookingPlanSlotSummaryResponse toSlotSummary(BookingPlanSlot slot, Map<Long, String> meetingUrlMap) {
+        // Lấy meetingUrl từ map, chỉ khi slot đã thanh toán
+        String meetingUrl = null;
+        if (slot.getStatus() == SlotStatus.Paid && slot.getBookingPlanID() != null) {
+            meetingUrl = meetingUrlMap.get(slot.getBookingPlanID());
+            // Nếu meetingUrl là empty string, set về null
+            if (meetingUrl != null && meetingUrl.isEmpty()) {
+                meetingUrl = null;
+            }
+        }
+        
         return BookingPlanSlotSummaryResponse.builder()
                 .slotId(slot.getSlotID())
                 .startTime(slot.getStartTime())
                 .endTime(slot.getEndTime())
                 .status(slot.getStatus().name())
+                .meetingUrl(meetingUrl)
                 .build();
     }
 
@@ -1024,7 +1056,7 @@ public class TutorBookingPlanService {
         return dt.toLocalTime() + " ngày " + dt.toLocalDate();
     }
 
-    private TutorBookingPlanResponse toBookingPlanResponse(BookingPlan bookingPlan) {
+    private TutorBookingPlanResponse toBookingPlanResponse(BookingPlan bookingPlan, boolean includeMeetingUrl) {
         Double rawPrice = bookingPlan.getPricePerHours();
 
         return TutorBookingPlanResponse.builder()
@@ -1035,6 +1067,7 @@ public class TutorBookingPlanService {
                 .endTime(bookingPlan.getEndHours())
                 .slotDuration(bookingPlan.getSlotDuration())
                 .pricePerHours(rawPrice == null ? BigDecimal.ZERO : BigDecimal.valueOf(rawPrice))
+                .meetingUrl(includeMeetingUrl ? bookingPlan.getMeetingUrl() : null)
                 .isOpen(bookingPlan.getIsOpen())
                 .isActive(bookingPlan.getIsActive())
                 .createdAt(bookingPlan.getCreatedAt())
