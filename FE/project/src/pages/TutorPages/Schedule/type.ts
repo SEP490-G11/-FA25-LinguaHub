@@ -24,12 +24,7 @@ export interface BookingPlanRequest {
 }
 
 export interface BookingPlanResponse {
-  id: number;
-  title: string;
-  startHours: number;
-  endHours: number;
-  slotDuration: number;
-  pricePerHours: number;
-  meeting_url: string;
-  createdAt: string;
+  success: boolean;
+  booking_planid: number;
+  slots_created: number;
 }

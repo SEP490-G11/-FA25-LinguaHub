@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { DaySchedule, TimeSlot, BookingPlanRequest } from '@/pages/TutorPages/Schedule/type';
+import { DaySchedule, TimeSlot, BookingPlanRequest, BookingPlanResponse } from '@/pages/TutorPages/Schedule/type';
 import { bookingPlanApi } from '@/pages/TutorPages/Schedule/booking-plan-api';
 import { ScheduleConfig } from './components/ScheduleConfig';
 import { DaySelection } from './components/DaySelection';
@@ -17,6 +17,7 @@ const TutorSchedule: React.FC = () => {
   const [meetingUrl, setMeetingUrl] = useState('');
   const [meetingUrlError, setMeetingUrlError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [createdBookingPlans, setCreatedBookingPlans] = useState<BookingPlanResponse[]>([]);
 
   const [schedule, setSchedule] = useState<DaySchedule[]>([
     { id: 2, name: 'Thứ 2', shortName: 'T2', isEnabled: false, startTime: '08:00', endTime: '22:00', slots: [] },
@@ -181,12 +182,17 @@ const TutorSchedule: React.FC = () => {
         return bookingPlanApi.createBookingPlan(bookingPlanData);
       });
 
-      await Promise.all(bookingPlanPromises);
+      const responses = await Promise.all(bookingPlanPromises);
 
-      toast.success('Lịch làm việc đã được tạo thành công!');
+      // Save responses for future use (edit, delete)
+      setCreatedBookingPlans(responses);
+
+      // Calculate total slots created
+      const totalSlots = responses.reduce((sum, res) => sum + res.slots_created, 0);
+
+      toast.success(`Lịch làm việc đã được tạo thành công! Đã tạo ${totalSlots} slots.`);
       
-      // Optionally reset the schedule after successful submission
-      // setSchedule(initialScheduleState);
+      console.log('Created booking plans:', responses);
     } catch (error) {
       console.error('Error submitting schedule:', error);
       toast.error('Có lỗi xảy ra khi tạo lịch làm việc. Vui lòng thử lại.');
