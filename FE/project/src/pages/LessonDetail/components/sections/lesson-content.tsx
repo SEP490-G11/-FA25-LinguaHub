@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Download, FileText, FileSignature, BookOpen } from "lucide-react";
+import { ExternalLink, FileText, FileSignature, BookOpen } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -364,9 +364,9 @@ const LessonContent = ({ lesson, courseId }: LessonContentProps) => {
                                 </div>
 
                                 <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700" asChild>
-                                  <a href={material.url} download target="_blank" rel="noreferrer">
-                                    <Download className="w-4 h-4 mr-2" />
-                                    Download
+                                  <a href={material.url} target="_blank" rel="noopener noreferrer">
+                                    <ExternalLink className="w-4 h-4 mr-2" />
+                                    Go to File
                                   </a>
                                 </Button>
                               </div>

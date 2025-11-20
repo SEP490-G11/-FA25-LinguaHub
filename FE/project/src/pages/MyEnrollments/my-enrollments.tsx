@@ -208,7 +208,7 @@ const MyEnrollments = () => {
                                             <div className="flex justify-between mb-1 text-sm">
                                                 <span>Progress</span>
                                                 <span className="font-semibold text-blue-700">
-                                                    {course.progressPercent}%
+                                                    {Math.round(course.progressPercent)}%
                                                 </span>
                                             </div>
 

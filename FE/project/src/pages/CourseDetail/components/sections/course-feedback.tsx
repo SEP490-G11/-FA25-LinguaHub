@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Star, Trash2 } from "lucide-react";
 import api from "@/config/axiosConfig";
 import {
@@ -34,9 +34,40 @@ const CourseFeedback = ({ feedbacks = [], courseId, isPurchased }: CourseFeedbac
     const [comment, setComment] = useState("");
     const [localFeedbacks, setLocalFeedbacks] = useState(feedbacks);
     const [loading, setLoading] = useState(false);
+    const [currentProgress, setCurrentProgress] = useState<number>(0);
+    const [hasReviewed, setHasReviewed] = useState(false);
 
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [selectedReviewId, setSelectedReviewId] = useState<number | null>(null);
+
+    // Fetch current user's progress
+    useEffect(() => {
+        const fetchProgress = async () => {
+            try {
+                const token = localStorage.getItem("access_token") || sessionStorage.getItem("access_token");
+                if (!token || !isPurchased) return;
+
+                // Lấy progress từ API student/courses giống như lesson detail
+                const courseRes = await api.get(`/student/courses/${courseId}`);
+                const courseData = courseRes.data.result;
+                
+                if (courseData?.progressPercent !== undefined) {
+                    setCurrentProgress(courseData.progressPercent);
+                }
+
+                // Check if user already reviewed
+                const userRes = await api.get('/users/myInfo');
+                const currentUserID = userRes.data.result?.userID;
+                
+                const userReview = feedbacks.find((fb) => fb.userID === currentUserID);
+                setHasReviewed(!!userReview);
+            } catch (error) {
+                console.error('Failed to fetch progress:', error);
+            }
+        };
+
+        fetchProgress();
+    }, [courseId, isPurchased, feedbacks]);
 
     const getUserInitial = (fullName: string) => {
         if (!fullName) return "U";
@@ -85,6 +116,20 @@ const CourseFeedback = ({ feedbacks = [], courseId, isPurchased }: CourseFeedbac
 
         setLoading(true);
         try {
+            // Check progress before submitting - sử dụng API giống lesson detail
+            const courseRes = await api.get(`/student/courses/${courseId}`);
+            const progress = courseRes.data.result?.progressPercent || 0;
+            
+            if (progress < 50) {
+                toast({
+                    variant: "destructive",
+                    title: "Insufficient Progress",
+                    description: `You must complete at least 50% of the course to leave a review. Your current progress: ${Math.round(progress)}%`,
+                });
+                setLoading(false);
+                return;
+            }
+
             const res = await api.post(`/review/${courseId}`, { rating, comment });
             const newReview = res.data.result;
 
@@ -97,6 +142,15 @@ const CourseFeedback = ({ feedbacks = [], courseId, isPurchased }: CourseFeedbac
                 title: "Review submitted 🎉",
             });
 
+        } catch (error) {
+            const err = error as AxiosError<{ message?: string }>;
+            const errorMsg = err.response?.data?.message || "Something went wrong.";
+            
+            toast({
+                variant: "destructive",
+                title: "Review submission failed",
+                description: errorMsg,
+            });
         } finally {
             setLoading(false);
         }
@@ -154,6 +208,26 @@ const CourseFeedback = ({ feedbacks = [], courseId, isPurchased }: CourseFeedbac
 
             <div className="mb-8 border rounded-xl p-6 bg-gray-50">
                 <h3 className="font-semibold mb-3">Write a Review</h3>
+                
+                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
+                    <p className="font-medium mb-1">📝 Review Guidelines:</p>
+                    <ul className="list-disc list-inside space-y-1 text-xs">
+                        <li>You can only submit one review per course</li>
+                        <li>You must complete at least 50% of the course to leave a review</li>
+                        {isPurchased && (
+                            <li className="font-semibold">
+                                Your current progress: {Math.round(currentProgress)}%
+                                {currentProgress < 50 && <span className="text-red-600"> (Need {50 - Math.round(currentProgress)}% more)</span>}
+                                {currentProgress >= 50 && <span className="text-green-600"> ✓ Eligible to review</span>}
+                            </li>
+                        )}
+                        {hasReviewed && (
+                            <li className="font-semibold text-orange-600">
+                                ⚠️ You have already submitted a review for this course
+                            </li>
+                        )}
+                    </ul>
+                </div>
 
                 <div className="flex gap-1 mb-3 cursor-pointer">
                     {[1, 2, 3, 4, 5].map((num) => (
@@ -177,10 +251,14 @@ const CourseFeedback = ({ feedbacks = [], courseId, isPurchased }: CourseFeedbac
 
                 <button
                     onClick={submitReview}
-                    disabled={loading}
-                    className="mt-3 bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-40"
+                    disabled={loading || !isPurchased || currentProgress < 50 || hasReviewed}
+                    className="mt-3 bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                    {loading ? "Submitting..." : "Submit Review"}
+                    {loading ? "Submitting..." : 
+                     !isPurchased ? "Purchase Required" :
+                     currentProgress < 50 ? `Need ${50 - Math.round(currentProgress)}% More Progress` :
+                     hasReviewed ? "Already Reviewed" :
+                     "Submit Review"}
                 </button>
             </div>
 

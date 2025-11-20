@@ -9,9 +9,6 @@ import LessonHeader from "./components/sections/lesson-header";
 import LessonContent from "./components/sections/lesson-content";
 import LessonSidebar from "./components/sections/lesson-sidebar";
 
-/* ============================================================
-   TYPE DEFINITIONS — chuẩn backend
-============================================================ */
 
 interface CourseResource {
   resourceID: number;
@@ -83,9 +80,6 @@ interface LessonData {
   } | null;
 }
 
-/* ============================================================
-   MAIN COMPONENT
-============================================================ */
 
 const LessonDetail: React.FC = () => {
   const { id } = useParams();
@@ -104,9 +98,6 @@ const LessonDetail: React.FC = () => {
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
   const [error, setError] = React.useState<string | null>(null);
 
-  /* ============================================================
-        FETCH LESSON
-  ============================================================ */
   React.useEffect(() => {
     const fetchLesson = async () => {
       if (!id) return;
@@ -193,9 +184,6 @@ const LessonDetail: React.FC = () => {
     fetchLesson();
   }, [id, courseId]);
 
-  /* ============================================================
-        UI STATES
-  ============================================================ */
 
   if (isLoading) {
     return (
@@ -218,9 +206,6 @@ const LessonDetail: React.FC = () => {
     );
   }
 
-  /* ============================================================
-        PAGE UI
-  ============================================================ */
 
   return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50">
