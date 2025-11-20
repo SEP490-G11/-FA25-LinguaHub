@@ -61,6 +61,7 @@ import Messages from '@/pages/MessagesPage/boxchat.tsx';
 import BookTutor from '@/pages/BookTutor/book-tutor.tsx';
 import MyBookings from "@/pages/MyBookings/my-booking.tsx";
 import RefundRequests from "@/pages/RefundRequests/refund-requests.tsx";
+import Notifications from "@/pages/Notifications/notifications.tsx";
 
 export function AppRoutes() {
     return (
