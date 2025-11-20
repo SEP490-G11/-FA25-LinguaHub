@@ -27,6 +27,9 @@ public class BookingPlanSlotSummaryResponse {
     LocalDateTime endTime;
 
     String status;
+    
+    @JsonProperty("meeting_url")
+    String meetingUrl; // Meeting URL chỉ hiển thị khi slot đã thanh toán (status = Paid)
 }
 
 

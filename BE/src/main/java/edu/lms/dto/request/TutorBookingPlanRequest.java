@@ -48,4 +48,8 @@ public class TutorBookingPlanRequest {
     @DecimalMin(value = "0.0", inclusive = false, message = "Price per hour must be greater than 0")
     BigDecimal pricePerHours;
 
+    @Size(max = 500, message = "Meeting URL must be less than 500 characters")
+    @JsonProperty("meeting_url")
+    String meetingUrl;
+
 }

@@ -48,6 +48,9 @@ public class BookingPlan {
     @Column(name = "price_per_hours")
     Double pricePerHours = 0.0;
 
+    @Column(name = "meeting_url", length = 500)
+    String meetingUrl;
+
     @Builder.Default
     @Column(name = "created_at", nullable = false, updatable = false)
     LocalDateTime createdAt = LocalDateTime.now();
