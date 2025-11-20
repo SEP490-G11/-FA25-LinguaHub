@@ -30,24 +30,48 @@ export const ScheduleConfig: React.FC<ScheduleConfigProps> = ({
   onDefaultPriceChange,
   onMeetingUrlChange,
 }) => {
+  // Generate time options with only :00 and :30 minutes
+  const generateTimeOptions = () => {
+    const times: string[] = [];
+    for (let hour = 0; hour < 24; hour++) {
+      times.push(`${hour.toString().padStart(2, '0')}:00`);
+      times.push(`${hour.toString().padStart(2, '0')}:30`);
+    }
+    return times;
+  };
+
+  const timeOptions = generateTimeOptions();
+
   return (
     <>
       <div className="space-y-2">
         <Label className="text-xs font-medium">Giờ làm việc mặc định</Label>
         <div className="flex items-center gap-1.5">
-          <Input
-            type="time"
-            value={defaultStartTime}
-            onChange={(e) => onStartTimeChange(e.target.value)}
-            className="h-8 flex-1 text-xs"
-          />
+          <Select value={defaultStartTime} onValueChange={onStartTimeChange}>
+            <SelectTrigger className="h-8 flex-1 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="max-h-[200px]">
+              {timeOptions.map((time) => (
+                <SelectItem key={time} value={time} className="text-xs">
+                  {time}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <span className="text-xs text-gray-500">đến</span>
-          <Input
-            type="time"
-            value={defaultEndTime}
-            onChange={(e) => onEndTimeChange(e.target.value)}
-            className="h-8 flex-1 text-xs"
-          />
+          <Select value={defaultEndTime} onValueChange={onEndTimeChange}>
+            <SelectTrigger className="h-8 flex-1 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="max-h-[200px]">
+              {timeOptions.map((time) => (
+                <SelectItem key={time} value={time} className="text-xs">
+                  {time}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -64,10 +88,7 @@ export const ScheduleConfig: React.FC<ScheduleConfigProps> = ({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="30">30 phút</SelectItem>
-            <SelectItem value="45">45 phút</SelectItem>
             <SelectItem value="60">60 phút</SelectItem>
-            <SelectItem value="90">90 phút</SelectItem>
-            <SelectItem value="120">120 phút</SelectItem>
           </SelectContent>
         </Select>
       </div>
