@@ -8,12 +8,14 @@ import edu.lms.entity.Tutor;
 import edu.lms.entity.WithdrawMoney;
 import edu.lms.enums.PaymentType;
 import edu.lms.enums.WithdrawStatus;
+import edu.lms.enums.RefundStatus;
 import edu.lms.exception.AppException;
 import edu.lms.exception.ErrorCode;
 import edu.lms.repository.PaymentRepository;
 import edu.lms.repository.SettingRepository;
 import edu.lms.repository.TutorRepository;
 import edu.lms.repository.WithdrawRepository;
+import edu.lms.repository.RefundRequestRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -33,11 +35,12 @@ public class WithdrawService {
     TutorRepository tutorRepository;
     PaymentRepository paymentRepository;
     SettingRepository settingRepository;
+    RefundRequestRepository refundRepository;
 
     // =============================
-    // CALCULATE NET INCOME (REPORT)
+    //  TÍNH TỔNG NET INCOME (PAYMENT)
     // =============================
-    // Chỉ dùng nếu sau này cần làm báo cáo tổng thu (không trừ withdraw)
+    // Tổng tiền tutor nhận được từ tất cả payment PAID (đã trừ commission)
     private BigDecimal calculateNetIncome(Long tutorId) {
 
         Setting setting = settingRepository.getCurrentSetting();
@@ -65,6 +68,41 @@ public class WithdrawService {
         return totalNet;
     }
 
+    // =============================
+    //  TÍNH SỐ DƯ HIỆN TẠI CỦA VÍ
+    // =============================
+    // Balance = NetIncome - WithdrawApproved - RefundApproved
+    public BigDecimal calculateCurrentBalance(Long tutorId) {
+
+        // 1) Tổng thu nhập ròng từ tất cả payment thành công
+        BigDecimal netIncome = calculateNetIncome(tutorId);
+
+        // 2) Tổng tiền đã rút (APPROVED)
+        BigDecimal totalWithdrawApproved =
+                withdrawRepository.sumWithdrawAmountByTutorAndStatus(
+                        tutorId,
+                        WithdrawStatus.APPROVED
+                );
+        if (totalWithdrawApproved == null) {
+            totalWithdrawApproved = BigDecimal.ZERO;
+        }
+
+        // 3) Tổng tiền refund đã được duyệt (trả lại cho learner)
+        BigDecimal totalRefundApproved =
+                refundRepository.sumRefundAmountByTutorAndStatus(
+                        tutorId,
+                        RefundStatus.APPROVED
+                );
+        if (totalRefundApproved == null) {
+            totalRefundApproved = BigDecimal.ZERO;
+        }
+
+        // 4) Số dư hiện tại
+        return netIncome
+                .subtract(totalWithdrawApproved)
+                .subtract(totalRefundApproved);
+    }
+
 
     // =============================
     // TUTOR REQUEST WITHDRAW
@@ -74,11 +112,8 @@ public class WithdrawService {
         Tutor tutor = tutorRepository.findById(tutorId)
                 .orElseThrow(() -> new AppException(ErrorCode.TUTOR_NOT_FOUND));
 
-        // Số dư thực tế trong ví
-        BigDecimal currentBalance = tutor.getWalletBalance();
-        if (currentBalance == null) {
-            currentBalance = BigDecimal.ZERO;
-        }
+        // Số dư thực tế trong ví = tính lại theo thuật toán
+        BigDecimal currentBalance = calculateCurrentBalance(tutorId);
 
         BigDecimal withdrawAmount = req.getWithdrawAmount();
 
@@ -108,11 +143,8 @@ public class WithdrawService {
     // GET BALANCE TỪ VÍ
     // =============================
     public BigDecimal getBalance(Long tutorId) {
-        Tutor tutor = tutorRepository.findById(tutorId)
-                .orElseThrow(() -> new AppException(ErrorCode.TUTOR_NOT_FOUND));
-
-        BigDecimal wallet = tutor.getWalletBalance();
-        return wallet != null ? wallet : BigDecimal.ZERO;
+        // Luôn tính lại, không đọc cứng từ tutor.walletBalance
+        return calculateCurrentBalance(tutorId);
     }
 
 

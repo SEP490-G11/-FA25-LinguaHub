@@ -8,19 +8,27 @@ import edu.lms.enums.RefundStatus;
 import edu.lms.exception.AppException;
 import edu.lms.exception.ErrorCode;
 import edu.lms.repository.RefundRequestRepository;
+import edu.lms.repository.TutorRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+
+import static lombok.AccessLevel.PRIVATE;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
+@FieldDefaults(level = PRIVATE, makeFinal = true)
 public class RefundService {
 
-    private final RefundRequestRepository refundRepo;
+    RefundRequestRepository refundRepo;
+    WithdrawService withdrawService;
+    TutorRepository tutorRepository;
 
     public void submitRefundInfo(Long refundId, RefundInfoRequest dto, Long userId) {
         RefundRequest req = refundRepo.findById(refundId)
@@ -66,18 +74,25 @@ public class RefundService {
     public void approve(Long refundId) {
         RefundRequest req = refundRepo.findById(refundId)
                 .orElseThrow(() -> new AppException(ErrorCode.REFUND_NOT_FOUND));
+
         Tutor tutor = req.getTutor();
-        if(tutor.getWalletBalance().compareTo(req.getRefundAmount()) < 0){
+        Long tutorId = tutor.getTutorID();
+
+        // 1) Check đủ tiền trong ví (theo thuật toán mới)
+        BigDecimal currentBalance = withdrawService.calculateCurrentBalance(tutorId);
+        if (req.getRefundAmount().compareTo(currentBalance) > 0) {
             throw new AppException(ErrorCode.INVALID_AMOUNT);
         }
-        tutor.setWalletBalance(
-                tutor.getWalletBalance().subtract(req.getRefundAmount())
-        );
 
+        // 2) Cập nhật trạng thái refund
         req.setStatus(RefundStatus.APPROVED);
         req.setProcessedAt(LocalDateTime.now());
-
         refundRepo.save(req);
+
+        // 3) Re-calc lại balance và update snapshot wallet_balance
+        BigDecimal newBalance = withdrawService.calculateCurrentBalance(tutorId);
+        tutor.setWalletBalance(newBalance);
+        tutorRepository.save(tutor);
     }
 
     public void reject(Long refundId) {
@@ -88,6 +103,7 @@ public class RefundService {
         req.setProcessedAt(LocalDateTime.now());
 
         refundRepo.save(req);
+        // Reject không ảnh hưởng balance nên không cần tính lại
     }
 
 
