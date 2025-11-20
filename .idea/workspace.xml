@@ -4,14 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="f34da5df-8de1-4fda-b60e-25fa28aac3e7" name="Changes" comment="">
+    <list default="true" id="f34da5df-8de1-4fda-b60e-25fa28aac3e7" name="Changes" comment="modified">
       <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FE/project/src/pages/HomePage/components/sections/learning-activity.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/FE/project/src/pages/HomePage/components/sections/learning-activity.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FE/project/src/pages/LanguageCourses/LanguageCourses.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/FE/project/src/pages/LanguageCourses/LanguageCourses.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FE/project/src/pages/LanguageCourses/components/sections/courses-grid.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/FE/project/src/pages/LanguageCourses/components/sections/courses-grid.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FE/project/src/pages/PaymentHistory/payment-history.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/FE/project/src/pages/PaymentHistory/payment-history.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FE/project/src/pages/TutorDetail/tutorDetail.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/FE/project/src/pages/TutorDetail/tutorDetail.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FE/project/src/routes/AppRoutes.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/FE/project/src/routes/AppRoutes.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BE/src/main/java/edu/lms/service/TutorPackageService.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/edu/lms/service/TutorPackageService.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -40,7 +36,7 @@
     "Spring Boot.LinguaHubApplication.executor": "Run",
     "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultAutoModeForALLUsers.v1": "true",
     "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
-    "git-widget-placeholder": "Booking-Fev2",
+    "git-widget-placeholder": "minpricebooking",
     "junie.onboarding.icon.badge.shown": "true",
     "kotlin-language-version-configured": "true",
     "node.js.detected.package.eslint": "true",
@@ -53,7 +49,7 @@
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
-  <component name="RunManager" selected="npm.dev">
+  <component name="RunManager">
     <configuration name="LinguaHubApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" temporary="true" nameIsGenerated="true">
       <module name="LinguaHub" />
       <option name="SPRING_BOOT_MAIN_CLASS" value="edu.lms.LinguaHubApplication" />
@@ -77,12 +73,6 @@
       <envs />
       <method v="2" />
     </configuration>
-    <recent_temporary>
-      <list>
-        <item itemvalue="npm.dev" />
-        <item itemvalue="Spring Boot.LinguaHubApplication" />
-      </list>
-    </recent_temporary>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>
@@ -123,5 +113,9 @@
         </entry>
       </map>
     </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="modified" />
+    <option name="LAST_COMMIT_MESSAGE" value="modified" />
   </component>
 </project>
