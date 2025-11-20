@@ -5,13 +5,57 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f34da5df-8de1-4fda-b60e-25fa28aac3e7" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FE/project/src/pages/HomePage/components/sections/learning-activity.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/FE/project/src/pages/HomePage/components/sections/learning-activity.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FE/project/src/pages/LanguageCourses/LanguageCourses.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/FE/project/src/pages/LanguageCourses/LanguageCourses.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FE/project/src/pages/LanguageCourses/components/sections/courses-grid.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/FE/project/src/pages/LanguageCourses/components/sections/courses-grid.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FE/project/src/pages/PaymentHistory/payment-history.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/FE/project/src/pages/PaymentHistory/payment-history.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/FE/project/src/pages/TutorDetail/tutorDetail.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/FE/project/src/pages/TutorDetail/tutorDetail.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BE/src/main/java/edu/lms/controller/RefundAdminController.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/edu/lms/controller/RefundAdminController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BE/src/main/java/edu/lms/controller/TutorCourseController.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/edu/lms/controller/TutorCourseController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BE/src/main/java/edu/lms/dto/response/RefundRequestResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/edu/lms/dto/response/RefundRequestResponse.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BE/src/main/java/edu/lms/dto/response/TutorCourseDetailResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/edu/lms/dto/response/TutorCourseDetailResponse.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BE/src/main/java/edu/lms/entity/CourseDraft.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/edu/lms/entity/CourseDraft.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BE/src/main/java/edu/lms/entity/CourseObjective.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/edu/lms/entity/CourseObjective.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BE/src/main/java/edu/lms/entity/CourseSection.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/edu/lms/entity/CourseSection.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BE/src/main/java/edu/lms/entity/Lesson.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/edu/lms/entity/Lesson.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BE/src/main/java/edu/lms/entity/LessonResource.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/edu/lms/entity/LessonResource.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BE/src/main/java/edu/lms/entity/RefundRequest.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/edu/lms/entity/RefundRequest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BE/src/main/java/edu/lms/entity/WithdrawMoney.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/edu/lms/entity/WithdrawMoney.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BE/src/main/java/edu/lms/exception/ErrorCode.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/edu/lms/exception/ErrorCode.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BE/src/main/java/edu/lms/repository/CourseDraftRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/edu/lms/repository/CourseDraftRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BE/src/main/java/edu/lms/repository/CourseObjectiveDraftRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/edu/lms/repository/CourseObjectiveDraftRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BE/src/main/java/edu/lms/repository/CourseSectionDraftRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/edu/lms/repository/CourseSectionDraftRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BE/src/main/java/edu/lms/repository/EnrollmentRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/edu/lms/repository/EnrollmentRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BE/src/main/java/edu/lms/repository/LessonDraftRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/edu/lms/repository/LessonDraftRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BE/src/main/java/edu/lms/repository/LessonResourceDraftRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/edu/lms/repository/LessonResourceDraftRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BE/src/main/java/edu/lms/service/AdminCourseService.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/edu/lms/service/AdminCourseService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BE/src/main/java/edu/lms/service/AuthenticationService.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/edu/lms/service/AuthenticationService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BE/src/main/java/edu/lms/service/CourseObjectiveDraftService.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/edu/lms/service/CourseObjectiveDraftService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BE/src/main/java/edu/lms/service/CourseSectionService.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/edu/lms/service/CourseSectionService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BE/src/main/java/edu/lms/service/EmailService.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/edu/lms/service/EmailService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BE/src/main/java/edu/lms/service/LessonDraftService.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/edu/lms/service/LessonDraftService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BE/src/main/java/edu/lms/service/LessonServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/edu/lms/service/LessonServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BE/src/main/java/edu/lms/service/NotificationService.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/edu/lms/service/NotificationService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BE/src/main/java/edu/lms/service/PaymentService.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/edu/lms/service/PaymentService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BE/src/main/java/edu/lms/service/RefundService.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/edu/lms/service/RefundService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BE/src/main/java/edu/lms/service/TutorBookingPlanService.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/edu/lms/service/TutorBookingPlanService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BE/src/main/java/edu/lms/service/TutorCourseService.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/edu/lms/service/TutorCourseService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BE/src/main/java/edu/lms/service/UserService.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/edu/lms/service/UserService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BE/src/main/java/edu/lms/service/WithdrawService.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/edu/lms/service/WithdrawService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BE/src/main/resources/application.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/resources/application.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/FE/project/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/FE/project/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/FE/project/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/FE/project/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/FE/project/src/components/Header.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/FE/project/src/components/Header.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/FE/project/src/constants/routes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/FE/project/src/constants/routes.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/FE/project/src/pages/CourseDetail/components/sections/course-feedback.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/FE/project/src/pages/CourseDetail/components/sections/course-feedback.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/FE/project/src/pages/CourseDetail/components/sections/course-sidebar.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/FE/project/src/pages/CourseDetail/components/sections/course-sidebar.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/FE/project/src/pages/LessonDetail/components/sections/lesson-content.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/FE/project/src/pages/LessonDetail/components/sections/lesson-content.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/FE/project/src/pages/LessonDetail/lesson.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/FE/project/src/pages/LessonDetail/lesson.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/FE/project/src/pages/MessagesPage/components/sections/chat-window.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/FE/project/src/pages/MessagesPage/components/sections/chat-window.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/FE/project/src/pages/MyEnrollments/my-enrollments.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/FE/project/src/pages/MyEnrollments/my-enrollments.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/FE/project/src/pages/Tutors/components/sections/filters-section.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/FE/project/src/pages/Tutors/components/sections/filters-section.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/FE/project/src/pages/Tutors/listTutor.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/FE/project/src/pages/Tutors/listTutor.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/FE/project/src/pages/Wishlist/components/sections/wishlist-content.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/FE/project/src/pages/Wishlist/components/sections/wishlist-content.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/FE/project/src/pages/not-found/index.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/FE/project/src/pages/not-found/not-found.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/FE/project/src/routes/AppRoutes.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/FE/project/src/routes/AppRoutes.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/FE/project/src/utils/course-routes.ts" beforeDir="false" afterPath="$PROJECT_DIR$/FE/project/src/utils/course-routes.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -21,6 +65,18 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;DinhHaiDang66&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/SEP490-G11/FA25-LinguaHub.git&quot;,
+    &quot;accountId&quot;: &quot;0db0492a-a927-4dcf-802c-5ab6e3996dab&quot;
+  }
+}</component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 4
 }</component>
@@ -29,31 +85,32 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RequestMappingsPanelOrder0": "0",
-    "RequestMappingsPanelOrder1": "1",
-    "RequestMappingsPanelWidth0": "75",
-    "RequestMappingsPanelWidth1": "75",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "Spring Boot.LinguaHubApplication.executor": "Run",
-    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultAutoModeForALLUsers.v1": "true",
-    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
-    "git-widget-placeholder": "Booking-Fev2",
-    "junie.onboarding.icon.badge.shown": "true",
-    "kotlin-language-version-configured": "true",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "to.speed.mode.migration.done": "true",
-    "ts.external.directory.path": "O:\\DoAn2\\-FA25-LinguaHub\\FE\\project\\node_modules\\typescript\\lib",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RequestMappingsPanelOrder0&quot;: &quot;0&quot;,
+    &quot;RequestMappingsPanelOrder1&quot;: &quot;1&quot;,
+    &quot;RequestMappingsPanelWidth0&quot;: &quot;75&quot;,
+    &quot;RequestMappingsPanelWidth1&quot;: &quot;75&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;Spring Boot.LinguaHubApplication.executor&quot;: &quot;Run&quot;,
+    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultAutoModeForALLUsers.v1&quot;: &quot;true&quot;,
+    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;Booking-Fev2&quot;,
+    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;npm.dev.executor&quot;: &quot;Run&quot;,
+    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
+    &quot;ts.external.directory.path&quot;: &quot;O:\\DoAn2\\-FA25-LinguaHub\\FE\\project\\node_modules\\typescript\\lib&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
-  <component name="RunManager" selected="npm.dev">
+}</component>
+  <component name="RunManager" selected="Spring Boot.LinguaHubApplication">
     <configuration name="LinguaHubApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" temporary="true" nameIsGenerated="true">
       <module name="LinguaHub" />
       <option name="SPRING_BOOT_MAIN_CLASS" value="edu.lms.LinguaHubApplication" />
@@ -79,19 +136,20 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="npm.dev" />
         <item itemvalue="Spring Boot.LinguaHubApplication" />
+        <item itemvalue="npm.dev" />
       </list>
     </recent_temporary>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-jdk-9823dce3aa75-bf35d07a577b-intellij.indexing.shared.core-IU-252.27397.103" />
-        <option value="bundled-js-predefined-d6986cc7102b-3aa1da707db6-JavaScript-IU-252.27397.103" />
+        <option value="bundled-jdk-9823dce3aa75-b114ca120d71-intellij.indexing.shared.core-IU-242.21829.227" />
+        <option value="bundled-js-predefined-d6986cc7102b-7c0b70fcd90d-JavaScript-IU-242.21829.227" />
       </set>
     </attachedChunks>
   </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
       <changelist id="f34da5df-8de1-4fda-b60e-25fa28aac3e7" name="Changes" comment="" />
@@ -107,6 +165,8 @@
       <workItem from="1763435589322" duration="7902000" />
       <workItem from="1763480192059" duration="620000" />
       <workItem from="1763526704711" duration="4818000" />
+      <workItem from="1763619092054" duration="7808000" />
+      <workItem from="1763628913427" duration="1609000" />
     </task>
     <servers />
   </component>

@@ -92,8 +92,7 @@ const WishlistContent = ({ wishlistItems, onRemoveItem }: WishlistContentProps) 
                     variants={fadeInUp}
                     className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 group cursor-pointer border border-blue-100"
                 >
-                  {/* ✅ Nội dung chính */}
-                  <Link to={`/course/${item.id}`} className="block hover:no-underline">
+                  <Link to={`/courses/${item.id}`} className="block hover:no-underline">
                     <div className="relative overflow-hidden">
                       <img
                           src={item.thumbnailURL}

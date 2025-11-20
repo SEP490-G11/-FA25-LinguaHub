@@ -27,6 +27,7 @@ const Tutors = () => {
   const [languages, setLanguages] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 0]);
   const [maxPrice, setMaxPrice] = useState(0);
+  const [selectedRating, setSelectedRating] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const tutorsPerPage = 6;
 
@@ -100,14 +101,16 @@ const Tutors = () => {
       const matchPrice =
           tutor.price >= priceRange[0] && tutor.price <= priceRange[1];
 
-      return matchLanguage && matchSearch && matchPrice;
+      const matchRating = selectedRating === 0 || tutor.rating >= selectedRating;
+
+      return matchLanguage && matchSearch && matchPrice && matchRating;
     });
-  }, [tutors, selectedLanguage, searchTerm, priceRange]);
+  }, [tutors, selectedLanguage, searchTerm, priceRange, selectedRating]);
 
   /**  Reset page when filters change */
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedLanguage, searchTerm, priceRange]);
+  }, [selectedLanguage, searchTerm, priceRange, selectedRating]);
 
   /**  Pagination logic */
   const totalPages = Math.ceil(filteredTutors.length / tutorsPerPage);
@@ -140,6 +143,7 @@ const Tutors = () => {
             selectedLanguage={selectedLanguage}
             priceRange={priceRange}
             maxPrice={maxPrice}
+            selectedRating={selectedRating}
             tutorCount={filteredTutors.length}
             onLanguageChange={(v) => {
               setSelectedLanguage(v);
@@ -148,6 +152,10 @@ const Tutors = () => {
             }}
             onPriceRangeChange={(range) => {
               setPriceRange(range);
+              setCurrentPage(1);
+            }}
+            onRatingChange={(rating) => {
+              setSelectedRating(rating);
               setCurrentPage(1);
             }}
         />

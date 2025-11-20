@@ -21,7 +21,7 @@ public class WithdrawMoney {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long withdrawId;
 
-    
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tutor_id", nullable = false)
     Tutor tutor;

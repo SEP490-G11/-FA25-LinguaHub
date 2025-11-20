@@ -50,6 +50,9 @@ public class RefundRequest {
     @Column(nullable = false, length = 20)
     RefundStatus status;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tutor_id", nullable = false)
+    Tutor tutor;
 
     @Builder.Default
     @Column(nullable = false)

@@ -14,7 +14,7 @@ import PracticeTest from '@/pages/PracticeTest/index';
 import BecomeTutor from '@/pages/BecomeTutor/index';
 import Wishlist from '@/pages/Wishlist/wishList.tsx';
 import Payment from '@/pages/Payment/payment.tsx';
-import NotFound from '@/pages/not-found';
+import NotFound from '@/pages/not-found/not-found.tsx';
 import PolicyPage from '@/pages/PolicyPage/index';
 import CompleteForgotPassword from '@/pages/auth/complete-forgot-password/complete-forgot-password.tsx';
 import GoogleCallback from '@/pages/auth/login-google/login-google.tsx';
@@ -61,6 +61,7 @@ import Messages from '@/pages/MessagesPage/boxchat.tsx';
 import BookTutor from '@/pages/BookTutor/book-tutor.tsx';
 import MyBookings from "@/pages/MyBookings/my-booking.tsx";
 import RefundRequests from "@/pages/RefundRequests/refund-requests.tsx";
+import Notifications from "@/pages/Notifications/notifications.tsx";
 
 export function AppRoutes() {
     return (
@@ -92,7 +93,8 @@ export function AppRoutes() {
             <Route path="/messages/:conversationId" element={<Messages />} />
             <Route path="/book-tutor/:tutorId" element={<BookTutor />} />
             <Route path="/my-bookings" element={<MyBookings />} />
-            <Route path="/refund-requests" element={<RefundRequests />} />
+            <Route path={ROUTES.REFUND_REQUESTS} element={<RefundRequests />} />
+            <Route path={ROUTES.NOTIFICATIONS} element={<Notifications />} />
             {/* User */}
             <Route path={ROUTES.PROFILE} element={<Profile />} />
             <Route path={ROUTES.CHANGE_PASSWORD} element={<ChangePassword />} />

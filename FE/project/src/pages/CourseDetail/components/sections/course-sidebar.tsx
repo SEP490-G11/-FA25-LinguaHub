@@ -272,6 +272,39 @@ const CourseSidebar = ({ course, wishlisted, setWishlisted }: CourseSidebarProps
           </h3>
 
           <div className="space-y-4">
+            {/* Content Summary - Udemy style */}
+            {course.contentSummary && (
+                <div className="pb-4 border-b border-gray-200">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-3">This course includes:</h4>
+                  <div className="space-y-2 text-sm">
+                    {course.contentSummary.totalVideoHours > 0 && (
+                        <div className="flex items-center gap-2 text-gray-600">
+                          <Clock className="w-4 h-4" />
+                          <span>{course.contentSummary.totalVideoHours} hours on-demand video</span>
+                        </div>
+                    )}
+                    {course.contentSummary.totalPracticeTests > 0 && (
+                        <div className="flex items-center gap-2 text-gray-600">
+                          <BookOpen className="w-4 h-4" />
+                          <span>{course.contentSummary.totalPracticeTests} practice tests</span>
+                        </div>
+                    )}
+                    {course.contentSummary.totalArticles > 0 && (
+                        <div className="flex items-center gap-2 text-gray-600">
+                          <BookOpen className="w-4 h-4" />
+                          <span>{course.contentSummary.totalArticles} articles</span>
+                        </div>
+                    )}
+                    {course.contentSummary.totalDownloadableResources > 0 && (
+                        <div className="flex items-center gap-2 text-gray-600">
+                          <BookOpen className="w-4 h-4" />
+                          <span>{course.contentSummary.totalDownloadableResources} downloadable resources</span>
+                        </div>
+                    )}
+                  </div>
+                </div>
+            )}
+
             <div className="flex justify-between">
               <div className="flex items-center space-x-2 text-gray-600">
                 <Clock className="w-5 h-5" />

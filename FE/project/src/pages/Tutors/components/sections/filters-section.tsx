@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Filter } from "lucide-react";
+import { Filter, Star } from "lucide-react";
 
 interface FiltersSectionProps {
   languages: string[];
@@ -9,12 +9,14 @@ interface FiltersSectionProps {
   priceRange: [number, number];
 
   maxPrice: number;
+  selectedRating: number;
   tutorCount: number;
 
   onLanguageChange: (value: string) => void;
 
   // ✅ đúng tên hàm callback để update range
   onPriceRangeChange: (range: [number, number]) => void;
+  onRatingChange: (rating: number) => void;
 }
 
 const FiltersSection = ({
@@ -22,9 +24,11 @@ const FiltersSection = ({
                           selectedLanguage,
                           priceRange,
                           maxPrice,
+                          selectedRating,
                           tutorCount,
                           onLanguageChange,
                           onPriceRangeChange,
+                          onRatingChange,
                         }: FiltersSectionProps) => {
   const fadeInUp = {
     initial: { opacity: 0, y: 60 },
@@ -103,6 +107,33 @@ const FiltersSection = ({
               <div className="flex justify-between text-xs text-gray-600 mt-1">
                 <span>{priceRange[0].toLocaleString("vi-VN")} ₫</span>
                 <span>{priceRange[1].toLocaleString("vi-VN")} ₫</span>
+              </div>
+            </div>
+
+            {/* === RATING FILTER === */}
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-gray-600">Rating:</label>
+              <div className="flex items-center gap-1">
+                {[1, 2, 3, 4, 5].map((star) => {
+                  const active = selectedRating >= star;
+                  return (
+                      <button
+                          key={star}
+                          type="button"
+                          onClick={() =>
+                              onRatingChange(selectedRating === star ? 0 : star)
+                          }
+                      >
+                        <Star
+                            className={`w-6 h-6 ${
+                                active
+                                    ? "text-yellow-400 fill-yellow-400"
+                                    : "text-gray-300"
+                            }`}
+                        />
+                      </button>
+                  );
+                })}
               </div>
             </div>
 

@@ -15,7 +15,10 @@ import { cn } from "@/lib/utils";
 import { ROUTES } from "@/constants/routes";
 import api from "@/config/axiosConfig";
 import { useToast } from "@/components/ui/use-toast";
-//  Chuẩn hoá kiểu dữ liệu người dùng
+import { useNotifications } from "@/hooks/useNotifications";
+import { Badge } from "@/components/ui/badge";
+import { formatDistanceToNow } from "date-fns";
+
 interface User {
     fullName: string;
     email: string;
@@ -36,8 +39,11 @@ const Header = () => {
 
     const isAuthenticated = !!token;
     const [user, setUser] = useState<User | null>(null);
+    
 
-    // === Fetch user info sau khi đăng nhập ===
+    const { recentNotifications, unreadCount } = useNotifications();
+
+
     useEffect(() => {
         if (!isAuthenticated) return;
 
@@ -53,9 +59,20 @@ const Header = () => {
 
     // === Logout ===
     const handleLogout = () => {
+        // Clear all tokens
         localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
         sessionStorage.removeItem("access_token");
+        sessionStorage.removeItem("refresh_token");
+        
+        // Clear user state
+        setUser(null);
+        
+        // Navigate to sign in
         navigate(ROUTES.SIGN_IN, { replace: true });
+        
+        // Force reload to clear all state
+        window.location.reload();
     };
 
     const getUserInitial = (fullName: string) => {
@@ -197,6 +214,7 @@ const Header = () => {
                                 <Button
                                     variant="ghost"
                                     size="icon"
+                                    className="relative"
                                     onClick={() => {
                                         if (!isAuthenticated) {
                                             toast({
@@ -208,16 +226,82 @@ const Header = () => {
                                     }}
                                 >
                                     <Bell className="w-5 h-5" />
+                                    {isAuthenticated && unreadCount > 0 && (
+                                        <Badge 
+                                            variant="destructive" 
+                                            className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                                        >
+                                            {unreadCount > 9 ? '9+' : unreadCount}
+                                        </Badge>
+                                    )}
                                 </Button>
                             </DropdownMenuTrigger>
 
                             {isAuthenticated && (
-                                <DropdownMenuContent align="end" className="w-72">
-                                    <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+                                <DropdownMenuContent align="end" className="w-80">
+                                    <DropdownMenuLabel className="flex items-center justify-between">
+                                        <span>Notifications</span>
+                                        {unreadCount > 0 && (
+                                            <Badge variant="secondary" className="ml-2">
+                                                {unreadCount} new
+                                            </Badge>
+                                        )}
+                                    </DropdownMenuLabel>
                                     <DropdownMenuSeparator />
-                                    <div className="px-4 py-6 text-sm text-muted-foreground text-center">
-                                        No notifications
-                                    </div>
+                                    
+                                    {recentNotifications.length === 0 ? (
+                                        <div className="px-4 py-6 text-sm text-muted-foreground text-center">
+                                            No notifications
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <div className="max-h-[400px] overflow-y-auto">
+                                                {recentNotifications.map((notification) => (
+                                                    <DropdownMenuItem
+                                                        key={notification.notificationId}
+                                                        className={cn(
+                                                            "flex flex-col items-start gap-1 p-3 cursor-pointer",
+                                                            !notification.isRead && "bg-blue-50/50"
+                                                        )}
+                                                        onClick={() => {
+                                                            if (notification.primaryActionUrl) {
+                                                                navigate(notification.primaryActionUrl);
+                                                            }
+                                                            setNotificationsOpen(false);
+                                                        }}
+                                                    >
+                                                        <div className="flex items-start justify-between w-full gap-2">
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className="font-medium text-sm truncate">
+                                                                    {notification.title}
+                                                                </p>
+                                                                <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
+                                                                    {notification.content}
+                                                                </p>
+                                                                <p className="text-xs text-muted-foreground mt-1">
+                                                                    {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
+                                                                </p>
+                                                            </div>
+                                                            {!notification.isRead && (
+                                                                <div className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0 mt-1" />
+                                                            )}
+                                                        </div>
+                                                    </DropdownMenuItem>
+                                                ))}
+                                            </div>
+                                            
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem
+                                                className="justify-center text-primary font-medium cursor-pointer"
+                                                onClick={() => {
+                                                    navigate(ROUTES.NOTIFICATIONS);
+                                                    setNotificationsOpen(false);
+                                                }}
+                                            >
+                                                All Notifications
+                                            </DropdownMenuItem>
+                                        </>
+                                    )}
                                 </DropdownMenuContent>
                             )}
                         </DropdownMenu>
@@ -300,7 +384,7 @@ const Header = () => {
                                         </Link>
                                     </DropdownMenuItem>
                                     <DropdownMenuItem asChild>
-                                        <Link to="/refund-requests" className="cursor-pointer">
+                                        <Link to={ROUTES.REFUND_REQUESTS} className="cursor-pointer">
                                             <DollarSign className="mr-2 h-4 w-4" />
                                             <span>Request a refund</span>
                                         </Link>

@@ -47,4 +47,10 @@ export const ROUTES = {
     ADMIN_USER_MANAGEMENT: '/admin/user-management',
     ADMIN_WITHDRAW_REQUESTS: '/admin/withdraw-requests',
     ADMIN_PAYMENTS: '/admin/payments',
+    
+    // Notifications
+    NOTIFICATIONS: '/notifications',
+    
+    // Refund
+    REFUND_REQUESTS: '/learner/refunds',
 } as const;

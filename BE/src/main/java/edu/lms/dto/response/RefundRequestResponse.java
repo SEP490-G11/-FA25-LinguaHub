@@ -22,6 +22,8 @@ public class RefundRequestResponse {
 
     Long userId;
 
+    Long TutorId;
+
     Long packageId;
 
     BigDecimal refundAmount;
@@ -37,4 +39,6 @@ public class RefundRequestResponse {
     LocalDateTime createdAt;
 
     LocalDateTime processedAt;
+
+
 }
