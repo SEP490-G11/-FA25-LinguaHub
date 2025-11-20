@@ -57,6 +57,7 @@ import TutorPackages from '@/pages/TutorPages/Packages';
 import TutorCourseDetailPage from '@/pages/TutorPages/CourseDetail';
 import TutorWithdrawal from '@/pages/TutorPages/Withdrawal';
 import TutorWithdrawalHistory from '@/pages/TutorPages/WithdrawalHistory';
+import BookedSlots from '@/pages/TutorPages/BookedSlots';
 import Messages from '@/pages/MessagesPage/boxchat.tsx';
 import BookTutor from '@/pages/BookTutor/book-tutor.tsx';
 import MyBookings from "@/pages/MyBookings/my-booking.tsx";
@@ -130,6 +131,7 @@ export function AppRoutes() {
             <Route path="/create-courses" element={<CreateCourse />} />
             <Route path="/students" element={<TutorStudents />} />
             <Route path="/schedule" element={<TutorSchedule />} />
+            <Route path="/booked-slots" element={<BookedSlots />} />
             <Route path="/packages" element={<TutorPackages />} />
             <Route path="/payments" element={<TutorPayment />} />
             <Route path="/withdrawal" element={<TutorWithdrawal />} />
