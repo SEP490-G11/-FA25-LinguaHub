@@ -38,7 +38,7 @@ public class PaymentService {
     private final PaymentMapper paymentMapper;
     private final UserPackageRepository userPackageRepository;
     private final SettingRepository settingRepository;
-
+    private final WithdrawService withdrawService;
     // =============================
     // TÍNH NET CHO 1 PAYMENT
     // =============================
@@ -250,12 +250,9 @@ public class PaymentService {
             payment.setTutorId(tutor.getTutorID());
             paymentRepository.save(payment);
 
-            // CỘNG TIỀN VÀO VÍ TUTOR (COURSE)
-            BigDecimal netAmount = calculateNetForPayment(payment);
-            BigDecimal currentBalance = tutor.getWalletBalance();
-            if (currentBalance == null) currentBalance = BigDecimal.ZERO;
-
-            tutor.setWalletBalance(currentBalance.add(netAmount));
+            // CẬP NHẬT SỐ DƯ VÍ TUTOR = TÍNH LẠI THEO THUẬT TOÁN
+            BigDecimal newBalance = withdrawService.calculateCurrentBalance(tutor.getTutorID());
+            tutor.setWalletBalance(newBalance);
             tutorRepository.save(tutor);
 
             log.info("[WALLET] Updated wallet_balance for tutor {} = {} after COURSE payment",
@@ -293,13 +290,10 @@ public class PaymentService {
                 }
             }
 
-            // CỘNG TIỀN VÀO VÍ TUTOR (BOOKING)
+            // CẬP NHẬT SỐ DƯ VÍ TUTOR = TÍNH LẠI THEO THUẬT TOÁN
             if (tutor != null) {
-                BigDecimal netAmount = calculateNetForPayment(payment);
-                BigDecimal currentBalance = tutor.getWalletBalance();
-                if (currentBalance == null) currentBalance = BigDecimal.ZERO;
-
-                tutor.setWalletBalance(currentBalance.add(netAmount));
+                BigDecimal newBalance = withdrawService.calculateCurrentBalance(tutor.getTutorID());
+                tutor.setWalletBalance(newBalance);
                 tutorRepository.save(tutor);
 
                 log.info("[WALLET] Updated wallet_balance for tutor {} = {} after BOOKING payment",

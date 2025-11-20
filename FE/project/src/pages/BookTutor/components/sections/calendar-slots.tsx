@@ -117,10 +117,15 @@ const CalendarSlots = ({
   const [bookedByMeMap, setBookedByMeMap] = useState<Record<string, boolean>>({});
   // Slots booked by others (key -> true). Fill from backend if available.
   const [bookedByOthersMap, setBookedByOthersMap] = useState<Record<string, boolean>>({});
+  // Slots that are locked (key -> true)
+  const [lockedSlotsMap, setLockedSlotsMap] = useState<Record<string, boolean>>({});
 
   // ===== Modal state for package detail =====
   const [selectedDetailPackage, setSelectedDetailPackage] = useState<PackageItem | null>(null);
   const [openDetail, setOpenDetail] = useState(false);
+  
+  // ===== Last update timestamp for visual feedback =====
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
   // ===== Fetch current user info =====
   useEffect(() => {
@@ -139,45 +144,76 @@ const CalendarSlots = ({
     };
   }, []);
 
-  // ===== Fetch my booked slots, then map only those with matching userId =====
+
+  // ===== Fetch booked slots with polling =====
   useEffect(() => {
     if (!userId) return;
     let mounted = true;
+    let intervalId: NodeJS.Timeout;
 
-    (async () => {
+    const fetchBookedSlots = async () => {
       try {
         const res = await api.get("/booking-slots/my-slots");
-        const slots: { startTime: string; bookingPlanID: number; userID: number }[] = res?.data?.result || [];
+        const slots: { 
+          status: string;
+          slotid: number;
+          booking_planid: number;
+          tutor_id: number;
+          user_id: number;
+          start_time: string;
+          end_time: string;
+          payment_id: number;
+          locked_at: string;
+          expires_at: string;
+          learner_name: string | null;
+          meeting_url: string | null;
+        }[] = res?.data?.result || [];
 
         const mine: Record<string, boolean> = {};
         const others: Record<string, boolean> = {};
+        const locked: Record<string, boolean> = {};
 
         slots.forEach((s) => {
-          const date = s.startTime.substring(0, 10); // "YYYY-MM-DD"
-          const hour = s.startTime.substring(11, 13); // "HH"
-          const key = `${date}T${hour}:00_plan_${s.bookingPlanID}`;
+          const date = s.start_time.substring(0, 10);
+          const hour = s.start_time.substring(11, 13);
+          const key = `${date}T${hour}:00_plan_${s.booking_planid}`;
 
-          if (s?.userID === userId) {
-            mine[key] = true;
-          } else {
-            others[key] = true;
+          if (s.status === "Locked") {
+            // Slot đang bị khóa (chưa thanh toán)
+            locked[key] = true;
+          } else if (s.status === "Paid") {
+            // Slot đã thanh toán
+            if (s.user_id === userId) {
+              mine[key] = true;
+            } else {
+              others[key] = true;
+            }
           }
         });
 
         if (!mounted) return;
         setBookedByMeMap(mine);
         setBookedByOthersMap(others);
+        setLockedSlotsMap(locked);
+        setLastUpdate(new Date());
       } catch (err) {
         console.error("Error fetching booked slots:", err);
       }
-    })();
+    };
+
+    // Fetch immediately
+    fetchBookedSlots();
+
+    // Poll every 10 seconds to update slot status
+    intervalId = setInterval(fetchBookedSlots, 10000);
 
     return () => {
       mounted = false;
+      if (intervalId) clearInterval(intervalId);
     };
   }, [userId]);
 
-  // ===== Fetch plans of tutor and align to current week =====
+
   useEffect(() => {
     let mounted = true;
 
@@ -227,15 +263,21 @@ const CalendarSlots = ({
   const getStatus = (
       plan: BookingPlan,
       hour: number
-  ): "Available" | "Selected" | "Booked" | "Your Slot" | null => {
+  ): "Available" | "Selected" | "Booked" | "Your Slot" | "Locked" | null => {
     const sH = getPlanHour(plan.start_hours);
     const eH = getPlanHour(plan.end_hours);
     if (!(hour >= sH && hour < eH)) return null;
 
     const slotKey = `${plan.date}T${String(hour).padStart(2, "0")}:00_plan_${plan.booking_planid}`;
 
+    // Check locked slots first
+    if (lockedSlotsMap[slotKey]) return "Locked";
+    
+    // Check if it's my slot
     if (bookedByMeMap[slotKey]) return "Your Slot";
-    if (bookedByOthersMap[slotKey]) return "Booked"; // "Locked" by others
+    
+    // Check if booked by others
+    if (bookedByOthersMap[slotKey]) return "Booked"; 
 
     const exists = selectedSlots.some(
         (s) => s.bookingPlanId === plan.booking_planid && s.time === `${hour}:00` && s.date === plan.date
@@ -365,9 +407,17 @@ const CalendarSlots = ({
           </Button>
         </div>
 
-        <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-blue-900">
-          <Calendar className="text-blue-600" /> Select Time Slots
-        </h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold flex items-center gap-2 text-blue-900">
+            <Calendar className="text-blue-600" /> Select Time Slots
+          </h2>
+          {lastUpdate && (
+            <div className="text-xs text-gray-500 flex items-center gap-1">
+              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+              Updated {lastUpdate.toLocaleTimeString()}
+            </div>
+          )}
+        </div>
 
         {/* TABLE */}
         <div className="overflow-x-auto rounded-lg border border-blue-200 bg-white shadow">
@@ -449,14 +499,16 @@ const CalendarSlots = ({
                                   "bg-red-400/20 text-red-700 border-red-300 cursor-not-allowed",
                               "Your Slot":
                                   "bg-yellow-500/30 text-yellow-900 border-yellow-500 cursor-not-allowed",
+                              Locked:
+                                  "bg-orange-400/20 text-orange-700 border-orange-300 cursor-not-allowed",
                             };
 
                             return (
                                 <button
                                     key={p.booking_planid}
-                                    disabled={status === "Booked" || status === "Your Slot"}
+                                    disabled={status === "Booked" || status === "Your Slot" || status === "Locked"}
                                     onClick={() => {
-                                      if (status === "Booked" || status === "Your Slot")
+                                      if (status === "Booked" || status === "Your Slot" || status === "Locked")
                                         return;
 
                                       onSlotsChange((prev) => {

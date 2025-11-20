@@ -20,5 +20,13 @@ public interface WithdrawRepository extends JpaRepository<WithdrawMoney, Long> {
       AND p.status = edu.lms.enums.PaymentStatus.PAID
 """)
     BigDecimal getTotalEarningOfTutor(Long tutorId);
+    @Query("""
+       SELECT COALESCE(SUM(w.withdrawAmount), 0)
+       FROM WithdrawMoney w
+       WHERE w.tutor.tutorID = :tutorId
+         AND w.status = :status
+       """)
+    BigDecimal sumWithdrawAmountByTutorAndStatus(Long tutorId, WithdrawStatus status);
+
 
 }
