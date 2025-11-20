@@ -25,7 +25,7 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class PaymentService {
-    private final WithdrawService withdrawService;
+
     private final CourseRepository courseRepository;
     private final BookingPlanRepository bookingPlanRepository;
     private final BookingPlanSlotRepository bookingPlanSlotRepository;
@@ -37,6 +37,30 @@ public class PaymentService {
     private final ChatService chatService;
     private final PaymentMapper paymentMapper;
     private final UserPackageRepository userPackageRepository;
+    private final SettingRepository settingRepository;
+
+    // =============================
+    // TÍNH NET CHO 1 PAYMENT
+    // =============================
+    private BigDecimal calculateNetForPayment(Payment payment) {
+        Setting setting = settingRepository.getCurrentSetting();
+        BigDecimal commissionCourse = setting.getCommissionCourse();
+        BigDecimal commissionBooking = setting.getCommissionBooking();
+
+        BigDecimal amount = payment.getAmount();
+        BigDecimal commissionRate;
+
+        if (payment.getPaymentType() == PaymentType.Course) {
+            commissionRate = commissionCourse;
+        } else if (payment.getPaymentType() == PaymentType.Booking) {
+            commissionRate = commissionBooking;
+        } else {
+            commissionRate = BigDecimal.ZERO;
+        }
+
+        return amount.subtract(amount.multiply(commissionRate));
+    }
+
     // ======================================================
     // TẠO THANH TOÁN (PENDING)
     // ======================================================
@@ -72,7 +96,6 @@ public class PaymentService {
         }
 
         // ----------------- BOOKING PAYMENT -----------------
-
         else if (request.getPaymentType() == PaymentType.Booking) {
             UserPackage userPackage = null;
 
@@ -80,6 +103,7 @@ public class PaymentService {
                 userPackage = userPackageRepository.findById(request.getUserPackageId())
                         .orElseThrow(() -> new AppException(ErrorCode.USER_PACKAGE_NOT_FOUND));
             }
+
             BookingPlan plan = bookingPlanRepository.findById(request.getTargetId())
                     .orElseThrow(() -> new AppException(ErrorCode.BOOKING_NOT_FOUND));
 
@@ -203,6 +227,7 @@ public class PaymentService {
         Long userId = payment.getUserId();
         Long targetId = payment.getTargetId();
 
+        // ----------------- COURSE PAYMENT -----------------
         if (payment.getPaymentType() == PaymentType.Course) {
 
             Course course = courseRepository.findById(targetId)
@@ -219,15 +244,28 @@ public class PaymentService {
                     .build();
 
             enrollmentRepository.save(enrollment);
-            payment.setEnrollment(enrollment);
-            payment.setTutorId(course.getTutor().getTutorID());
 
+            Tutor tutor = course.getTutor();
+            payment.setEnrollment(enrollment);
+            payment.setTutorId(tutor.getTutorID());
             paymentRepository.save(payment);
+
+            // CỘNG TIỀN VÀO VÍ TUTOR (COURSE)
+            BigDecimal netAmount = calculateNetForPayment(payment);
+            BigDecimal currentBalance = tutor.getWalletBalance();
+            if (currentBalance == null) currentBalance = BigDecimal.ZERO;
+
+            tutor.setWalletBalance(currentBalance.add(netAmount));
+            tutorRepository.save(tutor);
+
+            log.info("[WALLET] Updated wallet_balance for tutor {} = {} after COURSE payment",
+                    tutor.getTutorID(), tutor.getWalletBalance());
 
             log.info("[COURSE PAYMENT] User {} enrolled in course '{}'",
                     userId, course.getTitle());
         }
 
+        // ----------------- BOOKING PAYMENT -----------------
         else if (payment.getPaymentType() == PaymentType.Booking) {
 
             List<BookingPlanSlot> slots = bookingPlanSlotRepository.findAllByPaymentID(payment.getPaymentID());
@@ -237,10 +275,15 @@ public class PaymentService {
                 bookingPlanSlotRepository.save(s);
             }
 
+            Tutor tutor = null;
+
             if (!slots.isEmpty()) {
                 Long tutorID = slots.get(0).getTutorID();
                 payment.setTutorId(tutorID);
                 paymentRepository.save(payment);
+
+                tutor = tutorRepository.findById(tutorID)
+                        .orElseThrow(() -> new AppException(ErrorCode.TUTOR_NOT_FOUND));
 
                 try {
                     chatService.ensureTrainingRoomExists(userId, tutorID);
@@ -249,17 +292,19 @@ public class PaymentService {
                     log.warn("[CHAT ROOM] Failed: {}", e.getMessage());
                 }
             }
-            BigDecimal newBalance = withdrawService.getBalance(payment.getTutorId());
 
-            Tutor tutor = tutorRepository.findById(payment.getTutorId())
-                    .orElseThrow(() -> new AppException(ErrorCode.TUTOR_NOT_FOUND));
+            // CỘNG TIỀN VÀO VÍ TUTOR (BOOKING)
+            if (tutor != null) {
+                BigDecimal netAmount = calculateNetForPayment(payment);
+                BigDecimal currentBalance = tutor.getWalletBalance();
+                if (currentBalance == null) currentBalance = BigDecimal.ZERO;
 
-            tutor.setWalletBalance(newBalance);
+                tutor.setWalletBalance(currentBalance.add(netAmount));
+                tutorRepository.save(tutor);
 
-            tutorRepository.save(tutor);
-
-            log.info("[WALLET] Updated wallet_balance for tutor {} = {}",
-                    tutor.getTutorID(), newBalance);
+                log.info("[WALLET] Updated wallet_balance for tutor {} = {} after BOOKING payment",
+                        tutor.getTutorID(), tutor.getWalletBalance());
+            }
 
             log.info("[BOOKING PAYMENT] User {} confirmed {} slots",
                     userId, slots.size());

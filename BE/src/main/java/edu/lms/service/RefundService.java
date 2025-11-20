@@ -3,6 +3,7 @@ package edu.lms.service;
 import edu.lms.dto.request.RefundInfoRequest;
 import edu.lms.dto.response.RefundRequestResponse;
 import edu.lms.entity.RefundRequest;
+import edu.lms.entity.Tutor;
 import edu.lms.enums.RefundStatus;
 import edu.lms.exception.AppException;
 import edu.lms.exception.ErrorCode;
@@ -65,6 +66,13 @@ public class RefundService {
     public void approve(Long refundId) {
         RefundRequest req = refundRepo.findById(refundId)
                 .orElseThrow(() -> new AppException(ErrorCode.REFUND_NOT_FOUND));
+        Tutor tutor = req.getTutor();
+        if(tutor.getWalletBalance().compareTo(req.getRefundAmount()) < 0){
+            throw new AppException(ErrorCode.INVALID_AMOUNT);
+        }
+        tutor.setWalletBalance(
+                tutor.getWalletBalance().subtract(req.getRefundAmount())
+        );
 
         req.setStatus(RefundStatus.APPROVED);
         req.setProcessedAt(LocalDateTime.now());
@@ -101,6 +109,7 @@ public class RefundService {
                 .status(r.getStatus())
                 .createdAt(r.getCreatedAt())
                 .processedAt(r.getProcessedAt())
+                .TutorId(r.getTutor().getTutorID())
                 .build();
     }
 }
