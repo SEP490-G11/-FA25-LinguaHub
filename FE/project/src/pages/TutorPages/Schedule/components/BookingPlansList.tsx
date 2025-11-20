@@ -1,7 +1,6 @@
 import React, { useState, memo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { BookingPlan } from '@/pages/TutorPages/Schedule/type';
 import { Pencil, Trash2, Clock, DollarSign, Link, Calendar, RefreshCw } from 'lucide-react';
 
@@ -119,30 +118,16 @@ export const BookingPlansList: React.FC<BookingPlansListProps> = memo(({
           )}
         </div>
       </CardHeader>
-      <CardContent className="space-y-3 max-h-[400px] overflow-y-auto">
+      <CardContent className="space-y-3">
         {bookingPlans.map((plan) => (
           <div
             key={plan.booking_planid}
             className="border rounded-lg p-3 bg-white hover:bg-gray-50 transition-all duration-200 hover:shadow-sm"
           >
-            {/* Header with title and status badges */}
+            {/* Header with title */}
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <h3 className="font-medium text-sm text-gray-900">{plan.title}</h3>
-                <div className="flex gap-1">
-                  <Badge 
-                    variant={plan.is_active ? "default" : "secondary"}
-                    className="text-xs px-1.5 py-0.5"
-                  >
-                    {plan.is_active ? 'Hoạt động' : 'Tạm dừng'}
-                  </Badge>
-                  <Badge 
-                    variant={plan.is_open ? "outline" : "secondary"}
-                    className="text-xs px-1.5 py-0.5"
-                  >
-                    {plan.is_open ? 'Mở' : 'Đóng'}
-                  </Badge>
-                </div>
               </div>
               
               {/* Action buttons */}

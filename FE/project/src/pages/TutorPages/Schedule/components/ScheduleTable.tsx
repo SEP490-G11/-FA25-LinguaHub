@@ -5,24 +5,36 @@ interface ScheduleTableProps {
   schedule: DaySchedule[];
   getSlotForTime: (day: DaySchedule, timeId: string) => TimeSlot | null;
   bookingPlans?: BookingPlan[];
-  isEditMode?: boolean;
 }
 
 export const ScheduleTable: React.FC<ScheduleTableProps> = memo(({
   schedule,
   getSlotForTime,
   bookingPlans = [],
-  isEditMode = false,
 }) => {
-  const enabledDays = schedule.filter((day) => day.isEnabled);
+  // Early return if no valid data
+  if (!schedule || !Array.isArray(schedule)) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-gray-500">Không có dữ liệu lịch để hiển thị</p>
+      </div>
+    );
+  }
 
-  // Helper function to convert TimeObject to string format
-  const timeObjectToString = (timeObj: { hour: number; minute: number }) => {
+  const enabledDays = schedule.filter((day) => day && day.isEnabled);
+
+  const timeObjectToString = (timeObj: { hour: number; minute: number } | null | undefined) => {
+    if (!timeObj || typeof timeObj.hour !== 'number' || typeof timeObj.minute !== 'number') {
+      return '00:00';
+    }
     return `${timeObj.hour.toString().padStart(2, '0')}:${timeObj.minute.toString().padStart(2, '0')}`;
   };
 
-  // Helper function to generate time slots from booking plan
   const generateTimeSlotsFromBookingPlan = (plan: BookingPlan): TimeSlot[] => {
+    if (!plan || !plan.start_hours || !plan.end_hours || !plan.slot_duration) {
+      return [];
+    }
+    
     const slots: TimeSlot[] = [];
     const startTime = timeObjectToString(plan.start_hours);
     const endTime = timeObjectToString(plan.end_hours);
@@ -55,7 +67,10 @@ export const ScheduleTable: React.FC<ScheduleTableProps> = memo(({
 
   // Helper function to get existing booking plan for a day
   const getExistingBookingPlan = (dayShortName: string): BookingPlan | null => {
-    return bookingPlans.find(plan => plan.title === dayShortName) || null;
+    if (!bookingPlans || !Array.isArray(bookingPlans)) {
+      return null;
+    }
+    return bookingPlans.find(plan => plan && plan.title === dayShortName) || null;
   };
 
   // Helper function to check if a time slot exists in existing booking plan
@@ -72,30 +87,68 @@ export const ScheduleTable: React.FC<ScheduleTableProps> = memo(({
     const allSlots = new Set<string>();
     
     // Add slots from current schedule (new/preview slots)
-    schedule.forEach(day => {
-      if (day.isEnabled && day.slots.length > 0) {
-        day.slots.forEach(slot => {
-          allSlots.add(slot.id);
-        });
-      }
-    });
+    if (schedule && Array.isArray(schedule)) {
+      schedule.forEach(day => {
+        if (day && day.isEnabled && day.slots && Array.isArray(day.slots) && day.slots.length > 0) {
+          day.slots.forEach(slot => {
+            if (slot && slot.id) {
+              allSlots.add(slot.id);
+            }
+          });
+        }
+      });
+    }
 
     // Add slots from existing booking plans
-    bookingPlans.forEach(plan => {
-      const existingSlots = generateTimeSlotsFromBookingPlan(plan);
-      existingSlots.forEach(slot => {
-        allSlots.add(slot.id);
+    if (bookingPlans && Array.isArray(bookingPlans)) {
+      bookingPlans.forEach(plan => {
+        if (plan && plan.start_hours && plan.end_hours) {
+          const existingSlots = generateTimeSlotsFromBookingPlan(plan);
+          existingSlots.forEach(slot => {
+            if (slot && slot.id) {
+              allSlots.add(slot.id);
+            }
+          });
+        }
       });
-    });
+    }
 
     return Array.from(allSlots).sort((a, b) => {
-      const [aStartTime] = a.split('-');
-      const [bStartTime] = b.split('-');
-      const [aHour, aMin] = aStartTime.split(':').map(Number);
-      const [bHour, bMin] = bStartTime.split(':').map(Number);
-      const aMinutes = aHour * 60 + aMin;
-      const bMinutes = bHour * 60 + bMin;
-      return aMinutes - bMinutes;
+      try {
+        if (!a || !b || typeof a !== 'string' || typeof b !== 'string') {
+          return 0;
+        }
+        
+        const aParts = a.split('-');
+        const bParts = b.split('-');
+        
+        if (aParts.length < 1 || bParts.length < 1) {
+          return 0;
+        }
+        
+        const [aStartTime] = aParts;
+        const [bStartTime] = bParts;
+        
+        const aTimeParts = aStartTime.split(':');
+        const bTimeParts = bStartTime.split(':');
+        
+        if (aTimeParts.length < 2 || bTimeParts.length < 2) {
+          return 0;
+        }
+        
+        const [aHour, aMin] = aTimeParts.map(Number);
+        const [bHour, bMin] = bTimeParts.map(Number);
+        
+        if (isNaN(aHour) || isNaN(aMin) || isNaN(bHour) || isNaN(bMin)) {
+          return 0;
+        }
+        
+        const aMinutes = aHour * 60 + aMin;
+        const bMinutes = bHour * 60 + bMin;
+        return aMinutes - bMinutes;
+      } catch (error) {
+        return 0;
+      }
     });
   };
 
@@ -104,26 +157,32 @@ export const ScheduleTable: React.FC<ScheduleTableProps> = memo(({
     const daysMap = new Map<string, DaySchedule>();
     
     // Add enabled days from current schedule
-    enabledDays.forEach(day => {
-      daysMap.set(day.shortName, day);
-    });
+    if (enabledDays && Array.isArray(enabledDays)) {
+      enabledDays.forEach(day => {
+        if (day && day.shortName) {
+          daysMap.set(day.shortName, day);
+        }
+      });
+    }
 
     // Add days from existing booking plans
-    bookingPlans.forEach(plan => {
-      if (!daysMap.has(plan.title)) {
-        // Create a virtual day for existing booking plan
-        const virtualDay: DaySchedule = {
-          id: 0, // Virtual ID
-          name: plan.title,
-          shortName: plan.title,
-          isEnabled: false,
-          startTime: timeObjectToString(plan.start_hours),
-          endTime: timeObjectToString(plan.end_hours),
-          slots: generateTimeSlotsFromBookingPlan(plan)
-        };
-        daysMap.set(plan.title, virtualDay);
-      }
-    });
+    if (bookingPlans && Array.isArray(bookingPlans)) {
+      bookingPlans.forEach(plan => {
+        if (plan && plan.title && plan.start_hours && plan.end_hours && !daysMap.has(plan.title)) {
+          // Create a virtual day for existing booking plan
+          const virtualDay: DaySchedule = {
+            id: 0, // Virtual ID
+            name: plan.title,
+            shortName: plan.title,
+            isEnabled: false,
+            startTime: timeObjectToString(plan.start_hours),
+            endTime: timeObjectToString(plan.end_hours),
+            slots: generateTimeSlotsFromBookingPlan(plan)
+          };
+          daysMap.set(plan.title, virtualDay);
+        }
+      });
+    }
 
     return Array.from(daysMap.values()).sort((a, b) => {
       // Sort by day order: T2, T3, T4, T5, T6, T7, CN
@@ -137,11 +196,11 @@ export const ScheduleTable: React.FC<ScheduleTableProps> = memo(({
   const displayTimeSlots = getAllTimeSlotsIncludingExisting();
   const displayDays = getAllDaysToDisplay();
 
-  if (displayTimeSlots.length === 0) {
+  if (displayTimeSlots.length === 0 && displayDays.length === 0) {
     return (
       <div className="h-full flex items-center justify-center">
         <div className="text-center text-gray-400">
-          <p className="text-xs">Chưa có lịch làm việc</p>
+          <p className="text-sm">Chưa có lịch làm việc</p>
           <p className="text-xs mt-1">
             {bookingPlans.length > 0 
               ? "Chọn ngày và nhấn 'Xem lịch' để hiển thị lịch hiện có"
@@ -155,31 +214,6 @@ export const ScheduleTable: React.FC<ScheduleTableProps> = memo(({
 
   return (
     <div className="h-full w-full overflow-auto">
-      {/* Legend for visual indicators */}
-      {(displayDays.some(day => getExistingBookingPlan(day.shortName)) || displayDays.some(day => day.isEnabled)) && (
-        <div className="sticky top-0 z-20 bg-white border-b border-gray-200 px-3 py-2">
-          <div className="flex flex-wrap gap-4 text-xs">
-            {displayDays.some(day => day.isEnabled) && (
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 bg-emerald-50 border border-emerald-200 rounded"></div>
-                <span className="text-emerald-600 font-medium">Lịch mới</span>
-              </div>
-            )}
-            {displayDays.some(day => getExistingBookingPlan(day.shortName)) && (
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 bg-blue-50 border border-blue-200 rounded"></div>
-                <span className="text-blue-600 font-medium">Lịch hiện có</span>
-              </div>
-            )}
-            {isEditMode && (
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 bg-amber-50 border border-amber-200 rounded"></div>
-                <span className="text-amber-600 font-medium">Đang chỉnh sửa</span>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
       <table className="w-full border-collapse text-xs">
         <thead className="sticky top-0 z-10">
           <tr>
@@ -189,16 +223,11 @@ export const ScheduleTable: React.FC<ScheduleTableProps> = memo(({
             {displayDays.map((day) => {
               const hasExistingPlan = getExistingBookingPlan(day.shortName);
               const hasNewSchedule = day.isEnabled;
-              const isBeingEdited = isEditMode && hasExistingPlan;
               
-              // Determine header styling based on day type
-              let headerClasses = 'text-white font-semibold text-center py-1.5 border-r border-blue-700 last:border-r-0 min-w-[70px] relative ';
+              // Simplified header styling
+              let headerClasses = 'text-white font-semibold text-center py-2 border-r border-gray-300 last:border-r-0 min-w-[80px] ';
               
-              if (isBeingEdited) {
-                headerClasses += 'bg-amber-600';
-              } else if (hasNewSchedule) {
-                headerClasses += 'bg-emerald-600';
-              } else if (hasExistingPlan) {
+              if (hasNewSchedule || hasExistingPlan) {
                 headerClasses += 'bg-blue-600';
               } else {
                 headerClasses += 'bg-gray-500';
@@ -209,18 +238,7 @@ export const ScheduleTable: React.FC<ScheduleTableProps> = memo(({
                   key={`${day.shortName}-${day.id}`}
                   className={headerClasses}
                 >
-                  <div className="relative">
-                    {day.shortName}
-                    {/* Visual indicator for day type */}
-                    {hasNewSchedule && (
-                      <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-emerald-300 rounded-full border border-white" title="Có lịch mới"></div>
-                    )}
-                    {hasExistingPlan && !hasNewSchedule && (
-                      <div className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full border border-white ${
-                        isBeingEdited ? 'bg-amber-300' : 'bg-blue-300'
-                      }`} title={isBeingEdited ? "Đang chỉnh sửa" : "Có lịch hiện có"}></div>
-                    )}
-                  </div>
+                  {day.shortName}
                 </th>
               );
             })}
@@ -228,15 +246,13 @@ export const ScheduleTable: React.FC<ScheduleTableProps> = memo(({
         </thead>
         <tbody>
           {displayTimeSlots.map((timeId) => {
-            const [startTime, endTime] = timeId.split('-');
+            const [startTime] = timeId.split('-');
             const [startH, startM] = startTime.split(':');
-            const [endH, endM] = endTime.split(':');
 
             return (
               <tr key={timeId}>
-                <td className="bg-gray-50 text-center py-1.5 font-medium border-r border-b border-gray-200 text-gray-700">
-                  {startH.padStart(2, '0')}:{startM.padStart(2, '0')}-
-                  {endH.padStart(2, '0')}:{endM.padStart(2, '0')}
+                <td className="bg-gray-50 text-center py-2 font-medium border-r border-b border-gray-200 text-gray-700 min-w-[80px]">
+                  {startH.padStart(2, '0')}:{startM.padStart(2, '0')}
                 </td>
                 {displayDays.map((day) => {
                   // Check for new schedule slot (from current form)
@@ -247,48 +263,28 @@ export const ScheduleTable: React.FC<ScheduleTableProps> = memo(({
                   // Determine which slot to display and its type
                   const hasNewSlot = !!newSlot;
                   const hasExistingSlot = !!existingSlot;
-                  const isExistingPlan = getExistingBookingPlan(day.shortName);
-                  const isBeingEdited = isEditMode && isExistingPlan;
 
-                  // Determine cell styling based on slot type and mode
-                  let cellClasses = 'text-center py-1.5 font-medium border-r border-b border-gray-200 last:border-r-0 relative ';
-                  let textContent = '';
+                  // Simplified cell styling - just show available/unavailable
+                  let cellClasses = 'text-center py-2 border-r border-b border-gray-200 last:border-r-0 ';
+                  let content = '';
                   
-                  if (hasNewSlot) {
-                    // New slot (preview from form)
-                    cellClasses += 'bg-emerald-50 text-emerald-600 border-emerald-200';
-                    textContent = `${newSlot.startTime}-${newSlot.endTime}`;
-                  } else if (hasExistingSlot) {
-                    if (isBeingEdited) {
-                      // Existing slot being edited
-                      cellClasses += 'bg-amber-50 text-amber-600 border-amber-200';
-                    } else {
-                      // Regular existing slot
-                      cellClasses += 'bg-blue-50 text-blue-600 border-blue-200';
-                    }
-                    textContent = `${existingSlot.startTime}-${existingSlot.endTime}`;
+                  if (hasNewSlot || hasExistingSlot) {
+                    // Has schedule - show as available
+                    cellClasses += 'bg-green-100 text-green-700';
+                    content = '✓';
                   } else {
-                    // Empty slot
-                    cellClasses += 'bg-white';
+                    // No schedule - show as empty
+                    cellClasses += 'bg-gray-50 text-gray-400';
+                    content = '-';
                   }
 
                   return (
                     <td
                       key={`${day.shortName}-${timeId}`}
                       className={cellClasses}
+                      title={hasNewSlot || hasExistingSlot ? 'Có lịch làm việc' : 'Trống'}
                     >
-                      <div className="relative">
-                        {textContent}
-                        {/* Visual indicator for slot type */}
-                        {hasNewSlot && (
-                          <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-emerald-400 rounded-full border border-white" title="Lịch mới"></div>
-                        )}
-                        {hasExistingSlot && !hasNewSlot && (
-                          <div className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full border border-white ${
-                            isBeingEdited ? 'bg-amber-400' : 'bg-blue-400'
-                          }`} title={isBeingEdited ? "Đang chỉnh sửa" : "Lịch hiện có"}></div>
-                        )}
-                      </div>
+                      {content}
                     </td>
                   );
                 })}

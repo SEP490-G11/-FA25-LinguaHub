@@ -2,14 +2,9 @@ import axios from '@/config/axiosConfig';
 import { AxiosError } from 'axios';
 import { BookingPlanRequest, BookingPlanResponse, BookingPlansResponse, UpdateBookingPlanResponse, DeleteBookingPlanResponse } from '@/pages/TutorPages/Schedule/type';
 
-const BASE_URL = '/tutors/booking-plans';
+const BASE_URL = '/tutor/booking-plan';
 
-// Enhanced error handling utility with better typing
-const handleApiError = (error: unknown, operation: string): never => {
-  if (process.env.NODE_ENV === 'development') {
-    console.error(`Error ${operation}:`, error);
-  }
-  
+const handleApiError = (error: unknown): never => {
   if (error instanceof AxiosError) {
     const axiosError = error as AxiosError;
     
@@ -21,6 +16,11 @@ const handleApiError = (error: unknown, operation: string): never => {
     // Server error responses
     const status = axiosError.response.status;
     const responseData = axiosError.response.data as any;
+    
+    // Check for specific database deadlock error
+    if (responseData?.message && responseData.message.includes('Deadlock found')) {
+      throw new Error('Hệ thống đang bận, vui lòng thử lại sau vài giây.');
+    }
     
     switch (status) {
       case 400:
@@ -49,43 +49,51 @@ const handleApiError = (error: unknown, operation: string): never => {
 };
 
 export const bookingPlanApi = {
-  // Create a new booking plan
-  createBookingPlan: async (data: BookingPlanRequest): Promise<BookingPlanResponse> => {
+  // Create a new booking plan with retry logic for deadlocks
+  createBookingPlan: async (data: BookingPlanRequest, retryCount = 0): Promise<BookingPlanResponse> => {
+    const maxRetries = 3;
+    const retryDelay = 1000 + (retryCount * 500); // Increasing delay: 1s, 1.5s, 2s
+    
     try {
       const response = await axios.post<BookingPlanResponse>(BASE_URL, data);
       return response.data;
     } catch (error) {
-      return handleApiError(error, 'creating booking plan');
+      // Check if it's a deadlock error and we haven't exceeded max retries
+      if (error instanceof AxiosError && 
+          error.response?.data?.message?.includes('Deadlock found') && 
+          retryCount < maxRetries) {
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+        return bookingPlanApi.createBookingPlan(data, retryCount + 1);
+      }
+      
+      return handleApiError(error);
     }
   },
 
-  // Get all booking plans for a tutor
-  getBookingPlans: async (tutorId: number): Promise<BookingPlansResponse> => {
+  getBookingPlans: async (): Promise<BookingPlansResponse> => {
     try {
-      const response = await axios.get<BookingPlansResponse>(`/tutor/${tutorId}/booking-plan`);
+      const response = await axios.get<BookingPlansResponse>('/tutor/booking-plan/me');
       return response.data;
     } catch (error) {
-      return handleApiError(error, 'fetching booking plans');
+      return handleApiError(error);
     }
   },
 
-  // Update a booking plan
   updateBookingPlan: async (bookingPlanId: number, data: BookingPlanRequest): Promise<UpdateBookingPlanResponse> => {
     try {
       const response = await axios.put<UpdateBookingPlanResponse>(`/tutor/booking-plan/${bookingPlanId}`, data);
       return response.data;
     } catch (error) {
-      return handleApiError(error, 'updating booking plan');
+      return handleApiError(error);
     }
   },
 
-  // Delete a booking plan
   deleteBookingPlan: async (bookingPlanId: number): Promise<DeleteBookingPlanResponse> => {
     try {
       const response = await axios.delete<DeleteBookingPlanResponse>(`/tutor/booking-plan/${bookingPlanId}`);
       return response.data;
     } catch (error) {
-      return handleApiError(error, 'deleting booking plan');
+      return handleApiError(error);
     }
   },
 };
