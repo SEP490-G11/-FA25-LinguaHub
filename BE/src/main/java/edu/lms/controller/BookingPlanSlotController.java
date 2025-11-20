@@ -1,8 +1,8 @@
 package edu.lms.controller;
 
 import edu.lms.dto.request.ApiRespond;
+import edu.lms.dto.response.BookingPlanSlotResponse;
 import edu.lms.dto.response.UserResponse;
-import edu.lms.entity.BookingPlanSlot;
 import edu.lms.service.BookingPlanSlotService;
 import edu.lms.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +24,7 @@ public class BookingPlanSlotController {
     private final UserService userService; // ⬅️ Thêm dòng này
 
     @GetMapping("/my-slots")
-    public ApiRespond<List<BookingPlanSlot>> getMySlots() {
+    public ApiRespond<List<BookingPlanSlotResponse>> getMySlots() {
 
         // 1) Lấy user hiện tại giống myInfo()
         UserResponse user = userService.getMyInfo();
@@ -32,11 +32,11 @@ public class BookingPlanSlotController {
         String role = user.getRole(); // LEARNER / TUTOR
 
         // 2) Truy vấn slot
-        List<BookingPlanSlot> result = ("LEARNER".equalsIgnoreCase(role))
+        List<BookingPlanSlotResponse> result = ("LEARNER".equalsIgnoreCase(role))
                 ? bookingPlanSlotService.getSlotsForUser(userId)
                 : bookingPlanSlotService.getSlotsForTutor(userId);
 
-        return ApiRespond.<List<BookingPlanSlot>>builder()
+        return ApiRespond.<List<BookingPlanSlotResponse>>builder()
                 .code(1000)
                 .message("OK")
                 .result(result)

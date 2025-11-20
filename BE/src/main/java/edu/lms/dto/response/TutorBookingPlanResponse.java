@@ -42,6 +42,9 @@ public class TutorBookingPlanResponse {
     @JsonProperty("price_per_hours")
     BigDecimal pricePerHours;
 
+    @JsonProperty("meeting_url")
+    String meetingUrl;
+
     @JsonProperty("is_open")
     Boolean isOpen;
 

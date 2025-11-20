@@ -45,5 +45,8 @@ public class BookingPlanSlotResponse {
     
     @JsonProperty("learner_name")
     String learnerName; // Tên learner nếu đã book (optional, có thể null)
+    
+    @JsonProperty("meeting_url")
+    String meetingUrl; // Meeting URL chỉ hiển thị khi slot đã thanh toán (status = Paid)
 }
 
