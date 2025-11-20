@@ -4,12 +4,11 @@ import {
   LayoutDashboard,
   BookOpen,
   Users,
-  Settings,
   Calendar,
-  FileText,
   MessageSquare,
   CreditCard,
   Package,
+  CalendarCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -43,6 +42,11 @@ const menuItems: MenuItem[] = [
     title: 'Schedule',
     href: '/schedule',
     icon: Calendar,
+  },
+  {
+    title: 'Booked Slots',
+    href: '/booked-slots',
+    icon: CalendarCheck,
   },
   {
     title: 'Packages',
