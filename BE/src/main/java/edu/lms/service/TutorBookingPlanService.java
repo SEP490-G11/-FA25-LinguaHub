@@ -57,13 +57,19 @@ public class TutorBookingPlanService {
                 null
         );
 
+        // Normalize empty string to null for meetingUrl
+        String meetingUrl = request.getMeetingUrl();
+        if (meetingUrl != null && meetingUrl.trim().isEmpty()) {
+            meetingUrl = null;
+        }
+
         BookingPlan bookingPlan = BookingPlan.builder()
                 .title(request.getTitle())
                 .startHours(request.getStartTime())
                 .endHours(request.getEndTime())
                 .slotDuration(request.getSlotDuration())
                 .pricePerHours(request.getPricePerHours().doubleValue())
-                .meetingUrl(request.getMeetingUrl())
+                .meetingUrl(meetingUrl)
                 .tutorID(tutor.getTutorID())
                 .isActive(true)
                 .isOpen(true)
@@ -153,12 +159,18 @@ public class TutorBookingPlanService {
         LocalTime oldEndHours = bookingPlan.getEndHours();
         Integer oldSlotDuration = bookingPlan.getSlotDuration();
 
+        // Normalize empty string to null for meetingUrl
+        String meetingUrl = request.getMeetingUrl();
+        if (meetingUrl != null && meetingUrl.trim().isEmpty()) {
+            meetingUrl = null;
+        }
+
         bookingPlan.setTitle(request.getTitle());
         bookingPlan.setStartHours(request.getStartTime());
         bookingPlan.setEndHours(request.getEndTime());
         bookingPlan.setSlotDuration(request.getSlotDuration());
         bookingPlan.setPricePerHours(request.getPricePerHours().doubleValue());
-        bookingPlan.setMeetingUrl(request.getMeetingUrl());
+        bookingPlan.setMeetingUrl(meetingUrl);
 
         bookingPlanRepository.save(bookingPlan);
 

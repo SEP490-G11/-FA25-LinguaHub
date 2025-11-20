@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.AccessLevel;
@@ -49,6 +50,8 @@ public class TutorBookingPlanRequest {
     BigDecimal pricePerHours;
 
     @Size(max = 500, message = "Meeting URL must be less than 500 characters")
+    @Pattern(regexp = "^(|https?://.+)$",
+            message = "Meeting URL must be empty or start with http:// or https://")
     @JsonProperty("meeting_url")
     String meetingUrl;
 

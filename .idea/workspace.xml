@@ -5,17 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f34da5df-8de1-4fda-b60e-25fa28aac3e7" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BE/src/main/java/edu/lms/controller/BookingPlanSlotController.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/edu/lms/controller/BookingPlanSlotController.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/BE/src/main/java/edu/lms/dto/request/TutorBookingPlanRequest.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/edu/lms/dto/request/TutorBookingPlanRequest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BE/src/main/java/edu/lms/dto/response/BookingPlanSlotResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/edu/lms/dto/response/BookingPlanSlotResponse.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BE/src/main/java/edu/lms/dto/response/BookingPlanSlotSummaryResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/edu/lms/dto/response/BookingPlanSlotSummaryResponse.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BE/src/main/java/edu/lms/dto/response/TutorBookingPlanResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/edu/lms/dto/response/TutorBookingPlanResponse.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BE/src/main/java/edu/lms/entity/BookingPlan.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/edu/lms/entity/BookingPlan.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BE/src/main/java/edu/lms/service/BookingPlanSlotService.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/edu/lms/service/BookingPlanSlotService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BE/src/main/java/edu/lms/service/TutorBookingPlanService.java" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/java/edu/lms/service/TutorBookingPlanService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/BE/src/main/resources/application.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/BE/src/main/resources/application.yaml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -23,8 +13,25 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="main" />
+      </map>
+    </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
+  "lastFilter": {
+    "state": "OPEN",
+    "assignee": "NguyenTrang3008"
+  }
+}]]></component>
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/SEP490-G11/FA25-LinguaHub",
+    "accountId": "a9032a44-0db4-49ca-97ed-f6a701e8c528"
+  }
+}]]></component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 4
 }</component>
@@ -33,31 +40,31 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Application.LinguaHubApplication.executor": "Run",
-    "RequestMappingsPanelOrder0": "0",
-    "RequestMappingsPanelOrder1": "1",
-    "RequestMappingsPanelWidth0": "75",
-    "RequestMappingsPanelWidth1": "75",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "Spring Boot.LinguaHubApplication.executor": "Run",
-    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultAutoModeForALLUsers.v1": "true",
-    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
-    "git-widget-placeholder": "minpricebooking",
-    "junie.onboarding.icon.badge.shown": "true",
-    "kotlin-language-version-configured": "true",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "to.speed.mode.migration.done": "true",
-    "ts.external.directory.path": "O:\\DoAn2\\-FA25-LinguaHub\\FE\\project\\node_modules\\typescript\\lib",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Application.LinguaHubApplication.executor&quot;: &quot;Run&quot;,
+    &quot;RequestMappingsPanelOrder0&quot;: &quot;0&quot;,
+    &quot;RequestMappingsPanelOrder1&quot;: &quot;1&quot;,
+    &quot;RequestMappingsPanelWidth0&quot;: &quot;75&quot;,
+    &quot;RequestMappingsPanelWidth1&quot;: &quot;75&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;Spring Boot.LinguaHubApplication.executor&quot;: &quot;Run&quot;,
+    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultAutoModeForALLUsers.v1&quot;: &quot;true&quot;,
+    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;minpricebooking&quot;,
+    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
+    &quot;ts.external.directory.path&quot;: &quot;O:\\DoAn2\\-FA25-LinguaHub\\FE\\project\\node_modules\\typescript\\lib&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager" selected="Application.LinguaHubApplication">
     <configuration name="LinguaHubApplication" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="edu.lms.LinguaHubApplication" />
@@ -109,6 +116,7 @@
       </set>
     </attachedChunks>
   </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
       <changelist id="f34da5df-8de1-4fda-b60e-25fa28aac3e7" name="Changes" comment="" />
