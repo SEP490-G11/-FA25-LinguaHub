@@ -74,105 +74,113 @@ const Notifications = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50">
       <div className="max-w-4xl mx-auto px-4 py-8">
         
-        {/* Header - Tiêu đề và badge số lượng unread */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Notifications</h1>
-              <p className="text-gray-600 mt-1">
-                Stay updated with your learning activities
-              </p>
-            </div>
-            {unreadCount > 0 && (
-              <Badge variant="destructive" className="text-lg px-4 py-2">
-                {unreadCount} new
-              </Badge>
-            )}
-          </div>
-
-          {/* Filters - Nút All và Unread */}
-          <div className="flex gap-2">
-            <Button
-              variant={activeFilter === 'all' ? 'default' : 'outline'}
-              onClick={() => setActiveFilter('all')}
-            >
-              All ({notifications.length})
-            </Button>
-            <Button
-              variant={activeFilter === 'unread' ? 'default' : 'outline'}
-              onClick={() => setActiveFilter('unread')}
-            >
-              Unread ({unreadCount})
-            </Button>
-          </div>
-        </div>
-
-        {/* Danh sách thông báo */}
-        <div className="space-y-3">
-          {filteredNotifications.length === 0 ? (
-            // Không có thông báo
-            <Card className="p-12 text-center">
-              <Bell className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                No notifications
-              </h3>
-              <p className="text-gray-600">
-                {activeFilter === 'unread' 
-                  ? "You're all caught up! No unread notifications."
-                  : "You don't have any notifications yet."}
-              </p>
-            </Card>
-          ) : (
-            // Hiển thị từng thông báo
-            filteredNotifications.map((notification) => (
-              <Card
-                key={notification.notificationId}
-                className={cn(
-                  "p-4 cursor-pointer transition-all hover:shadow-md",
-                  // Thông báo chưa đọc có màu xanh nhạt
-                  !notification.isRead && "bg-blue-50/50 border-blue-200"
-                )}
-                onClick={() => handleNotificationClick(notification)}
-              >
-                <div className="flex items-start gap-4">
-                  {/* Icon */}
-                  <div className="flex-shrink-0 mt-1">
-                    {getNotificationIcon(notification.type)}
-                  </div>
-                  
-                  {/* Nội dung */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2 mb-1">
-                      <h3 className="font-semibold text-gray-900">
-                        {notification.title}
-                      </h3>
-                      {/* Chấm xanh cho thông báo chưa đọc */}
-                      {!notification.isRead && (
-                        <div className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0 mt-2" />
-                      )}
-                    </div>
-                    
-                    <p className="text-gray-700 text-sm mb-2">
-                      {notification.content}
-                    </p>
-                    
-                    {/* Thời gian và loại */}
-                    <div className="flex items-center gap-4 text-xs text-gray-500">
-                      <span>
-                        {formatDistanceToNow(new Date(notification.createdAt), { 
-                          addSuffix: true 
-                        })}
-                      </span>
-                      <span className="px-2 py-1 bg-gray-100 rounded text-xs">
-                        {notification.type.replace(/_/g, ' ')}
-                      </span>
-                    </div>
-                  </div>
+        {/* Container lớn bao quanh toàn bộ */}
+        <Card className="border-2 border-gray-300 shadow-xl bg-white">
+          <div className="p-6 md:p-8">
+            {/* Header - Tiêu đề và badge số lượng unread */}
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900">Notifications</h1>
+                  <p className="text-gray-600 mt-1">
+                    Stay updated with your learning activities
+                  </p>
                 </div>
-              </Card>
-            ))
-          )}
-        </div>
+                {unreadCount > 0 && (
+                  <Badge variant="destructive" className="text-lg px-4 py-2">
+                    {unreadCount} new
+                  </Badge>
+                )}
+              </div>
+
+              {/* Filters - Nút All và Unread */}
+              <div className="flex gap-2">
+                <Button
+                  variant={activeFilter === 'all' ? 'default' : 'outline'}
+                  onClick={() => setActiveFilter('all')}
+                >
+                  All ({notifications.length})
+                </Button>
+                <Button
+                  variant={activeFilter === 'unread' ? 'default' : 'outline'}
+                  onClick={() => setActiveFilter('unread')}
+                >
+                  Unread ({unreadCount})
+                </Button>
+              </div>
+            </div>
+
+            {/* Danh sách thông báo */}
+            <div className="space-y-3">
+              {filteredNotifications.length === 0 ? (
+                // Không có thông báo
+                <div className="p-12 text-center border-2 border-dashed border-gray-200 rounded-lg">
+                  <Bell className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                    No notifications
+                  </h3>
+                  <p className="text-gray-600">
+                    {activeFilter === 'unread' 
+                      ? "You're all caught up! No unread notifications."
+                      : "You don't have any notifications yet."}
+                  </p>
+                </div>
+              ) : (
+                // Hiển thị từng thông báo
+                filteredNotifications.map((notification) => (
+                  <Card
+                    key={notification.notificationId}
+                    className={cn(
+                      "p-5 cursor-pointer transition-all hover:shadow-lg border-2",
+                      // Thông báo chưa đọc có màu xanh nhạt với viền xanh đậm
+                      !notification.isRead 
+                        ? "bg-blue-50/50 border-blue-300 hover:border-blue-400" 
+                        : "bg-white border-gray-200 hover:border-gray-300"
+                    )}
+                    onClick={() => handleNotificationClick(notification)}
+                  >
+                    <div className="flex items-start gap-4">
+                      {/* Icon */}
+                      <div className="flex-shrink-0 mt-1">
+                        {getNotificationIcon(notification.type)}
+                      </div>
+                      
+                      {/* Nội dung */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <h3 className="font-semibold text-gray-900 text-base">
+                            {notification.title}
+                          </h3>
+                          {/* Chấm xanh cho thông báo chưa đọc */}
+                          {!notification.isRead && (
+                            <div className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0 mt-2" />
+                          )}
+                        </div>
+                        
+                        {/* Hiển thị FULL content ở trang notifications */}
+                        <p className="text-gray-700 text-sm mb-3 whitespace-pre-wrap break-words">
+                          {notification.content}
+                        </p>
+                        
+                        {/* Thời gian và loại */}
+                        <div className="flex items-center gap-4 text-xs text-gray-500">
+                          <span>
+                            {formatDistanceToNow(new Date(notification.createdAt), { 
+                              addSuffix: true 
+                            })}
+                          </span>
+                          <span className="px-2 py-1 bg-gray-100 rounded text-xs font-medium">
+                            {notification.type.replace(/_/g, ' ')}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                ))
+              )}
+            </div>
+          </div>
+        </Card>
       </div>
     </div>
   );
