@@ -186,8 +186,8 @@ const CalendarSlots = ({
 
         slots.forEach((s) => {
           const date = s.start_time.substring(0, 10);
-          const hour = s.start_time.substring(11, 13);
-          const key = `${date}T${hour}:00_plan_${s.booking_planid}`;
+          const time = s.start_time.substring(11, 16); // Lấy cả HH:MM
+          const key = `${date}T${time}_plan_${s.booking_planid}`;
 
           if (s.status === "Locked") {
             // Slot đang bị khóa (chưa thanh toán)

@@ -12,7 +12,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import api from "@/config/axiosConfig";
 
-// ✅ Validate form OTP
+
 const verifyEmailSchema = z.object({
   otpCode: z.string().length(6, "OTP code must be 6 digits"),
 });
@@ -44,7 +44,7 @@ const VerifyEmail = () => {
     resolver: zodResolver(verifyEmailSchema),
   });
 
-  //  countdown resend button (chạy ngay lần đầu)
+  //  countdown resend button 
   useEffect(() => {
     if (emailFromParam) {
       localStorage.setItem("temp_verify_email", emailFromParam);
@@ -69,7 +69,10 @@ const VerifyEmail = () => {
     setIsVerifying(true);
 
     try {
-      await api.post("/auth/verify", { otp: data.otpCode }, { withCredentials: true });
+      await api.post("/auth/verify", { otp: data.otpCode }, { 
+        withCredentials: true,
+        skipAuth: true 
+      } as any);
 
       setIsVerified(true);
       localStorage.removeItem("temp_verify_email");
@@ -82,14 +85,14 @@ const VerifyEmail = () => {
           "response" in error &&
           (error as { response?: { data?: { message?: unknown } } }).response?.data?.message;
 
-      setResendMessage(typeof message === "string" ? message : "Failed to resend OTP.");
+      setApiError(typeof message === "string" ? message : "Failed to verify OTP.");
 
     } finally {
       setIsVerifying(false);
     }
   };
 
-  /**  Resend OTP (gửi lại form đăng ký lưu trong localStorage) */
+  /**  Resend OTP  */
   const handleResendEmail = async () => {
     setResending(true);
     setResendMessage(null);
@@ -103,7 +106,7 @@ const VerifyEmail = () => {
       }
 
       const signupData = JSON.parse(savedForm) as Record<string, unknown>;
-      await api.post("/auth/register", signupData);
+      await api.post("/auth/register", signupData, { skipAuth: true } as any);
 
       setResendMessage(" A new OTP has been sent to your email.");
 
